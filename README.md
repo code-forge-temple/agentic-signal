@@ -10,7 +10,9 @@
 
 > Transform complex tasks into visual workflows with local AI intelligence. No cloud dependencies required.
 
-**🎥 [Watch the Demo Video](https://youtu.be/62zk8zE6UJI) - See Agentic Signal in action!**
+## 🎬 Demo Video  
+
+[![62zk8zE6UJI](https://img.youtube.com/vi/62zk8zE6UJI/0.jpg)](https://www.youtube.com/watch?v=62zk8zE6UJI)
 
 ## ✨ Features
 

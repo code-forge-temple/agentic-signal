@@ -1,0 +1,30 @@
+.workflow-json-tab {
+    position: relative;
+}
+
+.workflow-json-tab .actions {
+    position: absolute;
+    top: 45px;
+    right: 9px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+}
+
+.workflow-json-tab .download-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    padding: 0;
+    background: none;
+    color: #4e545b;
+    border: 1px solid;
+    box-shadow: none;
+}
+
+.workflow-json-tab .download-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}

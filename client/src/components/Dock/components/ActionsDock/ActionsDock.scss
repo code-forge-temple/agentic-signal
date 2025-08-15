@@ -1,0 +1,18 @@
+@use '../../Dock' as mixins;
+
+
+.actions-dock {
+    @include mixins.dock-wrapper;
+
+    margin-right: 20px;
+
+    .dock-items {
+        .dock-item {
+            cursor: pointer;
+
+            svg {
+                background: #9c27b0!important;
+            }
+        }
+    }
+}

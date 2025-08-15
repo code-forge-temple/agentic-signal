@@ -1,0 +1,36 @@
+{
+    "name": "agentic-signal",
+    "version": "1.0.0",
+    "description": "Visual AI Workflow Automation Platform with Local Agent Intelligence",
+    "author": "Code Forge Temple",
+    "type": "module",
+    "keywords": [
+        "ai",
+        "workflow",
+        "automation",
+        "agents",
+        "visual",
+        "low-code"
+    ],
+    "license": "AGPL-3.0-with-Commercial-Exception",
+    "scripts": {
+        "client:build": "cd client && bun run build",
+        "client:preview": "cd client && bun run preview",
+        "client:dev": "cd client && bun run dev",
+        "server:dev": "deno task dev",
+        "dev": "concurrently \"bun run client:dev\" \"bun run server:dev\"",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
+    },
+    "dependencies": {
+        "concurrently": "^9.1.2"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.29.0",
+        "eslint": "^9.29.0",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-react-refresh": "^0.4.19",
+        "typescript-eslint": "^8.34.1"
+    }
+}

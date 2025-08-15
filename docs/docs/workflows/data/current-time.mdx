@@ -1,0 +1,46 @@
+---
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import currentTimeJson from '@site/static/workflows/current-time.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Current Time Workflow
+
+This workflow returns the current date and time using the Date/Time Now tool and summarizes the result with AI.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Current Time Workflow](/img/workflows/current-time-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl('/workflows/current-time.json')}>
+        {JSON.stringify(currentTimeJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: `"What's the time now ?"`
+        - [**Date/Time Now Tool**](/docs/nodes/ai/tools/date-time-now)  
+            - Tool: Returns the current date and time in ISO 8601 format
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Prompt: Provide all answers in Markdown format  
+            - Model: llama3.1:8b
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Current date and time in a human-readable format.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies the prompt: "What's the time now?"
+2. **Interpret & Tool Call**: The AI Data Processing node interprets the input, determines a tool is needed, and calls the Date/Time Now Tool.
+3. **Summarize with AI**: The LLM receives the tool's result and summarizes the date and time in a human-readable format.
+4. **Output Result**: The Data Flow Spy node displays the final output.

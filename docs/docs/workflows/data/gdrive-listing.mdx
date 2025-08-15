@@ -1,0 +1,49 @@
+---
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import gdriveListingJson from '@site/static/workflows/gdrive-listing.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Google Drive Listing Workflow
+
+This workflow fetches a list of files from your Google Drive using a search query and summarizes the results using AI.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Google Drive Listing Workflow](/img/workflows/gdrive-listing-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/gdrive-listing.json")}>
+        {JSON.stringify(gdriveListingJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: `"Can you tell me the latest document that was created?"`
+        - [**Google Drive Fetch Files Tool**](/docs/nodes/ai/tools/gdrive-fetch-files)  
+            - Tool: Fetches files from Google Drive using a search query (`query` parameter)
+            - Requirements: Google Drive API access and authentication
+        - [**Date/Time Now Tool**](/docs/nodes/ai/tools/date-time-now)  
+            - Tool: Returns the current date and time in ISO 8601 format
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Prompt: Provide all answers in Markdown format  
+            - Model: llama3.1:8b
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Summarized list of recent Google Drive files with key details.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies the prompt: "Can you tell me the latest document that was created?"
+2. **Interpret & Tool Calls**: The AI Data Processing node interprets the input, determines which tools are needed, and calls the Google Drive Fetch Files Tool and Date/Time Now Tool.
+3. **Summarize with AI**: The LLM receives the tool results and generates a summary of the most recent Google Drive files with key details.
+4. **Output Result**: The Data Flow Spy node displays the summarized output.

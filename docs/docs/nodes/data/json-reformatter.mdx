@@ -1,0 +1,70 @@
+---
+sidebar_position: 1
+title: JSON Reformatter Node
+---
+
+# JSON Reformatter Node
+
+The **JSON Reformatter Node** transforms incoming data using [JSONata](https://jsonata.org/) expressions. It is ideal for reshaping, filtering, or extracting data from complex JSON structures before passing it to downstream nodes.
+
+![JSON Reformatter Node](/img/nodes/json-reformatter-preview.jpg)
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="expression" label="JSONata Expression" default>
+        Enter a [JSONata](https://jsonata.org/) expression to transform the input data.  
+        <details>
+            <summary>Example</summary>
+
+            - `$keys($.products)` — Get all product keys
+            - `$.items[price > 10]` — Filter items with price greater than 10
+        </details>
+
+        ![JSON Reformatter Node Params](/img/nodes/json-reformatter-params.jpg)
+    </TabItem>
+</Tabs>
+
+---
+
+## Example Usage
+
+For example usage, see the [Timeseries Chart workflow](/docs/workflows/data/timeseries-chart), which demonstrates fetching API data, reformatting it, and displaying it as a chart.
+
+## Common Use Cases
+
+1. **Data Transformation**: Reshape API responses for visualization or further processing.
+2. **Filtering**: Extract only relevant fields or records from large datasets.
+3. **Aggregation**: Summarize or group data before passing to output nodes.
+4. **Format Conversion**: Convert data into the format required by Chart or Data Validation nodes.
+
+## Best Practices
+
+- **Validate your expression**: Use the [JSONata Exerciser](https://try.jsonata.org/) to test expressions.
+- **Handle missing fields**: Use default values or conditional expressions to avoid errors.
+- **Keep expressions simple**: Complex logic can be split across multiple nodes for clarity.
+- **Chain with other nodes**: Use after data fetching or before visualization for maximum flexibility.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Invalid expression**: Check for typos or syntax errors in your JSONata expression.
+- **Unexpected output**: Ensure your input data matches the expected structure.
+- **Empty result**: The expression may not match any data; try a simpler query.
+
+### Performance Tips
+
+- Use for small to medium-sized datasets.
+- For very large data, consider filtering upstream to reduce processing load.
+- Test expressions with sample data before running full workflows.
+
+---
+
+## Supported Data Formats
+
+- **Input**: Any valid JSON object or array.
+- **Output**: Any JSON value (object, array, string, number, etc.) as produced by the JSONata expression.

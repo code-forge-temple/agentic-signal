@@ -1,0 +1,46 @@
+---
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import productDataValidationJson from '@site/static/workflows/product-data-validation-and-visualization.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Product Data Validation and Visualization Workflow
+
+This workflow demonstrates how to fetch product data from an API, validate its structure, reformat it, and visualize the results as a chart.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Product Data Validation and Visualization Workflow](/img/workflows/product-data-validation-and-visualization-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/product-data-validation-and-visualization.json")}>
+        {JSON.stringify(productDataValidationJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**GET Data**](/docs/nodes/input/get-data)  
+            - URL: `https://dummyjson.com/products`
+            - Data Type: JSON
+        - [**Data Validation**](/docs/nodes/data/data-validation)  
+            - Schema: Ensures the response contains a `products` array with objects having `id`, `title`, and `price`
+        - [**JSON Reformatter**](/docs/nodes/data/json-reformatter)  
+            - Expression: Extracts product titles and prices for charting
+        - [**Chart**](/docs/nodes/output/chart)  
+            - Displays the formatted product data as a chart
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Fetch Data**: The workflow starts by retrieving product data from a public API.
+2. **Validate Structure**: The Data Validation node checks that the data matches the expected schema, preventing downstream errors.
+3. **Reformat Data**: The JSON Reformatter node reshapes the validated data for visualization.
+4. **Visualize**: The Chart node displays product prices as a chart.

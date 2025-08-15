@@ -1,0 +1,66 @@
+---
+sidebar_position: 3
+---
+
+# Configuration
+
+## Ollama Host Configuration
+
+Ensure that the [Ollama](https://ollama.ai) host is installed on your local machine or available on your LAN. Then:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+   <TabItem value="linux" label="Linux" default>
+      1. Edit the systemd service file by running:
+         ```sh
+         sudo nano /etc/systemd/system/ollama.service
+         ```
+      2. Add the following environment variables in the `[Service]` section:
+         ```
+         Environment="OLLAMA_HOST=0.0.0.0"
+         ```
+         > **Note:** The `OLLAMA_HOST=0.0.0.0` setting is optional if the Ollama server is running on localhost and you do not need the Ollama server to be accessed from LAN.
+
+      3. Save the file, then reload and restart the service:
+         ```sh
+         sudo systemctl daemon-reload
+         sudo systemctl restart ollama.service
+         ```
+   </TabItem>
+   <TabItem value="windows" label="Windows">
+      1. On the machine running Ollama, set the environment variables:
+         ```
+         OLLAMA_HOST=0.0.0.0
+         ```
+         You can do this via the System Properties or using PowerShell.
+         > **Note:** The `OLLAMA_HOST=0.0.0.0` setting is optional if the Ollama server is running on localhost and you do not need the Ollama server to be accessed from LAN.
+
+      2. Restart Ollama app.
+   </TabItem>
+</Tabs>
+
+---
+
+## Configure Agentic Signal Client Settings
+
+![Current Time Workflow](/img/settings-preview.jpg)
+
+1. Open the **Settings** panel from the dock in the Agentic Signal client.
+2. **Ollama Host:** Enter the URL of your Ollama server in the "Ollama Host" field (e.g., `http://localhost:11434`).
+3. In the **Ollama Models** section:
+   - **Add a model:** Enter the model name (e.g., `llama3.1:8b`) and click the plus (+) button. Download progress will be shown.
+   - **Remove a model:** Click the trash icon next to any installed model to delete it.
+
+### Advanced: Manual Ollama CLI
+
+If you prefer, you can still use the Ollama CLI:
+
+```bash
+# Pull a lightweight model (recommended for testing but it will be more error prone)
+ollama pull llama3.2:1b
+
+# Or pull a more capable model
+ollama pull llama3.1:8b
+```

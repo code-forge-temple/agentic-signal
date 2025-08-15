@@ -1,0 +1,49 @@
+---
+sidebar_position: 7
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import weatherDashboardJson from '@site/static/workflows/weather-dashboard.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Weather Dashboard Workflow
+
+This workflow creates a real-time weather dashboard using the weather API and AI analysis.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Weather Dashboard Workflow](/img/workflows/weather-dashboard-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/weather-dashboard.json")}>
+        {JSON.stringify(weatherDashboardJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: `"What is the weather like now in New York?"`
+        - [**Fetch Weather Data Tool**](/docs/nodes/ai/tools/fetch-weather-data)  
+            - Tool: Fetches weather data for a given city (`city` parameter)
+            - Requirements: WeatherAPI.com API Key
+        - [**Date/Time Now Tool**](/docs/nodes/ai/tools/date-time-now)   
+            - Tool: Returns the current date and time in ISO 8601 format
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Prompt: Provide all answers in Markdown format  
+            - Model: llama3.1:8b
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Current weather conditions with AI-generated insights and recommendations.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies the prompt: "What is the weather like now in New York?"
+2. **Interpret & Tool Calls**: The AI Data Processing node interprets the input, determines which tools are needed, and calls the Fetch Weather Data Tool and Date/Time Now Tool.
+3. **Summarize with AI**: The LLM receives the tool results and generates a summary with insights and recommendations.
+4. **Output Result**: The Data Flow Spy node displays the final dashboard output.

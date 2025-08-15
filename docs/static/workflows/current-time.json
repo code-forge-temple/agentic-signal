@@ -1,0 +1,95 @@
+{
+    "nodes": [
+        {
+            "id": "b3d137fa-6534-4fc0-a6e0-15ee919be276",
+            "type": "data-source",
+            "position": {
+                "x": 100,
+                "y": 100
+            },
+            "data": {
+                "title": "Data Source",
+                "dataSource": {
+                    "value": "What's the time now ?",
+                    "type": "text"
+                }
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false
+        },
+        {
+            "id": "ca0be528-34f5-48e2-8d89-3c50260998c3",
+            "type": "ai-tool",
+            "position": {
+                "x": 400,
+                "y": 300
+            },
+            "data": {
+                "title": "AI Tool",
+                "toolSubtype": "date-time-now",
+                "userConfig": {}
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            }
+        },
+        {
+            "id": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "type": "llm-process",
+            "position": {
+                "x": 400,
+                "y": 100
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "prompt": "Provide all answers in Markdown format.",
+                "model": "",
+                "maxFeedbackLoops": 0
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            }
+        },
+        {
+            "id": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 700,
+                "y": 100
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": true
+        }
+    ],
+    "edges": [
+        {
+            "id": "f0e05088-09fb-44dc-b6d0-3c433d237d88",
+            "source": "b3d137fa-6534-4fc0-a6e0-15ee919be276",
+            "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "animated": false
+        },
+        {
+            "id": "3eb73176-bb89-4a3e-955e-fd5d1d0492a3",
+            "source": "ca0be528-34f5-48e2-8d89-3c50260998c3",
+            "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "targetHandle": "tools-target"
+        },
+        {
+            "id": "3c6892d46-614b-4a1e-a9f7-6970579860bd",
+            "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "target": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
+            "animated": false
+        }
+    ]
+}

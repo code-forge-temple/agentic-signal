@@ -1,0 +1,29 @@
+.youtube-preview-container {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.youtube-preview-link {
+    position: relative;
+    display: inline-block;
+}
+
+.youtube-preview-img {
+    width: 720px;
+    height: 405px;
+    cursor: pointer;
+    border-radius: 8px;
+    display: block;
+}
+
+.youtube-preview-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

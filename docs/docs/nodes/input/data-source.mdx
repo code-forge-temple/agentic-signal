@@ -1,0 +1,64 @@
+---
+sidebar_position: 2
+---
+
+# Data Source Node
+
+The **Data Source Node** provides static input for your workflow. Use it to supply text or JSON data directly, such as prompts, configuration, or sample datasets.
+
+![Data Source Node](/img/nodes/data-source-preview.jpg)
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="type" label="Type" default>
+        You can choose one of the following types of data:
+        - `text`: Enter plain text or Markdown.
+        - `json`: Enter JSON data (objects or arrays).
+
+        ![AI Data Processing Node Model](/img/nodes/data-source-params.jpg)
+    </TabItem>
+    <TabItem value="value" label="Value">
+        The actual content to be used as input for downstream nodes.
+
+        ![AI Data Processing Node Feedback Loops](/img/nodes/data-source-params.jpg)
+    </TabItem>
+</Tabs>
+
+---
+
+## Example Usage
+
+For example usage, see the [Weather Dashboard workflow](/docs/workflows/data/weather-dashboard) or [Google Drive Listing workflow](/docs/workflows/data/gdrive-listing), which use Data Source nodes to provide prompts or configuration.
+
+## Common Use Cases
+
+1. **Prompt Input**: Provide instructions or questions for LLM nodes.
+2. **Static Data**: Supply sample data for testing or demonstration.
+3. **Configuration**: Pass configuration objects to downstream nodes.
+4. **Markdown Content**: Input Markdown-formatted text for rendering or processing.
+5. **JSON Input**: Provide structured data for validation, transformation, or visualization.
+
+## Best Practices
+
+- **Choose the correct type**: Use `json` for structured data, `text` for plain text or Markdown.
+- **Validate JSON**: Ensure your JSON is valid to avoid downstream errors.
+- **Use Markdown**: For rich text, use Markdown in `text` mode.
+- **Keep it simple**: Use Data Source nodes for static or rarely-changing inputs.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Invalid JSON**: If using `json` type, ensure the value is valid JSON.
+- **Unexpected output**: Double-check the data type and value.
+- **Downstream errors**: Errors in downstream nodes may be caused by incorrect or missing input.
+
+### Performance Tips
+
+- Use for small to medium-sized static data.
+- For large datasets, consider loading data from an external source.
+- Use JSON validation tools to check your input before running the workflow.

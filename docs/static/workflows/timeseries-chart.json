@@ -1,0 +1,78 @@
+{
+    "nodes": [
+        {
+            "id": "94ccc828-cf75-4323-9273-f7144e539181",
+            "type": "get-data",
+            "position": {
+                "x": 100,
+                "y": 100
+            },
+            "data": {
+                "title": "GET Data",
+                "url": "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=demo",
+                "dataType": "json"
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "591a8b24-e0ea-4f38-b3ac-b633f2584444",
+            "type": "chart",
+            "position": {
+                "x": 650,
+                "y": 100
+            },
+            "data": {
+                "title": "Display Chart"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "5ab7119f-bef6-46b3-8de8-a9437b2109e9",
+            "type": "json-reformatter",
+            "position": {
+                "x": 400,
+                "y": 100
+            },
+            "data": {
+                "title": "JSON Reformatter",
+                "jsonataExpression": "(\r\n  $series := $lookup($, \"Time Series (5min)\");\r\n  $ts := $reverse($keys($series));\r\n  $symbol := $lookup($lookup($, \"Meta Data\"), \"2. Symbol\");\r\n  {\r\n    \"labels\": $ts,\r\n    \"datasets\": [\r\n      {\r\n        \"label\": \"Open\",\r\n        \"data\": $map($ts, function($t) { $number($lookup($lookup($series, $t), \"1. open\")) })\r\n      },\r\n      {\r\n        \"label\": \"High\",\r\n        \"data\": $map($ts, function($t) { $number($lookup($lookup($series, $t), \"2. high\")) })\r\n      },\r\n      {\r\n        \"label\": \"Low\",\r\n        \"data\": $map($ts, function($t) { $number($lookup($lookup($series, $t), \"3. low\")) })\r\n      },\r\n      {\r\n        \"label\": \"Close\",\r\n        \"data\": $map($ts, function($t) { $number($lookup($lookup($series, $t), \"4. close\")) })\r\n      }\r\n    ],\r\n    \"title\": $symbol\r\n  }\r\n)"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "94ccc828-cf75-4323-9273-f7144e539181",
+            "sourceHandle": "right-source",
+            "target": "5ab7119f-bef6-46b3-8de8-a9437b2109e9",
+            "targetHandle": "left-target",
+            "id": "86e4943f-6025-498b-816b-2250e8c36a96"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "5ab7119f-bef6-46b3-8de8-a9437b2109e9",
+            "sourceHandle": "right-source",
+            "target": "591a8b24-e0ea-4f38-b3ac-b633f2584444",
+            "targetHandle": "left-target",
+            "id": "2b844d7c-0729-485f-bfe6-b89bc75618cd"
+        }
+    ]
+}

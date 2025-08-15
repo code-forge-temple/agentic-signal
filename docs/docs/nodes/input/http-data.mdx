@@ -1,0 +1,49 @@
+# Fetch Web Page Node
+
+The **Fetch Web Page Node** fetches and renders the HTML content of a web page from any HTTP or HTTPS URL using a GET request. It is designed for previewing and extracting content from web pages, not for general API integration.
+
+![Fetch Web Page Node](/img/nodes/fetch-web-page.jpg)
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="url" label="URL" default>
+        The web page to fetch and render (e.g., `https://example.com`).
+
+        ![AI Data Processing Node Model](/img/nodes/fetch-web-page-params.jpg)
+    </TabItem>
+</Tabs>
+
+---
+
+## Example Usage
+
+For example usage, see the [Weather Dashboard workflow](/docs/workflows/data/weather-dashboard) or [Google Drive Listing workflow](/docs/workflows/data/gdrive-listing), which demonstrate fetching and displaying web page content.
+
+## Common Use Cases
+
+1. **Web Page Preview**: Render and inspect the HTML content of a web page.
+2. **Content Extraction**: Use downstream nodes to extract or process information from the rendered HTML.
+3. **Workflow Debugging**: Check what a web page returns before further processing.
+
+## Best Practices
+
+- **Use valid URLs**: Ensure the URL is correct and accessible.
+- **Handle errors**: Downstream nodes should handle possible fetch errors or missing data.
+- **Avoid dynamic/authenticated pages**: The node does not support login or session management.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Invalid URL**: Check for typos or missing protocol (`http://` or `https://`).
+- **Network errors**: Verify your internet connection and endpoint availability.
+- **Unexpected content**: Some web pages may block automated requests or require authentication.
+
+### Performance Tips
+
+- Avoid fetching very large or complex web pages unless necessary.
+- Use downstream nodes to process or extract only the needed information.

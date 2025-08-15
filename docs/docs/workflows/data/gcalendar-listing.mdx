@@ -1,0 +1,49 @@
+---
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import gcalendarListingJson from '@site/static/workflows/gcalendar-listing.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Google Calendar Listing Workflow
+
+This workflow fetches a list of upcoming events from your Google Calendar using a search query and summarizes the results using AI.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Google Calendar Listing Workflow](/img/workflows/gcalendar-listing-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/gcalendar-listing.json")}>
+        {JSON.stringify(gcalendarListingJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: `"Get me the next 3 calendar events coming up."`
+        - [**Google Calendar Fetch Events Tool**](/docs/nodes/ai/tools/gcalendar-fetch-events)  
+            - Tool: Fetches events from Google Calendar using a search query (`query` parameter)
+            - Requirements: Google Calendar API access and authentication
+        - [**Date/Time Now Tool**](/docs/nodes/ai/tools/date-time-now)  
+            - Tool: Returns the current date and time in ISO 8601 format
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Prompt: Provide all answers in Markdown format  
+            - Model: llama3.1:8b
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Summarized list of upcoming calendar events with key details.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies the prompt: "Get me the next 3 calendar events coming up."
+2. **Interpret & Tool Calls**: The AI Data Processing node interprets the input, determines which tools are needed, and calls the Google Calendar Fetch Events Tool and Date/Time Now Tool.
+3. **Summarize with AI**: The LLM receives the tool results and generates a summary of the upcoming calendar events with key details.
+4. **Output Result**: The Data Flow Spy node displays the summarized output.

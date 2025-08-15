@@ -1,0 +1,79 @@
+---
+sidebar_position: 6
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import aiDataProcessingOverseerJson from '@site/static/workflows/ai-data-processing-overseer.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# AI Data Processing Overseer Workflow
+
+This workflow demonstrates how to chain multiple AI Data Processing nodes with an overseer node that validates output and triggers a feedback loop for correction.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![AI Data Processing Overseer Workflow](/img/workflows/ai-data-processing-overseer-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/ai-data-processing-overseer.json")}>
+        {JSON.stringify(aiDataProcessingOverseerJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: `"This is incomplete data."`
+        - [**AI Data Processing (Worker)**](/docs/nodes/ai/llm-process)  
+            - Prompt: Summarize the input data. Output a summary as plain text.
+            - Model: llama3.1:8b
+            - Max Feedback Loops: 2
+        - [**AI Data Processing (Overseer)**](/docs/nodes/ai/llm-process)  
+            - Prompt: If the input is not a valid summary, respond with an error.
+            - Model: llama3.1:8b
+            - Max Feedback Loops: 0
+            - Structured Output:
+                - On Success: `{ "output": string }`
+                - On Error: `{ "error": string }`
+        - [**Data Flow Spy  (Worker)**](/docs/nodes/output/data-flow-spy)  
+            - Output: Displays the worker AI Data Processing node result.
+        - [**Data Flow Spy  (Overseer)**](/docs/nodes/output/data-flow-spy)  
+            - Output: will not display a response since the overseer AI Data Processing node will not return a response while there is an error.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies incomplete data.
+2. **Summarize**: The first AI Data Processing node attempts to summarize the input as plain text.
+3. **Oversee & Validate**: The overseer AI Data Processing node (second one in the workflow) receives the summary and determines if it is valid. If the input is not a valid summary, it sends back the error to the previous node.
+4. **Feedback Loop**: If an error is detected, the feedback loop triggers the first AI Data Processing node to retry, correcting its output.
+5. **Inspect Output**: The Data Flow Spy nodes display the final results for both AI Data Processing nodes (the overseer AI Data Processing node will not return a response while there is an error).
+
+---
+
+## Common Use Cases
+
+1. **Automated Output Correction**: Ensure AI-generated outputs meet strict format requirements.
+2. **Chained AI Validation**: Use an overseer node to validate and enforce output schemas.
+3. **Error Feedback Loops**: Automatically retry and correct outputs until they meet validation criteria.
+
+---
+
+## Best Practices
+
+- Define clear success and error schemas in the overseer node.
+- Use feedback loops to improve output reliability.
+- Inspect intermediate results with Data Flow Spy nodes for easier debugging.
+
+---
+
+## Troubleshooting
+
+- **Infinite Loops**: Set a reasonable max feedback loop count to avoid endless retries.
+- **Model Limitations**: Some models may not reliably follow structured output instructions.
+- **Schema Mismatch**: Ensure your overseer node's schemas match the expected output format.

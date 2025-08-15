@@ -1,0 +1,14 @@
+{
+    "importMap": "./import_map.json",
+    "nodeModulesDir": "auto",
+    "tasks": {
+        "dev": "deno run --watch --allow-net --allow-read --allow-env --allow-write --allow-run --allow-sys server/main.ts"
+    },
+    "compilerOptions": {
+        "lib": [
+            "dom",
+            "esnext"
+        ],
+        "strict": true
+    }
+}

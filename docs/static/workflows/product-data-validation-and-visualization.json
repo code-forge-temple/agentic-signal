@@ -1,0 +1,105 @@
+{
+    "nodes": [
+        {
+            "id": "4e5ed23f-31a2-42c8-ad39-e077ef1cdf82",
+            "type": "get-data",
+            "position": {
+                "x": 70,
+                "y": 90
+            },
+            "data": {
+                "title": "GET Data",
+                "url": "https://dummyjson.com/products",
+                "dataType": "json"
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "e16a3420-8a94-4256-a370-57dd7f8c4456",
+            "type": "data-validation",
+            "position": {
+                "x": 300,
+                "y": 200
+            },
+            "data": {
+                "title": "Data Validation",
+                "schema": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"products\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"required\": [\"id\", \"title\", \"price\"],\r\n        \"properties\": {\r\n          \"id\": { \"type\": \"integer\" },\r\n          \"title\": { \"type\": \"string\" },\r\n          \"price\": { \"type\": \"number\" }\r\n        }\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"products\"]\r\n}"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "f2d2b6a9-c9d6-48c9-a5e1-8a2d08607054",
+            "type": "json-reformatter",
+            "position": {
+                "x": 500,
+                "y": 90
+            },
+            "data": {
+                "title": "JSON Reformatter",
+                "jsonataExpression": "{\r\n  \"title\": \"Product Prices\",\r\n  \"labels\": products.title,\r\n  \"data\": products.price\r\n}"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "df939c05-8707-4335-862c-e8b2826223f2",
+            "type": "chart",
+            "position": {
+                "x": 700,
+                "y": 200
+            },
+            "data": {
+                "title": "Display Chart"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": true,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "4e5ed23f-31a2-42c8-ad39-e077ef1cdf82",
+            "sourceHandle": "right-source",
+            "target": "e16a3420-8a94-4256-a370-57dd7f8c4456",
+            "targetHandle": "left-target",
+            "id": "xy-edge__4e5ed23f-31a2-42c8-ad39-e077ef1cdf82right-source-e16a3420-8a94-4256-a370-57dd7f8c4456left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "e16a3420-8a94-4256-a370-57dd7f8c4456",
+            "sourceHandle": "right-source",
+            "target": "f2d2b6a9-c9d6-48c9-a5e1-8a2d08607054",
+            "targetHandle": "left-target",
+            "id": "xy-edge__e16a3420-8a94-4256-a370-57dd7f8c4456right-source-f2d2b6a9-c9d6-48c9-a5e1-8a2d08607054left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "f2d2b6a9-c9d6-48c9-a5e1-8a2d08607054",
+            "sourceHandle": "right-source",
+            "target": "df939c05-8707-4335-862c-e8b2826223f2",
+            "targetHandle": "left-target",
+            "id": "xy-edge__f2d2b6a9-c9d6-48c9-a5e1-8a2d08607054right-source-df939c05-8707-4335-862c-e8b2826223f2left-target"
+        }
+    ]
+}

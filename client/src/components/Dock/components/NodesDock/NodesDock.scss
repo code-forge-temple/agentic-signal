@@ -1,0 +1,6 @@
+@use '../../Dock' as mixins;
+
+
+.nodes-dock {
+    @include mixins.dock-wrapper;
+}

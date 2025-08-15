@@ -1,0 +1,49 @@
+---
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import gmailSummarizerJson from '@site/static/workflows/gmail-summarizer.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Gmail Summarizer Workflow
+
+This workflow fetches recent emails from your Gmail inbox and summarizes them using AI.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Gmail Summarizer Workflow](/img/workflows/gmail-summarizer-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/gmail-summarizer.json")}>
+        {JSON.stringify(gmailSummarizerJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: `"Can you tell me the latest emails I have received?"`
+        - [**Gmail Fetch Emails Tool**](/docs/nodes/ai/tools/gmail-fetch-emails)  
+            - Tool: Fetches emails from Gmail using a search query (`query` parameter)
+            - Requirements: Gmail API access and authentication
+        - [**Date/Time Now Tool**](/docs/nodes/ai/tools/date-time-now)  
+            - Tool: Returns the current date and time in ISO 8601 format
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Prompt: Provide all answers in Markdown format  
+            - Model: llama3.1:8b
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Summarized list of recent emails with key details.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies the prompt: "Can you tell me the latest emails I have received?"
+2. **Interpret & Tool Calls**: The AI Data Processing node interprets the input, determines which tools are needed, and calls the Gmail Fetch Emails Tool and Date/Time Now Tool.
+3. **Summarize with AI**: The LLM receives the tool results and generates a summary of the most recent emails with key details.
+4. **Output Result**: The Data Flow Spy node displays the summarized output.

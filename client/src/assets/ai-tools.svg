@@ -1,0 +1,27 @@
+<svg
+  width="55.35"
+  height="58.50"
+  viewBox="0 0 20.755 21.936"
+  fill="none"
+  stroke-width="1"
+  xmlns="http://www.w3.org/2000/svg">
+
+  <path
+    d="M8.154 8.869 -0.001 15.94c-.781.781-.781 2.047 0 2.828s2.047.781 2.828 0l7.071-7.071"
+    stroke="white"
+    stroke-linecap="round"
+    stroke-linejoin="round" />
+
+  <path
+    d="M8.154 8.869c-.844-2.153-.679-4.978 1.061-6.718 1.74-1.74 4.95-2.121 6.718-1.061L12.892 4.13l-.283 3.111 3.111-.283 3.041-3.041c1.061 1.768.679 4.978-1.061 6.718-1.739 1.739-4.564 1.904-6.717 1.061"
+    stroke="white"
+    stroke-linecap="round"
+    stroke-linejoin="round" />
+
+  <text
+    x="11.92"
+    y="21.56"
+    font-size="11"
+    font-family="Calibri"
+    fill="white">AI</text>
+</svg>

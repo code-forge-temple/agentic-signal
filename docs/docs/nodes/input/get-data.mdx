@@ -1,0 +1,66 @@
+---
+sidebar_position: 1
+---
+
+# GET Data Node
+
+The **GET Data Node** fetches data from any HTTP or HTTPS endpoint using a GET request. It is commonly used to retrieve JSON, text, or binary data from APIs or static URLs as the starting point for your workflow.
+
+![GET Data Node](/img/nodes/get-data-preview.jpg)
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="url" label="URL" default>
+        The endpoint to fetch data from (e.g., `https://api.example.com/data`).
+
+        ![AI Data Processing Node Model](/img/nodes/get-data-params.jpg)
+    </TabItem>
+    <TabItem value="data-type" label="Data Type">
+        Choose the expected response type:
+        - `json`: Parse response as JSON.
+        - `text`: Parse response as plain text.
+        - `blob`: Download as binary blob.
+        - `arrayBuffer`: Download as raw binary data.
+
+        ![AI Data Processing Node Model](/img/nodes/get-data-params.jpg)
+    </TabItem>
+</Tabs>
+
+---
+
+## Example Usage
+
+For example usage, see the [Timeseries Chart workflow](/docs/workflows/data/timeseries-chart), which demonstrates fetching API data and visualizing it.
+
+## Common Use Cases
+
+1. **API Data Fetching**: Retrieve data from public or private APIs.
+2. **Static File Download**: Download files or static resources.
+3. **Workflow Trigger**: Start a workflow with external data.
+4. **Data Integration**: Combine with other nodes for data transformation and visualization.
+
+## Best Practices
+
+- **Use correct data type**: Match the Data Type to the expected response for reliable parsing.
+- **Validate URLs**: Ensure the URL is correct and accessible.
+- **Handle errors**: Downstream nodes should handle possible fetch errors or missing data.
+- **Secure endpoints**: Avoid exposing sensitive API keys in public workflows.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Invalid URL**: Check for typos or missing protocol (`http://` or `https://`).
+- **CORS errors**: Some APIs may block browser requests; use a proxy if needed.
+- **Unexpected data format**: Ensure the Data Type matches the actual response.
+- **Network errors**: Verify your internet connection and endpoint availability.
+
+### Performance Tips
+
+- Prefer JSON for structured data.
+- Avoid fetching very large files unless necessary.
+- Use downstream nodes to process

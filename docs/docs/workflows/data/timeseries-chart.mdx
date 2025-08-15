@@ -1,0 +1,43 @@
+---
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import timeseriesChartJson from '@site/static/workflows/timeseries-chart.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Timeseries Chart Workflow
+
+This workflow fetches time series data from an API, reformats it for charting, and displays it as a chart.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Timeseries Chart Workflow](/img/workflows/timeseries-chart-preview.jpg)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/timeseries-chart.json")}>
+        {JSON.stringify(timeseriesChartJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**GET Data**](/docs/nodes/input/get-data)  
+            - URL: Alpha Vantage API endpoint for intraday time series (e.g., IBM stock)
+            - Data Type: JSON
+        - [**JSON Reformatter**](/docs/nodes/data/json-reformatter)  
+            - Tool: Applies a JSONata expression to transform the time series data for charting
+        - [**Chart**](/docs/nodes/output/chart)  
+            - Displays the formatted data as a chart
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Fetch Data**: The workflow starts by retrieving time series data from the Alpha Vantage API.
+2. **Reformat Data**: The JSON Reformatter node applies a JSONata expression to transform the raw time series data into a chart-friendly format.
+3. **Visualize**: The Chart node displays the formatted data as a chart.

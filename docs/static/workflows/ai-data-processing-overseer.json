@@ -1,0 +1,141 @@
+{
+    "nodes": [
+        {
+            "id": "1f718672-ced2-492d-925a-933c02a3f4a1",
+            "type": "data-source",
+            "position": {
+                "x": 300,
+                "y": 100
+            },
+            "data": {
+                "title": "Data Source",
+                "dataSource": {
+                    "value": "This is incomplete data.",
+                    "type": "text"
+                }
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
+            "type": "llm-process",
+            "position": {
+                "x": 550,
+                "y": 0
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "prompt": "Summarize the input data. Output a summary as plain text.",
+                "model": "",
+                "maxFeedbackLoops": 2
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "02613504-6c72-4ef1-b638-ff57a4eaff1a",
+            "type": "llm-process",
+            "position": {
+                "x": 700,
+                "y": 100
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "prompt": "If the input is not a valid summary respond with an error.",
+                "model": "",
+                "maxFeedbackLoops": 0,
+                "format": {
+                    "onSuccess": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"output\": { \"type\": \"string\" }\r\n  },\r\n  \"required\": [\"output\"]\r\n}\r\n",
+                    "onError": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"error\": { \"type\": \"string\" }\r\n  },\r\n  \"required\": [\"error\"]\r\n}"
+                }
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": true,
+            "dragging": false
+        },
+        {
+            "id": "d5c8c0c5-21c6-436e-8ee8-362704927af9",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 857,
+                "y": 0
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "799eba41-c42d-47af-9d4e-bb6a52efba29",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 857,
+                "y": -70
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "1f718672-ced2-492d-925a-933c02a3f4a1",
+            "sourceHandle": "right-source",
+            "target": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
+            "targetHandle": "left-target",
+            "id": "xy-edge__1f718672-ced2-492d-925a-933c02a3f4a1right-source-e40a9b65-dc2b-41e8-a1e5-88bb365d2ffeleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
+            "sourceHandle": "right-source",
+            "target": "02613504-6c72-4ef1-b638-ff57a4eaff1a",
+            "targetHandle": "left-target",
+            "id": "xy-edge__e40a9b65-dc2b-41e8-a1e5-88bb365d2fferight-source-02613504-6c72-4ef1-b638-ff57a4eaff1aleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "02613504-6c72-4ef1-b638-ff57a4eaff1a",
+            "sourceHandle": "right-source",
+            "target": "d5c8c0c5-21c6-436e-8ee8-362704927af9",
+            "targetHandle": "left-target",
+            "id": "xy-edge__02613504-6c72-4ef1-b638-ff57a4eaff1aright-source-d5c8c0c5-21c6-436e-8ee8-362704927af9left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
+            "sourceHandle": "right-source",
+            "target": "799eba41-c42d-47af-9d4e-bb6a52efba29",
+            "targetHandle": "left-target",
+            "id": "xy-edge__e40a9b65-dc2b-41e8-a1e5-88bb365d2fferight-source-799eba41-c42d-47af-9d4e-bb6a52efba29left-target"
+        }
+    ]
+}

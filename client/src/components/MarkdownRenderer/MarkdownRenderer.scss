@@ -1,0 +1,19 @@
+.markdown-renderer {
+    border-radius: 4px;
+    min-height: 50px;
+    padding: 10px;
+    background: #000000;
+}
+
+.code-wrapper {
+    position: relative;
+    
+    .react-syntax-highlighter {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    pre {
+        margin: 0!important;
+    }
+}

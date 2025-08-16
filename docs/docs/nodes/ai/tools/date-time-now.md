@@ -13,9 +13,11 @@ import TabItem from '@theme/TabItem';
 
 <Tabs>
     <TabItem value="inputs" label="Inputs" default>
-        - *None required*
+        - `city` ¹ (string): Name of the city to fetch the time for (e.g., `"New York"`).  
 
         ![Weather Dashboard Workflow](/img/nodes/ai-tool/datetime-now-tool.jpg)
+        ___
+        (1) Provided by the [AI Data Processing Node](/docs/nodes/ai/llm-process) as a result of processing it's input.
     </TabItem>
     <TabItem value="outputs" label="Outputs">
         - `iso`: Current date and time in ISO 8601 format (e.g., `2024-06-10T12:34:56.789Z`)

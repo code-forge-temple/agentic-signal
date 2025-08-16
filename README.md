@@ -1,4 +1,4 @@
-# <img src="docs/static/img/logo.svg" alt="Agentic Signal" width="32" height="32" style="vertical-align: middle;"> Agentic Signal
+# [<img src="docs/static/img/logo.svg" alt="Agentic Signal" width="32" height="32">](https://code-forge-temple.github.io/agentic-signal/) Agentic Signal
 
 **Visual AI Workflow Automation Platform with Local Agent Intelligence**
 
@@ -22,7 +22,7 @@
 
 ## 🎬 Demo Video  
 
-[![62zk8zE6UJI](https://img.youtube.com/vi/62zk8zE6UJI/0.jpg)](https://www.youtube.com/watch?v=62zk8zE6UJI)
+[<img src="https://img.youtube.com/vi/62zk8zE6UJI/maxresdefault.jpg" alt="Watch Demo Video" width="600">](https://www.youtube.com/watch?v=62zk8zE6UJI)
 
 ## ✨ Features
 

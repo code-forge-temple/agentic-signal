@@ -16,7 +16,15 @@
 [![Bun](https://img.shields.io/badge/Bun-20232A?logo=bun&logoColor=white)](https://bun.sh/)
 [![Ollama](https://img.shields.io/badge/Ollama-000000?logo=ollama&logoColor=white)](https://ollama.ai/)
 [![Docusaurus](https://img.shields.io/badge/Docusaurus-3ECC5F?logo=docusaurus&logoColor=white)](https://docusaurus.io/)
-[![Iconoir](https://img.shields.io/badge/Iconoir-18181B?logo=iconoir&logoColor=white)](https://iconoir.com/)  
+[![Iconoir](https://img.shields.io/badge/Iconoir-18181B?logo=iconoir&logoColor=white)](https://iconoir.com/)
+[![MUI](https://img.shields.io/badge/MUI-007FFF?logo=mui&logoColor=white)](https://mui.com/)
+[![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?logo=chartdotjs&logoColor=white)](https://www.chartjs.org/)
+[![AJV](https://img.shields.io/badge/AJV-EF4B4B?logo=ajv&logoColor=white)](https://ajv.js.org/)
+[![Zod](https://img.shields.io/badge/Zod-3A7AFE?logo=zod&logoColor=white)](https://zod.dev/)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
+[![Sass](https://img.shields.io/badge/Sass-CC6699?logo=sass&logoColor=white)](https://sass-lang.com/)
+[![ESLint](https://img.shields.io/badge/ESLint-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
 > Transform complex tasks into visual workflows with local AI intelligence. No cloud dependencies required.
 
@@ -63,6 +71,6 @@ See [LICENSE.md](LICENSE.md) for full details.
 
 ---
 
-**Built with ❤️ by the Code Forge Temple**
+**Built with ❤️ by `Code Forge Temple`**
 
 *Empowering everyone to build intelligent workflows with visual simplicity and local AI power.*

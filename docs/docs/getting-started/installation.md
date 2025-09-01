@@ -12,10 +12,10 @@ sidebar_position: 1
 ## 1. Prerequisites Setup
 
 - **Install Bun (Frontend & Docs Runtime)**  
-  Download from [bun.sh](https://bun.sh/docs/installation)
+  Follow installation instructions from [bun.sh](https://bun.sh/docs/installation)
 
 - **Install Deno (Backend Runtime)**  
-  Download from [deno.land](https://docs.deno.com/runtime/getting_started/installation/) (version 2.0+)
+  Follow installation instructions from [deno.land](https://docs.deno.com/runtime/getting_started/installation/) (version 2.0+)
 
 - **Install Ollama (AI Models - Optional)**  
   Download from [ollama.ai](https://ollama.ai/download)

@@ -77,6 +77,12 @@ const config: Config = {
                     label: 'Getting Started',
                 },
                 {
+                    label: 'Pricing',
+                    href: 'https://pricing.agentic-signal.com',
+                    position: 'left',
+                    target: '_self',
+                },
+                {
                     href: 'https://github.com/code-forge-temple/agentic-signal',
                     label: 'GitHub',
                     position: 'right',

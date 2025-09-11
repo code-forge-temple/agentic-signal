@@ -18,6 +18,7 @@ import {DataSourceNode} from './DataSourceNode';
 import {HttpNode} from './HttpNode';
 import {ToolNode} from './ToolNode';
 import {DataValidationNode} from './DataValidationNode';
+import {TimerNode} from './TimerNode/TimerNode';
 
 
 // Node type registry
@@ -31,6 +32,7 @@ export const nodeTypes: NodeTypes = {
     [TaskNodeType.DATA_FLOW_SPY]: DataFlowSpyNode as ComponentType<NodeProps>,
     [TaskNodeType.AI_TOOL]: ToolNode as ComponentType<NodeProps>,
     [TaskNodeType.DATA_VALIDATION]: DataValidationNode as ComponentType<NodeProps>,
+    [TaskNodeType.TIMER]: TimerNode as ComponentType<NodeProps>,
 };
 
 
@@ -141,6 +143,18 @@ export const nodeFactory = (nodeType: TaskNodeType, id: string, position: { x: n
                     toolSchema: {} as any,
                     userConfig: {},
                     handler: undefined
+                }
+            };
+            break;
+        case TaskNodeType.TIMER:
+            newNode = {
+                id,
+                type: nodeType,
+                position,
+                data: {
+                    title: TaskNodeTitles[TaskNodeType.TIMER],
+                    interval: 0,
+                    immediate: false
                 }
             };
             break;

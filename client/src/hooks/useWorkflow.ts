@@ -25,7 +25,8 @@ import {
     assertIsHttpNodeData,
     assertIsJsonReformatterNodeData,
     assertIsLlmProcessNodeData,
-    assertIsToolNodeData
+    assertIsTimerNodeData,
+    assertIsToolNodeData,
 } from '../types/workflow';
 import {initialEdges, initialNodes} from '../components/nodes';
 import {TaskNodeType} from '../constants';
@@ -39,7 +40,8 @@ const nodeAssertions: Record<TaskNodeType, (data: unknown) => void> = {
     [TaskNodeType.JSON_REFORMATTER]: assertIsJsonReformatterNodeData,
     [TaskNodeType.DATA_FLOW_SPY]: assertIsDataFlowSpyNodeData,
     [TaskNodeType.AI_TOOL]: assertIsToolNodeData,
-    [TaskNodeType.DATA_VALIDATION]: assertIsDataValidationNodeData
+    [TaskNodeType.DATA_VALIDATION]: assertIsDataValidationNodeData,
+    [TaskNodeType.TIMER]: assertIsTimerNodeData,
 };
 
 function updateNodeData<T extends AppNode> (

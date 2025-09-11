@@ -8,16 +8,16 @@ import {type NodeProps} from "@xyflow/react";
 import {useCallback, useState} from "react";
 import {AppNode, assertIsEnhancedNodeData, assertIsHttpNodeData} from "../../types/workflow";
 import {BaseNode} from "./BaseNode";
-import {TextField} from "@mui/material";
 import {runTask} from "./BaseNode/utils";
 import {BaseDialog} from "../BaseDialog";
 import {LogsDialog} from "../LogsDialog";
-import {useDebouncedState} from "../../hooks/useDebouncedState";
 import {TaskNodeIcons} from "../../constants";
 import {parseUrl} from "../../utils";
 import {html as beautifyHtml} from 'js-beautify';
 import {GraphQLService} from "../../services/graphqlService";
-
+import {DebouncedTextField} from "../DebouncedTextField";
+import {useTimerTrigger} from "../../hooks/useTimerTrigger";
+import {TimerTriggerPort} from "./TimerNode/TimerTriggerPort";
 
 export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -27,7 +27,7 @@ export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
-    const {title, url, onResultUpdate, onConfigChange} = data;
+    const {title, url, input, onResultUpdate, onConfigChange} = data;
 
     const handleRun = useCallback(() => {
         setError(null);
@@ -51,13 +51,7 @@ export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
         }, setIsRunning);
     }, [id, onResultUpdate, url]);
 
-    const [debouncedUrl, setDebouncedUrl] = useDebouncedState({
-        callback: (value: string) => {
-            onConfigChange(id, {url: value});
-        },
-        delay: 300,
-        initialValue: url
-    });
+    useTimerTrigger(input?.timerTrigger, handleRun);
 
     const hasMissingConfig = !url;
 
@@ -69,6 +63,9 @@ export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
                 ports={{
                     output: true
                 }}
+                extraPorts = {
+                    <TimerTriggerPort />
+                }
                 title={title}
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 run={handleRun}
@@ -88,13 +85,12 @@ export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
                 onClose={() => setOpenSettings(false)}
                 title={title}
             >
-                <TextField
+                <DebouncedTextField
                     label="URL"
                     variant="outlined"
                     fullWidth
-                    value={debouncedUrl}
-                    onChange={(e) => setDebouncedUrl(e.target.value)}
-                    sx={{mt: 2}}
+                    value={url}
+                    onChange={(value) => onConfigChange(id, {url: value})}
                 />
             </BaseDialog>
         </>

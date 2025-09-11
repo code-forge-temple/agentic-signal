@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {CodeBrackets, Database, DataTransferDown, Eye, GraphUp, ScanBarcode, Www} from "iconoir-react";
+import {CodeBrackets, Database, DataTransferDown, Eye, GraphUp, ScanBarcode, Www, ClockRotateRight} from "iconoir-react";
 import AiIcon from '../assets/ai.svg';
 import AiTools from '../assets/ai-tools.svg';
 import {TaskNodeType} from "./constants";
@@ -18,5 +18,6 @@ export const TaskNodeIcons: Record<TaskNodeType, React.ReactElement<{className?:
     [TaskNodeType.JSON_REFORMATTER]: <CodeBrackets />,
     [TaskNodeType.DATA_FLOW_SPY]: <Eye />,
     [TaskNodeType.AI_TOOL]: <AiTools />,
-    [TaskNodeType.DATA_VALIDATION]: <ScanBarcode />
+    [TaskNodeType.DATA_VALIDATION]: <ScanBarcode />,
+    [TaskNodeType.TIMER]: <ClockRotateRight />,
 };

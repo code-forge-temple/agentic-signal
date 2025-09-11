@@ -53,6 +53,25 @@
             },
             "selected": false,
             "dragging": false
+        },
+        {
+            "id": "b68794e4-ea77-4d51-8da5-372c052a3e28",
+            "type": "timer",
+            "position": {
+                "x": 118.25,
+                "y": 179.25
+            },
+            "data": {
+                "title": "Timer",
+                "interval": 60,
+                "immediate": true
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
         }
     ],
     "edges": [
@@ -73,6 +92,15 @@
             "target": "591a8b24-e0ea-4f38-b3ac-b633f2584444",
             "targetHandle": "left-target",
             "id": "2b844d7c-0729-485f-bfe6-b89bc75618cd"
+        },
+        {
+            "type": "smoothstep",
+            "animated": true,
+            "source": "b68794e4-ea77-4d51-8da5-372c052a3e28",
+            "sourceHandle": "timer-trigger",
+            "target": "94ccc828-cf75-4323-9273-f7144e539181",
+            "targetHandle": "timer-trigger",
+            "id": "xy-edge__b68794e4-ea77-4d51-8da5-372c052a3e28timer-trigger-94ccc828-cf75-4323-9273-f7144e539181timer-trigger"
         }
     ]
 }

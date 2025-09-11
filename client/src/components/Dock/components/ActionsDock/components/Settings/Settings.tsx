@@ -7,22 +7,14 @@
 import {useState, useEffect} from 'react';
 import './style.scss';
 import {useSettings} from '../../../../../../hooks/useSettings';
-import {useDebouncedState} from '../../../../../../hooks/useDebouncedState';
-import {TextField, IconButton, InputAdornment, Box, LinearProgress, List, ListItem, ListItemText} from '@mui/material';
+import {IconButton, InputAdornment, Box, LinearProgress, List, ListItem, ListItemText} from '@mui/material';
 import {Plus, Trash} from 'iconoir-react';
 import {OllamaService} from '../../../../../../services/ollamaService';
+import {DebouncedTextField} from '../../../../../DebouncedTextField';
 
 export const Settings = () => {
     const {settings, setSetting} = useSettings();
     const [hoveredOllamaListItemIdx, setHoveredOllamaListItemIdx] = useState<number | null>(null);
-
-    const [debouncedOllamaHost, setDebouncedOllamaHost] = useDebouncedState({
-        callback: (value: string) => {
-            setSetting("ollamaHost", value);
-        },
-        delay: 300,
-        initialValue: settings.ollamaHost
-    });
 
     const [modelInput, setModelInput] = useState('');
     const [isPulling, setIsPulling] = useState(false);
@@ -97,16 +89,16 @@ export const Settings = () => {
 
     return (
         <>
-            <TextField
+            <DebouncedTextField
                 label="Ollama Host"
                 variant="outlined"
                 fullWidth
-                value={debouncedOllamaHost}
-                onChange={(e) => setDebouncedOllamaHost(e.target.value)}
+                value={settings.ollamaHost}
+                onChange={(value) => setSetting("ollamaHost", value)}
                 sx={{mt: 2}}
             />
             <Box sx={{display: 'flex', alignItems: 'center', mt: 2}}>
-                <TextField
+                <DebouncedTextField
                     label="Add Ollama Model"
                     variant="outlined"
                     value={
@@ -114,7 +106,7 @@ export const Settings = () => {
                             ? `Downloading ${modelInput}   ${progress}%`
                             : modelInput
                     }
-                    onChange={e => setModelInput(e.target.value)}
+                    onChange={value => setModelInput(value)}
                     disabled={isPulling || !isOllamaHostValid}
                     fullWidth
                     helperText={!isOllamaHostValid ? "Invalid Ollama host - cannot add models" : ""}

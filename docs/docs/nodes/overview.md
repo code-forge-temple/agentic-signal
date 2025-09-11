@@ -13,11 +13,12 @@ This section provides an overview of all available node types and integrations i
 Legend:  
 ① **Input Data Connector**  
 ② **Output Data Connector**  
-③ **Extra Input Connector**: Some nodes offer additional connectors, such as the [Tool Connector](/docs/nodes/ai/ai-tool) on the [AI Data Processing Node](/docs/nodes/ai/llm-process).  
-④ **Settings**: Configure node-specific options (highlighted if configuration is missing or required).  
-⑤ **Error Logs**: View errors when the node fails to process input data (highlighted if errors are present).  
-⑥ **Output**: View processed results (e.g., see the [Display Chart Node](/docs/nodes/output/chart)); highlighted when new output is available.  
-⑦ **Run**: Manually trigger the workflow from this node onward.  
+③ **Tool Connector**: Some nodes offer additional connectors, such as the [Tool Connector](/docs/nodes/ai/ai-tool) on the [AI Data Processing Node](/docs/nodes/ai/llm-process).  
+④ **Timer Connector**: Connects to a [Timer Node](/docs/nodes/input/timer-node) to trigger this node **Run** method automatically at a set interval.  
+⑤ **Settings**: Configure node-specific options (highlighted if configuration is missing or required).  
+⑥ **Error Logs**: View errors when the node fails to process input data (highlighted if errors are present).  
+⑦ **Output**: View processed results (e.g., see the [Display Chart Node](/docs/nodes/output/chart)); highlighted when new output is available.  
+⑧ **Run**: Manually trigger the workflow from this node onward.  
 
 ## Node Types
 
@@ -31,6 +32,7 @@ Agentic Signal supports a variety of node types for building workflows, includin
 - Chart
 - Data Validation
 - Data Flow Spy
+- Timer Node
 
 ## AI & Tool Integrations
 

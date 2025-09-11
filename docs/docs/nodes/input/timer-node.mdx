@@ -1,0 +1,59 @@
+---
+sidebar_position: 4
+title: Timer Node
+---
+
+# Timer Node
+
+The **Timer Node** triggers workflow execution at a specified interval. Use it to schedule periodic actions, automate polling, or kick off workflows on a timer.
+
+![Timer Node Preview](/img/nodes/timer-node-preview.webp)
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="interval" label="Interval (s)" default>
+    Set the number of seconds between each trigger.  
+
+    ![Timer Node Interval](/img/nodes/timer-node-params.webp)
+  </TabItem>
+  <TabItem value="immediate" label="Trigger Immediately">
+    If enabled, the node triggers once immediately when started, then continues at the specified interval.
+
+    ![Timer Node Interval](/img/nodes/timer-node-params.webp)
+  </TabItem>
+</Tabs>
+
+---
+
+## Example Usage
+
+For example usage, see the [Timeseries Chart workflow](/docs/workflows/data/timeseries-chart), which demonstrates using the Timer Node to fetch data at regular intervals.
+
+## Common Use Cases
+
+1. **Scheduled API Calls**: Fetch data from an API every minute.
+2. **Automated Monitoring**: Check for changes or updates on a schedule.
+3. **Periodic Processing**: Run batch jobs or data transformations at intervals.
+
+## Best Practices
+
+- **Set a reasonable interval**: Avoid very short intervals to reduce resource usage.
+- **Combine with other nodes**: Use with Get Data, AI Processing, or Output nodes for automation.
+- **Monitor workflow activity**: Use Data Flow Spy nodes to inspect outputs.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Node not triggering**: Ensure the interval is set and the node is running.
+- **Too frequent triggers**: Increase the interval value.
+- **Workflow not starting**: Check downstream node configuration and connections.
+
+### Performance Tips
+
+- Use longer intervals for heavy or resource-intensive workflows.
+- Avoid overlapping triggers by ensuring downstream nodes complete before the next interval.

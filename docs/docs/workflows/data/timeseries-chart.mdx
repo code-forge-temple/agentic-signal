@@ -14,7 +14,7 @@ This workflow fetches time series data from an API, reformats it for charting, a
 
 <Tabs>
     <TabItem value="preview" label="Preview" default>
-        ![Timeseries Chart Workflow](/img/workflows/timeseries-chart-preview.jpg)
+        ![Timeseries Chart Workflow](/img/workflows/timeseries-chart-preview.webp)
     </TabItem>
 
     <TabItem value="json" label="JSON">
@@ -30,7 +30,10 @@ This workflow fetches time series data from an API, reformats it for charting, a
         - [**JSON Reformatter**](/docs/nodes/data/json-reformatter)  
             - Tool: Applies a JSONata expression to transform the time series data for charting
         - [**Chart**](/docs/nodes/output/chart)  
-            - Displays the formatted data as a chart
+            - Displays the formatted data as a chart  
+    - [**Timer Node**](/docs/nodes/input/timer-node)  
+        - Interval: `60` seconds  
+        - Trigger immediately: `true`   
     </TabItem>
 </Tabs>
 
@@ -41,3 +44,4 @@ This workflow fetches time series data from an API, reformats it for charting, a
 1. **Fetch Data**: The workflow starts by retrieving time series data from the Alpha Vantage API.
 2. **Reformat Data**: The JSON Reformatter node applies a JSONata expression to transform the raw time series data into a chart-friendly format.
 3. **Visualize**: The Chart node displays the formatted data as a chart.
+4. **Repeat**: The Timer node triggers the workflow at a set interval (60 seconds), automatically updating the data and chart.

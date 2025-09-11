@@ -6,7 +6,7 @@
 
 import {useEffect, useRef, useState} from "react";
 
-type UseDebouncedStateProps<T> = {
+export type UseDebouncedStateProps<T> = {
     callback: (value: T) => void;
     delay?: number;
     initialValue: T;

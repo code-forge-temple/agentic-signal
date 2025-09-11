@@ -13,6 +13,7 @@ export type GenericNodeData = {
     title: string;
     input?: any;
     feedback?: string;
+    timerTrigger?: number;
 };
 
 type EnhancedNodeData = {
@@ -220,6 +221,19 @@ export function assertIsDataValidationNodeData (data: unknown): asserts data is 
     }
 }
 
+export type TimerNodeData = {
+    interval: number;
+    immediate: boolean;
+};
+
+export function assertIsTimerNodeData (data: unknown): asserts data is TimerNodeData {
+    if (typeof data !== 'object' || data === null ||
+        !('interval' in data) || typeof (data as any).interval !== 'number' ||
+        !('immediate' in data) || typeof (data as any).immediate !== 'boolean') {
+        throw new Error('Node data is not TimerNodeData');
+    }
+}
+
 export type GetDataNode = Node<BaseNodeData & GetDataNodeData> & { type: typeof TaskNodeType.GET_DATA };
 
 export type LlmProcessNode = Node<BaseNodeData & LlmProcessNodeData> & { type: typeof TaskNodeType.LLM_PROCESS };
@@ -238,6 +252,8 @@ export type ToolNode = Node<BaseNodeData & ToolNodeData> & { type: typeof TaskNo
 
 export type DataValidationNode = Node<BaseNodeData & DataValidationNodeData> & { type: typeof TaskNodeType.DATA_VALIDATION };
 
+export type TimerNode = Node<BaseNodeData & TimerNodeData> & { type: typeof TaskNodeType.TIMER };
+
 export type AppNode =
     | GetDataNode
     | LlmProcessNode
@@ -247,6 +263,7 @@ export type AppNode =
     | DataFlowSpyNode
     | HttpNode
     | ToolNode
-    | DataValidationNode;
+    | DataValidationNode
+    | TimerNode;
 
 export type Edge = ReactFlowEdge;

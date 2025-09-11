@@ -8,7 +8,7 @@ import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
 import {AppNode, assertIsEnhancedNodeData, assertIsLlmProcessNodeData, assertIsToolNodeData, ToolNode} from "../../../types/workflow";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {BaseNode} from "../BaseNode";
-import {FormControl, InputLabel, MenuItem, Select, TextField} from "@mui/material";
+import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {CodeEditor} from "../../CodeEditor";
 import {useAIProcessor} from "./hooks/useAIProcessor";
 import {runTask} from "../BaseNode/utils";
@@ -20,6 +20,10 @@ import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/u
 import {AI_TOOL_PORT_COLOR, TaskNodeIcons, TaskNodeType, TOOL_PORT_ID} from "../../../constants";
 import {ToolSchema} from "../../../types/ollama.types";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
+import {DebouncedTextField} from "../../DebouncedTextField";
+import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
+import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
+
 
 const LLM_MODEL_LABEL = "LLM Model";
 
@@ -209,6 +213,8 @@ export function LLMProcessNode ({data, id, type}: NodeProps<AppNode>) {
         initialValue: format?.onError || ""
     });
 
+    useTimerTrigger(input?.timerTrigger, handleRun);
+
     const {getNode} = useReactFlow();
 
     const hasMissingConfig = !model || (model && models.length && !models.includes(model)) || false;
@@ -228,15 +234,18 @@ export function LLMProcessNode ({data, id, type}: NodeProps<AppNode>) {
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
                 extraPorts = {
-                    <Handle
-                        type="target"
-                        id={TOOL_PORT_ID}
-                        position={Position.Bottom}
-                        style={{left: 20, backgroundColor: AI_TOOL_PORT_COLOR}}
-                        isValidConnection={({source}) => {
-                            return getNode(source)?.type === TaskNodeType.AI_TOOL;
-                        }}
-                    />
+                    <>
+                        <Handle
+                            type="target"
+                            id={TOOL_PORT_ID}
+                            position={Position.Bottom}
+                            style={{left: 20, backgroundColor: AI_TOOL_PORT_COLOR}}
+                            isValidConnection={({source}) => {
+                                return getNode(source)?.type === TaskNodeType.AI_TOOL;
+                            }}
+                        />
+                        <TimerTriggerPort />
+                    </>
                 }
             />
 
@@ -272,16 +281,16 @@ export function LLMProcessNode ({data, id, type}: NodeProps<AppNode>) {
                     </Select>
                 </FormControl>
 
-                <TextField
+                <DebouncedTextField
                     label="Max Feedback Loops"
                     type="number"
                     fullWidth
                     size="small"
                     value={maxLoops}
-                    onChange={(e) => {
-                        const value = parseInt(e.target.value);
+                    onChange={(value) => {
+                        const parsedValue = parseInt(value);
 
-                        onConfigChange(id, {maxFeedbackLoops: Math.max(0, Math.min(10, value))});
+                        onConfigChange(id, {maxFeedbackLoops: Math.max(0, Math.min(10, parsedValue))});
                     }}
                     sx={{mb: 2}}
                     helperText={`Current loop: ${Math.min(currentRetryRef.current, maxLoops)}/${maxLoops}`}

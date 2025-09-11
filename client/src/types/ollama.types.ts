@@ -41,6 +41,8 @@ export type UserConfigSchema = {
     [key: string]: {
         type: string;
         description?: string;
+        required?: boolean;
+        default?: any;
         [key: string]: any;
     }
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

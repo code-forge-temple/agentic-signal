@@ -4,8 +4,10 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {TextField, Box, Typography, Button, Chip} from "@mui/material";
+import {Box, Typography, Button, Chip} from "@mui/material";
 import {PROVIDER_SCOPES, PROVIDERS} from "../../../constants";
+import {FieldsetGroup} from "../../FieldsetGroup";
+import {DebouncedTextField} from "../../DebouncedTextField";
 
 declare global {
     interface Window {
@@ -20,6 +22,7 @@ type UserConfigSchema = {
         minimum?: number;
         maximum?: number;
         default?: any;
+        required?: boolean;
         provider?: string;
     } | undefined;
 };
@@ -78,57 +81,61 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
 
                 const value = userConfig?.[key] ?? "";
                 const type = schema.type || "string";
+                const isRequired = schema.required || false;
+                const fieldLabel = `${schema.description || key}${isRequired ? ' *' : ''}`;
 
                 if (type === "oauth") {
                     const isConnected = userConfig?.accessToken && userConfig.accessToken.length > 0;
 
                     return (
-                        <Box key={key} sx={{mb: 2}}>
-                            <Typography variant="body2" sx={{mb: 1}}>
-                                {schema.description || `${schema.provider || 'OAuth'} Authentication`}
-                            </Typography>
-                            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                <Button
-                                    variant={isConnected ? "outlined" : "contained"}
-                                    color={isConnected ? "success" : "primary"}
-                                    onClick={() => handleOAuthLogin(schema.provider || 'gmail')}
-                                    size="small"
-                                >
-                                    {isConnected ? 'Reconnect' : 'Connect'} {schema.provider || 'Account'}
-                                </Button>
-                                {isConnected && (
-                                    <Chip
-                                        label="Connected"
-                                        color="success"
+                        <FieldsetGroup key={key} title="OAuth Settings">
+                            <Box key={key} sx={{mb: 2}}>
+                                <Typography variant="body2" sx={{mb: 1}}>
+                                    {schema.description || `${schema.provider || 'OAuth'} Authentication`}
+                                </Typography>
+                                <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1}}>
+                                    <Button
+                                        variant={isConnected ? "outlined" : "contained"}
+                                        color={isConnected ? "success" : "primary"}
+                                        onClick={() => handleOAuthLogin(schema.provider || 'gmail')}
                                         size="small"
-                                        onDelete={() => onConfigChange('accessToken', '')}
-                                    />
-                                )}
+                                    >
+                                        {isConnected ? 'Reconnect' : 'Connect'} {schema.provider || 'Account'}
+                                    </Button>
+                                    {isConnected && (
+                                        <Chip
+                                            label="Connected"
+                                            color="success"
+                                            size="small"
+                                            onDelete={() => onConfigChange('accessToken', '')}
+                                        />
+                                    )}
+                                </Box>
+                                {/* Fallback: Manual token input */}
+                                <DebouncedTextField
+                                    label={`Access Token (Manual)${isRequired ? ' *' : ''}`}
+                                    value={userConfig?.accessToken || ""}
+                                    onChange={value => onConfigChange('accessToken', value)}
+                                    fullWidth
+                                    size="small"
+                                    sx={{mt: 1}}
+                                    type="password"
+                                    helperText="Or paste your OAuth2 access token manually"
+                                />
                             </Box>
-                            {/* Fallback: Manual token input */}
-                            <TextField
-                                label="Access Token (Manual)"
-                                value={userConfig?.accessToken || ""}
-                                onChange={e => onConfigChange('accessToken', e.target.value)}
-                                fullWidth
-                                size="small"
-                                sx={{mt: 1}}
-                                type="password"
-                                helperText="Or paste your OAuth2 access token manually"
-                            />
-                        </Box>
+                        </FieldsetGroup>
                     );
                 }
 
                 if (type === "integer" || type === "number") {
                     return (
-                        <TextField
+                        <DebouncedTextField
                             key={key}
-                            label={schema.description || key}
+                            label={fieldLabel}
                             type="number"
                             value={value}
-                            onChange={e => {
-                                let newValue = Number(e.target.value || 0);
+                            onChange={value => {
+                                let newValue = Number(value || 0);
 
                                 if (typeof newValue === "number") {
                                     if (schema.minimum !== undefined) newValue = Math.max(schema.minimum, newValue);
@@ -154,11 +161,11 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
                 }
 
                 return (
-                    <TextField
+                    <DebouncedTextField
                         key={key}
-                        label={schema.description || key}
+                        label={fieldLabel}
                         value={value}
-                        onChange={e => onConfigChange(key, e.target.value)}
+                        onChange={value => onConfigChange(key, value)}
                         fullWidth
                         sx={{mb: 1}}
                         type={key.toLowerCase().includes('token') || key.toLowerCase().includes('key') ? 'password' : 'text'}

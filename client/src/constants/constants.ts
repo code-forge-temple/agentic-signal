@@ -14,6 +14,7 @@ export const TaskNodeType = {
     JSON_REFORMATTER: 'json-reformatter',
     DATA_FLOW_SPY: 'data-flow-spy',
     DATA_VALIDATION: 'data-validation',
+    TIMER: 'timer',
 } as const;
 
 export type TaskNodeType = typeof TaskNodeType[keyof typeof TaskNodeType];
@@ -28,6 +29,7 @@ export const TaskNodeTitles: Record<TaskNodeType, string> = {
     [TaskNodeType.JSON_REFORMATTER]: 'JSON Reformatter',
     [TaskNodeType.DATA_FLOW_SPY]: 'Data Flow Spy',
     [TaskNodeType.DATA_VALIDATION]: 'Data Validation',
+    [TaskNodeType.TIMER]: 'Timer',
 };
 
 export const FetchDataType = {
@@ -44,7 +46,11 @@ export type FetchDataType = typeof FetchDataType[keyof typeof FetchDataType];
 
 export const AI_TOOL_PORT_COLOR = "#9c27b0";
 
+export const TIMER_TRIGGER_PORT_COLOR = "#0bb6e1ea";
+
 export const TOOL_PORT_ID = "tools-target";
+
+export const TIMER_TRIGGER_PORT_ID = "timer-trigger";
 
 export const PROVIDERS = {
     GMAIL: 'gmail',
@@ -57,3 +63,5 @@ export const PROVIDER_SCOPES = {
     [PROVIDERS.DRIVE]: 'https://www.googleapis.com/auth/drive.readonly',
     [PROVIDERS.CALENDAR]: 'https://www.googleapis.com/auth/calendar.readonly',
 };
+
+export const ACCESS_TOKEN_TYPE_OAUTH = "oauth";

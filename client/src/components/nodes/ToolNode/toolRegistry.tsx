@@ -13,11 +13,18 @@ import {GraphQLService} from "../../../services/graphqlService";
 import {CalendarEventResult, CloudStorageFileResult, EmailResult} from "../../../types/api";
 import GoogleDrive from "../../../assets/google-drive.svg";
 import GoogleCalendar from "../../../assets/google-calendar.svg";
-import {PROVIDERS} from "../../../constants";
+import {ACCESS_TOKEN_TYPE_OAUTH, PROVIDERS} from "../../../constants";
 
-const OAUTH = "oauth";
+type ToolDefinition = {
+    toolSubtype: string;
+    title: string;
+    icon: any;
+    toolSchema: ToolSchema;
+    userConfigSchema: UserConfigSchema;
+    handlerFactory: (userConfig: any) => (params: any) => Promise<any>;
+};
 
-export const toolRegistry = [
+export const toolRegistry: ToolDefinition[] = [
     {
         toolSubtype: "fetch-weather-data",
         title: "Fetch Weather Data Tool",
@@ -32,7 +39,10 @@ export const toolRegistry = [
                 },
                 required: ["city"]
             }
-        } as ToolSchema,
+        },
+        userConfigSchema: {
+            apiKey: {type: "string", description: "WeatherAPI.com API Key"}
+        },
         handlerFactory: (userConfig: { apiKey?: string }) => async ({city}: { city: string }) => {
             const response = await fetch(
                 `https://api.weatherapi.com/v1/current.json?key=${userConfig.apiKey}&q=${encodeURIComponent(city)}`
@@ -40,9 +50,6 @@ export const toolRegistry = [
 
             return await response.json();
         },
-        userConfigSchema: {
-            apiKey: {type: "string", description: "WeatherAPI.com API Key"}
-        } as UserConfigSchema,
     },
     {
         toolSubtype: "duckduckgo-search",
@@ -58,7 +65,7 @@ export const toolRegistry = [
                 },
                 required: ["query"]
             }
-        } as ToolSchema,
+        },
         userConfigSchema: {
             maxResults: {
                 type: "integer",
@@ -67,7 +74,7 @@ export const toolRegistry = [
                 minimum: 1,
                 maximum: 20
             }
-        } as UserConfigSchema,
+        },
         handlerFactory: (userConfig: { maxResults?: number }) => async ({query}: { query: string }) => {
             if (!userConfig.maxResults) {
                 return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
@@ -99,7 +106,7 @@ export const toolRegistry = [
                 },
                 required: ["query"]
             }
-        } as ToolSchema,
+        },
         userConfigSchema: {
             apiKey: {type: "string", description: "Brave Search API Key"},
             maxResults: {
@@ -109,7 +116,7 @@ export const toolRegistry = [
                 minimum: 1,
                 maximum: 20
             }
-        } as UserConfigSchema,
+        },
         handlerFactory: (userConfig: { apiKey?: string, maxResults?: number }) => async ({query}: { query: string }) => {
             if (!userConfig.apiKey) {
                 return {error: "API key must be specified. Please set apiKey in the configuration."};
@@ -154,8 +161,8 @@ export const toolRegistry = [
                 },
                 required: []
             }
-        } as ToolSchema,
-        userConfigSchema: {} as UserConfigSchema,
+        },
+        userConfigSchema: {},
         handlerFactory: () => async ({city}: {city?: string}) => {
             if (!city) {
                 const now = new Date();
@@ -190,16 +197,17 @@ export const toolRegistry = [
                 },
                 required: ["query"]
             }
-        } as ToolSchema,
+        },
         userConfigSchema: {
             googleClientId: {
                 type: "string",
                 description: "Google OAuth2 Client ID (from Google Cloud Console)"
             },
             accessToken: {
-                type: OAUTH, // This will be rendered as a OAuth2 button + an access token input in the UI
+                type: ACCESS_TOKEN_TYPE_OAUTH, // This will be rendered as a OAuth2 button + an access token input in the UI
                 description: "Gmail Authentication",
-                provider: PROVIDERS.GMAIL
+                provider: PROVIDERS.GMAIL,
+                required: true
             },
             maxResults: {
                 type: "integer",
@@ -208,16 +216,12 @@ export const toolRegistry = [
                 minimum: 1,
                 maximum: 50
             }
-        } as UserConfigSchema,
+        },
         handlerFactory: (
-            userConfig: { googleClientId?: string, accessToken?: string, maxResults?: number }
+            userConfig: { accessToken?: string, maxResults?: number }
         ) => async ({query}: { query: string }): Promise<EmailResult[] | { error: string }> => {
 
             try {
-                if (!userConfig.googleClientId) {
-                    return {error: "Google Client ID is required. Please configure your Google OAuth2 credentials."};
-                }
-
                 if (!userConfig.accessToken) {
                     return {error: "Gmail authentication required. Please connect your Gmail account."};
                 }
@@ -260,16 +264,17 @@ export const toolRegistry = [
                 },
                 required: ["query"]
             }
-        } as ToolSchema,
+        },
         userConfigSchema: {
             googleClientId: {
                 type: "string",
                 description: "Google OAuth2 Client ID (from Google Cloud Console)"
             },
             accessToken: {
-                type: OAUTH,
+                type: ACCESS_TOKEN_TYPE_OAUTH,
                 description: "Google Drive Authentication",
-                provider: PROVIDERS.DRIVE
+                provider: PROVIDERS.DRIVE,
+                required: true
             },
             maxResults: {
                 type: "integer",
@@ -278,15 +283,11 @@ export const toolRegistry = [
                 minimum: 1,
                 maximum: 100
             }
-        } as UserConfigSchema,
+        },
         handlerFactory: (
-            userConfig: { googleClientId?: string, accessToken?: string, maxResults?: number }
+            userConfig: { accessToken?: string, maxResults?: number }
         ) => async ({query}: { query: string }): Promise<CloudStorageFileResult[] | { error: string }> => {
             try {
-                if (!userConfig.googleClientId) {
-                    return {error: "Google Client ID is required. Please configure your Google OAuth2 credentials."};
-                }
-
                 if (!userConfig.accessToken) {
                     return {error: "Google Drive authentication required. Please connect your Google Drive account."};
                 }
@@ -339,16 +340,17 @@ export const toolRegistry = [
                 },
                 required: ["query"]
             }
-        } as ToolSchema,
+        },
         userConfigSchema: {
             googleClientId: {
                 type: "string",
                 description: "Google OAuth2 Client ID (from Google Cloud Console)"
             },
             accessToken: {
-                type: OAUTH,
+                type: ACCESS_TOKEN_TYPE_OAUTH,
                 description: "Google Calendar Authentication",
-                provider: PROVIDERS.CALENDAR
+                provider: PROVIDERS.CALENDAR,
+                required: true
             },
             maxResults: {
                 type: "integer",
@@ -357,21 +359,15 @@ export const toolRegistry = [
                 minimum: 1,
                 maximum: 250
             }
-        } as UserConfigSchema,
+        },
         handlerFactory: (
-            userConfig: { googleClientId?: string, accessToken?: string, maxResults?: number }
+            userConfig: { accessToken?: string, maxResults?: number }
         ) => async ({query, timeMin, timeMax}: {
             query: string,
             timeMin?: string,
             timeMax?: string,
         }): Promise<CalendarEventResult[] | { error: string }> => {
-            console.log("Google Calendar PREfetch:", query, timeMin, timeMax, userConfig);
-
             try {
-                if (!userConfig.googleClientId) {
-                    return {error: "Google Client ID is required. Please configure your Google OAuth2 credentials."};
-                }
-
                 if (!userConfig.accessToken) {
                     return {error: "Google Calendar authentication required. Please connect your Google Calendar account."};
                 }

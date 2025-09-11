@@ -1,3 +1,3 @@
 export * from "./ToolNode";
 
-export * from "./tools";
+export * from "./toolRegistry";

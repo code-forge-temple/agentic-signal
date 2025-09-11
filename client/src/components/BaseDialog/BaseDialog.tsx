@@ -41,7 +41,7 @@ export function BaseDialog ({
                 <DialogTitle style={{cursor: 'move'}} id="draggable-dialog-title">
                     {title}
                 </DialogTitle>
-                <DialogContent sx={{p: 0, m: 2}}>
+                <DialogContent sx={{pt: '16px !important', pb: 0, pl: 0, pr: 0, m: 2}}>
                     {children}
                 </DialogContent>
                 <DialogActions>

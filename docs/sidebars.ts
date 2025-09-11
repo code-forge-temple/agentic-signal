@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
                         'nodes/input/data-source',
                         'nodes/input/http-data',
                         'nodes/input/get-data',
+                        'nodes/input/timer-node',
                     ],
                 },
                 {

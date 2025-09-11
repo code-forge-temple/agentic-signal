@@ -15,7 +15,7 @@ const DEFAULT_PORT_COLOR = "#ffc107";
 
 const PORT_IDS = {
     input: "left-target",
-    output: "right-source"
+    output: "right-source",
 };
 
 type OnClick = (() => void) | {callback: () => void; highlight: boolean};
@@ -24,13 +24,14 @@ type BaseNodeProps = {
     id: string;
     nodeIcon: React.ReactElement<{className?: string}>;
     title: string;
+    run?: OnClick;
     running?: boolean;
+    stoppable?: boolean;
     ports: {
         input?: boolean | {isValidConnection?: IsValidConnection, color?: string};
         output?: boolean | {isValidConnection?: IsValidConnection, color?: string};
     };
     settings?: OnClick;
-    run?: OnClick;
     logs?: OnClick;
     output?: OnClick;
     extraPorts?: React.ReactNode;
@@ -46,7 +47,7 @@ function buttonsPropsFactory (buttonProp: OnClick): React.SVGProps<SVGSVGElement
     }
 }
 
-export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, logs, output, extraPorts}: BaseNodeProps) => {
+export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, stoppable, logs, output, extraPorts}: BaseNodeProps) => {
     const {setEdges} = useReactFlow();
 
     useEffect(() => {
@@ -106,7 +107,8 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, lo
                         <EyeSolid {...buttonsPropsFactory(output)} />
                     </Tooltip>
                 ) : null}
-                {run && running ? <PlaySolid width={20} height={20} className="highlight" /> : null}
+                {run && running && !stoppable ? <PlaySolid width={20} height={20} className="highlight" /> : null}
+                {run && running && stoppable ? <PlaySolid {...buttonsPropsFactory(run)} className="highlight" /> : null}
                 {run && !running ? (
                     <Tooltip title={"run"} placement="bottom" arrow enterDelay={1000}>
                         <Play {...buttonsPropsFactory(run)} />

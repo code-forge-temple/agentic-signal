@@ -8,14 +8,16 @@ import {type NodeProps} from "@xyflow/react";
 import {useCallback, useState} from "react";
 import {AppNode, assertIsEnhancedNodeData, assertIsGetDataNodeData} from "../../types/workflow";
 import {BaseNode} from "./BaseNode";
-import {FormControl, InputLabel, MenuItem, Select, TextField} from "@mui/material";
+import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 
 import {runTask} from "./BaseNode/utils";
 import {BaseDialog} from "../BaseDialog";
 import {LogsDialog} from "../LogsDialog";
 import {FetchDataType, TaskNodeIcons} from "../../constants";
 import {parseUrl} from "../../utils";
-import {useDebouncedState} from "../../hooks/useDebouncedState";
+import {DebouncedTextField} from "../DebouncedTextField";
+import {useTimerTrigger} from "../../hooks/useTimerTrigger";
+import {TimerTriggerPort} from "./TimerNode/TimerTriggerPort";
 
 const DATA_TYPE_LABEL = "Data Type";
 
@@ -27,16 +29,17 @@ export function GetDataNode ({data, id, type}: NodeProps<AppNode>) {
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
+    const {input, url, title, dataType, onResultUpdate, onConfigChange} = data;
 
     const handleRun = useCallback(() => {
         setError(null);
-        data.onResultUpdate(id);
+        onResultUpdate(id);
 
         runTask(async () => {
             try {
-                const url = parseUrl(data.url);
+                const parsedUrl = parseUrl(url);
 
-                const response = await fetch(url);
+                const response = await fetch(parsedUrl);
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -44,7 +47,7 @@ export function GetDataNode ({data, id, type}: NodeProps<AppNode>) {
 
                 let getData;
 
-                switch (data.dataType) {
+                switch (dataType) {
                     case "json":
                         getData = await response.json();
                         break;
@@ -61,25 +64,19 @@ export function GetDataNode ({data, id, type}: NodeProps<AppNode>) {
                         getData = await response.text();
                 }
 
-                data.onResultUpdate(id, getData);
+                onResultUpdate(id, getData);
             } catch (error) {
                 setError(`Error fetching data: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
-                data.onResultUpdate(id);
+                onResultUpdate(id);
             }
 
         }, setIsRunning);
     }, [data, id]);
 
-    const [url, setUrl] = useDebouncedState({
-        callback: (value: string) => {
-            data.onConfigChange(id, {url: value});
-        },
-        delay: 300,
-        initialValue: data.url
-    });
+    useTimerTrigger(input?.timerTrigger, handleRun);
 
-    const hasMissingConfig = !data.url || !data.dataType;
+    const hasMissingConfig = !url || !dataType;
 
     return (
         <>
@@ -89,7 +86,10 @@ export function GetDataNode ({data, id, type}: NodeProps<AppNode>) {
                 ports={{
                     output: true
                 }}
-                title={data.title}
+                extraPorts = {
+                    <TimerTriggerPort />
+                }
+                title={title}
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 run={handleRun}
                 running={isRunning}
@@ -99,33 +99,33 @@ export function GetDataNode ({data, id, type}: NodeProps<AppNode>) {
             <LogsDialog
                 open={openLogs}
                 onClose={() => setOpenLogs(false)}
-                title={data.title}
+                title={title}
                 error={error}
             />
 
             <BaseDialog
                 open={openSettings}
                 onClose={() => setOpenSettings(false)}
-                title={data.title}
+                title={title}
             >
-                <TextField
+                <DebouncedTextField
                     label="URL"
                     variant="outlined"
                     fullWidth
                     value={url}
-                    onChange={(e) => {
-                        setUrl(e.target.value);
+                    onChange={(value) => {
+                        onConfigChange(id, {url: value});
                     }}
-                    sx={{mt: 2}}
+                    sx={{mb: 2}}
                 />
                 <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
                     <InputLabel id="data-type-label">{DATA_TYPE_LABEL}</InputLabel>
                     <Select
                         labelId="data-type-label"
                         label={DATA_TYPE_LABEL}
-                        value={data.dataType || ""}
+                        value={dataType || ""}
                         onChange={e => {
-                            data.onConfigChange(id, {dataType: e.target.value});
+                            onConfigChange(id, {dataType: e.target.value});
                         }}
                     >
                         <MenuItem value="" disabled>

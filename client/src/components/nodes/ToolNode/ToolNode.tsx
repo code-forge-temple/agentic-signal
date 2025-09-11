@@ -13,9 +13,10 @@ import {BaseDialog} from "../../BaseDialog";
 import {CodeEditor} from "../../CodeEditor";
 import {LogsDialog} from "../../LogsDialog";
 import {AI_TOOL_PORT_COLOR, TaskNodeIcons, TOOL_PORT_ID} from "../../../constants";
-import {toolRegistry} from "./tools";
+import {toolRegistry} from "./toolRegistry";
 import {MenuItem, Select, FormControl, InputLabel} from "@mui/material";
 import {UserConfigFields} from "./UserConfigFields";
+import {FieldsetGroup} from "../../FieldsetGroup";
 
 export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -28,9 +29,13 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
 
     useEffect(() => {
-        if (selectedTool && !handler) {
+        if (selectedTool) {
             const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
-            const missingKeys = requiredKeys.filter(k => !userConfig?.[k]);
+            const missingKeys = requiredKeys.filter(key => {
+                const schema = (selectedTool.userConfigSchema as any)?.[key];
+
+                return schema?.required && !userConfig?.[key];
+            });
 
             if (missingKeys.length > 0) {
                 const missingLabels = missingKeys.map(key => {
@@ -42,29 +47,27 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
                 const errorMessage = `⚠️Missing required configuration:\n- "${missingLabels.join('"\n- "')}"`;
 
                 setError(errorMessage);
-            } else if (requiredKeys.length === 0 && selectedTool.handlerFactory) {
-                const handler = selectedTool.handlerFactory(userConfig || {});
 
-                onConfigChange(id, {handler});
+                if (handler) {
+                    onConfigChange(id, {handler: undefined});
+                }
+            } else {
+                if (selectedTool.handlerFactory && (!handler || missingKeys.length === 0)) {
+                    const newHandler = selectedTool.handlerFactory(userConfig || {});
 
-                setError(null);
-            } else if (selectedTool.handlerFactory) {
-                const handler = selectedTool.handlerFactory(userConfig || {});
-
-                onConfigChange(id, {handler});
+                    onConfigChange(id, {handler: newHandler});
+                }
 
                 setError(null);
             }
         }
-    }, [selectedTool, handler, userConfig, onConfigChange, id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTool, userConfig, onConfigChange, id]);
 
-    const hasMissingConfig =
-        !toolSubtype ||
-        (selectedTool?.userConfigSchema &&
-            Object.entries(selectedTool.userConfigSchema).some(([key]) => {
-                return !userConfig?.[key];
-            })
-        ) || false;
+    const hasMissingConfig = !toolSubtype ||
+        (selectedTool?.userConfigSchema && Object.entries(selectedTool.userConfigSchema).some(
+            ([key, schema]) => schema.required && !userConfig?.[key]
+        ));
 
     const handleUserConfigChange = useCallback((key: string, value: string | number) => {
         const newUserConfig = {...(userConfig || {}), [key]: value};
@@ -73,7 +76,11 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
 
         if (selectedTool?.handlerFactory) {
             const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
-            const missingKeys = requiredKeys.filter(k => !newUserConfig[k]);
+            const missingKeys = requiredKeys.filter(key => {
+                const schema = (selectedTool.userConfigSchema as any)?.[key];
+
+                return schema?.required && !userConfig?.[key];
+            });
 
             if (missingKeys.length > 0) {
                 const missingLabels = missingKeys.map(key => {
@@ -110,7 +117,7 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
                     }
                 }}
                 title={selectedTool?.title || title}
-                settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
+                settings={{callback: () => setOpenSettings(true), highlight: !!hasMissingConfig}}
                 logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
             />
 
@@ -159,12 +166,14 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
                         ))}
                     </Select>
                 </FormControl>
-                {selectedTool?.userConfigSchema && (
-                    <UserConfigFields
-                        userConfigSchema={selectedTool.userConfigSchema}
-                        userConfig={userConfig || {}}
-                        onConfigChange={handleUserConfigChange}
-                    />
+                {selectedTool?.userConfigSchema && Object.keys(selectedTool.userConfigSchema).length > 0 && (
+                    <FieldsetGroup title="Tool Configuration">
+                        <UserConfigFields
+                            userConfigSchema={selectedTool.userConfigSchema}
+                            userConfig={userConfig || {}}
+                            onConfigChange={handleUserConfigChange}
+                        />
+                    </FieldsetGroup>
                 )}
                 <CodeEditor
                     mode="json"

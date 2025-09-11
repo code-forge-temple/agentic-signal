@@ -15,6 +15,8 @@ import {BaseDialog} from "../BaseDialog";
 import {LogsDialog} from "../LogsDialog";
 import {TaskNodeIcons} from "../../constants";
 import {useDebouncedState} from "../../hooks/useDebouncedState";
+import {useTimerTrigger} from "../../hooks/useTimerTrigger";
+import {TimerTriggerPort} from "./TimerNode/TimerTriggerPort";
 
 const DATA_SOURCE_TYPES = {
     TEXT: "text",
@@ -31,7 +33,7 @@ export function DataSourceNode ({data, id, type}: NodeProps<AppNode>) {
     const [isRunning, setIsRunning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openLogs, setOpenLogs] = useState(false);
-    const {title, dataSource, onResultUpdate, onConfigChange} = data;
+    const {title, dataSource, input, onResultUpdate, onConfigChange} = data;
 
     const handleRun = useCallback(() => {
         setError(null);
@@ -55,6 +57,8 @@ export function DataSourceNode ({data, id, type}: NodeProps<AppNode>) {
         }, setIsRunning);
     }, [dataSource.type, dataSource.value, id, onResultUpdate]);
 
+    useTimerTrigger(input?.timerTrigger, handleRun);
+
     const [debouncedDataSource, setDebouncedDataSource] = useDebouncedState({
         callback: (value: string) => {
             onConfigChange(id, {dataSource: {...dataSource, value}});
@@ -71,6 +75,9 @@ export function DataSourceNode ({data, id, type}: NodeProps<AppNode>) {
                 ports={{
                     output: true
                 }}
+                extraPorts = {
+                    <TimerTriggerPort />
+                }
                 title={title}
                 run={handleRun}
                 running={isRunning}

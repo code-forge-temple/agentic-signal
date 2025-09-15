@@ -53,6 +53,17 @@
 
 See the [Quick Start](https://code-forge-temple.github.io/agentic-signal/docs/getting-started/installation) for setup and configuration instructions.
 
+## 🤝 Contributing
+
+I welcome contributions from developers! 
+
+- **🛠️ Add New Tools** - The easiest way to contribute! See [ADD_NEW_TOOLS.md](ADD_NEW_TOOLS.md)
+- **🐛 Report Bugs** - [GitHub Issues](https://github.com/code-forge-temple/agentic-signal/issues)
+- **💡 Request Features** - [GitHub Discussions](https://github.com/code-forge-temple/agentic-signal/discussions)
+- **📋 Full Guidelines** - [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Every contribution helps make Agentic Signal better! 🚀
+
 ## 📄 License
 
 **Dual License Model**

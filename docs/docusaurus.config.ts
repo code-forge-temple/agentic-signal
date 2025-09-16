@@ -8,9 +8,12 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
+const TITLE = 'Agentic Signal';
+const TAGLINE = 'Visual AI Workflow Automation Platform with Local Agent Intelligence';
+
 const config: Config = {
-    title: 'Agentic Signal',
-    tagline: 'Visual AI Workflow Automation Platform with Local Agent Intelligence',
+    title: TITLE,
+    tagline: TAGLINE,
     favicon: 'img/logo.svg',
 
     future: {
@@ -45,19 +48,41 @@ const config: Config = {
                 theme: {
                     customCss: './src/css/custom.css',
                 },
+                sitemap: {
+                    lastmod: 'date',
+                    changefreq: 'weekly',
+                    priority: 0.5,
+                    ignorePatterns: ['/tags/**'],
+                    filename: 'sitemap.xml',
+                    createSitemapItems: async (params) => {
+                        const {defaultCreateSitemapItems, ...rest} = params;
+                        const items = await defaultCreateSitemapItems(rest);
+
+                        const filteredItems = items.filter((item) => !item.url.includes('/page/'));
+
+                        filteredItems.push({
+                            url: 'https://pricing.agentic-signal.com',
+                            changefreq: 'weekly',
+                            priority: 0.7,
+                            lastmod: new Date().toISOString(),
+                        });
+
+                        return filteredItems;
+                    },
+                },
             } satisfies Preset.Options,
         ],
     ],
 
     themeConfig: {
-        image: 'img/docusaurus-social-card.jpg',
+        image: '/img/logo.svg',
         colorMode: {
             defaultMode: 'dark',
             disableSwitch: false,
             respectPrefersColorScheme: false,
         },
         navbar: {
-            title: 'Agentic Signal',
+            title: TITLE,
             logo: {
                 alt: 'Agentic Signal Logo',
                 src: 'img/logo.svg',
@@ -144,6 +169,15 @@ const config: Config = {
             darkTheme: prismThemes.dracula,
             additionalLanguages: ['typescript', 'javascript', 'json', 'bash'],
         },
+        metadata: [
+            {name: 'og:title', content: TITLE},
+            {name: 'og:description', content: TAGLINE},
+            {name: 'og:image', content: '/img/logo.svg'},
+            {name: 'twitter:card', content: 'summary_large_image'},
+            {name: 'twitter:title', content: TITLE},
+            {name: 'twitter:description', content: TAGLINE},
+            {name: 'twitter:image', content: '/img/logo.svg'},
+        ],
     } satisfies Preset.ThemeConfig,
 };
 

@@ -1,4 +1,6 @@
 ---
+title: Installation
+description: Step-by-step guide to install Agentic Signal, set up prerequisites, and start building visual AI workflows with local intelligence.
 sidebar_position: 1
 ---
 

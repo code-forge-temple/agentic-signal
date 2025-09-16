@@ -1,4 +1,6 @@
 ---
+title: Intro
+description: Discover ready-to-use workflow templates for Agentic Signal. Download, import, and customize visual AI workflows for data processing, automation, and integration.
 sidebar_position: 1
 ---
 

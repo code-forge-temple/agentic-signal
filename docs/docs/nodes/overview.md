@@ -1,4 +1,6 @@
 ---
+title: Intro
+description: Explore all available node types and integrations in Agentic Signal. Learn how to configure data sources, AI processors, validation, and output nodes for your workflows.
 sidebar_position: 1
 ---
 

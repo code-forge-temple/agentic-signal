@@ -11,6 +11,8 @@ import * as emailServices from "./services/emailService.ts";
 import * as cloudStorageServices from "./services/cloudStorageService.ts";
 import * as calendarServices from "./services/calendarService.ts";
 import * as timezoneServices from "./services/timezoneService.ts";
+import {BACKEND_PORT} from "../shared/constants.ts";
+
 
 const yoga = createYoga({
     schema,
@@ -18,6 +20,7 @@ const yoga = createYoga({
         origin: [
             'http://localhost:5173',
             'http://127.0.0.1:5173',
+            'http://tauri.localhost',
         ],
         credentials: true,
     },
@@ -33,12 +36,22 @@ const yoga = createYoga({
     })
 });
 
-const port = Number(Deno.env.get("PORT")) || 8000;
+const port = BACKEND_PORT;
 const hostname = "0.0.0.0";
+
+const loggingFetch = async (request: Request) => {
+    const origin = request.headers.get("origin");
+    const url = request.url;
+    const method = request.method;
+
+    console.log(`[Backend] ${method} ${url} | Origin: ${origin}`);
+
+    return await yoga.fetch(request);
+};
 
 Deno.serve({
     hostname,
     port,
-}, yoga.fetch);
+}, loggingFetch);
 
 console.log(`Deno server running on http://${hostname}:${port}`);

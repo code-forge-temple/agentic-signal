@@ -26,16 +26,12 @@ export type {
 
 export interface GraphQLContext {
     services: {
-        fetchRenderedHtml: (url: string) => Promise<string>;
-        fetchDuckDuckGoResults: (query: string) => Promise<DuckDuckGoResult[]>;
+        fetchRenderedHtml: (url: string, browserPath?: string) => Promise<string>;
+        fetchDuckDuckGoResults: (query: string, browserPath?: string) => Promise<DuckDuckGoResult[]>;
         fetchGmailEmails: (args: EmailSearchArgs) => Promise<EmailResult[]>;
         fetchGdriveFiles: (args: CloudStorageFileSearchArgs) => Promise<CloudStorageFileResult[]>;
         fetchGcalendarEvents: (args: CalendarEventSearchArgs) => Promise<CalendarEventResult[]>;
         getTimezoneForCity: (city: string) => Promise<TimezoneResult>;
     };
     request?: Request;
-}
-
-export interface RenderHtmlArgs {
-    url: string;
 }

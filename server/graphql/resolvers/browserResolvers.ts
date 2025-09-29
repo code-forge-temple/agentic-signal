@@ -4,17 +4,17 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {GraphQLContext, RenderHtmlArgs} from '../types.ts';
+import {GraphQLContext} from '../types.ts';
 
 
 export const browserResolvers = {
-    renderHtml: async (_parent: unknown, {url}: RenderHtmlArgs, {services}: GraphQLContext): Promise<string> => {
+    renderHtml: async (_parent: unknown, {url, browserPath}: { url: string, browserPath?: string }, {services}: GraphQLContext): Promise<string> => {
         if (!url) {
             throw new Error("Missing url parameter");
         }
 
         try {
-            const html = await services.fetchRenderedHtml(url);
+            const html = await services.fetchRenderedHtml(url, browserPath);
 
             return html;
         } catch (err) {

@@ -36,15 +36,6 @@ type GoogleCalendarEvent = {
 export async function fetchGcalendarEvents (args: CalendarEventSearchArgs): Promise<CalendarEventResult[]> {
     const {query, timeMin, timeMax, maxResults, accessToken} = args;
 
-    console.log('=== fetchGcalendarEvents Debug Start ===');
-    console.log('Input args:', {
-        query,
-        timeMin,
-        timeMax,
-        maxResults,
-        accessToken: accessToken ? `${accessToken.substring(0, 10)}...` : 'MISSING'
-    });
-
     try {
         // Build the Google Calendar API URL with parameters
         const params = new URLSearchParams({
@@ -66,13 +57,7 @@ export async function fetchGcalendarEvents (args: CalendarEventSearchArgs): Prom
             }
         );
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-
         if (!response.ok) {
-            console.log(`Google Calendar API failed: ${response.status} ${response.statusText}`);
-
             throw new Error(`Google Calendar API failed: ${response.status} ${response.statusText}`);
         }
 

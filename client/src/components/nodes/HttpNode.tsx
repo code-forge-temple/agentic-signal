@@ -18,6 +18,7 @@ import {GraphQLService} from "../../services/graphqlService";
 import {DebouncedTextField} from "../DebouncedTextField";
 import {useTimerTrigger} from "../../hooks/useTimerTrigger";
 import {TimerTriggerPort} from "./TimerNode/TimerTriggerPort";
+import { useSettings } from "../../hooks/useSettings";
 
 export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -28,6 +29,7 @@ export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
     const [openSettings, setOpenSettings] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
     const {title, url, input, onResultUpdate, onConfigChange} = data;
+    const {settings} = useSettings();
 
     const handleRun = useCallback(() => {
         setError(null);
@@ -40,7 +42,7 @@ export function HttpNode ({data, id, type}: NodeProps<AppNode>) {
                 }
 
                 const parsedUrl = parseUrl(url);
-                const html = await GraphQLService.renderHtml(parsedUrl);
+                const html = await GraphQLService.renderHtml(parsedUrl, settings.browserPath);
 
                 onResultUpdate(id, beautifyHtml(html));
             } catch (error) {

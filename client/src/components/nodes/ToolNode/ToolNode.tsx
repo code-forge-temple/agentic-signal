@@ -17,6 +17,7 @@ import {toolRegistry} from "./toolRegistry";
 import {MenuItem, Select, FormControl, InputLabel} from "@mui/material";
 import {UserConfigFields} from "./UserConfigFields";
 import {FieldsetGroup} from "../../FieldsetGroup";
+import { useSettings } from "../../../hooks/useSettings";
 
 export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -27,6 +28,7 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
     const [error, setError] = useState<string | null>(null);
     const {title, toolSubtype, userConfig, handler, onConfigChange} = data;
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
+    const {settings} = useSettings();
 
     useEffect(() => {
         if (selectedTool) {
@@ -70,7 +72,11 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
         ));
 
     const handleUserConfigChange = useCallback((key: string, value: string | number) => {
-        const newUserConfig = {...(userConfig || {}), [key]: value};
+        const newUserConfig = {
+            ...(userConfig || {}),
+            [key]: value,
+            browserPath: settings.browserPath
+        };
 
         let handler: ((params: any) => Promise<any>) | undefined = undefined;
 

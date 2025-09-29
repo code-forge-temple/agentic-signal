@@ -75,7 +75,7 @@ export const toolRegistry: ToolDefinition[] = [
                 maximum: 20
             }
         },
-        handlerFactory: (userConfig: { maxResults?: number }) => async ({query}: { query: string }) => {
+        handlerFactory: (userConfig: { maxResults?: number, browserPath?: string }) => async ({query}: { query: string }) => {
             if (!userConfig.maxResults) {
                 return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
             }
@@ -85,7 +85,8 @@ export const toolRegistry: ToolDefinition[] = [
 
             try {
                 return await GraphQLService.duckDuckGoSearch(sanitizedQuery, {
-                    maxResults: userConfig.maxResults
+                    maxResults: userConfig.maxResults,
+                    browserPath: userConfig.browserPath
                 });
             } catch (error) {
                 return {error: error instanceof Error ? error.message : 'Unknown error'};

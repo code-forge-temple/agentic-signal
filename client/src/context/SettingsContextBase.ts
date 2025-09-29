@@ -8,6 +8,7 @@ import {createContext} from "react";
 
 export type Settings = {
     ollamaHost: string;
+    browserPath: string;
 };
 
 export type SettingsContextType = {

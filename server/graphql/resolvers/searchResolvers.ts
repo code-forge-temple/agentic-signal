@@ -14,7 +14,7 @@ import {
 export const searchResolvers = {
     duckDuckGoSearch: async (
         _parent: unknown,
-        {query, maxResults}: { query: string, maxResults: number },
+        {query, maxResults, browserPath}: { query: string, maxResults: number, browserPath?: string },
         {services}: GraphQLContext
     ): Promise<DuckDuckGoResult[]> => {
         if (!query || !maxResults) {
@@ -22,7 +22,7 @@ export const searchResolvers = {
         }
 
         try {
-            const results = await services.fetchDuckDuckGoResults(query);
+            const results = await services.fetchDuckDuckGoResults(query, browserPath);
 
             return results.slice(0, maxResults);
         } catch (err) {
@@ -68,8 +68,6 @@ export const searchResolvers = {
                 }
             );
             const data = await braveResponse.json();
-
-            console.log("Brave Search:", data.web?.results);
 
             return data.web?.results || [];
         } catch (err) {

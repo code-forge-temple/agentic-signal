@@ -1,10 +1,12 @@
 ---
 title: Installation
 description: Step-by-step guide to install Agentic Signal, set up prerequisites, and start building visual AI workflows with local intelligence.
-sidebar_position: 1
 ---
 
 # Installation
+
+This guide walks you through setting up `Agentic Signal` for **development** and running it as a **web app** in your browser.  
+If you want to use the packaged Windows app without development, see [Run as Windows App](../windows-app/quick-start).
 
 ## Prerequisites
 - **Bun** (for frontend and docs)

@@ -10,13 +10,20 @@ const sidebars: SidebarsConfig = {
     gettingStartedSidebar: [
         {
             type: 'category',
-            label: 'Getting Started',
+            label: 'Run as Windows App',
             items: [
-                'getting-started/installation',
-                'getting-started/quick-start',
-                'getting-started/configuration',
+                'getting-started/windows-app/quick-start',
             ],
         },
+        {
+            type: 'category',
+            label: 'Run as Web App',
+            items: [
+                'getting-started/web-app/installation',
+                'getting-started/web-app/quick-start',
+            ],
+        },
+        'getting-started/configuration',
     ],
 
     nodesSidebar: [

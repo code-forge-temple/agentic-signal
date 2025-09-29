@@ -67,6 +67,13 @@ const config: Config = {
                             lastmod: new Date().toISOString(),
                         });
 
+                        items.push({
+                            url: 'https://github.com/code-forge-temple/agentic-signal',
+                            changefreq: 'weekly',
+                            priority: 0.7,
+                            lastmod: new Date().toISOString(),
+                        });
+
                         return filteredItems;
                     },
                 },
@@ -127,7 +134,7 @@ const config: Config = {
                     items: [
                         {
                             label: 'Getting Started',
-                            to: '/docs/getting-started/installation',
+                            to: '/docs/getting-started/windows-app/quick-start',
                         },
                         {
                             label: 'Nodes Reference',
@@ -150,6 +157,10 @@ const config: Config = {
                             label: 'GitHub Issues',
                             href: 'https://github.com/code-forge-temple/agentic-signal/issues',
                         },
+                        {
+                            label: 'Reddit Community',
+                            href: 'https://www.reddit.com/r/AgenticSignal/'
+                        }
                     ],
                 },
                 {

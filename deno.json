@@ -2,12 +2,17 @@
     "importMap": "./import_map.json",
     "nodeModulesDir": "auto",
     "tasks": {
-        "dev": "deno run --watch --allow-net --allow-read --allow-env --allow-write --allow-run --allow-sys server/main.ts"
+        "dev": "deno run --watch --allow-net --allow-read --allow-env --allow-write --allow-run --allow-sys server/main.ts",
+        "compile:windows": "deno compile --allow-net --allow-read --allow-env --allow-write --allow-run --allow-sys --target x86_64-pc-windows-msvc --output server/dist/agentic-signal-backend.exe server/main.ts",
+        "compile:linux": "deno compile --allow-net --allow-read --allow-env --allow-write --allow-run --allow-sys --target x86_64-unknown-linux-gnu --output server/dist/agentic-signal-backend-linux server/main.ts",
+        "compile:macos": "deno compile --allow-net --allow-read --allow-env --allow-write --allow-run --allow-sys --target x86_64-apple-darwin --output server/dist/agentic-signal-backend-macos server/main.ts",
+        "compile": "deno task compile:windows && deno task compile:linux && deno task compile:macos"
     },
     "compilerOptions": {
         "lib": [
             "dom",
-            "esnext"
+            "esnext",
+            "deno.ns"
         ],
         "strict": true
     }

@@ -1,8 +1,4 @@
----
-sidebar_position: 3
----
-
-# Configuration
+# Ollama and App Configuration
 
 ## Ollama Host Configuration
 
@@ -14,16 +10,22 @@ import TabItem from '@theme/TabItem';
 <Tabs>
    <TabItem value="linux" label="Linux" default>
       1. Edit the systemd service file by running:
+
          ```sh
          sudo nano /etc/systemd/system/ollama.service
          ```
       2. Add the following environment variables in the `[Service]` section:
+
          ```
          Environment="OLLAMA_HOST=0.0.0.0"
+         Environment="OLLAMA_ORIGINS=http://tauri.localhost"
          ```
-         > **Note:** The `OLLAMA_HOST=0.0.0.0` setting is optional if the Ollama server is running on localhost and you do not need the Ollama server to be accessed from LAN.
+         > **Note:** The `OLLAMA_HOST=0.0.0.0` setting is optional if the Ollama server is running on localhost and you do not need the Ollama server to be accessed from LAN.  
+         
+         > **Note:** The `OLLAMA_ORIGINS=http://tauri.localhost` setting is required only if you use the [Windows app version of Agentic Signal](./windows-app/quick-start) to let Ollama know to accept requests from that origin.  
 
       3. Save the file, then reload and restart the service:
+
          ```sh
          sudo systemctl daemon-reload
          sudo systemctl restart ollama.service
@@ -31,12 +33,15 @@ import TabItem from '@theme/TabItem';
    </TabItem>
    <TabItem value="windows" label="Windows">
       1. On the machine running Ollama, set the environment variables:
+
          ```
          OLLAMA_HOST=0.0.0.0
+         OLLAMA_ORIGINS=http://tauri.localhost
          ```
          You can do this via the System Properties or using PowerShell.
-         > **Note:** The `OLLAMA_HOST=0.0.0.0` setting is optional if the Ollama server is running on localhost and you do not need the Ollama server to be accessed from LAN.
-
+         > **Note:** The `OLLAMA_HOST=0.0.0.0` setting is optional if the Ollama server is running on localhost and you do not need the Ollama server to be accessed from LAN.  
+         
+         > **Note:** The `OLLAMA_ORIGINS=http://tauri.localhost` setting is required only if you use the [Windows app version of Agentic Signal](./windows-app/quick-start) to let Ollama know to accept requests from that origin.  
       2. Restart Ollama app.
    </TabItem>
 </Tabs>
@@ -45,11 +50,15 @@ import TabItem from '@theme/TabItem';
 
 ## Configure Agentic Signal Client Settings
 
-![Current Time Workflow](/img/settings-preview.jpg)
+![Current Time Workflow](/img/settings-preview.webp)
 
-1. Open the **Settings** panel from the dock in the Agentic Signal client.
-2. **Ollama Host:** Enter the URL of your Ollama server in the "Ollama Host" field (e.g., `http://localhost:11434`).
-3. In the **Ollama Models** section:
+1. Open the **Settings** panel from the dock in the `Agentic Signal` client.
+2. **Browser Executable Path:** You  need to provide the path to your Chrome browser executable. This is required for web browsing capabilities.
+
+   > **Note:** The `Browser Executable Path` setting is required only if you use the [Windows app version of Agentic Signal](./windows-app/quick-start).  
+
+3. **Ollama Host:** Enter the URL of your Ollama server in the "Ollama Host" field (e.g., `http://localhost:11434`).
+4. In the **Ollama Models** section:
    - **Add a model:** Enter the model name (e.g., `llama3.1:8b`) and click the plus (+) button. Download progress will be shown.
    - **Remove a model:** Click the trash icon next to any installed model to delete it.
 

@@ -9,14 +9,14 @@ import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-markdown";
 import "ace-builds/src-noconflict/theme-terminal";
-
+import "ace-builds/src-noconflict/mode-html";
 
 type CodeEditorProps = {
     value?: string;
     onChange?: (value: string) => void;
     placeholder?: string;
     readOnly?: boolean;
-    mode?: "json" | "javascript" | "markdown";
+    mode?: "json" | "javascript" | "markdown" | "html";
     height?: string;
     width?: string;
     showLineNumbers?: boolean;

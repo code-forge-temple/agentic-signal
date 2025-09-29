@@ -1,8 +1,4 @@
---- 
-sidebar_position: 2 
----
-
-# Quick Start
+# Quick Dev Start
 
 ## 1. Start the Development Servers
 
@@ -21,9 +17,9 @@ Navigate to [http://localhost:5173](http://localhost:5173) to start building wor
 
 ## 3. Configure Ollama Host and Models
 
-See [Configuration](./configuration) for detailed instructions.
+See [Configuration](../configuration) for detailed instructions.
 
 ## Next Steps
 
-- Explore [example workflows](../workflows/overview) to see ready-to-use templates.
-- Learn about all available [node types](../nodes/overview) and their capabilities.
+- Explore [example workflows](../../workflows/overview) to see ready-to-use templates.
+- Learn about all available [node types](../../nodes/overview) and their capabilities.

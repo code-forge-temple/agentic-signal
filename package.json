@@ -1,6 +1,6 @@
 {
     "name": "agentic-signal",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Visual AI Workflow Automation Platform with Local Agent Intelligence",
     "author": "Code Forge Temple",
     "type": "module",
@@ -18,7 +18,18 @@
         "client:preview": "cd client && bun run preview",
         "client:dev": "cd client && bun run dev",
         "server:dev": "deno task dev",
-        "dev": "concurrently \"bun run client:dev\" \"bun run server:dev\"",
+        "server:build": "deno task compile",
+        "sync:tauri-version": "deno run --allow-read --allow-write src-tauri/sync-tauri-version.ts",
+        "dev:windows": "bun run client:build && deno task compile:windows && bun run copy:backend:windows && bunx tauri dev",
+        "dev:linux": "bun run client:build && deno task compile:linux && bun run copy:backend:linux && bunx tauri dev",
+        "dev:macos": "bun run client:build && deno task compile:macos && bun run copy:backend:macos && bunx tauri dev",
+        "clean:bin": "bunx rimraf src-tauri/bin",
+        "copy:backend:windows": "bun run clean:bin && bunx cpx2 \"server/dist/agentic-signal-backend.exe\" src-tauri/bin/",
+        "copy:backend:linux": "bun run clean:bin && bunx cpx2 \"server/dist/agentic-signal-backend-linux\" src-tauri/bin/",
+        "copy:backend:macos": "bun run clean:bin && bunx cpx2 \"server/dist/agentic-signal-backend-macos\" src-tauri/bin/",
+        "build:windows": "bun run sync:tauri-version && bun run client:build && deno task compile:windows && bun run copy:backend:windows && bunx tauri build",
+        "build:linux": "bun run sync:tauri-version && bun run client:build && deno task compile:linux && bun run copy:backend:linux && bunx tauri build",
+        "build:macos": "bun run sync:tauri-version && bun run client:build && deno task compile:macos && bun run copy:backend:macos && bunx tauri build",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix"
     },
@@ -27,10 +38,13 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.29.0",
+        "@tauri-apps/cli": "^2.8.4",
+        "cpx2": "^8.0.0",
         "eslint": "^9.29.0",
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.19",
+        "rimraf": "^6.0.1",
         "typescript-eslint": "^8.34.1"
     }
 }

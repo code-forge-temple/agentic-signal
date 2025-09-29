@@ -9,6 +9,7 @@ import {Settings, SettingsContext} from "./SettingsContextBase";
 
 const defaultSettings: Settings = {
     ollamaHost: localStorage.getItem("ollamaHost") || "",
+    browserPath: localStorage.getItem("browserPath") || "",
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
@@ -19,6 +20,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({child
             const updated = {...prev, [key]: value};
 
             if (key === "ollamaHost") localStorage.setItem("ollamaHost", value as string);
+
+            if (key === "browserPath") localStorage.setItem("browserPath", value as string);
 
             return updated;
         });

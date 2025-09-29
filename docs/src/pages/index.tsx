@@ -77,7 +77,7 @@ function HomepageHeader () {
                 <div className={styles.buttons}>
                     <Link
                         className="button button--secondary button--lg"
-                        to="/docs/getting-started/installation">
+                        to="/docs/getting-started/windows-app/quick-start">
                         Get Started
                     </Link>
                 </div>

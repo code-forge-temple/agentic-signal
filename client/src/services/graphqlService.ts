@@ -5,18 +5,22 @@
  ************************************************************************/
 
 import {BraveResult, CalendarEventResult, CloudStorageFileResult, DuckDuckGoResult, EmailResult} from '../types/api.ts';
+import {BACKEND_PORT} from '@shared/constants.ts';
 
 export class GraphQLService {
-    private static baseUrl = '/graphql';
+    private static baseUrl =
+        import.meta.env.PROD
+            ? `http://localhost:${BACKEND_PORT}/graphql`
+            : "/graphql";
 
-    static async duckDuckGoSearch (query: string, userConfig: { maxResults: number }): Promise<DuckDuckGoResult[]> {
+    static async duckDuckGoSearch (query: string, userConfig: { maxResults: number, browserPath?: string }): Promise<DuckDuckGoResult[]> {
         const response = await fetch(this.baseUrl, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 query: /* GraphQL */ `
-                    query($query: String!, $maxResults: Int) {
-                        duckDuckGoSearch(query: $query, maxResults: $maxResults) {
+                    query($query: String!, $maxResults: Int, $browserPath: String) {
+                        duckDuckGoSearch(query: $query, maxResults: $maxResults, browserPath: $browserPath) {
                             sourceAndUrl
                             title
                             description
@@ -24,7 +28,7 @@ export class GraphQLService {
                         }
                     }
                 `,
-                variables: {query, maxResults: userConfig.maxResults}
+                variables: {query, maxResults: userConfig.maxResults, browserPath: userConfig.browserPath}
             })
         });
 
@@ -65,8 +69,6 @@ export class GraphQLService {
                 throw new Error(errors.map((e: any) => e.message).join('\n'));
             }
 
-            console.log("Brave Search results:", data.braveSearch);
-
             return data.braveSearch;
         } catch (error) {
             console.error("Brave Search error:", error);
@@ -74,17 +76,17 @@ export class GraphQLService {
         }
     }
 
-    static async renderHtml (url: string): Promise<string> {
+    static async renderHtml (url: string, browserPath?: string): Promise<string> {
         const response = await fetch(this.baseUrl, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 query: /* GraphQL */ `
-                    query($url: String!) {
-                        renderHtml(url: $url)
+                    query($url: String!, $browserPath: String) {
+                        renderHtml(url: $url, browserPath: $browserPath)
                     }
                 `,
-                variables: {url}
+                variables: {url, browserPath}
             })
         });
 

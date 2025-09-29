@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # Intro
 
-This section contains ready-to-use workflow examples that you can download and import into Agentic Signal.
+This section contains ready-to-use workflow examples that you can download and import into `Agentic Signal`.
 
 ## Available Workflows
 
@@ -23,7 +23,7 @@ This section contains ready-to-use workflow examples that you can download and i
 
 1. **Go to any workflow example page** below.
 2. **Download** the workflow JSON file by selecting the **JSON** tab → **Download JSON** icon button on the right of the JSON.
-3. **Open** Agentic Signal in your browser.
+3. **Open** `Agentic Signal` in your browser.
 4. **Click** the "Load workflow" button in the actions dock.
 5. **Select** the downloaded JSON file.
 6. **Configure** any required API keys or settings.

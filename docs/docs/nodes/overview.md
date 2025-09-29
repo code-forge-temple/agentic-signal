@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # Intro
 
-This section provides an overview of all available node types and integrations in Agentic Signal. Each node represents a building block for your workflow, enabling data input, AI processing, external API calls, validation, and output.
+This section provides an overview of all available node types and integrations in `Agentic Signal`. Each node represents a building block for your workflow, enabling data input, AI processing, external API calls, validation, and output.
 
 ## Node Structure
 
@@ -24,7 +24,7 @@ Legend:
 
 ## Node Types
 
-Agentic Signal supports a variety of node types for building workflows, including:
+`Agentic Signal` supports a variety of node types for building workflows, including:
 
 - Data Source
 - AI Data Processing

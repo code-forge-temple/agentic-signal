@@ -51,7 +51,7 @@
 
 ## 🚀 Quick Start
 
-See the [Quick Start](https://code-forge-temple.github.io/agentic-signal/docs/getting-started/installation) for setup and configuration instructions.
+See the [Quick Start](https://code-forge-temple.github.io/agentic-signal/docs/getting-started/windows-app/quick-start) for setup and configuration instructions.
 
 ## 🤝 Contributing
 

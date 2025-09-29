@@ -1,0 +1,115 @@
+name: Build Agentic Signal
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # Install Bun
+      - uses: oven-sh/setup-bun@v2
+
+      # Install root dependencies
+      - name: Install root dependencies
+        run: bun install
+
+      # Install client dependencies
+      - name: Install client dependencies
+        run: cd client && bun install
+
+      # Install Deno
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Custom: Build your backend for each platform
+      - name: Build backend (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: bun run build:windows
+
+      - name: Build backend (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: bun run build:macos
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Build backend (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: bun run build:linux
+
+      # Official Tauri build & artifact upload
+      - uses: tauri-apps/tauri-action@v0
+      # Artifacts will be uploaded automatically by tauri-action
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Extract version from package.json
+      - name: Get Package Version
+        id: pkg_version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # Download all build artifacts
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: tauri-app-windows-latest
+          path: dist/windows
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: tauri-app-macos-latest
+          path: dist/macos
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: tauri-app-ubuntu-latest
+          path: dist/linux
+
+      # Create a release (will auto-create a tag if it doesn't exist)
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg_version.outputs.VERSION }}
+          name: Release v${{ steps.pkg_version.outputs.VERSION }}
+          files: |
+            dist/windows/**
+            dist/macos/**
+            dist/linux/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

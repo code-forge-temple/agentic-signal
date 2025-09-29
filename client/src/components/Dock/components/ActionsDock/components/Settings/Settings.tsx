@@ -90,7 +90,15 @@ export const Settings = () => {
     return (
         <>
             <DebouncedTextField
-                label="Ollama Host"
+                label="Browser Executable Path *"
+                variant="outlined"
+                fullWidth
+                value={settings.browserPath}
+                onChange={value => setSetting("browserPath", value)}
+                helperText="Path to your Chrome Browser executable for Playwright (required for scraping tools like 'Fetch Web Page' Node, etc.)"
+            />
+            <DebouncedTextField
+                label="Ollama Host *"
                 variant="outlined"
                 fullWidth
                 value={settings.ollamaHost}

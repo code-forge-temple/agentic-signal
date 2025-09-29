@@ -2,6 +2,7 @@ import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
 import path from 'path'
+import {BACKEND_PORT} from '../shared/constants';
 
 // https://vite.dev/config/
 // eslint-disable-next-line no-restricted-exports
@@ -24,7 +25,7 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         proxy: {
-            '/graphql': 'http://localhost:8000'
+            '/graphql': `http://localhost:${BACKEND_PORT}`
         }
     }
 })

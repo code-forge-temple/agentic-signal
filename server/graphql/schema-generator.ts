@@ -45,8 +45,8 @@ export function generateTypeDefs (): string {
     ${generateGraphQLType("TimezoneResult", TimezoneResultFields)}
 
     type Query {
-        renderHtml(url: String!): String
-        duckDuckGoSearch(query: String!, maxResults: Int): [DuckDuckGoResult]
+        renderHtml(url: String!, browserPath: String): String
+        duckDuckGoSearch(query: String!, maxResults: Int, browserPath: String): [DuckDuckGoResult]
         braveSearch(query: String!, maxResults: Int): [BraveResult]
         gmailFetchEmails(query: String!, maxResults: Int!): [EmailResult]
         gdriveFetchFiles(query: String!, maxResults: Int!): [CloudStorageFileResult]

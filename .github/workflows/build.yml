@@ -1,5 +1,8 @@
 name: Build Agentic Signal
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [main]
@@ -20,6 +23,15 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v5
+
+      # Extract version from package.json
+      - name: Get Package Version
+        id: pkg_version
+        shell: bash
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       # Install Bun
       - uses: oven-sh/setup-bun@v2
@@ -64,52 +76,19 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: bun run build:linux
 
-      # Official Tauri build & artifact upload
+      # Official Tauri build & release upload
       - uses: tauri-apps/tauri-action@v0
-      # Artifacts will be uploaded automatically by tauri-action
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      # Extract version from package.json
-      - name: Get Package Version
-        id: pkg_version
-        run: |
-          VERSION=$(jq -r '.version' package.json)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      # Download all build artifacts
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v5
         with:
-          name: tauri-app-windows-latest
-          path: dist/windows
-
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: tauri-app-macos-latest
-          path: dist/macos
-
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: tauri-app-ubuntu-latest
-          path: dist/linux
-
-      # Create a release (will auto-create a tag if it doesn't exist)
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.pkg_version.outputs.VERSION }}
-          name: Release v${{ steps.pkg_version.outputs.VERSION }}
-          files: |
-            dist/windows/**
-            dist/macos/**
-            dist/linux/**
+          tagName: v${{ steps.pkg_version.outputs.VERSION }}
+          releaseName: Agentic Signal v${{ steps.pkg_version.outputs.VERSION }}
+          releaseDraft: false
+          prerelease: false
+          projectPath: .
+          includeDebug: false
+          includeRelease: true
+          includeUpdaterJson: true
+          updaterJsonKeepUniversal: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Artifacts will be uploaded automatically by tauri-action to the release for all platforms.

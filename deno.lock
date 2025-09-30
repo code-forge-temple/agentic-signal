@@ -14,6 +14,7 @@
     "npm:graphql-yoga@*": "5.13.5_graphql@16.11.0",
     "npm:playwright@*": "1.53.1",
     "npm:playwright@1.53.1": "1.53.1",
+    "npm:rimraf@^6.0.1": "6.0.1",
     "npm:typescript-eslint@^8.34.1": "8.34.1_eslint@9.29.0_typescript@5.8.3_@typescript-eslint+parser@8.34.1__eslint@9.29.0__typescript@5.8.3"
   },
   "npm": {
@@ -1769,6 +1770,14 @@
     "reusify@1.1.0": {
       "integrity": "sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw=="
     },
+    "rimraf@6.0.1": {
+      "integrity": "sha512-9dkvaxAsk/xNXSJzMgFqqMCuFgt2+KsOFek3TMLfo8NCPfWpBmqwyNn5Y+NX56QUYfCtsyhF3ayiboEoUmJk/A==",
+      "dependencies": [
+        "glob",
+        "package-json-from-dist"
+      ],
+      "bin": true
+    },
     "run-parallel@1.2.0": {
       "integrity": "sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==",
       "dependencies": [
@@ -2750,6 +2759,7 @@
         "npm:eslint-plugin-react-refresh@~0.4.19",
         "npm:eslint-plugin-react@^7.37.5",
         "npm:eslint@^9.29.0",
+        "npm:rimraf@^6.0.1",
         "npm:typescript-eslint@^8.34.1"
       ]
     }

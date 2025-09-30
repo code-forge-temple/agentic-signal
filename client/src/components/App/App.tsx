@@ -15,6 +15,8 @@ import {TaskNodeType} from '../../constants';
 import {Dock} from '../Dock';
 import {v4 as uuidv4} from 'uuid';
 import {toolRegistry} from '../nodes/ToolNode';
+import {useSnackbar} from 'notistack'
+
 
 const getId = () => uuidv4();
 
@@ -32,6 +34,7 @@ function AppFlow () {
         setNodes,
         setEdges,
     } = useWorkflow();
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleSave = () => {
         const sanitizedNodes = nodes.map(node => {
@@ -60,6 +63,8 @@ function AppFlow () {
         a.click();
 
         URL.revokeObjectURL(url);
+
+        enqueueSnackbar('Workflow saved!', { variant: 'success' });
     };
 
     const handleClear = () => {

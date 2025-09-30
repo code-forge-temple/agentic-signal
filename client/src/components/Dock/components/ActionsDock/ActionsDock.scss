@@ -8,10 +8,10 @@
 
     .dock-items {
         .dock-item {
-            cursor: pointer;
+            cursor: pointer !important;
 
             svg {
-                background: #9c27b0!important;
+                background: #9c27b0 !important;
             }
         }
     }

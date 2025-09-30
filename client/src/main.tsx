@@ -9,12 +9,15 @@ import {createRoot} from 'react-dom/client'
 import './index.css'
 import {App} from './components/App'
 import {SettingsProvider} from './context/SettingsContext'
+import {SnackbarProvider} from 'notistack'
 
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <SettingsProvider>
-            <App />
-        </SettingsProvider>
+        <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
+            <SettingsProvider>
+                <App />
+            </SettingsProvider>
+        </SnackbarProvider>
     </StrictMode>
 )

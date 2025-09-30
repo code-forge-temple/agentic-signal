@@ -7,7 +7,7 @@
 import {useState, useEffect} from 'react';
 import './style.scss';
 import {useSettings} from '../../../../../../hooks/useSettings';
-import {IconButton, InputAdornment, Box, LinearProgress, List, ListItem, ListItemText} from '@mui/material';
+import {IconButton, InputAdornment, Box, LinearProgress, List, ListItem, ListItemText, TextField} from '@mui/material';
 import {Plus, Trash} from 'iconoir-react';
 import {OllamaService} from '../../../../../../services/ollamaService';
 import {DebouncedTextField} from '../../../../../DebouncedTextField';
@@ -106,7 +106,7 @@ export const Settings = () => {
                 sx={{mt: 2}}
             />
             <Box sx={{display: 'flex', alignItems: 'center', mt: 2}}>
-                <DebouncedTextField
+                <TextField
                     label="Add Ollama Model"
                     variant="outlined"
                     value={
@@ -114,7 +114,7 @@ export const Settings = () => {
                             ? `Downloading ${modelInput}   ${progress}%`
                             : modelInput
                     }
-                    onChange={value => setModelInput(value)}
+                    onChange={event => setModelInput(event.target.value)}
                     disabled={isPulling || !isOllamaHostValid}
                     fullWidth
                     helperText={!isOllamaHostValid ? "Invalid Ollama host - cannot add models" : ""}

@@ -23,6 +23,7 @@
         "iconoir-react": "^7.11.0",
         "js-beautify": "^1.15.4",
         "jsonata": "^2.0.6",
+        "notistack": "^3.0.2",
         "ollama": "^0.5.16",
         "react": "^19.1.0",
         "react-ace": "^14.0.1",

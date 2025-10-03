@@ -160,6 +160,10 @@ const config: Config = {
                         {
                             label: 'Reddit Community',
                             href: 'https://www.reddit.com/r/AgenticSignal/'
+                        },
+                        {
+                            label: 'Discord Community',
+                            href: 'https://discord.gg/HZPEbJM8'
                         }
                     ],
                 },

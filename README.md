@@ -76,6 +76,8 @@ See [LICENSE.md](LICENSE.md) for full details.
 ## 🆘 Support
 
 - **Documentation**: [https://code-forge-temple.github.io/agentic-signal/](https://code-forge-temple.github.io/agentic-signal/)
+- **Discord**: [Join the Agentic Signal Discord](https://discord.gg/HZPEbJM8)
+- **Reddit**: [r/AgenticSignal](https://www.reddit.com/r/AgenticSignal/)
 - **Issues**: [GitHub Issues](https://github.com/code-forge-temple/agentic-signal/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/code-forge-temple/agentic-signal/discussions)
 - **Commercial Support**: please contact me on my Github email

@@ -34,7 +34,7 @@ export function YouTubePreview ({url}: YouTubePreviewProps) {
                 className="youtube-preview-link"
             >
                 <img
-                    src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
                     alt="Watch on YouTube"
                     className="youtube-preview-img"
                 />

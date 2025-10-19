@@ -189,11 +189,11 @@ const config: Config = {
         metadata: [
             {name: 'og:title', content: TITLE},
             {name: 'og:description', content: TAGLINE},
-            {name: 'og:image', content: `${GITHUB_DEPLOYMENT}/img/logo.png`},
+            {name: 'og:image', content: `${GITHUB_DEPLOYMENT}/img/promo-video.png`},
             {name: 'twitter:card', content: 'summary_large_image'},
             {name: 'twitter:title', content: TITLE},
             {name: 'twitter:description', content: TAGLINE},
-            {name: 'twitter:image', content: `${GITHUB_DEPLOYMENT}/img/logo.png`},
+            {name: 'twitter:image', content: `${GITHUB_DEPLOYMENT}/img/promo-video.png`},
         ],
     } satisfies Preset.ThemeConfig,
 };

@@ -10,6 +10,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const TITLE = 'Agentic Signal';
 const TAGLINE = 'Visual AI Workflow Automation Platform with Local Agent Intelligence';
+const GITHUB_DEPLOYMENT = "https://code-forge-temple.github.io/agentic-signal";
+
 
 const config: Config = {
     title: TITLE,
@@ -187,11 +189,11 @@ const config: Config = {
         metadata: [
             {name: 'og:title', content: TITLE},
             {name: 'og:description', content: TAGLINE},
-            {name: 'og:image', content: '/img/logo.png'},
+            {name: 'og:image', content: `${GITHUB_DEPLOYMENT}/img/logo.png`},
             {name: 'twitter:card', content: 'summary_large_image'},
             {name: 'twitter:title', content: TITLE},
             {name: 'twitter:description', content: TAGLINE},
-            {name: 'twitter:image', content: '/img/logo.png'},
+            {name: 'twitter:image', content: `${GITHUB_DEPLOYMENT}/img/logo.png`},
         ],
     } satisfies Preset.ThemeConfig,
 };

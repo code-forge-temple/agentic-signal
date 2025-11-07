@@ -165,7 +165,7 @@ const config: Config = {
                         },
                         {
                             label: 'Discord Community',
-                            href: 'https://discord.gg/HZPEbJM8'
+                            href: 'https://discord.gg/FpT2VFdFYu'
                         }
                     ],
                 },

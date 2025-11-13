@@ -85,3 +85,11 @@ export const parseUrl = (initialUrl: string): string => {
 
     return url;
 }
+
+export const isTauri = (): boolean => {
+    return typeof window !== 'undefined' && (
+        window.__TAURI_INTERNALS__ !== undefined ||
+        window.location.protocol === 'tauri:' ||
+        window.location.hostname === 'tauri.localhost'
+    );
+};

@@ -15,7 +15,7 @@ import TabItem from '@theme/TabItem';
     <TabItem value="inputs" label="Inputs" default>
         - `query` ¹ (string): Google Drive search query using Google Drive search operators (e.g., `"name contains \"report\""`).  
         - `googleClientId` (string, user config): Google OAuth2 Client ID.  
-        You must [create an OAuth2 client in Google Cloud Console](https://console.cloud.google.com/auth/clients) before using this tool.
+        You must [create an OAuth2 client in Google Cloud Console](../../../getting-started/google-oauth-client) before using this tool.  
         - `accessToken` (OAuth, user config): Google Drive Authentication.  
         This field will be auto-filled if you use the **CONNECT DRIVE** button.
         - `maxResults` (integer, user config): Maximum number of files to fetch (default: 5, min: 1, max: 50)

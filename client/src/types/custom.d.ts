@@ -4,3 +4,12 @@ declare module "*.svg" {
     const content: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
     export default content;
 }
+
+declare global {
+    interface Window {
+        google?: any;
+        __TAURI_INTERNALS__?: any;
+    }
+}
+
+export {};

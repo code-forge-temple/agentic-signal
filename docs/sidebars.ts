@@ -24,6 +24,7 @@ const sidebars: SidebarsConfig = {
             ],
         },
         'getting-started/configuration',
+        'getting-started/google-oauth-client',
     ],
 
     nodesSidebar: [

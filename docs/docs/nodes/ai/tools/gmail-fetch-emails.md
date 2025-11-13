@@ -15,7 +15,7 @@ import TabItem from '@theme/TabItem';
     <TabItem value="inputs" label="Inputs" default>
         - `query` ¹ (string): Gmail search query using Gmail search operators (e.g., `"in:inbox newer_than:7d"`).  
         - `googleClientId` (string, user config): Google OAuth2 Client ID.  
-        You must [create an OAuth2 client in Google Cloud Console](https://console.cloud.google.com/auth/clients) before using this tool.
+        You must [create an OAuth2 client in Google Cloud Console](../../../getting-started/google-oauth-client) before using this tool.  
         - `accessToken` (OAuth, user config): Gmail Authentication.  
         This field will be auto-filled if you use the **CONNECT GMAIL** button.
         - `maxResults` (integer, user config): Maximum number of emails to fetch (default: 5, min: 1, max: 50)

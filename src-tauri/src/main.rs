@@ -2,6 +2,8 @@ use std::process::Command;
 use std::env;
 use std::path::PathBuf;
 
+mod oauth;
+
 fn main() {
     tauri::Builder::default()
         .setup(|_app| {
@@ -23,6 +25,8 @@ fn main() {
                 .expect("Failed to start backend");
             Ok(())
         })
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![oauth::start_oauth_flow])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

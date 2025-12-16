@@ -13,12 +13,20 @@ If you **do not want to develop or build from source**, you can simply:
    - Run the installer you downloaded from GitHub Releases and follow the prompts to complete installation.
    - **Windows users:** When launching `Agentic Signal` for the first time, your antivirus may scan the app because the installer is unsigned.  
     > If you notice the app is slow or unresponsive, wait for the scan to finish, then close `Agentic Signal` and restart it. This resolves most issues related to initial antivirus checks.
+   - **macOS users:** If you see an "app is damaged" error, run this command in Terminal to remove quarantine attributes:
+    ```bash
+    xattr -dr com.apple.quarantine /Applications/Agentic\ Signal.app
+    ```
+    > This error occurs because the app is unsigned. The command removes macOS Gatekeeper's quarantine flag, allowing the app to run normally.
 4. **Configure Ollama and App Settings:**  
    See [Ollama and App Configuration](../configuration) for instructions on:
      - Setting up Ollama CORS for the Windows app
      - Configuring the Ollama Host and Chrome Executable Path in the app settings
 5. *(Optional)* **Set up Google OAuth2 Client for Google integrations:**  
    If you want to use Gmail, Google Drive, or Google Calendar nodes, follow the [Google OAuth2 Client Setup](../google-oauth-client) guide to create your credentials in Google Cloud Console.  
+6. *(Optional)* **Set up Reddit OAuth2 Client for Reddit integrations:**  
+   If you want to use the Reddit nodes / tools (available only in <a href='https://pricing.agentic-signal.com/'><span className="pro-badge">PRO</span> subscription tier</a>), follow the [Reddit OAuth2 Client Setup](../reddit-oauth-client) guide to create your credentials in Reddit Developer Portal.  
+
 
 You are now ready to use `Agentic Signal` with local AI and browser automation!
 

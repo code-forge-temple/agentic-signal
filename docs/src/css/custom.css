@@ -32,3 +32,14 @@
 .markdown img {
   border-radius: 10px;
 }
+
+.pro-badge {
+  background-color: #E91E63;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: bold;
+  display: inline-block;
+  margin-left: 4px;
+}

@@ -11,15 +11,36 @@ import './App.scss';
 import {useWorkflow} from '../../hooks/useWorkflow';
 import {nodeFactory, nodeTypes} from '../nodes';
 import {useCallback} from 'react';
-import {TaskNodeType} from '../../constants';
 import {Dock} from '../Dock';
 import {v4 as uuidv4} from 'uuid';
-import {toolRegistry} from '../nodes/ToolNode';
 import {useSnackbar} from 'notistack'
+import { AppNodeType } from '../nodes/workflow.gen';
+import { toolRegistry } from '../nodes/ToolNode/tools/toolRegistry.gen';
+import {nodeRegistry} from '../nodes/nodeRegistry.gen';
+import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
 
 
 const getId = () => uuidv4();
 
+function deleteByPath(obj: Record<string, any>, path: string): void {
+    const parts = path.split(".");
+    if (parts.length === 1) {
+        delete obj[parts[0]];
+    } else {
+        let current: any = obj;
+        for (let i = 0; i < parts.length - 1; i++) {
+            if (!current || typeof current !== "object") return;
+            current = current[parts[i]];
+        }
+        if (current && typeof current === "object") {
+            delete current[parts[parts.length - 1]];
+        }
+    }
+}
+
+const descriptorMap = Object.fromEntries(
+    nodeRegistry.map(desc => [desc.type, desc])
+);
 
 function AppFlow () {
     const {
@@ -39,13 +60,13 @@ function AppFlow () {
     const handleSave = () => {
         const sanitizedNodes = nodes.map(node => {
             const nodeData = JSON.parse(JSON.stringify(node.data));
-
-            delete nodeData.input;
-            delete nodeData?.conversationHistory;
-            delete nodeData?.userConfig?.accessToken;
-            delete nodeData?.feedback;
-            delete nodeData?.handler;
-            delete nodeData?.toolSchema;
+            const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize : [];
+            
+            for (const path of toSanitize) {
+                deleteByPath(nodeData, path);
+            }
+            
+            deleteByPath(nodeData, "toSanitize");
 
             return {
                 ...node,
@@ -82,30 +103,79 @@ function AppFlow () {
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target?.result as string);
+
+                if (!data.nodes || !Array.isArray(data.nodes)) {
+                    enqueueSnackbar("Invalid workflow file: missing or invalid 'nodes' array.", { variant: 'error' });
+                    
+                    return;
+                }
+
+                let nodesHidrationError = "";
+
                 const hydratedNodes = data.nodes.map((node: any) => {
-                    if (node.type === 'ai-tool' && node.data.toolSubtype) {
+                    if(nodesHidrationError) return;
+
+                    if (!node.type || !node.data) {                       
+                        nodesHidrationError = "Invalid workflow file: missing or invalid '<node>.data' and/or <node>.type";
+
+                        return;
+                    }
+
+                    const descriptor = descriptorMap[node.type];
+                    let updatedNode = node;
+
+                    if (node.type === TOOL_NODE_TYPE) {
                         const tool = toolRegistry.find(t => t.toolSubtype === node.data.toolSubtype);
 
                         if (tool) {
-                            return {
+                            updatedNode = {
                                 ...node,
                                 data: {
                                     ...node.data,
                                     toolSchema: tool.toolSchema,
                                     title: tool.title,
-                                    handler: undefined
+                                    handler: undefined,
+                                    toSanitize: [...descriptor?.defaultData.toSanitize, ...tool.toSanitize]
+                                }
+                            };
+                        } else {
+                            updatedNode = {
+                                ...node,
+                                data: {
+                                    ...node.data,
+                                    toolSchema: {},
+                                    title: descriptor?.defaultData.title || node.data.title,
+                                    handler: undefined,
+                                    toSanitize: [...descriptor?.defaultData.toSanitize]
                                 }
                             };
                         }
+                    } else {
+                        updatedNode = {
+                            ...node,
+                            data: {
+                                ...node.data,
+                                title: descriptor?.defaultData.title || node.data.title,
+                                toSanitize: descriptor?.defaultData.toSanitize
+                            }
+                        };
                     }
 
-                    return node;
+                    return updatedNode;
                 });
+
+                if (nodesHidrationError) {
+                    enqueueSnackbar(nodesHidrationError, { variant: 'error' });
+
+                    return;
+                }
 
                 setNodes(hydratedNodes);
                 setEdges(data.edges || []);
+
+                event.target.value = '';
             } catch (error) {
-                console.error('Failed to load workflow:', error);
+                enqueueSnackbar('Failed to load workflow: ' + (error instanceof Error ? error.message : String(error)), { variant: 'error' });
             }
         };
         reader.readAsText(file);
@@ -122,7 +192,7 @@ function AppFlow () {
         (event: React.DragEvent) => {
             event.preventDefault();
 
-            const nodeType = event.dataTransfer.getData('application/reactflow') as TaskNodeType;
+            const nodeType = event.dataTransfer.getData('application/reactflow') as AppNodeType;
 
             if (typeof nodeType === 'undefined' || !nodeType) {
                 return;

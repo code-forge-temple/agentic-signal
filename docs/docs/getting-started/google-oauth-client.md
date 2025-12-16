@@ -1,6 +1,6 @@
 # Google OAuth2 Client Setup
 
-To use Google services (Gmail, Drive, Calendar) in Agentic Signal, you need to create an OAuth2 client in Google Cloud Console.
+To use Google services (Gmail, Drive, Calendar) in `Agentic Signal`, you need to create an OAuth2 client in Google Cloud Console.
 
 ## Step-by-Step Guide
 
@@ -19,14 +19,13 @@ To use Google services (Gmail, Drive, Calendar) in Agentic Signal, you need to c
    - Choose **Web application** as the application type.
    - **Authorized JavaScript origins:**  
      - `http://localhost:3000`  
-     - `http://localhost:5173`
+     - `http://localhost:8080`
    - **Authorized redirect URIs:**  
      - `http://localhost:3000`  
-     - `http://localhost:5173`  
      - `http://localhost:8080`  
      - `http://localhost:8080/callback`
    - Click **Save** to create the client.
-6. **Copy your Client ID** and use it in Agentic Signal’s configuration (`Google OAuth2 Client ID (from Google Cloud Console)` field).
+6. **Copy your Client ID** and use it in `Agentic Signal`’s configuration (`Google OAuth2 Client ID (from Google Cloud Console)` field).
 
 
 > For more details, see [Google's official documentation](https://developers.google.com/identity/protocols/oauth2).

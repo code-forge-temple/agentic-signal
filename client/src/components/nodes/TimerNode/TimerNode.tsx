@@ -7,12 +7,14 @@
 import {useCallback, useEffect, useState, useRef} from "react";
 import {Handle, Position, type NodeProps} from "@xyflow/react";
 import {BaseNode} from "../BaseNode";
-import {ClockRotateRight} from "iconoir-react";
-import {AppNode, assertIsEnhancedNodeData, assertIsTimerNodeData} from "../../../types/workflow";
+import {assertIsTimerNodeData} from "./types/workflow";
 import {TIMER_TRIGGER_PORT_COLOR, TIMER_TRIGGER_PORT_ID} from "../../../constants";
 import {BaseDialog} from "../../BaseDialog";
 import {FormControlLabel, Switch} from "@mui/material";
 import {DebouncedTextField} from "../../DebouncedTextField";
+import {Icon} from "./constants";
+import {AppNode} from "../workflow.gen";
+import {assertIsEnhancedNodeData} from "../../../types/workflow";
 
 
 export function TimerNode ({data, id}: NodeProps<AppNode>) {
@@ -61,7 +63,7 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
         <>
             <BaseNode
                 id={id}
-                nodeIcon={<ClockRotateRight />}
+                nodeIcon={Icon}
                 title={title}
                 ports={{}}
                 run={handleRun}

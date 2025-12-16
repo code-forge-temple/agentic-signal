@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {type NodeProps} from "@xyflow/react";
-import {AppNode, assertIsEnhancedNodeData, assertIsChartNodeData} from "../../../types/workflow";
+import {assertIsChartNodeData} from "./types/workflow";
 import {useMemo, useState} from "react";
 import {Line} from "react-chartjs-2";
 import {
@@ -24,16 +24,10 @@ import {runTask} from "../BaseNode/utils";
 import {LogsDialog} from "../../LogsDialog";
 import {BaseDialog} from "../../BaseDialog";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
-import {TaskNodeIcons} from "../../../constants";
+import {ERROR_PREFIX, Icon} from "./constants";
+import {AppNode} from "../workflow.gen";
+import {assertIsEnhancedNodeData} from "../../../types/workflow";
 
-const ERROR_PREFIX = `
-This Chart Data Node only supports the following input formats of JSON objects:
-1. Chart.js format: \`{title: "", labels:[], datasets:[{label, data, borderColor, backgroundColor, tension}]}\`
-2. Simple format: \`{title: "", labels:[], data:[]}\`
-3. Array of points format: \`[{x,y},...]\`
-4. Array of numbers format: \`[1,2,3,...]\`
----
-`;
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -45,7 +39,7 @@ function randomColor () {
     return `rgb(${r},${g},${b})`;
 }
 
-export function ChartNode ({data, id, type}: NodeProps<AppNode>) {
+export function ChartNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
     assertIsChartNodeData(data);
 
@@ -163,7 +157,7 @@ export function ChartNode ({data, id, type}: NodeProps<AppNode>) {
         <>
             <BaseNode
                 id={id}
-                nodeIcon={TaskNodeIcons[type]}
+                nodeIcon={Icon}
                 ports={{
                     input: true
                 }}

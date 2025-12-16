@@ -5,21 +5,8 @@
  ************************************************************************/
 
 import {Box, Typography, Button, Chip} from "@mui/material";
-import {PROVIDER_SCOPES, PROVIDERS} from "../../../constants";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {DebouncedTextField} from "../../DebouncedTextField";
-import {isTauri} from "../../../utils";
-
-
-const AUTHENTICATION_CANCELED = 'Authentication cancelled';
-
-const showTauriError = (error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    if (!errorMessage.includes(AUTHENTICATION_CANCELED)) {
-        alert(`OAuth failed: ${errorMessage}`);
-    }
-};
 
 type UserConfigSchema = {
     [key: string]: {
@@ -30,6 +17,12 @@ type UserConfigSchema = {
         default?: any;
         required?: boolean;
         provider?: string;
+        scope?: string;
+        oauthHandler?: (params: {
+            clientId?: string;
+            scope?: string;
+            onConfigChange: (key: string, value: string) => void;
+        }) => void;
     } | undefined;
 };
 
@@ -44,64 +37,6 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
         return null;
     }
 
-    const handleOAuthLogin = async (provider: string) => {
-        try {
-            if (provider === PROVIDERS.GMAIL || provider === PROVIDERS.DRIVE || provider === PROVIDERS.CALENDAR) {
-                const googleClientId = userConfig?.googleClientId;
-
-                if (!googleClientId) {
-                    alert('Please provide your Google Client ID first in the configuration above.');
-
-                    return;
-                }
-
-                const isTauriEnv = isTauri();
-
-                if (isTauriEnv) {
-                    try {
-                        const scope = PROVIDER_SCOPES[provider];
-                        const {invoke} = await import('@tauri-apps/api/core');
-                        const result = await invoke<{accessToken: string}>('start_oauth_flow', {
-                            clientId: googleClientId,
-                            scope: scope
-                        });
-
-                        if (result && result.accessToken) {
-                            onConfigChange('accessToken', result.accessToken);
-                        } else {
-                            alert('OAuth failed: No access token received');
-                        }
-                    } catch (error) {
-                        showTauriError(error);
-                    }
-                } else {
-                    // Web environment - use Google's popup
-                    if (!window.google) {
-                        alert('Google Identity Services not loaded. Please refresh the page.');
-
-                        return;
-                    }
-
-                    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-                        client_id: googleClientId,
-                        scope: PROVIDER_SCOPES[provider],
-                        callback: (response: { access_token: string; error?: string }) => {
-                            if (response.access_token) {
-                                onConfigChange('accessToken', response.access_token);
-                            } else {
-                                alert(`OAuth authentication failed: ${response.error || 'Unknown error'}`);
-                            }
-                        }
-                    });
-
-                    tokenClient.requestAccessToken();
-                }
-            }
-        } catch (error) {
-            alert(`OAuth failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    };
-
     return (
         <Box sx={{mb: 2}}>
             {Object.entries(userConfigSchema).map(([key, schema]) => {
@@ -114,6 +49,7 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
 
                 if (type === "oauth") {
                     const isConnected = userConfig?.accessToken && userConfig.accessToken.length > 0;
+                    const oauthHandler = schema.oauthHandler;
 
                     return (
                         <FieldsetGroup key={key} title="OAuth Settings">
@@ -126,7 +62,15 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
                                         variant={isConnected ? "outlined" : "contained"}
                                         color={isConnected ? "success" : "primary"}
                                         onClick={() => {
-                                            handleOAuthLogin(schema.provider || 'gmail');
+                                            if (oauthHandler) {
+                                                oauthHandler({
+                                                    clientId: userConfig?.googleClientId,
+                                                    scope: schema.scope,
+                                                    onConfigChange: (key: string, value: string) => onConfigChange(key, value)
+                                                });
+                                            } else {
+                                                alert("No OAuth handler defined for this tool.");
+                                            }
                                         }}
                                         size="small"
                                     >

@@ -2,7 +2,7 @@
 
 ## Ollama Host Configuration
 
-Ensure that the [Ollama](https://ollama.ai) host is installed on your local machine or available on your LAN. Then:
+Ensure that the [Ollama](https://ollama.com/download) host is installed on your local machine or available on your LAN. Then:
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -47,6 +47,24 @@ import TabItem from '@theme/TabItem';
 </Tabs>
 
 ---
+
+## Minimum Recommended System Requirements for LLMs
+
+| Model           | RAM (CPU-only) | GPU (VRAM)   | Recommended GPU      | Disk Space |
+|-----------------|---------------|--------------|----------------------|------------|
+| Llama 3 8B      | 16GB          | 8GB+         | RTX 3060/3070/4060   | ~4GB       |
+| Llama 2 7B      | 12GB          | 6GB+         | GTX 1660/RTX 2060+   | ~4GB       |
+| Mistral 7B      | 12GB          | 6GB+         | GTX 1660/RTX 2060+   | ~4GB       |
+| Llama 3 70B     | 64GB+         | 48GB+        | RTX 6000/A100/H100   | ~40GB      |
+| Mixtral 8x7B    | 64GB+         | 48GB+        | RTX 6000/A100/H100   | ~50GB      |
+| Phi-3 Mini      | 8GB           | 4GB+         | GTX 1650/RTX 3050+   | ~1.8GB     |
+
+**Notes:**
+- More RAM/VRAM = faster inference and ability to run larger models.
+- CPU-only is possible for small models, but much slower.
+- For best performance, use a modern NVIDIA GPU with CUDA support.
+- Disk space is for the model file only; additional space may be needed for dependencies.
+
 
 ## Configure Agentic Signal Client Settings
 

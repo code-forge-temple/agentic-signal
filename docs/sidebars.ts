@@ -25,6 +25,7 @@ const sidebars: SidebarsConfig = {
         },
         'getting-started/configuration',
         'getting-started/google-oauth-client',
+        'getting-started/reddit-oauth-client',
     ],
 
     nodesSidebar: [
@@ -78,6 +79,7 @@ const sidebars: SidebarsConfig = {
                     items: [
                         'nodes/output/chart',
                         'nodes/output/data-flow-spy',
+                        'nodes/output/reddit-post',
                     ],
                 },
             ],

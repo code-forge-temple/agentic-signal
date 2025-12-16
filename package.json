@@ -1,6 +1,6 @@
 {
     "name": "agentic-signal",
-    "version": "1.1.2",
+    "version": "2.0.0",
     "description": "Visual AI Workflow Automation Platform with Local Agent Intelligence",
     "author": "Code Forge Temple",
     "type": "module",
@@ -14,11 +14,13 @@
     ],
     "license": "AGPL-3.0-with-Commercial-Exception",
     "scripts": {
-        "client:build": "cd client && bun run build",
-        "client:preview": "cd client && bun run preview",
-        "client:dev": "cd client && bun run dev",
-        "server:dev": "deno task dev",
-        "server:build": "deno task compile",
+        "prebuild": "bun run scripts/generate-files.ts",
+        "client:build": "bun run prebuild && cd client && bun run build",
+        "client:preview": "bun run prebuild && cd client && bun run preview",
+        "client:dev": "bun run prebuild && cd client && bun run dev",
+        "server:dev": "bun run prebuild && deno task dev",
+        "server:build": "bun run prebuild && deno task compile",
+        "dev": "concurrently \"bun run server:dev\" \"bun run client:dev\"",
         "sync:tauri-version": "deno run --allow-read --allow-write src-tauri/sync-tauri-version.ts",
         "dev:windows": "bun run client:build && deno task compile:windows && bun run copy:backend:windows && bunx tauri dev",
         "dev:linux": "bun run client:build && deno task compile:linux && bun run copy:backend:linux && bunx tauri dev",
@@ -31,7 +33,8 @@
         "build:linux": "bun run sync:tauri-version && bun run client:build && deno task compile:linux && bun run copy:backend:linux && bunx tauri build",
         "build:macos": "bun run sync:tauri-version && bun run client:build && deno task compile:macos && bun run copy:backend:macos && bunx tauri build",
         "lint": "eslint .",
-        "lint:fix": "eslint . --fix"
+        "lint:fix": "eslint . --fix",
+        "circular": "bunx madge --circular --extensions ts,tsx ./client/src"
     },
     "dependencies": {
         "concurrently": "^9.1.2"
@@ -39,11 +42,14 @@
     "devDependencies": {
         "@eslint/js": "^9.29.0",
         "@tauri-apps/cli": "^2.8.4",
+        "@types/mustache": "^4.2.6",
         "cpx2": "^8.0.0",
         "eslint": "^9.29.0",
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.19",
+        "madge": "^8.0.0",
+        "mustache": "^4.2.0",
         "rimraf": "^6.0.1",
         "typescript-eslint": "^8.34.1"
     }

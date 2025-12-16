@@ -15,39 +15,19 @@ import {
     OnEdgesDelete,
     OnNodesDelete,
 } from '@xyflow/react';
-import {
-    AppNode,
-    assertIsChartNodeData,
-    assertIsDataFlowSpyNodeData,
-    assertIsDataSourceNodeData,
-    assertIsDataValidationNodeData,
-    assertIsGetDataNodeData,
-    assertIsHttpNodeData,
-    assertIsJsonReformatterNodeData,
-    assertIsLlmProcessNodeData,
-    assertIsTimerNodeData,
-    assertIsToolNodeData,
-} from '../types/workflow';
 import {initialEdges, initialNodes} from '../components/nodes';
-import {TaskNodeType} from '../constants';
+import {nodeRegistry} from '../components/nodes/nodeRegistry.gen';
+import {AppNode, AppNodeType} from '../components/nodes/workflow.gen';
 
-const nodeAssertions: Record<TaskNodeType, (data: unknown) => void> = {
-    [TaskNodeType.GET_DATA]: assertIsGetDataNodeData,
-    [TaskNodeType.HTTP_DATA]: assertIsHttpNodeData,
-    [TaskNodeType.LLM_PROCESS]: assertIsLlmProcessNodeData,
-    [TaskNodeType.CHART]: assertIsChartNodeData,
-    [TaskNodeType.DATA_SOURCE]: assertIsDataSourceNodeData,
-    [TaskNodeType.JSON_REFORMATTER]: assertIsJsonReformatterNodeData,
-    [TaskNodeType.DATA_FLOW_SPY]: assertIsDataFlowSpyNodeData,
-    [TaskNodeType.AI_TOOL]: assertIsToolNodeData,
-    [TaskNodeType.DATA_VALIDATION]: assertIsDataValidationNodeData,
-    [TaskNodeType.TIMER]: assertIsTimerNodeData,
-};
+
+const nodeAssertions = Object.fromEntries(
+    nodeRegistry.map(nodeDescriptor => [nodeDescriptor.type, nodeDescriptor.assertion])
+) as Record<AppNodeType, (data: unknown) => void>;
 
 function updateNodeData<T extends AppNode> (
     node: T,
     newData: Partial<T['data']>,
-    assertions: Record<TaskNodeType, (data: unknown) => void>
+    assertions: Record<AppNodeType, (data: unknown) => void>
 ): T {
     // Merge newData over node.data, but never remove required fields
     const updatedData = {...node.data, ...newData};

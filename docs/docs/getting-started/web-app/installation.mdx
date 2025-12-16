@@ -1,0 +1,114 @@
+---
+title: Installation
+description: Step-by-step guide to install Agentic Signal, set up prerequisites, and start building visual AI workflows with local intelligence.
+---
+
+# Installation
+
+This guide walks you through setting up `Agentic Signal` for **development** and running it as a **web app** in your browser.  
+If you want to use the packaged Windows app without development, see [Run as Windows App](../windows-app/quick-start).
+
+## Installation Options
+
+Choose your preferred installation method:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="docker" label="🐳 Docker (Recommended)" default>
+
+### Prerequisites
+- **Docker** with BuildKit support
+- **Git** (to clone the repository)
+- **Ollama** (optional, for local AI features)
+
+### 1. Prerequisites Setup
+
+- **Install Docker**  
+  Follow installation instructions from [docker.com](https://docs.docker.com/get-docker/)
+
+- **Install Ollama (AI Models - Optional)**  
+  Download from [ollama.com](https://ollama.com/download)
+
+### 2. Quick Docker Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/code-forge-temple/agentic-signal
+   cd agentic-signal
+   ```
+
+2. **Build and run with Docker:**
+   ```bash
+   # On Linux/macOS:
+   ./docker-build.sh
+   
+   # On Windows:
+   docker-build.bat
+   ```
+</TabItem>
+<TabItem value="manual" label="🔧 Manual Installation">
+
+### Prerequisites
+- **Bun** (for frontend and docs)
+- **Deno** 2.0+ for the backend
+- **Ollama** (optional, for local AI features)
+
+### 1. Prerequisites Setup
+
+- **Install Bun (Frontend & Docs Runtime)**  
+  Follow installation instructions from [bun.sh](https://bun.sh/docs/installation)
+
+- **Install Deno (Backend Runtime)**  
+  Follow installation instructions from [deno.land](https://docs.deno.com/runtime/getting_started/installation/) (version 2.0+)
+
+- **Install Ollama (AI Models - Optional)**  
+  Download from [ollama.com](https://ollama.com/download)
+
+### 2. Clone and Setup Project
+
+```bash
+# Clone the repository
+git clone https://github.com/code-forge-temple/agentic-signal
+cd agentic-signal
+
+# Install root dependencies
+bun install
+
+# Install client dependencies
+cd client && bun install && cd ..
+
+# Install docs dependencies
+cd docs && bun install && cd ..
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Optional Integrations
+
+1. *(Optional)* **Set up Google OAuth2 Client for Google integrations:**  
+   If you want to use Gmail, Google Drive, or Google Calendar nodes, follow the [Google OAuth2 Client Setup](../google-oauth-client) guide to create your credentials in Google Cloud Console.  
+
+2. *(Optional)* **Set up Reddit OAuth2 Client for Reddit integrations:**  
+   If you want to use the Reddit nodes / tools (available only in <a href='https://pricing.agentic-signal.com/'><span className="pro-badge">PRO</span> subscription tier</a>), follow the [Reddit OAuth2 Client Setup](../reddit-oauth-client) guide to create your credentials in Reddit Developer Portal.  
+
+## Configuration
+
+See [Configuration](../configuration) for detailed instructions on:
+- Setting up Ollama host and models
+- Configuring browser executable path
+
+## Next Steps
+
+After installation, continue to [Quick Start](./quick-start) to begin using `Agentic Signal`.
+
+## Troubleshooting
+
+### Manual Installation Issues
+- **Bun installation**: Make sure you have the latest version of Bun installed
+- **Deno compatibility**: Ensure you're using Deno 2.0 or later
+- **Dependency conflicts**: Try clearing node_modules and reinstalling dependencies

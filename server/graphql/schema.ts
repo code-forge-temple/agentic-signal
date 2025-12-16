@@ -6,7 +6,14 @@
 
 import {createSchema} from "npm:graphql-yoga";
 import {typeDefs} from "./typeDefs.ts";
-import {resolvers} from "./resolvers/index.ts";
+import {toolResolvers} from "../tools/toolsRegistry.gen.ts";
+import {nodeResolvers} from "../nodes/nodesRegistry.gen.ts";
+
+export const resolvers = {
+    Query: {
+        ...Object.assign({}, ...toolResolvers, ...nodeResolvers),
+    },
+};
 
 export const schema = createSchema({
     typeDefs,

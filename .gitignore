@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+desktop.ini
+
+# Generated files
+*.gen.ts
+*.gen.rs

@@ -6,6 +6,7 @@
 
 import {z} from 'zod';
 
+
 // Basic point structure for x,y data
 export const ChartPointSchema = z.object({
     x: z.union([z.string(), z.number()]),

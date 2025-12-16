@@ -6,25 +6,26 @@
 
 import React from 'react';
 import './NodesDock.scss';
-import {TaskNodeTitles, TaskNodeType} from '../../../../constants';
 import {ThemeProvider, Tooltip} from '@mui/material';
 import {darkTheme} from '../../../../utils';
-import {TaskNodeIcons} from '../../../../constants';
+import {nodeRegistry} from '../../../nodes/nodeRegistry.gen';
+import {AppNodeType} from '../../../nodes/workflow.gen';
+
 
 type NodeConfig = {
-    type: TaskNodeType;
+    type: AppNodeType;
     label: string;
     icon: React.ReactElement<{className?: string}>;
 };
 
-const nodeConfigs: NodeConfig[] = Object.values(TaskNodeType).map((type) => ({
-    type,
-    label: TaskNodeTitles[type],
-    icon: TaskNodeIcons[type]
+const nodeConfigs: NodeConfig[] = nodeRegistry.map((desc) => ({
+    type: desc.type,
+    label: desc.title,
+    icon: desc.icon,
 }));
 
 export function NodesDock () {
-    const onDragStart = (event: React.DragEvent, nodeType: TaskNodeType) => {
+    const onDragStart = (event: React.DragEvent, nodeType: AppNodeType) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
     };

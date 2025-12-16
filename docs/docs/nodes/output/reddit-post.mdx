@@ -1,0 +1,74 @@
+---
+title: Reddit Post Node
+---
+
+:::info PRO Feature
+This feature is available in the <span className="pro-badge">PRO</span> subscription tier. [Learn more about PRO](https://pricing.agentic-signal.com/)
+:::
+
+# Reddit Post Node
+
+The **Reddit Post Node** allows you to automatically post content to Reddit subreddits. It supports both text posts and link posts, with full OAuth authentication and post configuration options.
+
+![Reddit Post Node](/img/nodes/reddit-post-preview.webp)
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="oauth" label="OAuth Settings" default>
+        Configure your Reddit app credentials:
+        - **Reddit Client ID**: Your app's Client ID from Reddit
+        - **Reddit Client Secret**: Your app's Client Secret (keep private!)
+        - **Connect Reddit**: OAuth authentication button
+        > You must [create an OAuth2 client in Reddit Developer Portal](../../getting-started/reddit-oauth-client) before using this tool.  
+
+        ![Reddit Post Node Configuration](/img/nodes/reddit-post-params.webp)
+    </TabItem>
+    <TabItem value="post-config" label="Post Configuration">
+        Configure your post details:
+        - **Subreddit**: Target subreddit (e.g., "test" or "r/test")
+        - **Post Type**: Text Post or Link Post
+        - **Post Title**: Title for your post
+        - **Post Body/URL**: Content (text for text posts, URL for link posts)
+        - **Flair ID**: Optional flair ID
+        - **NSFW**: Mark as Not Safe For Work
+        - **Spoiler**: Mark as spoiler content
+
+        ![Reddit Post Node Configuration](/img/nodes/reddit-post-params.webp)
+    </TabItem>
+</Tabs>
+
+---
+
+## Common Use Cases
+
+1. **Automated Posting**: Schedule regular posts to subreddits
+2. **AI Content Sharing**: Post AI-generated content to relevant communities
+3. **Workflow Results**: Share workflow outputs or summaries
+4. **Community Updates**: Automated announcements or updates
+
+## Best Practices
+
+- **Follow subreddit rules**: Ensure your posts comply with community guidelines
+- **Use appropriate flairs**: Select relevant post flairs when available
+- **Test with safe subreddits**: Use r/test or similar for testing
+- **Respect rate limits**: Avoid spamming or excessive posting
+- **Secure credentials**: Keep your Client Secret private
+
+## Troubleshooting
+
+### Common Issues
+
+- **OAuth fails**: Verify Client ID and Client Secret are correct
+- **Insufficient permissions**: Ensure your Reddit app has submit permissions
+- **Post rejected**: Check subreddit rules and requirements
+- **Rate limited**: Reddit may limit posting frequency
+
+### Performance Tips
+
+- Use [Timer Node](/docs/nodes/input/timer-node) for scheduled posting
+- Combine with AI Data Processing for dynamic content
+- Use Data Validation to ensure post content meets requirements

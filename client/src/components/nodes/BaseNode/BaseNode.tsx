@@ -43,7 +43,7 @@ function buttonsPropsFactory (buttonProp: OnClick): React.SVGProps<SVGSVGElement
         height: 20,
         onClick: "callback" in buttonProp ? buttonProp.callback : buttonProp,
         className: "highlight" in buttonProp && buttonProp.highlight ? "highlight" : "",
-        pointerEvents: "bounding-box",
+        pointerEvents: "all",
     }
 }
 

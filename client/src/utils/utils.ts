@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {createTheme} from "@mui/material";
+import {BACKEND_PORT} from "@shared/constants";
 
 export const darkTheme = createTheme({
     palette: {
@@ -93,3 +94,15 @@ export const isTauri = (): boolean => {
         window.location.hostname === 'tauri.localhost'
     );
 };
+
+export const getField = <T, >(source: any, key: string, fallback: T): T => {
+    if (source && typeof source === "object" && key in source && source[key] !== undefined && source[key] !== null && source[key] !== "") {
+        return source[key];
+    }
+
+    return fallback;
+};
+
+export const graphqlBaseUrl = isTauri()
+    ? `http://localhost:${BACKEND_PORT}/graphql`
+    : "/graphql";

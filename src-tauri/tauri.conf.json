@@ -1,11 +1,11 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "agentic-signal",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "identifier": "com.agentic-signal",
   "build": {
     "frontendDist": "../client/dist",
-    "devUrl": "http://localhost:5173",
+    "devUrl": "http://localhost:8080",
     "beforeDevCommand": "bun run client:dev",
     "beforeBuildCommand": "bun run client:build"
   },

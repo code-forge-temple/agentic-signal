@@ -6,27 +6,31 @@
 
 import {useEffect, useCallback} from "react";
 import {type NodeProps} from "@xyflow/react";
-import {AppNode, assertIsEnhancedNodeData, assertIsToolNodeData} from "../../../types/workflow";
+import {assertIsToolNodeData} from "./types/workflow";
 import {BaseNode} from "../BaseNode";
 import {useState} from "react";
 import {BaseDialog} from "../../BaseDialog";
 import {CodeEditor} from "../../CodeEditor";
 import {LogsDialog} from "../../LogsDialog";
-import {AI_TOOL_PORT_COLOR, TaskNodeIcons, TOOL_PORT_ID} from "../../../constants";
-import {toolRegistry} from "./toolRegistry";
+import {AI_TOOL_PORT_COLOR, TOOL_PORT_ID} from "../../../constants";
 import {MenuItem, Select, FormControl, InputLabel} from "@mui/material";
 import {UserConfigFields} from "./UserConfigFields";
 import {FieldsetGroup} from "../../FieldsetGroup";
-import { useSettings } from "../../../hooks/useSettings";
+import {useSettings} from "../../../hooks/useSettings";
+import {AppNode} from "../workflow.gen";
+import {Icon} from "./constants";
+import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {toolRegistry} from "./tools/toolRegistry.gen";
 
-export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
+
+export function ToolNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
     assertIsToolNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const {title, toolSubtype, userConfig, handler, onConfigChange} = data;
+    const {title, toolSubtype, userConfig, handler, onConfigChange, toSanitize} = data;
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
     const {settings} = useSettings();
 
@@ -115,7 +119,7 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
         <>
             <BaseNode
                 id={id}
-                nodeIcon={selectedTool?.icon || TaskNodeIcons[type]}
+                nodeIcon={selectedTool?.icon || Icon}
                 ports={{
                     output: {
                         isValidConnection: ({targetHandle}) => targetHandle === TOOL_PORT_ID,
@@ -160,7 +164,8 @@ export function ToolNode ({data, id, type}: NodeProps<AppNode>) {
                                     toolSchema: tool.toolSchema,
                                     title: tool.title,
                                     userConfig: {},
-                                    handler
+                                    handler,
+                                    toSanitize: [...toSanitize, ...tool.toSanitize] // important to merge the the generic ToolNode toSanitize with the tool specific ones
                                 });
                             }
                         }}

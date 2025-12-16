@@ -1,0 +1,49 @@
+# Quick Start
+
+Choose your preferred method to start Agentic Signal:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="docker" label="🐳 Docker (Recommended)" default>
+
+## 1. Start with Docker
+
+```bash
+# Run the Docker image
+docker run -it -p 8080:8080 -p 8000:8000 agentic-signal
+
+# Or with Docker Compose
+docker-compose up
+```
+</TabItem>
+<TabItem value="manual" label="🔧 Manual Development">
+
+## 1. Start the Development Servers
+
+```bash
+# Start both client and server concurrently
+bun run dev
+
+# Or start them separately:
+bun run client:dev  # Frontend (http://localhost:8080)
+bun run server:dev  # Backend (http://localhost:8000)
+```
+</TabItem>
+</Tabs>
+
+---
+
+## 2. Open Your Browser
+
+Navigate to [http://localhost:8080](http://localhost:8080) to start building workflows!
+
+## 3. Configure Ollama Host and Models
+
+See [Configuration](../configuration) for detailed instructions.
+
+## Next Steps
+
+- Explore [example workflows](../../workflows/overview) to see ready-to-use templates.
+- Learn about all available [node types](../../nodes/overview) and their capabilities.

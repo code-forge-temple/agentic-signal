@@ -10,6 +10,10 @@ rust-version = "1.77.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "app"
+path = "src/main.gen.rs"
+
 [lib]
 name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
@@ -30,3 +34,6 @@ url = "2"
 opener = "0.7"
 urlencoding = "2"
 lazy_static = "1.4"
+reqwest = { version = "0.11", features = ["json"] }
+base64 = "0.21"
+uuid = { version = "1.0", features = ["v4"] }

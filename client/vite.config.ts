@@ -18,14 +18,16 @@ export default defineConfig({
         })
     ],
     resolve: {
+        preserveSymlinks: true,
         alias: {
             '@shared': path.resolve(__dirname, '../shared'),
         }
     },
     server: {
         host: '0.0.0.0',
+        port: 8080,
         proxy: {
             '/graphql': `http://localhost:${BACKEND_PORT}`
-        }
+        },
     }
 })

@@ -55,8 +55,10 @@
 @media screen and (max-width: 768px) {
     .youtube-preview-container-fixed {
         width: 100%;
-        height: auto;
+        height: 0;
+        padding-bottom: 56.25%;
         margin: 1rem 0;
+        position: relative;
     }
 
     .youtube-preview-iframe,

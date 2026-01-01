@@ -7,8 +7,10 @@
 import {NodeDescriptor} from "../types";
 import {TimerNode as component} from "./TimerNode";
 import {Icon, NODE_TYPE} from "./constants";
-import {assertIsTimerNodeData, TimerNode} from "./types/workflow";
+import {assertIsTimerNodeData, defaultTimerNodeData, TIMER_NODE_MODES, TimerNode} from "./types/workflow";
 
+
+const defaultIntervalTimerNodeData = defaultTimerNodeData[TIMER_NODE_MODES.INTERVAL];
 
 export const TimerNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, TimerNode> = {
     type: NODE_TYPE,
@@ -18,8 +20,7 @@ export const TimerNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, TimerNode> = 
     assertion: assertIsTimerNodeData,
     defaultData: {
         title: "Timer",
-        interval: 60,
-        immediate: false,
+        ...defaultIntervalTimerNodeData,
         toSanitize: ["input"],
     }
 };

@@ -10,17 +10,19 @@ import {fetchDuckDuckGoResults} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {query, maxResults, browserPath}: { query: string, maxResults: number, browserPath?: string },
-        _context: GraphQLContext
-    ): Promise<DuckDuckGoResult[]> => {
-        if (!query || !maxResults) {
-            throw new Error("Missing query or maxResults parameter");
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {query, maxResults, browserPath}: { query: string, maxResults: number, browserPath?: string },
+            _context: GraphQLContext
+        ): Promise<DuckDuckGoResult[]> => {
+            if (!query || !maxResults) {
+                throw new Error("Missing query or maxResults parameter");
+            }
+
+            const results = await fetchDuckDuckGoResults(query, browserPath);
+
+            return results.slice(0, maxResults);
         }
-
-        const results = await fetchDuckDuckGoResults(query, browserPath);
-
-        return results.slice(0, maxResults);
     }
 };

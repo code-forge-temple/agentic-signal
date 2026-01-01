@@ -4,11 +4,9 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-/* eslint-disable react-refresh/only-export-components */
+import {timerService} from "./service.ts";
+import {webSocketManager} from "../../ws/webSocketManager.ts";
 
-import {ClockRotateRight} from "iconoir-react";
-
-export {TIMER_NODE_TYPE as NODE_TYPE} from "@shared/types.gen";
-
-
-export const Icon = <ClockRotateRight />;
+webSocketManager.registerSubscriptionType('timerTrigger', (nodeId, handler) => {
+    return timerService.subscribe(nodeId, handler);
+});

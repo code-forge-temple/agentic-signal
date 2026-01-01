@@ -19,3 +19,15 @@ export const nodeQueryDefs = [
 {{#nodes}}    {{nodeName}}.queryDefs,
 {{/nodes}}
 ];
+
+export const nodeMutationDefs = [
+{{#nodes}}
+{{#hasMutationDefs}}    {{nodeName}}.mutationDefs,{{/hasMutationDefs}}
+{{/nodes}}
+];
+
+export const nodeSubscriptionDefs = [
+{{#nodes}}
+{{#hasSubscriptionDefs}}    {{nodeName}}.subscriptionDefs,{{/hasSubscriptionDefs}}
+{{/nodes}}
+];

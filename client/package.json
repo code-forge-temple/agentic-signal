@@ -21,6 +21,7 @@
         "ajv": "^8.17.1",
         "chart.js": "^4.4.9",
         "googleapis": "^150.0.1",
+        "graphql-ws": "^6.0.6",
         "iconoir-react": "^7.11.0",
         "js-beautify": "^1.15.4",
         "jsonata": "^2.0.6",

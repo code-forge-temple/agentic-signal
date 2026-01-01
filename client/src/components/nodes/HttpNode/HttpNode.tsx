@@ -54,7 +54,7 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
                 onResultUpdate(id);
             }
         }, setIsRunning);
-    }, [id, onResultUpdate, url]);
+    }, [id, onResultUpdate, settings.browserPath, url]);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 

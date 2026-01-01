@@ -4,18 +4,30 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {createSchema} from "npm:graphql-yoga";
-import {typeDefs} from "./typeDefs.ts";
+import {makeExecutableSchema} from "npm:@graphql-tools/schema";
+import {generateTypeDefs} from "./schema-generator.ts";
 import {toolResolvers} from "../tools/toolsRegistry.gen.ts";
 import {nodeResolvers} from "../nodes/nodesRegistry.gen.ts";
 
-export const resolvers = {
-    Query: {
-        ...Object.assign({}, ...toolResolvers, ...nodeResolvers),
-    },
+const typeDefs = generateTypeDefs();
+const allResolvers = [...toolResolvers, ...nodeResolvers];
+
+const resolvers = {
+    Query: Object.assign(
+        {},
+        ...allResolvers.map(r => r.Query || {})
+    ),
+    Mutation: Object.assign(
+        {},
+        ...allResolvers.map(r => 'Mutation' in r ? r.Mutation : {})
+    ),
+    Subscription: Object.assign(
+        {},
+        ...allResolvers.map(r => 'Subscription' in r ? r.Subscription : {})
+    )
 };
 
-export const schema = createSchema({
+export const schema = makeExecutableSchema({
     typeDefs,
-    resolvers,
+    resolvers
 });

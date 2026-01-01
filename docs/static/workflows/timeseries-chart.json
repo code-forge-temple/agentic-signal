@@ -63,8 +63,10 @@
             },
             "data": {
                 "title": "Timer",
+                "mode": "interval",
                 "interval": 60,
-                "immediate": true
+                "immediate": true,
+                "runOnce": false
             },
             "measured": {
                 "width": 120,

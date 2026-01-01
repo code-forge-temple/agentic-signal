@@ -11,11 +11,13 @@ import {getTimezoneForCity} from "./service.ts";
 
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {city}: { city: string },
-        _context: GraphQLContext
-    ): Promise<TimezoneResult> => {
-        return await getTimezoneForCity(city);
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {city}: { city: string },
+            _context: GraphQLContext
+        ): Promise<TimezoneResult> => {
+            return await getTimezoneForCity(city);
+        }
     }
 };

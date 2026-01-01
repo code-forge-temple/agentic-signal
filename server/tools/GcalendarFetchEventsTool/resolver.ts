@@ -11,21 +11,23 @@ import {graphqlMethodName} from "./schema.ts";
 
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {query, timeMin, timeMax, maxResults}: { query: string; timeMin: string; timeMax: string; maxResults: number },
-        {request}: GraphQLContext
-    ): Promise<CalendarEventResult[]> => {
-        if (!timeMin || !timeMax) throw new Error("Missing timeMin or timeMax parameter");
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {query, timeMin, timeMax, maxResults}: { query: string; timeMin: string; timeMax: string; maxResults: number },
+            {request}: GraphQLContext
+        ): Promise<CalendarEventResult[]> => {
+            if (!timeMin || !timeMax) throw new Error("Missing timeMin or timeMax parameter");
 
-        if (!maxResults || maxResults < 1 || maxResults > 250) throw new Error("maxResults must be between 1 and 250");
+            if (!maxResults || maxResults < 1 || maxResults > 250) throw new Error("maxResults must be between 1 and 250");
 
-        const authHeader = request?.headers?.get("authorization");
+            const authHeader = request?.headers?.get("authorization");
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) throw new Error("Missing or invalid Authorization header");
+            if (!authHeader || !authHeader.startsWith("Bearer ")) throw new Error("Missing or invalid Authorization header");
 
-        const accessToken = authHeader.substring(7);
+            const accessToken = authHeader.substring(7);
 
-        return await fetchGcalendarEvents({query, timeMin, timeMax, maxResults, accessToken});
+            return await fetchGcalendarEvents({query, timeMin, timeMax, maxResults, accessToken});
+        }
     }
 };

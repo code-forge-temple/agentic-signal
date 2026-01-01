@@ -11,17 +11,23 @@ interface LogsDialogProps {
     open: boolean;
     onClose: () => void;
     title: string;
-    error: string | null;
+    error: string | string[] | null;
 }
 
+const NO_LOGS_AVAILABLE = "No logs available";
+
 export function LogsDialog ({open, onClose, title, error}: LogsDialogProps) {
+    const errorContent = Array.isArray(error)
+        ? (error.length > 0 ? error.join('\n\n---\n\n') : NO_LOGS_AVAILABLE)
+        : (error || NO_LOGS_AVAILABLE);
+
     return (
         <BaseDialog
             open={open}
             onClose={onClose}
             title={title}
         >
-            <MarkdownRenderer content={error || "No logs available"} />
+            <MarkdownRenderer content={errorContent} />
         </BaseDialog>
     );
 }

@@ -15,15 +15,20 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
-  <TabItem value="interval" label="Interval (s)" default>
-    Set the number of seconds between each trigger.  
+  <TabItem value="interval" label="Interval Mode" default>
+    **Interval Mode** triggers the node at a fixed interval (in seconds).  
+    - `Interval(s)` (number): field to specify how often the node should trigger.
+    - `Run once` (boolean): option to trigger only a single time.
+    - `Trigger immediately, then repeat` (boolean): option to run once as soon as the timer starts.
 
-    ![Timer Node Interval](/img/nodes/timer-node-params.webp)
+    ![Timer Node Interval](/img/nodes/timer-node-params-interval.webp)
   </TabItem>
-  <TabItem value="immediate" label="Trigger Immediately">
-    If enabled, the node triggers once immediately when started, then continues at the specified interval.
+  <TabItem value="scheduled" label="Scheduled Mode">
+    **Scheduled Mode** triggers the node at a specific date and time, with optional repeat settings.
+    - `Scheduled Date & Time` (datetime): field to choose when the node should trigger.
+    - `Repeat` (string): set to "Once", "Daily", "Weekly", or "Monthly" for recurring triggers.
 
-    ![Timer Node Interval](/img/nodes/timer-node-params.webp)
+    ![Timer Node Scheduled](/img/nodes/timer-node-params-scheduled.webp)
   </TabItem>
 </Tabs>
 
@@ -49,7 +54,7 @@ For example usage, see the [Timeseries Chart workflow](/docs/workflows/data/time
 
 ### Common Issues
 
-- **Node not triggering**: Ensure the interval is set and the node is running.
+- **Node not triggering**: For Interval mode, ensure the interval is set and the node is running. For Scheduled mode, check that the scheduled date/time is in the future and the node is enabled.
 - **Too frequent triggers**: Increase the interval value.
 - **Workflow not starting**: Check downstream node configuration and connections.
 

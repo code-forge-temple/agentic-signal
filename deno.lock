@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "npm:@eslint/js@^9.29.0": "9.29.0",
+    "npm:@graphql-tools/schema@*": "10.0.23_graphql@16.11.0",
     "npm:@tauri-apps/cli@^2.8.4": "2.8.4",
     "npm:@types/mustache@^4.2.6": "4.2.6",
     "npm:@types/node@*": "22.15.15",

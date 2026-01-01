@@ -10,21 +10,23 @@ import {fetchGdriveFiles} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {query, maxResults}: {query: string, maxResults: number},
-        {request}: GraphQLContext
-    ): Promise<CloudStorageFileResult[]> => {
-        if (!query) throw new Error("Missing query parameter");
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {query, maxResults}: {query: string, maxResults: number},
+            {request}: GraphQLContext
+        ): Promise<CloudStorageFileResult[]> => {
+            if (!query) throw new Error("Missing query parameter");
 
-        if (!maxResults || maxResults < 1 || maxResults > 100) throw new Error("maxResults must be between 1 and 100");
+            if (!maxResults || maxResults < 1 || maxResults > 100) throw new Error("maxResults must be between 1 and 100");
 
-        const authHeader = request?.headers?.get('authorization');
+            const authHeader = request?.headers?.get('authorization');
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) throw new Error("Missing or invalid Authorization header");
+            if (!authHeader || !authHeader.startsWith('Bearer ')) throw new Error("Missing or invalid Authorization header");
 
-        const accessToken = authHeader.substring(7);
+            const accessToken = authHeader.substring(7);
 
-        return await fetchGdriveFiles({query, maxResults, accessToken});
+            return await fetchGdriveFiles({query, maxResults, accessToken});
+        }
     }
 };

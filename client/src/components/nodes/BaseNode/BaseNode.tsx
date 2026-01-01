@@ -8,7 +8,7 @@ import {Handle, IsValidConnection, Position, useReactFlow} from "@xyflow/react";
 import "./BaseNode.scss";
 import {AppWindow, Play, Settings, EyeSolid, PlaySolid} from "iconoir-react";
 import React, {useEffect} from "react";
-import {ThemeProvider, Tooltip} from "@mui/material";
+import {ThemeProvider} from "@mui/material";
 import {darkTheme} from "../../../utils";
 
 const DEFAULT_PORT_COLOR = "#ffc107";
@@ -93,27 +93,17 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
             </div>
             <ThemeProvider theme={darkTheme}>
                 {settings ? (
-                    <Tooltip title={"settings"} placement="bottom" arrow enterDelay={1000}>
-                        <Settings {...buttonsPropsFactory(settings)} />
-                    </Tooltip>
+                    <Settings {...buttonsPropsFactory(settings)} />
                 ) : null}
                 {logs ? (
-                    <Tooltip title={"logs"} placement="bottom" arrow enterDelay={1000}>
-                        <AppWindow {...buttonsPropsFactory(logs)} />
-                    </Tooltip>
+                    <AppWindow {...buttonsPropsFactory(logs)} />
                 ) : null}
                 {output ? (
-                    <Tooltip title={"output"} placement="bottom" arrow enterDelay={1000}>
-                        <EyeSolid {...buttonsPropsFactory(output)} />
-                    </Tooltip>
+                    <EyeSolid {...buttonsPropsFactory(output)} />
                 ) : null}
                 {run && running && !stoppable ? <PlaySolid width={20} height={20} className="highlight" /> : null}
                 {run && running && stoppable ? <PlaySolid {...buttonsPropsFactory(run)} className="highlight" /> : null}
-                {run && !running ? (
-                    <Tooltip title={"run"} placement="bottom" arrow enterDelay={1000}>
-                        <Play {...buttonsPropsFactory(run)} />
-                    </Tooltip>
-                ) : null}
+                {run && !running ? <Play {...buttonsPropsFactory(run)} /> : null}
             </ThemeProvider>
             {ports.input ? (
                 <Handle

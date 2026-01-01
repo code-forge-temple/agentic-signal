@@ -10,13 +10,15 @@ import {fetchRenderedHtml} from "./service.ts";
 
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {url, browserPath}: { url: string, browserPath?: string },
-        _context: GraphQLContext
-    ): Promise<string> => {
-        if (!url) throw new Error("Missing url parameter");
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {url, browserPath}: { url: string, browserPath?: string },
+            _context: GraphQLContext
+        ): Promise<string> => {
+            if (!url) throw new Error("Missing url parameter");
 
-        return await fetchRenderedHtml(url, browserPath);
+            return await fetchRenderedHtml(url, browserPath);
+        }
     }
 };

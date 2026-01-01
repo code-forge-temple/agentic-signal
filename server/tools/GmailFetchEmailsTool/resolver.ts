@@ -11,21 +11,23 @@ import {graphqlMethodName} from "./schema.ts";
 
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {query, maxResults}: { query: string, maxResults: number },
-        {request}: GraphQLContext
-    ): Promise<EmailResult[]> => {
-        if (!query) throw new Error("Missing query parameter");
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {query, maxResults}: { query: string, maxResults: number },
+            {request}: GraphQLContext
+        ): Promise<EmailResult[]> => {
+            if (!query) throw new Error("Missing query parameter");
 
-        if (!maxResults || maxResults < 1 || maxResults > 50) throw new Error("maxResults must be between 1 and 50");
+            if (!maxResults || maxResults < 1 || maxResults > 50) throw new Error("maxResults must be between 1 and 50");
 
-        const authHeader = request?.headers?.get('authorization');
+            const authHeader = request?.headers?.get('authorization');
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) throw new Error("Missing or invalid Authorization header");
+            if (!authHeader || !authHeader.startsWith('Bearer ')) throw new Error("Missing or invalid Authorization header");
 
-        const accessToken = authHeader.substring(7);
+            const accessToken = authHeader.substring(7);
 
-        return await fetchGmailEmails({query, maxResults, accessToken});
+            return await fetchGmailEmails({query, maxResults, accessToken});
+        }
     }
 };

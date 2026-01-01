@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {
     addEdge,
     useNodesState,
@@ -38,11 +38,15 @@ function updateNodeData<T extends AppNode> (
     return {...node, data: updatedData};
 }
 
-
 export function useWorkflow () {
     const [nodes, setNodes, onNodesChange] = useNodesState<AppNode>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
     const [results, setResults] = useState<Map<string, any>>(new Map());
+    const edgeConnectionsRef = useRef<Pick<Edge, 'source' | 'target'>[]>([]);
+
+    useEffect(() => {
+        edgeConnectionsRef.current = edges.map(({source, target}) => ({source, target}));
+    }, [edges]);
 
     // Handle node connections
     const onConnect: OnConnect = useCallback(
@@ -93,7 +97,7 @@ export function useWorkflow () {
                 setNodes((existingNodes) =>
                     existingNodes.map((node) => {
                         // Check if this node was receiving input from the deleted node
-                        const wasReceivingFromDeleted = edges.some(
+                        const wasReceivingFromDeleted = edgeConnectionsRef.current.some(
                             (edge) => edge.source === deletedNode.id && edge.target === node.id
                         );
 
@@ -106,7 +110,7 @@ export function useWorkflow () {
                 );
             });
         },
-        [setNodes, edges]
+        [setNodes]
     );
 
     // Update node configuration
@@ -126,7 +130,7 @@ export function useWorkflow () {
 
         setNodes((existingNodes) =>
             existingNodes.map((node) => {
-                const hasIncoming = edges.some(
+                const hasIncoming = edgeConnectionsRef.current.some(
                     (edge) => edge.source === nodeId && edge.target === node.id
                 );
 
@@ -135,13 +139,13 @@ export function useWorkflow () {
                 return updateNodeData(node, {input, feedback: undefined}, nodeAssertions);
             })
         );
-    }, [edges, setNodes]);
+    }, [setNodes]);
 
     const handleFeedbackSend = useCallback((fromNodeId: string, feedback: string) => {
         setNodes((existingNodes) =>
             existingNodes.map((node) => {
                 // Find the source node that sent data to the current node
-                const hasIncomingFromSource = edges.some(
+                const hasIncomingFromSource = edgeConnectionsRef.current.some(
                     (edge) => edge.target === fromNodeId && edge.source === node.id
                 );
 
@@ -150,7 +154,7 @@ export function useWorkflow () {
                 return updateNodeData(node, {feedback}, nodeAssertions);
             })
         );
-    }, [edges, setNodes]);
+    }, [setNodes]);
 
     // Enhance nodes with handlers
     const enhancedNodes: AppNode[] = nodes.map((node) =>

@@ -14,24 +14,28 @@ import {useCallback} from 'react';
 import {Dock} from '../Dock';
 import {v4 as uuidv4} from 'uuid';
 import {useSnackbar} from 'notistack'
-import { AppNodeType } from '../nodes/workflow.gen';
-import { toolRegistry } from '../nodes/ToolNode/tools/toolRegistry.gen';
+import {AppNodeType} from '../nodes/workflow.gen';
+import {toolRegistry} from '../nodes/ToolNode/tools/toolRegistry.gen';
 import {nodeRegistry} from '../nodes/nodeRegistry.gen';
 import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
 
 
 const getId = () => uuidv4();
 
-function deleteByPath(obj: Record<string, any>, path: string): void {
+function deleteByPath (obj: Record<string, any>, path: string): void {
     const parts = path.split(".");
+
     if (parts.length === 1) {
         delete obj[parts[0]];
     } else {
         let current: any = obj;
+
         for (let i = 0; i < parts.length - 1; i++) {
             if (!current || typeof current !== "object") return;
+
             current = current[parts[i]];
         }
+
         if (current && typeof current === "object") {
             delete current[parts[parts.length - 1]];
         }
@@ -55,17 +59,17 @@ function AppFlow () {
         setNodes,
         setEdges,
     } = useWorkflow();
-    const { enqueueSnackbar } = useSnackbar();
+    const {enqueueSnackbar} = useSnackbar();
 
     const handleSave = () => {
         const sanitizedNodes = nodes.map(node => {
             const nodeData = JSON.parse(JSON.stringify(node.data));
             const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize : [];
-            
+
             for (const path of toSanitize) {
                 deleteByPath(nodeData, path);
             }
-            
+
             deleteByPath(nodeData, "toSanitize");
 
             return {
@@ -85,7 +89,7 @@ function AppFlow () {
 
         URL.revokeObjectURL(url);
 
-        enqueueSnackbar('Workflow saved!', { variant: 'success' });
+        enqueueSnackbar('Workflow saved!', {variant: 'success'});
     };
 
     const handleClear = () => {
@@ -105,20 +109,12 @@ function AppFlow () {
                 const data = JSON.parse(e.target?.result as string);
 
                 if (!data.nodes || !Array.isArray(data.nodes)) {
-                    enqueueSnackbar("Invalid workflow file: missing or invalid 'nodes' array.", { variant: 'error' });
-                    
-                    return;
+                    throw new Error("missing or invalid 'nodes' array.");
                 }
 
-                let nodesHidrationError = "";
-
                 const hydratedNodes = data.nodes.map((node: any) => {
-                    if(nodesHidrationError) return;
-
-                    if (!node.type || !node.data) {                       
-                        nodesHidrationError = "Invalid workflow file: missing or invalid '<node>.data' and/or <node>.type";
-
-                        return;
+                    if (!node.type || !node.data) {
+                        throw new Error("missing or invalid <node>.data or <node>.type");
                     }
 
                     const descriptor = descriptorMap[node.type];
@@ -135,7 +131,7 @@ function AppFlow () {
                                     toolSchema: tool.toolSchema,
                                     title: tool.title,
                                     handler: undefined,
-                                    toSanitize: [...descriptor?.defaultData.toSanitize, ...tool.toSanitize]
+                                    toSanitize: [...descriptor?.defaultData.toSanitize || [], ...tool.toSanitize]
                                 }
                             };
                         } else {
@@ -146,7 +142,7 @@ function AppFlow () {
                                     toolSchema: {},
                                     title: descriptor?.defaultData.title || node.data.title,
                                     handler: undefined,
-                                    toSanitize: [...descriptor?.defaultData.toSanitize]
+                                    toSanitize: [...descriptor?.defaultData.toSanitize || []]
                                 }
                             };
                         }
@@ -161,21 +157,17 @@ function AppFlow () {
                         };
                     }
 
+                    descriptor?.assertion(updatedNode.data);
+
                     return updatedNode;
                 });
 
-                if (nodesHidrationError) {
-                    enqueueSnackbar(nodesHidrationError, { variant: 'error' });
-
-                    return;
-                }
-
                 setNodes(hydratedNodes);
                 setEdges(data.edges || []);
-
-                event.target.value = '';
             } catch (error) {
-                enqueueSnackbar('Failed to load workflow: ' + (error instanceof Error ? error.message : String(error)), { variant: 'error' });
+                enqueueSnackbar('Failed to load workflow: ' + (error instanceof Error ? error.message : String(error)), {variant: 'error'});
+            } finally {
+                event.target.value = '';
             }
         };
         reader.readAsText(file);

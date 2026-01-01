@@ -11,23 +11,25 @@ import {graphqlMethodName} from "./schema.ts";
 
 
 export const resolver = {
-    [graphqlMethodName]: async (
-        _parent: unknown,
-        {query, maxResults}: { query: string, maxResults: number },
-        {request}: GraphQLContext
-    ): Promise<BraveResult[]> => {
-        if (!query || !maxResults) {
-            throw new Error("Missing query or maxResults parameter");
+    Query: {
+        [graphqlMethodName]: async (
+            _parent: unknown,
+            {query, maxResults}: { query: string, maxResults: number },
+            {request}: GraphQLContext
+        ): Promise<BraveResult[]> => {
+            if (!query || !maxResults) {
+                throw new Error("Missing query or maxResults parameter");
+            }
+
+            const authHeader = request?.headers?.get("authorization");
+
+            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+                throw new Error("Missing or invalid Authorization header");
+            }
+
+            const apiKey = authHeader.substring(7);
+
+            return await fetchBraveSearchResults(query, apiKey, maxResults);
         }
-
-        const authHeader = request?.headers?.get("authorization");
-
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            throw new Error("Missing or invalid Authorization header");
-        }
-
-        const apiKey = authHeader.substring(7);
-
-        return await fetchBraveSearchResults(query, apiKey, maxResults);
     }
 };

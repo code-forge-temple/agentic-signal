@@ -106,3 +106,21 @@ export const getField = <T, >(source: any, key: string, fallback: T): T => {
 export const graphqlBaseUrl = isTauri()
     ? `http://localhost:${BACKEND_PORT}/graphql`
     : "/graphql";
+
+export function isoToLocalDatetime (isoString: string): string {
+    const date = new Date(isoString);
+    // Format: YYYY-MM-DDTHH:mm (required format for datetime-local input)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+export function localDatetimeToIso (localDatetime: string): string {
+    const date = new Date(localDatetime);
+
+    return date.toISOString();
+}

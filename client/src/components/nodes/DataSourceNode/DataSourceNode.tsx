@@ -16,9 +16,9 @@ import {LogsDialog} from "../../LogsDialog";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
-import { Icon } from "./constants";
-import { AppNode } from "../workflow.gen";
-import { assertIsEnhancedNodeData } from "../../../types/workflow";
+import {Icon} from "./constants";
+import {AppNode} from "../workflow.gen";
+import {assertIsEnhancedNodeData} from "../../../types/workflow";
 
 
 const DATA_SOURCE_TYPES = {

@@ -14,4 +14,4 @@ export const graphqlResultTypeName = "TimezoneResult"
 
 export const typeDefs = `${generateGraphQLType(graphqlResultTypeName, TimezoneResultFields)}`;
 
-export const queryDefs = /* GraphQL */ `${graphqlMethodName}(city: String!): [${graphqlResultTypeName}]`;
+export const queryDefs = /* GraphQL */ `${graphqlMethodName}(city: String!): ${graphqlResultTypeName}`;

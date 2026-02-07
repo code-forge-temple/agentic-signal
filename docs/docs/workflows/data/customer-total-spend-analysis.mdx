@@ -1,0 +1,56 @@
+---
+sidebar_position: 8
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import customerTotalSpendAnalysisJson from '@site/static/workflows/customer-total-spend-analysis.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Customer Total Spend Analysis Workflow
+
+This workflow analyzes customer order data to determine which customer spent the most money in total.
+
+> **Note:**  
+> This workflow uses **two AI Data Processing nodes**, each with a tool, because the output of the first tool (CSV to Array) is required as input for the second tool (Max Tool).  
+> Current smaller models (≤ 8B parameters) are not able to call the available tools sequentially—they attempt to call both tools at the same time, which leads to incorrect results.  
+> If you use a larger LLM (more than 8B parameters), you can combine both tools in a single AI Data Processing node, as larger models can more reliably call tools one after the other.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Customer Total Spend Analysis Workflow](/img/workflows/customer-total-spend-analysis-preview.webp)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl('/workflows/customer-total-spend-analysis.json')}>
+        {JSON.stringify(customerTotalSpendAnalysisJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Attachment: `data.csv` (order data as CSV)
+                > **Note:** to add your own CSV data you will need to attach a file from your local folders
+        - [**AI Data Processing (CSV Parsing)**](/docs/nodes/ai/llm-process)  
+            - Prompt: Converts the CSV file to an array of objects using the csvToArray tool
+            - Tool: [CSV to Array Tool](/docs/nodes/ai/tools/csv-to-array)
+        - [**AI Data Processing (Max Calculation)**](/docs/nodes/ai/llm-process)  
+            - Prompt: Finds the customer with the highest total spend using the max tool
+            - Tool: [Max Tool](/docs/nodes/ai/tools/max)
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Displays the final result
+        - *(Optional)* [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Used for inspecting intermediate data
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The workflow starts with a Data Source node that supplies the `data.csv` file (or you can attach your own CSV file) containing order data.
+2. **Parse CSV with AI**: The first AI Data Processing node uses the csvToArray tool to convert the attached CSV file into an array of order objects.
+3. **Analyze Data with AI**: The second AI Data Processing node receives the parsed data and uses the max tool to find the customer with the highest total spend.
+4. **Inspect Output**: The Data Flow Spy node displays the final answer.
+5. *(Optional)* **Inspect Intermediate Data**: An additional Data Flow Spy node can be used to inspect intermediate results.

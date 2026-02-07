@@ -10,8 +10,11 @@
             "data": {
                 "title": "Data Source",
                 "dataSource": {
-                    "value": "What's the time now ?",
-                    "type": "text"
+                    "value": {
+                        "text": "What's the time now ?",
+                        "files": []
+                    },
+                    "type": "markdown"
                 }
             },
             "measured": {

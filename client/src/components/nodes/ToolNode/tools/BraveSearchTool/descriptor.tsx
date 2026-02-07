@@ -8,6 +8,7 @@
 import {GraphQLService} from "./services/graphqlService";
 import {ToolDefinition} from "../types";
 import Brave from "./assets/brave.svg";
+import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 
 
 export const BraveSearchToolDescriptor:ToolDefinition = {
@@ -25,7 +26,7 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
             required: ["query"]
         }
     },
-    userConfigSchema: {
+    userConfigSchema: extendSystemUserConfigSchema({
         apiKey: {type: "string", description: "Brave Search API Key", required: true},
         maxResults: {
             type: "integer",
@@ -34,7 +35,7 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
             minimum: 1,
             maximum: 20
         }
-    },
+    }),
     toSanitize: [],
     handlerFactory: (userConfig: { apiKey?: string, maxResults?: number }) => async ({query}: { query: string }) => {
         if (!userConfig.apiKey) {
@@ -45,8 +46,12 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
             return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
         }
 
+        if(!query){
+            return {error: "`query` tool parameter must be specified"};
+        }
+
         // data received from the LLM needs to be sanitized to avoid issues:
-        const sanitizedQuery = (query || "").replace(/["“”]/g, '"').replace(/['‘’]/g, "'");
+        const sanitizedQuery = String(query).replace(/["“”]/g, '"').replace(/['‘’]/g, "'");
 
         try {
             return await GraphQLService.braveSearch(

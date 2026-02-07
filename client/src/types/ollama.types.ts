@@ -37,13 +37,68 @@ export type ToolSchema = {
     parameters?: object;
 };
 
-export type UserConfigSchema = {
-    [key: string]: {
+export type ExtractConfigValues<T> = {
+    [K in keyof T]?: Required<T>[K] extends { type: "boolean" }
+        ? boolean
+        : Required<T>[K] extends { type: "string" }
+        ? string
+        : Required<T>[K] extends { type: "number" }
+        ? number
+        : Required<T>[K] extends { type: "array" }
+        ? any[]
+        : Required<T>[K] extends { type: "object" }
+        ? object
+        : any;
+};
+
+export type SystemUserConfigSchema = {
+    requireToolUse?: {
+        type: "boolean";
+        description: string;
+        default: boolean;
+        required?: boolean;
+    };
+};
+
+export const extendSystemUserConfigSchema = (schema: GenericSchema): UserConfigSchema => {
+    return {
+        ...schema,
+        requireToolUse: {
+            type: "boolean",
+            description: "Require tool use (forces the LLM to always call this tool)",
+            default: true
+        }
+    }
+}
+
+export type SystemUserConfigValues = ExtractConfigValues<SystemUserConfigSchema>;
+
+type GenericSchema = {
+        [key: string]: {
         type: string;
         description?: string;
         required?: boolean;
         default?: any;
         [key: string]: any;
     }
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-} | {};
+}
+
+export type UserConfigSchema = SystemUserConfigSchema & GenericSchema;
+
+export const getDefaultUserConfigValues = (schema: UserConfigSchema): Record<string, any> => {
+    const defaults: Record<string, any> = {};
+
+    for (const [key, fieldSchema] of Object.entries(schema)) {
+        if (fieldSchema && typeof fieldSchema === 'object' && 'default' in fieldSchema) {
+            defaults[key] = fieldSchema.default;
+        }
+    }
+
+    return defaults;
+}
+
+export type ToolError = { error: string };
+
+export function isToolError (obj: unknown): obj is ToolError {
+    return typeof obj === "object" && obj !== null && "error" in obj && typeof (obj as any).error === "string";
+}

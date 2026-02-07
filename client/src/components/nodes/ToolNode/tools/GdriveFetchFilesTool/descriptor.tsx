@@ -10,6 +10,8 @@ import GoogleDrive from "./assets/google-drive.svg";
 import {OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler} from "./constants";
 import {CloudStorageFileResult} from "@shared/types.gen";
 import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
+import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {sanitizeStringInput, sanitizeJsonInput} from "../utils/sanitize";
 
 
 export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
@@ -32,7 +34,7 @@ export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
             required: ["query"]
         }
     },
-    userConfigSchema: {
+    userConfigSchema: extendSystemUserConfigSchema({
         googleClientId: {
             type: "string",
             description: "Google OAuth2 Client ID (from Google Cloud Console)"
@@ -52,7 +54,7 @@ export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
             minimum: 1,
             maximum: 100
         }
-    },
+    }),
     toSanitize: ["userConfig.accessToken"],
     handlerFactory: (
         userConfig: { accessToken?: string, maxResults?: number }
@@ -66,8 +68,24 @@ export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
                 return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
             }
 
+            if(!query || String(query).trim() === ""){
+                return {error: "`query` tool parameter must be specified"};
+            }
+
+            const jsonQueryError = "`query` tool parameter must be a string, not a JSON object";
+
+            try {
+                sanitizeJsonInput(query);
+
+                throw new Error(jsonQueryError);
+            } catch (err) {
+                if (err instanceof Error && err.message === jsonQueryError) {
+                    throw err;
+                }
+            }
+
             // data received from the LLM needs to be sanitized to avoid issues:
-            const sanitizedQuery = (query || "").replace(/["“”]/g, '"').replace(/['‘’]/g, "'");
+            const sanitizedQuery = sanitizeStringInput(query);
 
             return await GraphQLService.gdriveFetchFiles(
                 sanitizedQuery,

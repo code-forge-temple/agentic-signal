@@ -1,5 +1,4 @@
 ---
-sidebar_position: 7
 title: Google Calendar Fetch Events Tool
 ---
 
@@ -21,8 +20,10 @@ import TabItem from '@theme/TabItem';
         - `accessToken` (OAuth, user config): Google Calendar Authentication.  
         This field will be auto-filled if you use the **CONNECT CALENDAR** button.
         - `maxResults` (integer, user config): Maximum number of events to fetch (default: 10, min: 1, max: 100)
+        - `requireToolUse` (boolean, user config): Require tool use (forces the LLM to always call this tool; default: true)
+            > **Note:** When enabled, the node will retry tool calls up to the number of times set in [Max Tool Retries](/docs/nodes/ai/llm-process?activeTab=max-tool-retries#configuration) in the AI Data Processing Node.
 
-        ![Google Calendar Listing Workflow](/img/nodes/ai-tool/gcalendar-fetch-events-tool.jpg)
+        ![Google Calendar Listing Workflow](/img/nodes/ai-tool/gcalendar-fetch-events-tool.webp)
         ___
         (1) Provided by the [AI Data Processing Node](/docs/nodes/ai/llm-process) as a result of processing its input.
     </TabItem>

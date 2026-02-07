@@ -7,7 +7,6 @@
 import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, ReactFlowProvider} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './App.scss';
-
 import {useWorkflow} from '../../hooks/useWorkflow';
 import {nodeFactory, nodeTypes} from '../nodes';
 import {useCallback} from 'react';
@@ -18,6 +17,8 @@ import {AppNodeType} from '../nodes/workflow.gen';
 import {toolRegistry} from '../nodes/ToolNode/tools/toolRegistry.gen';
 import {nodeRegistry} from '../nodes/nodeRegistry.gen';
 import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
+import {useFullscreen} from '../../hooks/useFullscreen';
+import {getDefaultUserConfigValues} from '../../types/ollama.types';
 
 
 const getId = () => uuidv4();
@@ -60,6 +61,8 @@ function AppFlow () {
         setEdges,
     } = useWorkflow();
     const {enqueueSnackbar} = useSnackbar();
+
+    useFullscreen();
 
     const handleSave = () => {
         const sanitizedNodes = nodes.map(node => {
@@ -124,11 +127,18 @@ function AppFlow () {
                         const tool = toolRegistry.find(t => t.toolSubtype === node.data.toolSubtype);
 
                         if (tool) {
+                            const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
+
                             updatedNode = {
                                 ...node,
                                 data: {
                                     ...node.data,
                                     toolSchema: tool.toolSchema,
+                                    userConfigSchema: tool.userConfigSchema,
+                                    userConfig: {
+                                        ...defaultUserConfig,
+                                        ...node.data.userConfig
+                                    },
                                     title: tool.title,
                                     handler: undefined,
                                     toSanitize: [...descriptor?.defaultData.toSanitize || [], ...tool.toSanitize]

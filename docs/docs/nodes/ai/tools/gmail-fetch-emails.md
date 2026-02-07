@@ -1,5 +1,4 @@
 ---
-sidebar_position: 5
 title: Gmail Fetch Emails Tool
 ---
 
@@ -19,8 +18,10 @@ import TabItem from '@theme/TabItem';
         - `accessToken` (OAuth, user config): Gmail Authentication.  
         This field will be auto-filled if you use the **CONNECT GMAIL** button.
         - `maxResults` (integer, user config): Maximum number of emails to fetch (default: 5, min: 1, max: 50)
+        - `requireToolUse` (boolean, user config): Require tool use (forces the LLM to always call this tool; default: true)
+            > **Note:** When enabled, the node will retry tool calls up to the number of times set in [Max Tool Retries](/docs/nodes/ai/llm-process?activeTab=max-tool-retries#configuration) in the AI Data Processing Node.
 
-        ![Weather Dashboard Workflow](/img/nodes/ai-tool/gmail-fetch-emails-tool.jpg)
+        ![Weather Dashboard Workflow](/img/nodes/ai-tool/gmail-fetch-emails-tool.webp)
         ___
         (1) Provided by the [AI Data Processing Node](/docs/nodes/ai/llm-process) as a result of processing it's input.
     </TabItem>

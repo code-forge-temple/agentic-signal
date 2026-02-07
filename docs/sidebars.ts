@@ -57,6 +57,10 @@ const sidebars: SidebarsConfig = {
                                 'nodes/ai/tools/fetch-weather-data',
                                 'nodes/ai/tools/duckduckgo-search',
                                 'nodes/ai/tools/brave-search',
+                                'nodes/ai/tools/csv-to-array',
+                                'nodes/ai/tools/max',
+                                'nodes/ai/tools/min',
+                                'nodes/ai/tools/sort',
                                 'nodes/ai/tools/date-time-now',
                                 'nodes/ai/tools/gmail-fetch-emails',
                                 'nodes/ai/tools/gdrive-fetch-files',
@@ -103,7 +107,7 @@ const sidebars: SidebarsConfig = {
                         'workflows/data/timeseries-chart',
                         'workflows/data/product-data-validation-and-visualization',
                         'workflows/data/ai-data-processing-overseer',
-
+                        'workflows/data/customer-total-spend-analysis',
                     ],
                 },
                 {

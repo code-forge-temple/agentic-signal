@@ -7,7 +7,7 @@
 import {useState, useCallback} from 'react';
 import {OllamaService} from '../../../../services/ollamaService';
 import {GenericNodeData} from '../../../../types/workflow';
-import {Message, MessageRole, ToolSchema} from '../../../../types/ollama.types';
+import {Message, MessageRole, SystemUserConfigValues, ToolSchema} from '../../../../types/ollama.types';
 import Ajv from "ajv";
 import {LlmProcessNodeData} from '../types/workflow';
 
@@ -132,10 +132,16 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         format,
         tools,
         feedback,
+        maxToolRetries,
         conversationHistory
     }: Pick<GenericNodeData & LlmProcessNodeData, 'input' | 'prompt' | 'message' | 'model' | 'format'> & {
-    tools?: {schema: ToolSchema, handler: (params: any) => Promise<any>}[];
+    tools?: {
+        schema: ToolSchema,
+        systemUserConfigValues: SystemUserConfigValues,
+        handler: (params: any) => Promise<any>
+    }[];
     feedback?: string;
+    maxToolRetries: number;
     conversationHistory: {
         value: Message[];
         onChange: (history: Message[]) => void;
@@ -262,7 +268,8 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 messages,
                 model,
                 ...(parsedFormat ? {format: parsedFormat} : {}),
-                tools
+                tools,
+                maxToolRetries
             });
 
             if (!response.success) {

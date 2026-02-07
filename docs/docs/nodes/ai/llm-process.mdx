@@ -2,39 +2,45 @@
 sidebar_position: 1
 ---
 
+import { UrlDefaultTabs } from '@site/src/components/UrlDefaultTabs';
+import TabItem from '@theme/TabItem';
+
 # AI Data Processing Node
 
 The **AI Data Processing Node** is the main AI component in your workflow. It uses local language models via Ollama to analyze, transform, and generate text-based content for a wide range of tasks.
 
 ![Display Chart Node](/img/nodes/ai-data-processing-preview.jpg)
 
-## Configuration
+## Configuration  
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-<Tabs>
+<UrlDefaultTabs defaultTab="model">
     <TabItem value="model" label="Model" default>
         Choose an Ollama model to use for processing (e.g., `llama3.1:8b`).
 
-        ![AI Data Processing Node Model](/img/nodes/ai-tool/llm-process-node-system-prompt.jpg)
+        ![AI Data Processing Node Model](/img/nodes/llm-process-node-system-prompt.webp)
     </TabItem>
     <TabItem value="loops" label="Max Feedback Loops">
         Set how many times the node should retry if it receives an error from the next node in the chain.
 
-        ![AI Data Processing Node Feedback Loops](/img/nodes/ai-tool/llm-process-node-system-prompt.jpg)
+        ![AI Data Processing Node Feedback Loops](/img/nodes/llm-process-node-system-prompt.webp)
+    </TabItem>
+    <TabItem value="max-tool-retries" label="Max Tool Retries">
+        Set the maximum number of retry attempts for each required tool call.  
+        If a tool call fails (for example, due to invalid parameters or an external API error), the node will retry up to this number of times before failing.
+
+        ![AI Data Processing Node Max Tool Retries](/img/nodes/llm-process-node-system-prompt.webp)
     </TabItem>
     <TabItem value="prompt" label="System Prompt">
         Provide instructions that guide the AI's behavior and responses.
 
-        ![AI Data Processing Node System Prompt](/img/nodes/ai-tool/llm-process-node-system-prompt.jpg)
+        ![AI Data Processing Node System Prompt](/img/nodes/llm-process-node-system-prompt.webp)
     </TabItem>
     <TabItem value="user-message" label="User Message">
         The input the node receives can be customized before processing by adding text before or after  it:
         - **Message Prefix**: Text added before the input.
         - **Message Suffix**: Text added after the input.
 
-        ![AI Data Processing Node User Message](/img/nodes/ai-tool/llm-process-node-user-message.jpg)
+        ![AI Data Processing Node User Message](/img/nodes/llm-process-node-user-message.webp)
     </TabItem>
     <TabItem value="structured-output" label="Structured Output">
         Define JSON schemas for structured responses:
@@ -43,9 +49,9 @@ import TabItem from '@theme/TabItem';
         > **Note:** If you want to chain multiple AI Data Processing Nodes (for example, one node processes data and another oversees its output), set up both **On Success** and **On Error** schemas in the overseer node. If the overseer detects an error, it will trigger a feedback loop, prompting the previous node to correct its output.  
         > See the [AI Data Processing Overseer workflow](/docs/workflows/data/ai-data-processing-overseer) for a complete example.
 
-        ![AI Data Processing Node Structured Output](/img/nodes/ai-tool/llm-process-node-structured-output.jpg)
+        ![AI Data Processing Node Structured Output](/img/nodes/llm-process-node-structured-output.webp)
     </TabItem>
-</Tabs>
+</UrlDefaultTabs>
 
 ## Example Usage
 
@@ -80,4 +86,5 @@ For an example usage, see the [Weather Dashboard workflow](/docs/workflows/data/
 
 - Use smaller models for simple tasks.
 - Write concise, focused prompts.
-- Batch similar requests when
+- Batch similar requests when possible.
+- **For workflows that require tool calls (such as using the Max Tool or CSV parsing), use larger LLMs (at least 8B or bigger) for lower error rates and more reliable tool execution. Smaller models may fail or produce inconsistent results when handling tool-based tasks.**

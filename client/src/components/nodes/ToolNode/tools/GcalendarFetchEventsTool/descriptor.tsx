@@ -10,6 +10,8 @@ import {GraphQLService} from "./services/graphqlService";
 import {CalendarEventResult} from "@shared/types.gen";
 import {OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler} from "./constants";
 import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
+import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {sanitizeStringInput} from "../utils/sanitize";
 
 
 export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
@@ -42,7 +44,7 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
             required: ["query"]
         }
     },
-    userConfigSchema: {
+    userConfigSchema: extendSystemUserConfigSchema({
         googleClientId: {
             type: "string",
             description: "Google OAuth2 Client ID (from Google Cloud Console)"
@@ -62,7 +64,7 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
             minimum: 1,
             maximum: 250
         }
-    },
+    }),
     toSanitize: ["userConfig.accessToken"],
     handlerFactory: (
         userConfig: { accessToken?: string, maxResults?: number }
@@ -80,8 +82,10 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
                 return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
             }
 
+            //NOTE: an empty query is a valid input. It means fetch all events.
+
             // data received from the LLM needs to be sanitized to avoid issues:
-            const sanitizedQuery = (query || "").replace(/["“”]/g, '"').replace(/['‘’]/g, "'");
+            const sanitizedQuery = sanitizeStringInput(query || "");
             const sanitizedTimeMin = timeMin && !isNaN(new Date(timeMin).getTime()) ?
                 new Date(timeMin).toISOString() :
                 new Date().toISOString();

@@ -10,8 +10,11 @@
             "data": {
                 "title": "Data Source",
                 "dataSource": {
-                    "value": "This is incomplete data.",
-                    "type": "text"
+                    "value": {
+                        "text": "This is incomplete data.",
+                        "files": []
+                    },
+                    "type": "markdown"
                 }
             },
             "measured": {

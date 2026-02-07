@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
-import {assertIsLlmProcessNodeData} from "./types/workflow";
+import {assertIsLlmProcessNodeData, defaultLlmProcessNodeData} from "./types/workflow";
 import {assertIsToolNodeData, ToolNode} from "../ToolNode/types/workflow";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {BaseNode} from "../BaseNode";
@@ -19,7 +19,7 @@ import {BasicTabs} from "../../Tabs/Tabs";
 import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hooks/useRunOnTriggerChange";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {AI_TOOL_PORT_COLOR, TOOL_PORT_ID} from "../../../constants";
-import {ToolSchema} from "../../../types/ollama.types";
+import {SystemUserConfigValues, ToolSchema} from "../../../types/ollama.types";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {DebouncedTextField} from "../../DebouncedTextField";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
@@ -51,11 +51,11 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         format,
         feedback,
         maxFeedbackLoops,
+        maxToolRetries,
         onResultUpdate,
         onConfigChange,
         onFeedbackSend
     } = data;
-    const maxLoops = (maxFeedbackLoops);
 
     const connectedToolNodes = getEdges()
         .filter(edge => edge.target === id && edge.targetHandle === TOOL_PORT_ID)
@@ -71,7 +71,8 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         .filter(node => typeof node.data.handler === "function")
         .map(node => ({
             schema: node.data.toolSchema as ToolSchema,
-            handler: node.data.handler as (params: any) => Promise<any>
+            handler: node.data.handler as (params: any) => Promise<any>,
+            systemUserConfigValues: node.data.userConfig as SystemUserConfigValues || {}
         }));
 
     const {
@@ -104,10 +105,10 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
     }, [openSettings]);
 
     useAutoRunOnFeedbackChange({
-        clearError: () => { if(currentRetryRef.current < maxLoops) clearError(); },
-        clearOutput: () => { if(currentRetryRef.current < maxLoops) onResultUpdate(id); },
+        clearError: () => { if(currentRetryRef.current < maxFeedbackLoops) clearError(); },
+        clearOutput: () => { if(currentRetryRef.current < maxFeedbackLoops) onResultUpdate(id); },
         runCallback: async () => {
-            if (currentRetryRef.current++ < maxLoops) {
+            if (currentRetryRef.current++ < maxFeedbackLoops) {
                 await runTask(async () => {
                     await processAIRequest({
                         input: input,
@@ -117,11 +118,12 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         format: format,
                         tools,
                         feedback: feedback,
+                        maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                         conversationHistory: {
                             value: conversationHistory || [],
                             onChange: (newHistory) => {
                                 onConfigChange(id, {
-                                    conversationHistory: currentRetryRef.current < maxLoops ? newHistory : [],
+                                    conversationHistory: currentRetryRef.current < maxFeedbackLoops ? newHistory : [],
                                     feedback: undefined
                                 });
                             }
@@ -146,6 +148,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                     model: model,
                     format: format,
                     tools,
+                    maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                     conversationHistory: {
                         value: [],
                         onChange: (newHistory) => {
@@ -172,6 +175,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 format: format,
                 tools,
                 feedback: feedback,
+                maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                 conversationHistory: {
                     value: [],
                     onChange: (newHistory) => {
@@ -180,7 +184,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 },
             });
         }, setIsRunning);
-    }, [clearError, feedback, format, id, input, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, tools]);
+    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, tools]);
 
     const [systemPrompt, setSystemPrompt] = useDebouncedState({
         callback: (value: string) => {
@@ -291,16 +295,30 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                     type="number"
                     fullWidth
                     size="small"
-                    value={maxLoops}
+                    value={maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops}
                     onChange={(value) => {
                         const parsedValue = parseInt(value);
 
                         onConfigChange(id, {maxFeedbackLoops: Math.max(0, Math.min(10, parsedValue))});
                     }}
                     sx={{mb: 2}}
-                    helperText={`Current loop: ${Math.min(currentRetryRef.current, maxLoops)}/${maxLoops}`}
+                    // eslint-disable-next-line max-len
+                    helperText={`Current loop: ${Math.min(currentRetryRef.current, maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops)}/${maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops}`}
                 />
+                <DebouncedTextField
+                    label="Max Tool Retries"
+                    type="number"
+                    fullWidth
+                    size="small"
+                    value={maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries}
+                    onChange={(value) => {
+                        const parsedValue = parseInt(value);
 
+                        onConfigChange(id, {maxToolRetries: Math.max(3, Math.min(10, parsedValue))});
+                    }}
+                    sx={{mb: 2}}
+                    helperText="Maximum number of retry attempts for each required tool"
+                />
                 <BasicTabs tabs={[
                     {
                         title: "System Prompt",

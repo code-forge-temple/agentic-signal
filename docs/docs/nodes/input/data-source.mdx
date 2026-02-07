@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Data Source Node
 
-The **Data Source Node** provides static input for your workflow. Use it to supply text or JSON data directly, such as prompts, configuration, or sample datasets.
+The **Data Source Node** provides static input for your workflow. You can supply text, Markdown, JSON data, or attach local files (including images and code) directly as input for downstream nodes.
 
 ![Data Source Node](/img/nodes/data-source-preview.jpg)
 
@@ -14,17 +14,19 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
-    <TabItem value="type" label="Type" default>
-        You can choose one of the following types of data:
-        - `text`: Enter plain text or Markdown.
-        - `json`: Enter JSON data (objects or arrays).
+    <TabItem value="markdown" label="Markdown" default>
+        For **Markdown**: Enter text and optionally attach files.  
 
-        ![AI Data Processing Node Model](/img/nodes/data-source-params.jpg)
+        > **Note:** Currently supported file extensions are .txt, .md, .html, .css, .scss, .js, .ts, .tsx, .json, .xml, .csv, .yaml, .yml, .ini, .log, .sh, .sql, .py, .java, .c, .cpp, .h, .bat, .env, .png, .jpg, .jpeg, .gif, .bmp, .webp, .svg).  
+        
+        Attached files are available to downstream nodes as Markdown code blocks or embedded images.  
+
+        ![Data Source Node Attachments](/img/nodes/data-source-params-markdown.webp)
     </TabItem>
-    <TabItem value="value" label="Value">
-        The actual content to be used as input for downstream nodes.
+    <TabItem value="json" label="Json">
+        For **JSON**: Enter structured JSON data to be passed to downstream nodes.
 
-        ![AI Data Processing Node Feedback Loops](/img/nodes/data-source-params.jpg)
+        ![Data Source Node Attachments](/img/nodes/data-source-params-json.webp)
     </TabItem>
 </Tabs>
 
@@ -32,33 +34,33 @@ import TabItem from '@theme/TabItem';
 
 ## Example Usage
 
-For example usage, see the [Weather Dashboard workflow](/docs/workflows/data/weather-dashboard) or [Google Drive Listing workflow](/docs/workflows/data/gdrive-listing), which use Data Source nodes to provide prompts or configuration.
+See the [Weather Dashboard workflow](/docs/workflows/data/weather-dashboard), [Google Drive Listing workflow](/docs/workflows/data/gdrive-listing) or [Customer Total Spend Analysis workflow](/docs/workflows/data/customer-total-spend-analysis) for examples using prompts, configuration, and file attachments.
 
 ## Common Use Cases
 
 1. **Prompt Input**: Provide instructions or questions for LLM nodes.
 2. **Static Data**: Supply sample data for testing or demonstration.
 3. **Configuration**: Pass configuration objects to downstream nodes.
-4. **Markdown Content**: Input Markdown-formatted text for rendering or processing.
+4. **Markdown Content & Files**: Input Markdown-formatted text and attach images or code files for rendering or processing.
 5. **JSON Input**: Provide structured data for validation, transformation, or visualization.
 
 ## Best Practices
 
-- **Choose the correct type**: Use `json` for structured data, `text` for plain text or Markdown.
+- **Choose the correct type**: Use `json` for structured data, `markdown` for text, rich formatting, or file attachments.
 - **Validate JSON**: Ensure your JSON is valid to avoid downstream errors.
-- **Use Markdown**: For rich text, use Markdown in `text` mode.
+- **Use Markdown**: For rich text and file attachments, use Markdown mode.
 - **Keep it simple**: Use Data Source nodes for static or rarely-changing inputs.
+- **Attach files as needed**: Images and code files can be previewed and used by downstream nodes.
 
 ## Troubleshooting
 
 ### Common Issues
 
 - **Invalid JSON**: If using `json` type, ensure the value is valid JSON.
-- **Unexpected output**: Double-check the data type and value.
+- **Unexpected output**: Double-check the data type, value, and attached files.
 - **Downstream errors**: Errors in downstream nodes may be caused by incorrect or missing input.
 
 ### Performance Tips
 
-- Use for small to medium-sized static data.
-- For large datasets, consider loading data from an external source.
-- Use JSON validation tools to check your input before running the workflow.
+- Use for small to medium-sized static data and attachments.
+- Use bigger LLM nodes for large data processing tasks.

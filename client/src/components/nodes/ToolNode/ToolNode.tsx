@@ -21,6 +21,7 @@ import {AppNode} from "../workflow.gen";
 import {Icon} from "./constants";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {toolRegistry} from "./tools/toolRegistry.gen";
+import {getDefaultUserConfigValues} from "../../../types/ollama.types";
 
 
 export function ToolNode ({data, id}: NodeProps<AppNode>) {
@@ -75,7 +76,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             ([key, schema]) => schema.required && !userConfig?.[key]
         ));
 
-    const handleUserConfigChange = useCallback((key: string, value: string | number) => {
+    const handleUserConfigChange = useCallback((key: string, value: string | number | boolean) => {
         const newUserConfig = {
             ...(userConfig || {}),
             [key]: value,
@@ -113,7 +114,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             userConfig: newUserConfig,
             handler
         });
-    }, [id, onConfigChange, selectedTool, userConfig]);
+    }, [id, onConfigChange, selectedTool, settings.browserPath, userConfig]);
 
     return (
         <>
@@ -159,11 +160,13 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                                     handler = tool.handlerFactory({});
                                 }
 
+                                const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
+
                                 onConfigChange(id, {
                                     toolSubtype: tool.toolSubtype,
                                     toolSchema: tool.toolSchema,
                                     title: tool.title,
-                                    userConfig: {},
+                                    userConfig: defaultUserConfig,
                                     handler,
                                     toSanitize: [...toSanitize, ...tool.toSanitize] // important to merge the the generic ToolNode toSanitize with the tool specific ones
                                 });
@@ -181,7 +184,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                     <FieldsetGroup title="Tool Configuration">
                         <UserConfigFields
                             userConfigSchema={selectedTool.userConfigSchema}
-                            userConfig={userConfig || {}}
+                            userConfig={{...getDefaultUserConfigValues(selectedTool.userConfigSchema), ...(userConfig || {})}}
                             onConfigChange={handleUserConfigChange}
                         />
                     </FieldsetGroup>

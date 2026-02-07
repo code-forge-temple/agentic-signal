@@ -10,8 +10,11 @@
             "data": {
                 "title": "Data Source",
                 "dataSource": {
-                    "value": "Get me the next 3 calendar events coming up.",
-                    "type": "text"
+                    "value": {
+                        "text": "Get me the next 3 calendar events coming up.",
+                        "files": []
+                    },
+                    "type": "markdown"
                 }
             },
             "measured": {
@@ -24,39 +27,78 @@
             "id": "8a0dd721-4139-4ca4-bcc9-2624aad5b309",
             "type": "ai-tool",
             "position": {
-                "x": 400,
-                "y": 200
+                "x": 640,
+                "y": 220
             },
             "data": {
-                "title": "AI Tool",
+                "title": "Google Calendar Fetch Events Tool",
                 "toolSubtype": "gcalendar-fetch-events",
                 "userConfig": {
-                    "maxResults": 5
+                    "maxResults": 3,
+                    "requireToolUse": true,
+                    "googleClientId": "",
+                    "browserPath": ""
+                },
+                "userConfigSchema": {
+                    "googleClientId": {
+                        "type": "string",
+                        "description": "Google OAuth2 Client ID (from Google Cloud Console)"
+                    },
+                    "accessToken": {
+                        "type": "oauth",
+                        "description": "Google Calendar Authentication",
+                        "provider": "calendar.readonly",
+                        "scope": "https://www.googleapis.com/auth/calendar.readonly",
+                        "required": true
+                    },
+                    "maxResults": {
+                        "type": "integer",
+                        "description": "Maximum number of events to fetch",
+                        "default": 5,
+                        "minimum": 1,
+                        "maximum": 250
+                    },
+                    "requireToolUse": {
+                        "type": "boolean",
+                        "description": "Require tool use (forces the LLM to always call this tool)",
+                        "default": true
+                    }
                 }
             },
             "measured": {
                 "width": 120,
                 "height": 40
             },
-            "selected": true
+            "selected": false,
+            "dragging": false
         },
         {
             "id": "ca0be528-34f5-48e2-8d89-3c50260998c3",
             "type": "ai-tool",
             "position": {
-                "x": 400,
-                "y": 300
+                "x": 420,
+                "y": 220
             },
             "data": {
-                "title": "AI Tool",
+                "title": "Date/Time Now Tool",
                 "toolSubtype": "date-time-now",
-                "userConfig": {}
+                "userConfig": {
+                    "requireToolUse": true
+                },
+                "userConfigSchema": {
+                    "requireToolUse": {
+                        "type": "boolean",
+                        "description": "Require tool use (forces the LLM to always call this tool)",
+                        "default": true
+                    }
+                }
             },
             "measured": {
                 "width": 120,
                 "height": 40
             },
-            "selected": false
+            "selected": false,
+            "dragging": false
         },
         {
             "id": "7b0f7a40-769c-4406-a90b-2717db038e78",
@@ -67,20 +109,44 @@
             },
             "data": {
                 "title": "AI Data Processing",
-                "prompt": "Provide all answers in Markdown format.",
+                "prompt": "Based on the next message request, you need to use dateTimeNow tool to obtain the current date time.\nYour sole responsibility is to provide more context to the original request from the date time point of view and nothing else.\nYou are to respond ONLY with the augmented request that includes the exact date and time information.\nDo NOT include any explanations, preambles, or descriptions about what you did.\nJust output the enhanced request directly.",
                 "model": "",
                 "maxFeedbackLoops": 0
             },
             "measured": {
                 "width": 160,
                 "height": 40
-            }
+            },
+            "selected": false,
+            "dragging": false
         },
         {
-            "id": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
+            "id": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
+            "type": "llm-process",
+            "position": {
+                "x": 620,
+                "y": 100
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "model": "",
+                "prompt": "You need to use gcalendarFetchEvents tool and to output the tool result and nothing else.\nDo NOT include any explanations, preambles, or descriptions about what you did.\nThe output needs to contain the title and date of the event and nothing else.\nYou can format the outpur in markdown code.",
+                "message": {},
+                "format": {},
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 5
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false
+        },
+        {
+            "id": "f7aed229-7b45-4e54-a036-37bd48a55733",
             "type": "data-flow-spy",
             "position": {
-                "x": 700,
+                "x": 860,
                 "y": 100
             },
             "data": {
@@ -90,7 +156,25 @@
                 "width": 120,
                 "height": 40
             },
-            "selected": false
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 640,
+                "y": 0
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
         }
     ],
     "edges": [
@@ -101,22 +185,49 @@
             "animated": false
         },
         {
-            "id": "87b8e752-bdc4-4b12-b866-6249023c785f",
+            "type": "smoothstep",
+            "animated": false,
             "source": "8a0dd721-4139-4ca4-bcc9-2624aad5b309",
-            "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "targetHandle": "tools-target"
+            "sourceHandle": "right-source",
+            "target": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
+            "targetHandle": "tools-target",
+            "id": "xy-edge__8a0dd721-4139-4ca4-bcc9-2624aad5b309right-source-e94b755b-fcd8-4a87-9174-d33e44c9db7btools-target"
         },
         {
-            "id": "3eb73176-bb89-4a3e-955e-fd5d1d0492a3",
+            "type": "smoothstep",
+            "animated": false,
             "source": "ca0be528-34f5-48e2-8d89-3c50260998c3",
+            "sourceHandle": "right-source",
             "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "targetHandle": "tools-target"
+            "targetHandle": "tools-target",
+            "id": "xy-edge__ca0be528-34f5-48e2-8d89-3c50260998c3right-source-7b0f7a40-769c-4406-a90b-2717db038e78tools-target"
         },
         {
-            "id": "3c6892d46-614b-4a1e-a9f7-6970579860bd",
+            "type": "smoothstep",
+            "animated": false,
             "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "target": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
-            "animated": false
+            "sourceHandle": "right-source",
+            "target": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
+            "targetHandle": "left-target",
+            "id": "xy-edge__7b0f7a40-769c-4406-a90b-2717db038e78right-source-e94b755b-fcd8-4a87-9174-d33e44c9db7bleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
+            "sourceHandle": "right-source",
+            "target": "f7aed229-7b45-4e54-a036-37bd48a55733",
+            "targetHandle": "left-target",
+            "id": "xy-edge__e94b755b-fcd8-4a87-9174-d33e44c9db7bright-source-f7aed229-7b45-4e54-a036-37bd48a55733left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "sourceHandle": "right-source",
+            "target": "bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1",
+            "targetHandle": "left-target",
+            "id": "xy-edge__7b0f7a40-769c-4406-a90b-2717db038e78right-source-bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1left-target"
         }
     ]
 }

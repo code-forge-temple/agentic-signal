@@ -18,6 +18,7 @@ import {
 import {initialEdges, initialNodes} from '../components/nodes';
 import {nodeRegistry} from '../components/nodes/nodeRegistry.gen';
 import {AppNode, AppNodeType} from '../components/nodes/workflow.gen';
+import {NODE_TYPE as LLM_NODE_TYPE} from '../components/nodes/LlmProcessNode/constants';
 
 
 const nodeAssertions = Object.fromEntries(
@@ -149,7 +150,7 @@ export function useWorkflow () {
                     (edge) => edge.target === fromNodeId && edge.source === node.id
                 );
 
-                if (!hasIncomingFromSource) return node;
+                if (!hasIncomingFromSource || node.type !== LLM_NODE_TYPE) return node;
 
                 return updateNodeData(node, {feedback}, nodeAssertions);
             })

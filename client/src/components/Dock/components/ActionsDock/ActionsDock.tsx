@@ -8,10 +8,12 @@ import React, {useRef, useState} from "react";
 import "./ActionsDock.scss";
 import {ThemeProvider} from "@mui/material";
 import {darkTheme} from "../../../../utils";
-import {BinFull, FloppyDiskArrowIn, FloppyDiskArrowOut, Settings as SettingsIcon} from "iconoir-react";
+import {BinFull, FloppyDiskArrowIn, FloppyDiskArrowOut, Settings as SettingsIcon, HelpCircle as Docs} from "iconoir-react";
 import {BaseDialog} from "../../../BaseDialog";
 import {DockItem} from "../DockItem";
 import {Settings} from "./components/Settings";
+import {isTauri} from "../../../../utils";
+
 
 type WorkflowActionsProps = {
     onSave: () => void;
@@ -23,6 +25,21 @@ export function ActionsDock ({onSave, onLoad, onClear}: WorkflowActionsProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [openSettings, setOpenSettings] = useState(false);
 
+    const handleOpenDocs = async () => {
+        const url = "https://agentic-signal.com";
+
+        if (isTauri()) {
+            try {
+                const shell = await import("@tauri-apps/plugin-shell");
+
+                await shell.open(url);
+            } catch (error) {
+                console.error("Failed to open URL with Tauri:", error);
+            }
+        } else {
+            window.open(url, "_blank", "noopener,noreferrer");
+        }
+    };
 
     return (
         <ThemeProvider theme={darkTheme}>
@@ -36,6 +53,7 @@ export function ActionsDock ({onSave, onLoad, onClear}: WorkflowActionsProps) {
                     >
                         <Settings />
                     </BaseDialog>
+                    <DockItem title="Open Documentation" icon={<Docs />} onClick={handleOpenDocs} />
                     <DockItem title="Save workflow" icon={<FloppyDiskArrowIn />} onClick={onSave} />
                     <DockItem title="Clear workflow" icon={<BinFull />} onClick={onClear} />
                     <DockItem title="Load workflow" icon={<FloppyDiskArrowOut />} onClick={() => fileInputRef.current?.click()} />

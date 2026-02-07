@@ -10,8 +10,11 @@
             "data": {
                 "title": "Data Source",
                 "dataSource": {
-                    "value": "Can you tell me the latest emails I have received?",
-                    "type": "text"
+                    "value": {
+                        "text": "Can you tell me the latest emails I have received?",
+                        "files": []
+                    },
+                    "type": "markdown"
                 }
             },
             "measured": {
@@ -39,23 +42,6 @@
                 "height": 40
             },
             "selected": true
-        },
-        {
-            "id": "ca0be528-34f5-48e2-8d89-3c50260998c3",
-            "type": "ai-tool",
-            "position": {
-                "x": 400,
-                "y": 300
-            },
-            "data": {
-                "title": "AI Tool",
-                "toolSubtype": "date-time-now",
-                "userConfig": {}
-            },
-            "measured": {
-                "width": 120,
-                "height": 40
-            }
         },
         {
             "id": "7b0f7a40-769c-4406-a90b-2717db038e78",
@@ -102,12 +88,6 @@
         {
             "id": "87b8e752-bdc4-4b12-b866-6249023c785f",
             "source": "8a0dd721-4139-4ca4-bcc9-2624aad5b309",
-            "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "targetHandle": "tools-target"
-        },
-        {
-            "id": "3eb73176-bb89-4a3e-955e-fd5d1d0492a3",
-            "source": "ca0be528-34f5-48e2-8d89-3c50260998c3",
             "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
             "targetHandle": "tools-target"
         },

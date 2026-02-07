@@ -10,6 +10,8 @@ import Gmail from "./assets/gmail.svg";
 import {EmailResult} from "@shared/types.gen";
 import {OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler} from "./constants";
 import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
+import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {sanitizeStringInput} from "../utils/sanitize";
 
 
 export const GmailFetchEmailsToolDescriptor:ToolDefinition = {
@@ -32,7 +34,7 @@ export const GmailFetchEmailsToolDescriptor:ToolDefinition = {
             required: ["query"]
         }
     },
-    userConfigSchema: {
+    userConfigSchema: extendSystemUserConfigSchema({
         googleClientId: {
             type: "string",
             description: "Google OAuth2 Client ID (from Google Cloud Console)"
@@ -52,12 +54,11 @@ export const GmailFetchEmailsToolDescriptor:ToolDefinition = {
             minimum: 1,
             maximum: 50
         }
-    },
+    }),
     toSanitize: ["userConfig.accessToken"],
     handlerFactory: (
         userConfig: { accessToken?: string, maxResults?: number }
     ) => async ({query}: { query: string }): Promise<EmailResult[] | { error: string }> => {
-
         try {
             if (!userConfig.accessToken) {
                 return {error: "Gmail authentication required. Please connect your Gmail account."};
@@ -67,8 +68,12 @@ export const GmailFetchEmailsToolDescriptor:ToolDefinition = {
                 return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
             }
 
+            if(!query || String(query).trim() === ""){
+                return {error: "`query` tool parameter must be specified"};
+            }
+
             // data received from the LLM needs to be sanitized to avoid issues:
-            const sanitizedQuery = (query || "").replace(/["“”]/g, '"').replace(/['‘’]/g, "'");
+            const sanitizedQuery = sanitizeStringInput(query);
 
             return await GraphQLService.gmailFetchEmails(
                 sanitizedQuery,

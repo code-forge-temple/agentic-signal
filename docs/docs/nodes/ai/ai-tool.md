@@ -19,6 +19,10 @@ Each AI Tool node must specify a `toolSubtype`. Available subtypes include:
 - `fetch-weather-data` — Fetches weather data for a given city
 - `duckduckgo-search` — Performs a DuckDuckGo search and returns results
 - `brave-search` — Performs a Brave Search using the Brave Search API
+- `csv-to-array` — Converts CSV file content into an array of objects for downstream processing
+- `max` — Finds the row(s) with the maximum value for a specified key in an array of objects
+- `min` — Finds the row(s) with the minimum value for a specified key in an array of objects
+- `sort` — Sorts an array of objects by a specified key and order (ascending or descending)
 - `date-time-now` — Returns the current date and time in ISO 8601 format
 - `gmail-fetch-emails` — Fetches emails from Gmail using search queries
 - `gdrive-fetch-files` — Fetches files from Google Drive using search queries

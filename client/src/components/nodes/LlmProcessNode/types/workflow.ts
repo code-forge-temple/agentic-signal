@@ -19,6 +19,7 @@ export type LlmProcessNodeData = {
         suffix?: string;
     };
     maxFeedbackLoops: number;
+    maxToolRetries: number;
     conversationHistory?: Array<{
         role: MessageRole;
         content: string;
@@ -72,6 +73,11 @@ export function assertIsLlmProcessNodeData (data: unknown): asserts data is LlmP
         throw new Error('Node data maxFeedbackLoops must be a number if provided');
     }
 
+    // Validate maxToolRetries field if present
+    if ('maxToolRetries' in data && data.maxToolRetries !== undefined && typeof data.maxToolRetries !== 'number') {
+        throw new Error('Node data maxToolRetries must be a number if provided');
+    }
+
     // Validate conversationHistory field if present
     if ('conversationHistory' in data && data.conversationHistory !== undefined) {
         if (!Array.isArray(data.conversationHistory)) {
@@ -100,3 +106,13 @@ export function assertIsLlmProcessNodeData (data: unknown): asserts data is LlmP
 }
 
 export type LlmProcessNode = Node<BaseNodeData & LlmProcessNodeData> & { type: typeof NODE_TYPE };
+
+export const defaultLlmProcessNodeData = {
+    model: "",
+    prompt: "",
+    message: {},
+    format: {},
+    maxFeedbackLoops: 0,
+    maxToolRetries: 3,
+    conversationHistory: [],
+}

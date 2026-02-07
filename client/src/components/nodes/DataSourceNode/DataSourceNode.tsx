@@ -5,26 +5,21 @@
  ************************************************************************/
 
 import {type NodeProps} from "@xyflow/react";
-import {assertIsDataSourceNodeData} from "./types/workflow";
+import {assertIsDataSourceNodeData, DATA_SOURCE_TYPES} from "./types/workflow";
 import {useCallback, useState} from "react";
 import {BaseNode} from "../BaseNode";
 import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
-import {CodeEditor} from "../../CodeEditor";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
 import {LogsDialog} from "../../LogsDialog";
-import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
-import {Icon} from "./constants";
+import {Icon, IMAGE_EXTENSIONS} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {JsonInput} from "./components/JsonInput";
+import {FilesInput} from "./components/FilesInput";
 
-
-const DATA_SOURCE_TYPES = {
-    TEXT: "text",
-    JSON: "json"
-};
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
 
@@ -53,22 +48,37 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 }
 
                 return;
+            } else if(dataSource.type === DATA_SOURCE_TYPES.MARKDOWN) {
+                let mergedOutput = dataSource.value?.text || "";
+                let imageCounter = 1;
+
+                for (const file of dataSource.value?.files || []) {
+                    const ext = file.name.split('.').pop()?.toLowerCase() || "";
+                    let prefix;
+
+                    if (IMAGE_EXTENSIONS.includes(ext)) {
+                        prefix = `### Image ${imageCounter++} attached `;
+                    } else {
+                        prefix = `### File "${file.name}"\n`;
+                    }
+
+                    mergedOutput += `\n\n${prefix}${file.content}\n\n`;
+                }
+
+                onResultUpdate(id, mergedOutput);
             }
-
-            onResultUpdate(id, dataSource.value || "");
-
         }, setIsRunning);
     }, [dataSource.type, dataSource.value, id, onResultUpdate]);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 
-    const [debouncedDataSource, setDebouncedDataSource] = useDebouncedState({
-        callback: (value: string) => {
-            onConfigChange(id, {dataSource: {...dataSource, value}});
-        },
-        delay: 300,
-        initialValue: dataSource.value || ""
-    });
+    let content;
+
+    if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
+        content = <JsonInput value={dataSource.value} onChange={value => onConfigChange(id, {dataSource: {...dataSource, value}})} />;
+    } else if (dataSource.type === DATA_SOURCE_TYPES.MARKDOWN) {
+        content = <FilesInput value={dataSource.value} onChange={value => onConfigChange(id, {dataSource: {...dataSource, value}})} />;
+    }
 
     return (
         <>
@@ -107,19 +117,21 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                         label={DATA_SOURCE_TYPE_LABEL}
                         value={dataSource.type}
                         onChange={e => {
-                            onConfigChange(id, {dataSource: {...dataSource, type: e.target.value as "json" | "text"}});
+                            if(e.target.value === DATA_SOURCE_TYPES.JSON) {
+                                onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.JSON, value: ""}});
+                            } else if (e.target.value === DATA_SOURCE_TYPES.MARKDOWN) {
+                                onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.MARKDOWN, value: {text: "", files: []}}});
+                            }
                         }}
                     >
-                        <MenuItem value={DATA_SOURCE_TYPES.TEXT}>{DATA_SOURCE_TYPES.TEXT}</MenuItem>
-                        <MenuItem value={DATA_SOURCE_TYPES.JSON}>{DATA_SOURCE_TYPES.JSON}</MenuItem>
+                        {
+                            Object.values(DATA_SOURCE_TYPES).map(type => (
+                                <MenuItem key={type} value={type}>{type}</MenuItem>
+                            ))
+                        }
                     </Select>
                 </FormControl>
-                <CodeEditor
-                    mode={dataSource.type === DATA_SOURCE_TYPES.JSON ? "json" : "markdown"}
-                    value={debouncedDataSource}
-                    onChange={setDebouncedDataSource}
-                    showLineNumbers={true}
-                />
+                {content}
             </BaseDialog>
         </>
     );

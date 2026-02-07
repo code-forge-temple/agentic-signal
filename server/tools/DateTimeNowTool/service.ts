@@ -5,52 +5,41 @@
  ************************************************************************/
 
 import {TimezoneResult} from "./types.ts";
-
+import ct from "npm:city-timezones";
 
 export async function getTimezoneForCity (city: string): Promise<TimezoneResult> {
     try {
-        if (!city || city.trim() === "") {
-            // Return UTC time if no city is provided
+        const cityData = ct.lookupViaCity(city);
+
+        if (cityData && cityData.length > 0) {
+            const timezone = cityData[0].timezone;
             const now = new Date();
+
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZoneName: 'shortOffset'
+            });
+
+            const parts = formatter.formatToParts(now);
+            const offset = parts.find(p => p.type === 'timeZoneName')?.value;
 
             return {
                 iso: now.toISOString(),
-                locale: now.toLocaleString(),
+                locale: formatter.format(now),
                 unix: Math.floor(now.getTime() / 1000),
-                timezone: "UTC",
-                city: "UTC"
+                timezone: timezone,
+                city: city,
+                utc_offset: offset || undefined
             };
         }
 
-        // Example using timeapi.io (replace with your preferred API)
-        const response = await fetch(`https://timeapi.io/api/TimeZone/AvailableTimeZones`);
-
-        if (!response.ok) throw new Error(`TimeAPI error: ${response.status}`);
-
-        const timezones = await response.json();
-        const cityLower = city.toLowerCase();
-        const matchingTimezone = timezones.find((tz: string) =>
-            tz.toLowerCase().includes(cityLower) ||
-            tz.toLowerCase().includes(cityLower.replace(/\s+/g, '_'))
-        );
-
-        if (matchingTimezone) {
-            const timeResponse = await fetch(`https://timeapi.io/api/Time/current/zone?timeZone=${encodeURIComponent(matchingTimezone)}`);
-
-            if (timeResponse.ok) {
-                const timeData = await timeResponse.json();
-
-                return {
-                    iso: timeData.dateTime,
-                    locale: new Date(timeData.dateTime).toLocaleString(),
-                    unix: Math.floor(new Date(timeData.dateTime).getTime() / 1000),
-                    timezone: matchingTimezone,
-                    city: city
-                };
-            }
-        }
-
-        // Fallback to UTC if no timezone found
         const now = new Date();
 
         return {
@@ -59,6 +48,7 @@ export async function getTimezoneForCity (city: string): Promise<TimezoneResult>
             unix: Math.floor(now.getTime() / 1000),
             timezone: "UTC",
             city: city,
+            utc_offset: undefined,
             error: `Could not determine timezone for city: ${city}. Returning UTC time.`
         };
     } catch (error) {
@@ -70,6 +60,7 @@ export async function getTimezoneForCity (city: string): Promise<TimezoneResult>
             unix: Math.floor(now.getTime() / 1000),
             timezone: "UTC",
             city: city,
+            utc_offset: undefined,
             error: `Could not determine timezone for city: ${city}. ${error instanceof Error ? error.message : 'Unknown error'}. Returning UTC time.`
         };
     }

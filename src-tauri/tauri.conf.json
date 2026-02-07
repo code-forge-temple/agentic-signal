@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "agentic-signal",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "identifier": "com.agentic-signal",
   "build": {
     "frontendDist": "../client/dist",

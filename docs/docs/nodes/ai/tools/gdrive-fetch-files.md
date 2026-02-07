@@ -1,5 +1,4 @@
 ---
-sidebar_position: 6
 title: Google Drive Fetch Files Tool
 ---
 
@@ -19,8 +18,10 @@ import TabItem from '@theme/TabItem';
         - `accessToken` (OAuth, user config): Google Drive Authentication.  
         This field will be auto-filled if you use the **CONNECT DRIVE** button.
         - `maxResults` (integer, user config): Maximum number of files to fetch (default: 5, min: 1, max: 50)
+        - `requireToolUse` (boolean, user config): Require tool use (forces the LLM to always call this tool; default: true)
+            > **Note:** When enabled, the node will retry tool calls up to the number of times set in [Max Tool Retries](/docs/nodes/ai/llm-process?activeTab=max-tool-retries#configuration) in the AI Data Processing Node.
 
-        ![Google Drive Listing Workflow](/img/nodes/ai-tool/gdrive-fetch-files-tool.jpg)
+        ![Google Drive Listing Workflow](/img/nodes/ai-tool/gdrive-fetch-files-tool.webp)
         ___
         (1) Provided by the [AI Data Processing Node](/docs/nodes/ai/llm-process) as a result of processing its input.
     </TabItem>

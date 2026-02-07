@@ -7,6 +7,7 @@
 import {Clock} from "iconoir-react";
 import {GraphQLService} from "./services/graphqlService";
 import {ToolDefinition} from "../types";
+import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 
 
 export const DateTimeNowToolDescriptor:ToolDefinition = {
@@ -15,22 +16,23 @@ export const DateTimeNowToolDescriptor:ToolDefinition = {
     icon: <Clock />,
     toolSchema: {
         name: "dateTimeNow",
-        description: "Returns the current date and time for a specific city or timezone.",
+        description: "Returns the current date and time for a specific city. Do not use timezone abbreviations like UTC or EST - use actual city names.",
         parameters: {
             type: "object",
             properties: {
                 city: {
                     type: "string",
-                    description: "City name to get the local time for (e.g., 'New York', 'London', 'Tokyo'). Optional - if not provided, returns UTC time."
+                    // eslint-disable-next-line max-len
+                    description: "The name of a city (e.g., 'New York', 'London', 'Tokyo'). Use actual city names only, NOT timezone codes like 'UTC' or 'EST'. If omitted, returns the current UTC time."
                 }
             },
             required: []
         }
     },
-    userConfigSchema: {},
+    userConfigSchema: extendSystemUserConfigSchema({}),
     toSanitize: [],
     handlerFactory: () => async ({city}: {city?: string}) => {
-        if (!city) {
+        if (!city || String(city).trim() === "") {
             const now = new Date();
 
             return {

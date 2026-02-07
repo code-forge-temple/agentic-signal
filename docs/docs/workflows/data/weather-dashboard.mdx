@@ -12,9 +12,14 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 This workflow creates a real-time weather dashboard using the weather API and AI analysis.
 
+> **Note:**  
+> This workflow uses **two AI Data Processing nodes**, each with a tool, because the output of the first tool (Date/Time Now) is required as input for the second tool (Fetch Weather Data).  
+> Current smaller models (≤ 8B parameters) are not able to call the available tools sequentially—they attempt to call both tools at the same time, which leads to incorrect results.  
+> If you use a larger LLM (more than 8B parameters), you can combine both tools in a single AI Data Processing node, as larger models can more reliably call tools one after the other.
+
 <Tabs>
     <TabItem value="preview" label="Preview" default>
-        ![Weather Dashboard Workflow](/img/workflows/weather-dashboard-preview.jpg)
+        ![Weather Dashboard Workflow](/img/workflows/weather-dashboard-preview.webp)
     </TabItem>
 
     <TabItem value="json" label="JSON">
@@ -26,16 +31,18 @@ This workflow creates a real-time weather dashboard using the weather API and AI
     <TabItem value="config" label="Node Configuration">
         - [**Data Source**](/docs/nodes/input/data-source)  
             - Input: `"What is the weather like now in New York?"`
-        - [**Fetch Weather Data Tool**](/docs/nodes/ai/tools/fetch-weather-data)  
-            - Tool: Fetches weather data for a given city (`city` parameter)
-            - Requirements: WeatherAPI.com API Key
-        - [**Date/Time Now Tool**](/docs/nodes/ai/tools/date-time-now)   
-            - Tool: Returns the current date and time in ISO 8601 format
-        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
-            - Prompt: Provide all answers in Markdown format  
+        - [**AI Data Processing (Date/Time Context)**](/docs/nodes/ai/llm-process)  
+            - Prompt: Augments the weather request with current date and time information using the dateTimeNow tool
+            - Tool: [Date/Time Now Tool](/docs/nodes/ai/tools/date-time-now)
             - Model: llama3.1:8b
+        - [**AI Data Processing (Weather Fetch)**](/docs/nodes/ai/llm-process)  
+            - Prompt: Fetches current weather data using fetchWeatherData tool and formats the output
+            - Tool: [Fetch Weather Data Tool](/docs/nodes/ai/tools/fetch-weather-data)
+            - Model: llama3.2:3b
         - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
-            - Output: Current weather conditions with AI-generated insights and recommendations.
+            - Output: Displays the weather information with conditions, temperature, humidity, and wind speed
+        - *(Optional)* [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Used for inspecting intermediate data (time-augmented request)
     </TabItem>
 </Tabs>
 
@@ -44,6 +51,7 @@ This workflow creates a real-time weather dashboard using the weather API and AI
 ## Steps
 
 1. **Provide Input**: The workflow starts with a Data Source node that supplies the prompt: "What is the weather like now in New York?"
-2. **Interpret & Tool Calls**: The AI Data Processing node interprets the input, determines which tools are needed, and calls the Fetch Weather Data Tool and Date/Time Now Tool.
-3. **Summarize with AI**: The LLM receives the tool results and generates a summary with insights and recommendations.
-4. **Output Result**: The Data Flow Spy node displays the final dashboard output.
+2. **Add Date/Time Context**: The first AI Data Processing node uses the Date/Time Now Tool to obtain the current date and time, then augments the original weather request with this temporal context.
+3. **Fetch Weather Data**: The second AI Data Processing node receives the time-augmented request and uses the Fetch Weather Data Tool to retrieve current weather information, then formats the results in Markdown.
+4. **Display Result**: The Data Flow Spy node displays the final weather information including temperature, conditions, humidity, and wind speed.
+5. *(Optional)* **Inspect Intermediate Data**: An additional Data Flow Spy node can be used to inspect the time-augmented request between the two AI processing steps.

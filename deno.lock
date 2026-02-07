@@ -6,6 +6,8 @@
     "npm:@tauri-apps/cli@^2.8.4": "2.8.4",
     "npm:@types/mustache@^4.2.6": "4.2.6",
     "npm:@types/node@*": "22.15.15",
+    "npm:city-timezones@*": "1.2.0",
+    "npm:city-timezones@1.2.0": "1.2.0",
     "npm:concurrently@9.1.2": "9.1.2",
     "npm:concurrently@^9.1.2": "9.1.2",
     "npm:cpx2@8": "8.0.0",
@@ -756,6 +758,12 @@
       "dependencies": [
         "ansi-styles@4.3.0",
         "supports-color@7.2.0"
+      ]
+    },
+    "city-timezones@1.2.0": {
+      "integrity": "sha512-/69UkTbg9MEsYfiEIUqkKFZBRzuuw+5WLHgybeGaR/E28/w0hLy87Q4QHa0GLStp/EOxXpq5zYvDIu9xcs+bKw==",
+      "dependencies": [
+        "lodash"
       ]
     },
     "cli-cursor@3.1.0": {

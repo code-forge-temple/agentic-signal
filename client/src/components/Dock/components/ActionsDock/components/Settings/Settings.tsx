@@ -39,7 +39,7 @@ export const Settings = () => {
         fetchModels();
     }, [settings.ollamaHost]);
 
-    const pollForModel = async (modelName: string, maxAttempts = 5, interval = 1000) => {
+    const pollForModel = async (modelName: string, maxAttempts = 15, interval = 1000) => {
         let attempts = 0;
 
         return new Promise<void>((resolve) => {

@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, Typography, Button, Chip} from "@mui/material";
+import {Box, Typography, Button, Chip, FormControlLabel, Switch} from "@mui/material";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {DebouncedTextField} from "../../DebouncedTextField";
 
@@ -29,7 +29,7 @@ type UserConfigSchema = {
 type UserConfigFieldsProps = {
     userConfigSchema?: UserConfigSchema;
     userConfig: Record<string, any>;
-    onConfigChange: (key: string, value: string|number) => void;
+    onConfigChange: (key: string, value: string|number|boolean) => void;
 };
 
 export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}: UserConfigFieldsProps) {
@@ -42,7 +42,7 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
             {Object.entries(userConfigSchema).map(([key, schema]) => {
                 if (!schema) return null;
 
-                const value = userConfig?.[key] ?? "";
+                const value = userConfig?.[key] ?? schema.default ?? "";
                 const type = schema.type || "string";
                 const isRequired = schema.required || false;
                 const fieldLabel = `${schema.description || key}${isRequired ? ' *' : ''}`;
@@ -98,6 +98,22 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
                                 />
                             </Box>
                         </FieldsetGroup>
+                    );
+                }
+
+                if (type === "boolean") {
+                    return (
+                        <FormControlLabel
+                            key={key}
+                            control={
+                                <Switch
+                                    checked={!!value}
+                                    onChange={e => onConfigChange(key, e.target.checked)}
+                                />
+                            }
+                            label={fieldLabel}
+                            sx={{mb: 1}}
+                        />
                     );
                 }
 

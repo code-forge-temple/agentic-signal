@@ -8,7 +8,7 @@ import React, {useRef, useState} from "react";
 import "./ActionsDock.scss";
 import {ThemeProvider} from "@mui/material";
 import {darkTheme} from "../../../../utils";
-import {BinFull, FloppyDiskArrowIn, FloppyDiskArrowOut, Settings as SettingsIcon, HelpCircle as Docs} from "iconoir-react";
+import {BinFull, FloppyDiskArrowIn, FloppyDiskArrowOut, Settings as SettingsIcon, HelpCircle as Docs, OffTag} from "iconoir-react";
 import {BaseDialog} from "../../../BaseDialog";
 import {DockItem} from "../DockItem";
 import {Settings} from "./components/Settings";
@@ -41,6 +41,20 @@ export function ActionsDock ({onSave, onLoad, onClear}: WorkflowActionsProps) {
         }
     };
 
+    const handleCloseApp = async () => {
+        if (isTauri()) {
+            try {
+                const {invoke} = await import('@tauri-apps/api/core');
+
+                await invoke('kill_backend_process');
+
+                const {Window} = await import('@tauri-apps/api/window');
+
+                await Window.getCurrent().close();
+            } catch { /* empty */ }
+        }
+    };
+
     return (
         <ThemeProvider theme={darkTheme}>
             <div className="actions-dock">
@@ -53,6 +67,7 @@ export function ActionsDock ({onSave, onLoad, onClear}: WorkflowActionsProps) {
                     >
                         <Settings />
                     </BaseDialog>
+                    {isTauri() && <DockItem title="Close App" icon={<OffTag />} onClick={handleCloseApp} />}
                     <DockItem title="Open Documentation" icon={<Docs />} onClick={handleOpenDocs} />
                     <DockItem title="Save workflow" icon={<FloppyDiskArrowIn />} onClick={onSave} />
                     <DockItem title="Clear workflow" icon={<BinFull />} onClick={onClear} />

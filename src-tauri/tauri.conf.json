@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "agentic-signal",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "identifier": "com.agentic-signal",
   "build": {
     "frontendDist": "../client/dist",
@@ -17,7 +17,8 @@
         "height": 1080,
         "resizable": true,
         "fullscreen": false,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "backgroundColor": "#141414"
       }
     ],
     "security": {

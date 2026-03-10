@@ -43,6 +43,7 @@
 }
 
 .youtube-preview-play {
+    opacity: 0.8;
     position: absolute;
     top: 50%;
     left: 50%;

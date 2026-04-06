@@ -6,6 +6,7 @@
 
 import {CodeEditor} from '../../../CodeEditor';
 import {useDebouncedState} from '../../../../hooks/useDebouncedState';
+import {Box} from '@mui/material';
 
 
 type JsonInputProps = {
@@ -21,11 +22,13 @@ export const JsonInput = ({value, onChange}: JsonInputProps) => {
     });
 
     return (
-        <CodeEditor
-            mode={"json"}
-            value={debouncedDataSource}
-            onChange={setDebouncedDataSource}
-            showLineNumbers={true}
-        />
+        <Box sx={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}>
+            <CodeEditor
+                mode={"json"}
+                value={debouncedDataSource}
+                onChange={setDebouncedDataSource}
+                showLineNumbers={true}
+            />
+        </Box>
     );
 };

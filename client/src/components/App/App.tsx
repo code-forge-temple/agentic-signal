@@ -19,6 +19,7 @@ import {nodeRegistry} from '../nodes/nodeRegistry.gen';
 import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
 import {useFullscreen} from '../../hooks/useFullscreen';
 import {getDefaultUserConfigValues} from '../../types/ollama.types';
+import {Chip} from '@mui/material';
 
 
 const getId = () => uuidv4();
@@ -247,6 +248,11 @@ function AppFlow () {
 export function App () {
     return (
         <div style={{width: '100vw', height: '100vh', position: 'relative'}}>
+            <Chip
+                label={`v${__APP_VERSION__}`}
+                size="small"
+                className="version-tag"
+            />
             <ReactFlowProvider>
                 <AppFlow />
             </ReactFlowProvider>

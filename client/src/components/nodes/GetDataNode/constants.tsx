@@ -10,3 +10,5 @@ import {DataTransferDown} from "iconoir-react";
 export const Icon = <DataTransferDown />;
 
 export const NODE_TYPE = "get-data";
+
+export const TITLE = "GET Data";

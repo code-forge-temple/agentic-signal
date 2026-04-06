@@ -6,17 +6,17 @@
 
 import {NodeDescriptor} from "../types";
 import {DataSourceNode as component} from "./DataSourceNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsDataSourceNodeData, DATA_SOURCE_TYPES, DataSourceNode} from "./types/workflow";
 
 export const DataSourceNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataSourceNode> = {
     type: NODE_TYPE,
     component: component,
     icon: Icon,
-    title: "Data Source",
+    title: TITLE,
     assertion: assertIsDataSourceNodeData,
     defaultData: {
-        title: "Data Source",
+        title: TITLE,
         dataSource: {
             value: {
                 text: "",

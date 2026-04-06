@@ -19,3 +19,5 @@ This Chart Data Node only supports the following input formats of JSON objects:
 4. Array of numbers format: \`[1,2,3,...]\`
 ---
 `;
+
+export const TITLE = "Display Chart";

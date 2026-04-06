@@ -25,6 +25,8 @@ import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/mode-batchfile";
 import "ace-builds/src-noconflict/theme-terminal";
 import {AceEditorMode} from "./types";
+import './CodeEditor.scss';
+
 
 type CodeEditorProps = {
     value?: string;
@@ -34,6 +36,7 @@ type CodeEditorProps = {
     mode?: AceEditorMode;
     height?: string;
     width?: string;
+    minHeight?: string;
     showLineNumbers?: boolean;
 };
 
@@ -43,34 +46,38 @@ export function CodeEditor ({
     placeholder = "",
     readOnly = false,
     mode = "json",
-    height = "500px",
+    height = "100%",
     width = "100%",
+    minHeight = "400px",
     showLineNumbers = false
 }: CodeEditorProps) {
     return (
-        <AceEditor
-            placeholder={placeholder}
-            mode={mode}
-            theme="terminal"
-            fontSize={14}
-            lineHeight={19}
-            showPrintMargin={true}
-            showGutter={true}
-            highlightActiveLine={true}
-            value={value}
-            onChange={onChange}
-            readOnly={readOnly}
-            width={width}
-            height={height}
-            setOptions={{
-                enableBasicAutocompletion: false,
-                enableLiveAutocompletion: false,
-                enableSnippets: false,
-                enableMobileMenu: true,
-                showLineNumbers,
-                tabSize: 4,
-                useWorker: false,
-            }}
-        />
+        <div className="code-editor-container">
+            <AceEditor
+                placeholder={placeholder}
+                mode={mode}
+                theme="terminal"
+                fontSize={14}
+                lineHeight={19}
+                showPrintMargin={true}
+                showGutter={true}
+                highlightActiveLine={true}
+                value={value}
+                onChange={onChange}
+                readOnly={readOnly}
+                width={width}
+                height={height}
+                style={{minHeight}}
+                setOptions={{
+                    enableBasicAutocompletion: false,
+                    enableLiveAutocompletion: false,
+                    enableSnippets: false,
+                    enableMobileMenu: true,
+                    showLineNumbers,
+                    tabSize: 4,
+                    useWorker: false,
+                }}
+            />
+        </div>
     );
 }

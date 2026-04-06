@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {LlmProcessNode as component} from "./LlmProcessNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsLlmProcessNodeData, defaultLlmProcessNodeData, LlmProcessNode} from "./types/workflow";
 
 
@@ -14,10 +14,10 @@ export const LlmProcessNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, LlmProce
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "AI Data Processing",
+    title: TITLE,
     assertion: assertIsLlmProcessNodeData,
     defaultData: {
-        title: "AI Data Processing",
+        title: TITLE,
         ...defaultLlmProcessNodeData,
         toSanitize: ["input", "conversationHistory", "feedback"],
     }

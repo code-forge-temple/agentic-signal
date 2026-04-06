@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {DataFlowSpyNode as component} from "./DataFlowSpyNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsDataFlowSpyNodeData, DataFlowSpyNode} from "./types/workflow";
 
 
@@ -14,10 +14,10 @@ export const DataFlowSpyNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataFlo
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "Data Flow Spy",
+    title: TITLE,
     assertion: assertIsDataFlowSpyNodeData,
     defaultData: {
-        title: "Data Flow Spy",
+        title: TITLE,
         toSanitize: ["input"],
     }
 };

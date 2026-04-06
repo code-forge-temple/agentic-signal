@@ -27,6 +27,7 @@ Each AI Tool node must specify a `toolSubtype`. Available subtypes include:
 - `gmail-fetch-emails` — Fetches emails from Gmail using search queries
 - `gdrive-fetch-files` — Fetches files from Google Drive using search queries
 - `gcalendar-fetch-events` — Fetches events from Google Calendar within a specified date range
+- `stock-analysis` — Analyzes historical stock data and computes technical indicators (SMA, volatility, trend, etc.)
 
 ## Inputs
 

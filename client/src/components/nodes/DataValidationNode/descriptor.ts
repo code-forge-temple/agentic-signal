@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {DataValidationNode as component} from "./DataValidationNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsDataValidationNodeData, DataValidationNode} from "./types/workflow";
 
 
@@ -14,10 +14,10 @@ export const DataValidationNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Data
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "Data Validation",
+    title: TITLE,
     assertion: assertIsDataValidationNodeData,
     defaultData: {
-        title: "Data Validation",
+        title: TITLE,
         schema: "",
         toSanitize: ["input"],
     }

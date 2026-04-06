@@ -1,8 +1,20 @@
+.markdown-renderer-container {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 .markdown-renderer {
     border-radius: 4px;
     min-height: 50px;
     padding: 30px;
     background: #000000;
+    flex: 1 1 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 
     table {
         border-collapse: collapse;
@@ -37,6 +49,10 @@
 
     tbody tr:hover {
         background: rgba(255, 255, 255, 0.03);
+    }
+
+    ul {
+        margin: 0 0 0 40px;
     }
 }
 

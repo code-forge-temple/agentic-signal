@@ -13,3 +13,5 @@ export const NODE_TYPE = "data-source";
 export const TRIPLE_BACKTICK = "```";
 
 export const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg"];
+
+export const TITLE = "Data Source";

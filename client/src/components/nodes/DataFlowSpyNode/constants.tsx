@@ -9,3 +9,5 @@ import {Eye} from "iconoir-react";
 export const Icon = <Eye />;
 
 export const NODE_TYPE = "data-flow-spy";
+
+export const TITLE = "Data Flow Spy";

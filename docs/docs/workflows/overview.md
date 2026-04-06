@@ -16,6 +16,7 @@ This section contains ready-to-use workflow examples that you can download and i
 - [**Current Time**](/docs/workflows/data/current-time) – Get and display the current date and time  
 - [**Timeseries Chart**](/docs/workflows/data/timeseries-chart) – Fetch, reformat, and visualize time series data as a chart  
 - [**Product Data Validation and Visualization**](/docs/workflows/data/product-data-validation-and-visualization) – Validate and chart product data from an API  
+- [**Stock Analysis & AI Prediction**](/docs/workflows/data/stock-analysis-ai-prediction) – AI-powered stock trading analysis combining technical indicators with news sentiment  
 - [**Gmail Summarizer**](/docs/workflows/email/gmail-summarizer) – Fetch and summarize recent emails from Gmail  
 - [**AI Data Processing Overseer**](/docs/workflows/data/ai-data-processing-overseer) – Chain AI nodes with validation and feedback loops
 
@@ -28,12 +29,6 @@ This section contains ready-to-use workflow examples that you can download and i
 5. **Select** the downloaded JSON file.
 6. **Configure** any required API keys or settings.
 7. **Run** the workflow to see it in action.
-
-Each workflow includes:
-- ✅ **Ready-to-use** node configuration
-- 📝 **Setup instructions** for any required services
-- 🎯 **Expected output** examples
-- 🔧 **Customization** tips
 
 Each workflow includes:
 - ✅ **Ready-to-use** node configuration

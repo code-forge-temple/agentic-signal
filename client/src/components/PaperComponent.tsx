@@ -9,16 +9,25 @@ import {useRef} from "react";
 import Draggable from "react-draggable";
 
 
-export function PaperComponent (props: PaperProps) {
+export interface PaperComponentProps extends PaperProps {
+    enableDragging?: boolean;
+    cancel?: string;
+}
+
+export function PaperComponent (props: PaperComponentProps) {
+    const {enableDragging = true, cancel, ...paperProps} = props;
     const nodeRef = useRef<HTMLDivElement>(null);
+
+    if (!enableDragging) {
+        return <Paper {...paperProps} ref={nodeRef} />;
+    }
 
     return (
         <Draggable
             nodeRef={nodeRef as React.RefObject<HTMLDivElement>}
-            handle="#draggable-dialog-title"
-            cancel={'[class*="MuiDialogContent-root"]'}
+            cancel={cancel}
         >
-            <Paper {...props} ref={nodeRef} />
+            <Paper {...paperProps} ref={nodeRef} />
         </Draggable>
     );
 }

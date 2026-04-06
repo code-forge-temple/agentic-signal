@@ -5,7 +5,6 @@
  ************************************************************************/
 
 import {useState, useEffect} from 'react';
-import './style.scss';
 import {useSettings} from '../../../../../../hooks/useSettings';
 import {IconButton, InputAdornment, Box, LinearProgress, List, ListItem, ListItemText, TextField} from '@mui/material';
 import {Plus, Trash} from 'iconoir-react';

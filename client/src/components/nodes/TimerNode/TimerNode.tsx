@@ -26,6 +26,7 @@ import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {graphQLService} from "./services/timerService";
 import {LogsDialog} from "../../LogsDialog";
 import {isoToLocalDatetime, localDatetimeToIso} from "../../../utils";
+import {runTask} from "../BaseNode/utils";
 
 
 function getIntervalData (data: TimerNodeData): IntervalTimerConfig {
@@ -71,6 +72,14 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
     useEffect(() => {
         if (!isRunning) {
             immediateTriggeredRef.current = false;
+
+            return;
+        }
+
+        if (mode === TIMER_NODE_MODES.INTERVAL && runOnce && interval === 0) {
+            runTask(async () => {
+                onResultUpdate(id, {timerTrigger: Date.now()});
+            }, setIsRunning);
 
             return;
         }

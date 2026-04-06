@@ -10,3 +10,5 @@ import {Www} from "iconoir-react";
 export const Icon = <Www />;
 
 export const NODE_TYPE = "http-data";
+
+export const TITLE = "Fetch Web Page";

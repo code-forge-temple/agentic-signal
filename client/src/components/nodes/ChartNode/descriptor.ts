@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {ChartNode as component} from "./ChartNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsChartNodeData, ChartNode} from "./types/workflow";
 
 
@@ -14,10 +14,10 @@ export const ChartNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ChartNode> = 
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "Display Chart",
+    title: TITLE,
     assertion: assertIsChartNodeData,
     defaultData: {
-        title: "Display Chart",
+        title: TITLE,
         toSanitize: ["input"],
     }
 };

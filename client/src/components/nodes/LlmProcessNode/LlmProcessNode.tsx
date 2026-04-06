@@ -9,7 +9,7 @@ import {assertIsLlmProcessNodeData, defaultLlmProcessNodeData} from "./types/wor
 import {assertIsToolNodeData, ToolNode} from "../ToolNode/types/workflow";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {BaseNode} from "../BaseNode";
-import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
+import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {CodeEditor} from "../../CodeEditor";
 import {useAIProcessor} from "./hooks/useAIProcessor";
 import {runTask} from "../BaseNode/utils";
@@ -270,129 +270,133 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 onClose={() => setOpenSettings(false)}
                 title={title}
             >
-                <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
-                    <InputLabel id="llm-label">{LLM_MODEL_LABEL}</InputLabel>
-                    <Select
-                        labelId="llm-label"
-                        label={LLM_MODEL_LABEL}
-                        value={model || ""}
-                        onChange={e => {
-                            onConfigChange(id, {model: e.target.value});
+                <Box sx={{display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0}}>
+                    <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
+                        <InputLabel id="llm-label">{LLM_MODEL_LABEL}</InputLabel>
+                        <Select
+                            labelId="llm-label"
+                            label={LLM_MODEL_LABEL}
+                            value={model || ""}
+                            onChange={e => {
+                                onConfigChange(id, {model: e.target.value});
+                            }}
+                            disabled={isFetchingModels}
+                        >
+                            <MenuItem value="" disabled>
+                                {isFetchingModels ? "Loading models..." : "Select a model..."}
+                            </MenuItem>
+                            {models.map(model => (
+                                <MenuItem key={model} value={model}>{model}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <DebouncedTextField
+                        label="Max Feedback Loops"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops}
+                        onChange={(value) => {
+                            const parsedValue = parseInt(value);
+
+                            onConfigChange(id, {maxFeedbackLoops: Math.max(0, Math.min(10, parsedValue))});
                         }}
-                        disabled={isFetchingModels}
-                    >
-                        <MenuItem value="" disabled>
-                            {isFetchingModels ? "Loading models..." : "Select a model..."}
-                        </MenuItem>
-                        {models.map(model => (
-                            <MenuItem key={model} value={model}>{model}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                        sx={{mb: 2}}
+                        // eslint-disable-next-line max-len
+                        helperText={`Current loop: ${Math.min(currentRetryRef.current, maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops)}/${maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops}`}
+                    />
+                    <DebouncedTextField
+                        label="Max Tool Retries"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries}
+                        onChange={(value) => {
+                            const parsedValue = parseInt(value);
 
-                <DebouncedTextField
-                    label="Max Feedback Loops"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    value={maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops}
-                    onChange={(value) => {
-                        const parsedValue = parseInt(value);
-
-                        onConfigChange(id, {maxFeedbackLoops: Math.max(0, Math.min(10, parsedValue))});
-                    }}
-                    sx={{mb: 2}}
-                    // eslint-disable-next-line max-len
-                    helperText={`Current loop: ${Math.min(currentRetryRef.current, maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops)}/${maxFeedbackLoops ?? defaultLlmProcessNodeData.maxFeedbackLoops}`}
-                />
-                <DebouncedTextField
-                    label="Max Tool Retries"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    value={maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries}
-                    onChange={(value) => {
-                        const parsedValue = parseInt(value);
-
-                        onConfigChange(id, {maxToolRetries: Math.max(3, Math.min(10, parsedValue))});
-                    }}
-                    sx={{mb: 2}}
-                    helperText="Maximum number of retry attempts for each required tool"
-                />
-                <BasicTabs tabs={[
-                    {
-                        title: "System Prompt",
-                        content: (
-                            <CodeEditor
-                                mode={"markdown"}
-                                placeholder="System prompt that will be used to guide the AI model"
-                                value={systemPrompt}
-                                onChange={setSystemPrompt}
-                                showLineNumbers={true}
-                            />
-                        )
-                    },
-                    {
-                        title: "User Message",
-                        content: (
-                            <BasicTabs tabs={[
-                                {
-                                    title: "Message Prefix",
-                                    content: (
-                                        <CodeEditor
-                                            mode={"markdown"}
-                                            placeholder="Prefix (optional) that will be added to the node input before processing"
-                                            value={messagePrefix}
-                                            onChange={setMessagePrefix}
-                                            showLineNumbers={true}
-                                        />
-                                    )
-                                },
-                                {
-                                    title: "Message Suffix",
-                                    content: (
-                                        <CodeEditor
-                                            mode={"markdown"}
-                                            placeholder="Suffix (optional) that will be added to the node input before processing"
-                                            value={messageSuffix}
-                                            onChange={setMessageSuffix}
-                                            showLineNumbers={true}
-                                        />
-                                    )
-                                }
-                            ]} />
-                        )
-                    },
-                    {
-                        title: "Structured Output",
-                        content: (
-                            <BasicTabs tabs={[{
-                                title: "ON SUCCESS",
+                            onConfigChange(id, {maxToolRetries: Math.max(3, Math.min(10, parsedValue))});
+                        }}
+                        sx={{mb: 2}}
+                        helperText="Maximum number of retry attempts for each required tool"
+                    />
+                    <Box sx={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
+                        <BasicTabs tabs={[
+                            {
+                                title: "System Prompt",
                                 content: (
                                     <CodeEditor
-                                        mode={"json"}
-                                        placeholder="Optional JSON schema for structured output on success"
-                                        value={formatOnSuccess}
-                                        onChange={setFormatOnSuccess}
+                                        mode={"markdown"}
+                                        placeholder="System prompt that will be used to guide the AI model"
+                                        value={systemPrompt}
+                                        onChange={setSystemPrompt}
                                         showLineNumbers={true}
                                     />
                                 )
                             },
                             {
-                                title: "ON ERROR",
+                                title: "User Message",
                                 content: (
-                                    <CodeEditor
-                                        mode={"json"}
-                                        placeholder="Optional JSON schema for structured output for on error"
-                                        value={formatOnError}
-                                        onChange={setFormatOnError}
-                                        showLineNumbers={true}
-                                    />
+                                    <BasicTabs key="user-message-tabs" tabs={[
+                                        {
+                                            title: "Message Prefix",
+                                            content: (
+                                                <CodeEditor
+                                                    mode={"markdown"}
+                                                    placeholder="Prefix (optional) that will be added to the node input before processing"
+                                                    value={messagePrefix}
+                                                    onChange={setMessagePrefix}
+                                                    showLineNumbers={true}
+                                                />
+                                            )
+                                        },
+                                        {
+                                            title: "Message Suffix",
+                                            content: (
+                                                <CodeEditor
+                                                    mode={"markdown"}
+                                                    placeholder="Suffix (optional) that will be added to the node input before processing"
+                                                    value={messageSuffix}
+                                                    onChange={setMessageSuffix}
+                                                    showLineNumbers={true}
+                                                />
+                                            )
+                                        }
+                                    ]} />
                                 )
-                            }]} />
-                        )
-                    }
-                ]} />
+                            },
+                            {
+                                title: "Structured Output",
+                                content: (
+                                    <BasicTabs key="structured-output-tabs" tabs={[{
+                                        title: "ON SUCCESS",
+                                        content: (
+                                            <CodeEditor
+                                                mode={"json"}
+                                                placeholder="Optional JSON schema for structured output on success"
+                                                value={formatOnSuccess}
+                                                onChange={setFormatOnSuccess}
+                                                showLineNumbers={true}
+                                            />
+                                        )
+                                    },
+                                    {
+                                        title: "ON ERROR",
+                                        content: (
+                                            <CodeEditor
+                                                mode={"json"}
+                                                placeholder="Optional JSON schema for structured output for on error"
+                                                value={formatOnError}
+                                                onChange={setFormatOnError}
+                                                showLineNumbers={true}
+                                            />
+                                        )
+                                    }]} />
+                                )
+                            }
+                        ]} />
+                    </Box>
+                </Box>
             </BaseDialog>
         </>
     );

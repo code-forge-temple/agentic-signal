@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {TimerNode as component} from "./TimerNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsTimerNodeData, defaultTimerNodeData, TIMER_NODE_MODES, TimerNode} from "./types/workflow";
 
 
@@ -16,10 +16,10 @@ export const TimerNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, TimerNode> = 
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "Timer",
+    title: TITLE,
     assertion: assertIsTimerNodeData,
     defaultData: {
-        title: "Timer",
+        title: TITLE,
         ...defaultIntervalTimerNodeData,
         toSanitize: ["input"],
     }

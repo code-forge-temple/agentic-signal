@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {GetDataNode as component} from "./GetDataNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsGetDataNodeData, GetDataNode} from "./types/workflow";
 
 
@@ -14,10 +14,10 @@ export const GetDataNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, GetDataNode
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "GET Data",
+    title: TITLE,
     assertion: assertIsGetDataNodeData,
     defaultData: {
-        title: "GET Data",
+        title: TITLE,
         url: "",
         dataType: "json",
         toSanitize: ["input"],

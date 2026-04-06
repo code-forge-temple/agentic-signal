@@ -180,21 +180,25 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
                 title={title}
             >
                 {lineData ? (
-                    <Line
-                        data={lineData}
-                        options={{
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    display: true
-                                },
-                                title: {
-                                    display: true,
-                                    ...('title' in lineData ? {text: lineData.title} : {}),
+                    <div style={{width: "100%", height: "100%", minHeight: 0}}>
+                        <Line
+                            data={lineData}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true
+                                    },
+                                    title: {
+                                        display: true,
+                                        ...('title' in lineData ? {text: lineData.title} : {}),
+                                    }
                                 }
-                            }
-                        }}
-                    />
+                            }}
+                            style={{width: "100%", height: "100%"}}
+                        />
+                    </div>
                 ) : (
                     <div style={{color: "#888", fontSize: 12}}>No data</div>
                 )}

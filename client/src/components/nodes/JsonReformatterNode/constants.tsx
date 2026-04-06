@@ -10,3 +10,5 @@ import {CodeBrackets} from "iconoir-react";
 export const Icon = <CodeBrackets />;
 
 export const NODE_TYPE = "json-reformatter";
+
+export const TITLE = "JSON Reformatter";

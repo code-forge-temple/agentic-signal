@@ -19,6 +19,7 @@ import {initialEdges, initialNodes} from '../components/nodes';
 import {nodeRegistry} from '../components/nodes/nodeRegistry.gen';
 import {AppNode, AppNodeType} from '../components/nodes/workflow.gen';
 import {NODE_TYPE as LLM_NODE_TYPE} from '../components/nodes/LlmProcessNode/constants';
+import {NODE_TYPE as ASYNC_DATA_AGGREGATOR_NODE_TYPE} from '../components/nodes/AsyncDataAggregatorNode/constants';
 
 
 const nodeAssertions = Object.fromEntries(
@@ -62,6 +63,14 @@ export function useWorkflow () {
                 setNodes((nds) =>
                     nds.map((node) => {
                         if (node.id === edge.target) {
+                            if (node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
+                                const rest = Object.fromEntries(
+                                    Object.entries((node.data as any).input ?? {}).filter(([k]) => k !== edge.source)
+                                );
+
+                                return updateNodeData(node, {input: rest}, nodeAssertions);
+                            }
+
                             return updateNodeData(node, {input: undefined}, nodeAssertions);
                         }
 
@@ -103,6 +112,14 @@ export function useWorkflow () {
                         );
 
                         if (wasReceivingFromDeleted) {
+                            if (node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
+                                const rest = Object.fromEntries(
+                                    Object.entries((node.data as any).input ?? {}).filter(([k]) => k !== deletedNode.id)
+                                );
+
+                                return updateNodeData(node, {input: rest}, nodeAssertions);
+                            }
+
                             return updateNodeData(node, {input: undefined}, nodeAssertions);
                         }
 
@@ -136,6 +153,20 @@ export function useWorkflow () {
                 );
 
                 if (!hasIncoming) return node;
+
+                if (node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
+                    const currentInputs = node.data.input ?? {};
+
+                    if (input === undefined) {
+                        const rest = Object.fromEntries(
+                            Object.entries(currentInputs).filter(([k]) => k !== nodeId)
+                        );
+
+                        return updateNodeData(node, {input: rest}, nodeAssertions);
+                    }
+
+                    return updateNodeData(node, {input: {...currentInputs, [nodeId]: input}}, nodeAssertions);
+                }
 
                 return updateNodeData(node, {input, feedback: undefined}, nodeAssertions);
             })

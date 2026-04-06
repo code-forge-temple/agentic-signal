@@ -10,3 +10,5 @@ import AiIcon from './assets/ai.svg';
 export const Icon = <AiIcon />;
 
 export const NODE_TYPE = "llm-process";
+
+export const TITLE = "AI Data Processing";

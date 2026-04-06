@@ -14,6 +14,7 @@ import "./MarkdownRenderer.scss";
 
 interface MarkdownRendererProps {
     content: string;
+    style?: React.CSSProperties;
 }
 
 const LoadingSpinner = () => (
@@ -23,7 +24,7 @@ const LoadingSpinner = () => (
         alignItems="center"
         className="markdown-renderer"
     >
-        <CircularProgress size={40} />
+        <CircularProgress size={25} />
     </Box>
 );
 
@@ -91,11 +92,12 @@ const LinkRenderer: FC<any> = React.memo(({href, children, ...props}) => {
 
 const PreBlock: FC<any> = React.memo(({children, ...props}) => <div {...props}>{children}</div>);
 
-export const MarkdownRenderer = React.memo(({content}: MarkdownRendererProps) => {
-
+export const MarkdownRenderer = React.memo(({content, style}: MarkdownRendererProps) => {
     return (
-        <Suspense fallback={<LoadingSpinner />}>
-            <LazyMarkdownContent content={content} />
-        </Suspense>
+        <div style={style} className="markdown-renderer-container">
+            <Suspense fallback={<LoadingSpinner />}>
+                <LazyMarkdownContent content={content} />
+            </Suspense>
+        </div>
     );
 });

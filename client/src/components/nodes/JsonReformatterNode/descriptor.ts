@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {JsonReformatterNode as component} from "./JsonReformatterNode";
-import {Icon, NODE_TYPE} from "./constants";
+import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsJsonReformatterNodeData, JsonReformatterNode} from "./types/workflow";
 
 
@@ -14,10 +14,10 @@ export const JsonReformatterNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Jso
     type: NODE_TYPE,
     component,
     icon: Icon,
-    title: "JSON Reformatter",
+    title: TITLE,
     assertion: assertIsJsonReformatterNodeData,
     defaultData: {
-        title: "JSON Reformatter",
+        title: TITLE,
         jsonataExpression: "",
         toSanitize: ["input"],
     }

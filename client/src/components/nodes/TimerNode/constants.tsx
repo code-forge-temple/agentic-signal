@@ -12,3 +12,5 @@ export {TIMER_NODE_TYPE as NODE_TYPE} from "@shared/types.gen";
 
 
 export const Icon = <ClockRotateRight />;
+
+export const TITLE = "Timer";

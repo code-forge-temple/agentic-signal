@@ -1,0 +1,19 @@
+.basic-tabs-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+
+    .tabs-titles {
+        border-bottom: .5px solid;
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .tabs-content {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0 0;
+    }
+}

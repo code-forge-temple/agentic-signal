@@ -144,57 +144,59 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                 onClose={() => setOpenSettings(false)}
                 title={selectedTool?.title || title}
             >
-                <FormControl fullWidth sx={{mb: 2}}>
-                    <InputLabel id="tool-select-label">Tool</InputLabel>
-                    <Select
-                        labelId="tool-select-label"
-                        value={toolSubtype}
-                        label="Tool"
-                        onChange={e => {
-                            const tool = toolRegistry.find(t => t.toolSubtype === e.target.value);
+                <div style={{display: 'flex', flexDirection: 'column', height: '60vh', minHeight: 0, flex: 1}}>
+                    <FormControl fullWidth sx={{mb: 2}}>
+                        <InputLabel id="tool-select-label">Tool</InputLabel>
+                        <Select
+                            labelId="tool-select-label"
+                            value={toolSubtype}
+                            label="Tool"
+                            onChange={e => {
+                                const tool = toolRegistry.find(t => t.toolSubtype === e.target.value);
 
-                            if (tool) {
-                                let handler: ((params: any) => Promise<any>) | undefined = undefined;
+                                if (tool) {
+                                    let handler: ((params: any) => Promise<any>) | undefined = undefined;
 
-                                if (!tool.userConfigSchema || Object.keys(tool.userConfigSchema).length === 0) {
-                                    handler = tool.handlerFactory({});
+                                    if (!tool.userConfigSchema || Object.keys(tool.userConfigSchema).length === 0) {
+                                        handler = tool.handlerFactory({});
+                                    }
+
+                                    const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
+
+                                    onConfigChange(id, {
+                                        toolSubtype: tool.toolSubtype,
+                                        toolSchema: tool.toolSchema,
+                                        title: tool.title,
+                                        userConfig: defaultUserConfig,
+                                        handler,
+                                        toSanitize: [...toSanitize, ...tool.toSanitize] // important to merge the the generic ToolNode toSanitize with the tool specific ones
+                                    });
                                 }
-
-                                const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
-
-                                onConfigChange(id, {
-                                    toolSubtype: tool.toolSubtype,
-                                    toolSchema: tool.toolSchema,
-                                    title: tool.title,
-                                    userConfig: defaultUserConfig,
-                                    handler,
-                                    toSanitize: [...toSanitize, ...tool.toSanitize] // important to merge the the generic ToolNode toSanitize with the tool specific ones
-                                });
-                            }
-                        }}
-                    >
-                        {toolRegistry.map(tool => (
-                            <MenuItem key={tool.toolSubtype} value={tool.toolSubtype}>
-                                {tool.title}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                {selectedTool?.userConfigSchema && Object.keys(selectedTool.userConfigSchema).length > 0 && (
-                    <FieldsetGroup title="Tool Configuration">
-                        <UserConfigFields
-                            userConfigSchema={selectedTool.userConfigSchema}
-                            userConfig={{...getDefaultUserConfigValues(selectedTool.userConfigSchema), ...(userConfig || {})}}
-                            onConfigChange={handleUserConfigChange}
-                        />
-                    </FieldsetGroup>
-                )}
-                <CodeEditor
-                    mode="json"
-                    value={JSON.stringify(selectedTool?.toolSchema || {}, null, 4)}
-                    readOnly={true}
-                    showLineNumbers={true}
-                />
+                            }}
+                        >
+                            {toolRegistry.map(tool => (
+                                <MenuItem key={tool.toolSubtype} value={tool.toolSubtype}>
+                                    {tool.title}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    {selectedTool?.userConfigSchema && Object.keys(selectedTool.userConfigSchema).length > 0 && (
+                        <FieldsetGroup title="Tool Configuration">
+                            <UserConfigFields
+                                userConfigSchema={selectedTool.userConfigSchema}
+                                userConfig={{...getDefaultUserConfigValues(selectedTool.userConfigSchema), ...(userConfig || {})}}
+                                onConfigChange={handleUserConfigChange}
+                            />
+                        </FieldsetGroup>
+                    )}
+                    <CodeEditor
+                        mode="json"
+                        value={JSON.stringify(selectedTool?.toolSchema || {}, null, 4)}
+                        readOnly={true}
+                        showLineNumbers={true}
+                    />
+                </div>
             </BaseDialog>
         </>
     );

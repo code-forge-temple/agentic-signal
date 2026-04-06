@@ -65,6 +65,7 @@ const sidebars: SidebarsConfig = {
                                 'nodes/ai/tools/gmail-fetch-emails',
                                 'nodes/ai/tools/gdrive-fetch-files',
                                 'nodes/ai/tools/gcalendar-fetch-events',
+                                'nodes/ai/tools/stock-analysis',
                             ],
                         },
                     ],
@@ -75,6 +76,8 @@ const sidebars: SidebarsConfig = {
                     items: [
                         'nodes/data/json-reformatter',
                         'nodes/data/data-validation',
+                        'nodes/data/stock-analysis',
+                        'nodes/data/async-data-aggregator',
                     ],
                 },
                 {
@@ -108,6 +111,7 @@ const sidebars: SidebarsConfig = {
                         'workflows/data/product-data-validation-and-visualization',
                         'workflows/data/ai-data-processing-overseer',
                         'workflows/data/customer-total-spend-analysis',
+                        'workflows/data/stock-analysis-ai-prediction',
                     ],
                 },
                 {

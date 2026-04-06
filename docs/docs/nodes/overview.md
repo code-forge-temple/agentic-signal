@@ -31,8 +31,10 @@ Legend:
 - AI Tool
 - HTTP Data
 - JSON Reformatter
-- Chart
+- Stock Analysis
+- Async Data Aggregator
 - Data Validation
+- Chart
 - Data Flow Spy
 - Timer Node
 
@@ -42,6 +44,7 @@ Legend:
 - **Google Services**: Gmail, Google Drive, Google Calendar.
 - **Weather APIs**: Real-time weather data.
 - **Search Engines**: DuckDuckGo, Brave Search.
+- **Financial Analysis**: Stock market data analysis with technical indicators.
 - **Date/Time Tools**: Get current date and time.
 - **Custom APIs**: Integrate any REST API via HTTP Data node.
 

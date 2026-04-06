@@ -41,6 +41,7 @@ export class GraphQLService {
             return data.braveSearch;
         } catch (error) {
             console.error("Brave Search error:", error);
+
             throw new Error(error instanceof Error ? error.message : 'Unknown error');
         }
     }

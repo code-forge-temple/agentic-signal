@@ -110,28 +110,30 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 onClose={() => setOpenSettings(false)}
                 title={title}
             >
-                <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
-                    <InputLabel id="data-source-type-label">{DATA_SOURCE_TYPE_LABEL}</InputLabel>
-                    <Select
-                        labelId="data-source-type-label"
-                        label={DATA_SOURCE_TYPE_LABEL}
-                        value={dataSource.type}
-                        onChange={e => {
-                            if(e.target.value === DATA_SOURCE_TYPES.JSON) {
-                                onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.JSON, value: ""}});
-                            } else if (e.target.value === DATA_SOURCE_TYPES.MARKDOWN) {
-                                onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.MARKDOWN, value: {text: "", files: []}}});
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}>
+                    <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
+                        <InputLabel id="data-source-type-label">{DATA_SOURCE_TYPE_LABEL}</InputLabel>
+                        <Select
+                            labelId="data-source-type-label"
+                            label={DATA_SOURCE_TYPE_LABEL}
+                            value={dataSource.type}
+                            onChange={e => {
+                                if(e.target.value === DATA_SOURCE_TYPES.JSON) {
+                                    onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.JSON, value: ""}});
+                                } else if (e.target.value === DATA_SOURCE_TYPES.MARKDOWN) {
+                                    onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.MARKDOWN, value: {text: "", files: []}}});
+                                }
+                            }}
+                        >
+                            {
+                                Object.values(DATA_SOURCE_TYPES).map(type => (
+                                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                                ))
                             }
-                        }}
-                    >
-                        {
-                            Object.values(DATA_SOURCE_TYPES).map(type => (
-                                <MenuItem key={type} value={type}>{type}</MenuItem>
-                            ))
-                        }
-                    </Select>
-                </FormControl>
-                {content}
+                        </Select>
+                    </FormControl>
+                    {content}
+                </div>
             </BaseDialog>
         </>
     );

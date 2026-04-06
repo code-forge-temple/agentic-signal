@@ -1,0 +1,181 @@
+---
+sidebar_position: 9
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import stocksAnalysisJson from '@site/static/workflows/stocks analysis.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Stock Analysis & AI Prediction Workflow
+
+This advanced workflow demonstrates a complete AI-powered stock trading analysis system that combines technical analysis, real-time news sentiment, and machine learning to generate BUY/SELL/HOLD predictions with confidence scores.
+
+**Key Features:**  
+- **Technical Analysis**: Computes moving averages, volatility, trend classification, and volume analysis  
+- **News Integration**: Fetches real-time market news using Brave Search  
+- **AI Decision Making**: Uses AI to combine technical indicators with news sentiment  
+- **Parallel Processing**: Leverages Async Data Aggregator for efficient multi-source data handling  
+- **Dual Output**: Displays both AI predictions and interactive price charts
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Stock Analysis AI Prediction Workflow](/img/workflows/stock-analysis-ai-prediction-preview.webp)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/stocks analysis.json")}>
+        {JSON.stringify(stocksAnalysisJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        ### Input & Trigger Nodes
+        - [**Timer Node**](/docs/nodes/input/timer-node)  
+            - Mode: Run once (can be set to interval for periodic analysis)
+            - Triggers both data source and API fetch simultaneously
+        
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: Stock name context (e.g., "The stock name is TESLA.")
+            - Provides textual context for AI processing
+        
+        - [**GET Data**](/docs/nodes/input/get-data)  
+            - URL: Alpha Vantage API endpoint for daily time series
+            - Symbol: TSLA (configurable)
+            - API Key: `demo` (⚠️ **Important**: Replace `demo` with your actual Alpha Vantage API key)
+            - Data Type: JSON
+
+        ### Data Processing Nodes
+        - [**JSON Reformatter #1** (Chart Data)](/docs/nodes/data/json-reformatter)  
+            - Purpose: Transforms API response into Chart.js format
+            - Extracts: Open, High, Low, Close prices
+            - Output: Multi-dataset chart configuration
+        
+        - [**JSON Reformatter #2** (Analysis Data)](/docs/nodes/data/json-reformatter)  
+            - Purpose: Transforms API response into OHLCV format
+            - Extracts: Symbol, timestamp, open, high, low, close, volume
+            - Output: Array of data points for technical analysis
+        
+        - [**Stock Analysis Node**](/docs/nodes/data/stock-analysis)  
+            - Computes: SMA5, SMA10, volatility, trend, slope, volume ratio
+            - Input: Minimum 10 data points required
+            - Output: Technical indicators + trend classification
+
+        ### Aggregation & AI Processing
+        - [**Async Data Aggregator**](/docs/nodes/data/async-data-aggregator)  
+            - Combines: Stock analysis results + stock name context
+            - Waits for both parallel inputs before proceeding
+            - Output: Array containing both data sources
+        
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Model: granite4:latest (or your preferred LLM)
+            - Prompt: Financial analysis AI with access to technical indicators and news search
+            - Decision Logic:
+                - Evaluates technical indicators (trend, slope, volume)
+                - Calls Brave Search tool for recent news
+                - Combines both signals for final prediction
+                - Outputs: BUY/SELL/HOLD with confidence score
+            - Max Tool Retries: 3
+        
+        - [**Brave Search Tool**](/docs/nodes/ai/tools/brave-search)  
+            - Query: `"<symbol> stock news"`
+            - Max Results: 15
+            - Used by AI to gather news sentiment
+            - Requires: Brave Search API Key
+
+        ### Output Nodes
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Displays AI prediction with:
+                - Symbol
+                - Prediction (BUY/SELL/HOLD)
+                - Confidence score (0-1)
+                - Reasoning (technical + news analysis)
+        
+        - [**Display Chart**](/docs/nodes/output/chart)  
+            - Visualizes: OHLC price data
+            - Interactive chart with multiple datasets
+            - Time series view of stock performance
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Trigger Workflow**
+The Timer node initiates the workflow, triggering both the Data Source (stock name context) and GET Data (API fetch) nodes in parallel.
+
+2. **Fetch Stock Data**
+The GET Data node calls the Alpha Vantage API to retrieve daily historical OHLCV data for the specified stock symbol (e.g., TSLA).
+
+3. **Parallel Data Transformation**
+The API response is processed through two parallel paths:
+   - **Path A (Chart)**: JSON Reformatter extracts and formats Open/High/Low/Close data for visualization
+   - **Path B (Analysis)**: JSON Reformatter converts data to OHLCV format with proper types
+
+4. **Compute Technical Indicators**
+The Stock Analysis node receives the OHLCV data and computes:
+   - Simple Moving Averages (SMA5, SMA10)
+   - Price volatility (standard deviation)
+   - Trend classification (up/down/sideways)
+   - Volume ratio (current vs. average)
+   - Price slope (momentum indicator)
+   - Percentage change
+
+5. **Aggregate Multi-Source Data**
+The Async Data Aggregator waits for both inputs:
+   - Technical analysis results (from Stock Analysis node)
+   - Stock name context (from Data Source node)
+
+    Once both arrive, it combines them into an array and passes to the AI processing node.
+
+6. **AI-Powered Decision Making**
+The AI Data Processing node:
+   1. **Analyzes Technical Indicators**: Evaluates trend, slope, volume ratio, volatility
+   2. **Searches for News**: Calls the Brave Search tool with query `"<symbol> stock news"`
+   3. **Synthesizes Information**: Combines technical signals with news sentiment
+   4. **Generates Prediction**: Outputs BUY/SELL/HOLD with confidence score
+   5. **Provides Reasoning**: Explains the decision based on indicators and news
+
+7. **Display Results**
+Two parallel outputs show the complete picture:
+   - **Data Flow Spy**: Displays AI prediction with symbol, recommendation, confidence, and reasoning
+   - **Display Chart**: Shows interactive OHLC chart for visual analysis
+
+## Customization Options
+
+1. Change Stock Symbol
+Modify the GET Data node URL to analyze different stocks:
+```
+https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=AAPL&outputsize=compact&apikey=YOUR_KEY
+```
+
+2. Fine-tune AI Prompt
+Customize the AI Data Processing prompt to:
+- Add more sophisticated decision rules
+- Include risk management considerations
+- Adjust confidence scoring methodology
+- Add additional data sources
+
+3. Add More Context
+Include additional data sources in the Async Data Aggregator:
+- Fundamental data (P/E ratio, earnings)
+- Sector performance
+- Market indices correlation
+- Social media sentiment
+
+
+## Requirements
+
+### API Keys
+1. **Alpha Vantage API Key**: Get free key at [alphavantage.co](https://www.alphavantage.co/support/#api-key)
+   - Free tier: 25 requests/day
+   - ⚠️ Replace the `demo` API key in the GET Data node with your actual key
+2. **Brave Search API Key**: Get key at [brave.com/search/api](https://brave.com/search/api/)
+   - Required for news search functionality
+
+### LLM Model
+- Recommended: Models with 8B+ parameters for reliable tool calling
+- Examples: `granite4:latest`, `llama3.1:8b`, `qwen2.5:14b`
+- Smaller models may struggle with sequential tool calls

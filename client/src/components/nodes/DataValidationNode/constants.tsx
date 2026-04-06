@@ -9,3 +9,5 @@ import {ScanBarcode} from "iconoir-react";
 export const Icon = <ScanBarcode />;
 
 export const NODE_TYPE = "data-validation";
+
+export const TITLE = "Data Validation";

@@ -34,6 +34,10 @@
             background: #E91E63;
             width: 20px;
             height: 20px;
+
+            &.selected {
+                background: #9C27B0;
+            }
         }
 
         $node-icon-tooltip-background: rgba(0, 0, 0, 0.5);

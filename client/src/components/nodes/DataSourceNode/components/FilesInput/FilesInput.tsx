@@ -7,7 +7,7 @@
 import {CodeEditor, getEditorMode} from '../../../../CodeEditor';
 import {Box, IconButton, Tabs, Tab} from '@mui/material';
 import {Attachment, Xmark} from 'iconoir-react';
-import './style.scss';
+import './FilesInput.scss';
 import {useRef, useEffect, useState} from 'react';
 import {FileData, FilesDataSource} from '../../types/workflow';
 import {extractFromMarkdown, EXTRACTION_TYPE, fileExtensionToCodeBlockLang} from '../../../../MarkdownRenderer';
@@ -135,7 +135,7 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                     <Tabs
                         value={tab}
                         onChange={(_e, v) => setTab(v)}
-                        sx={{minHeight: 32}}
+                        sx={{minHeight: 32, height: '100%'}}
                         variant="scrollable"
                         scrollButtons="auto"
                     >

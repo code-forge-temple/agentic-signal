@@ -1,0 +1,293 @@
+{
+    "nodes": [
+        {
+            "id": "3360ba53-ee55-437e-923b-4b9a6067ade6",
+            "type": "slack-input",
+            "position": {
+                "x": 295.5,
+                "y": 51
+            },
+            "data": {
+                "title": "Slack Input",
+                "commandFilter": "/agentic-signal",
+                "routingId": "web"
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false
+        },
+        {
+            "id": "cae625cb-e8ed-407c-8552-0bbc7203367e",
+            "type": "json-reformatter",
+            "position": {
+                "x": 552,
+                "y": 83
+            },
+            "data": {
+                "title": "JSON Reformatter",
+                "jsonataExpression": "message"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "173be744-6758-4590-980c-d90e0b28da46",
+            "type": "json-reformatter",
+            "position": {
+                "x": 547.5,
+                "y": -39
+            },
+            "data": {
+                "title": "JSON Reformatter",
+                "jsonataExpression": "{\n    \"channelId\": channelId,\n    \"userId\": userId,\n    \"responseUrl\": responseUrl\n}"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "68d69a06-12c0-4d97-8b39-8f26e2536688",
+            "type": "llm-process",
+            "position": {
+                "x": 775.5,
+                "y": 54.5
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "model": "",
+                "prompt": "You MUST use all available tools to provide an answer.\nTools available: \"duckDuckGoSearch\"",
+                "message": {},
+                "format": {},
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false
+        },
+        {
+            "id": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
+            "type": "async-data-aggregator",
+            "position": {
+                "x": 808.5,
+                "y": -58
+            },
+            "data": {
+                "title": "Async Data Aggregator"
+            },
+            "measured": {
+                "width": 80,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
+            "type": "json-reformatter",
+            "position": {
+                "x": 1051.0660807290367,
+                "y": 48.20579979871614
+            },
+            "data": {
+                "title": "JSON Reformatter",
+                "jsonataExpression": "(\r\n  $obj := $[$type($)=\"object\"];\r\n  $msg := $[$type($)=\"string\"][0];\r\n  $merge([$obj, {\"message\": $msg}])\r\n)"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "eeb99d89-81f8-4a4d-b2f7-e1ed1e3a6f8a",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 1043.522319673531,
+                "y": -46.51230223067765
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "1e889652-dc86-4429-b8c9-c0d88740e461",
+            "type": "slack-output",
+            "position": {
+                "x": 1063,
+                "y": 177.5
+            },
+            "data": {
+                "title": "Slack Output"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false
+        },
+        {
+            "id": "c1268f03-a6cf-4013-9282-e1739fc0f00d",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 410,
+                "y": 167.5
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "5487ec93-620d-4093-9125-08e73030712b",
+            "type": "ai-tool",
+            "position": {
+                "x": 778,
+                "y": 183.5
+            },
+            "data": {
+                "title": "DuckDuckGo Search Tool",
+                "toolSubtype": "duckduckgo-search",
+                "userConfig": {
+                    "maxResults": 5,
+                    "requireToolUse": true,
+                    "browserPath": ""
+                },
+                "userConfigSchema": {
+                    "maxResults": {
+                        "type": "integer",
+                        "description": "Maximum number of results to return",
+                        "default": 5,
+                        "minimum": 1,
+                        "maximum": 20
+                    },
+                    "requireToolUse": {
+                        "type": "boolean",
+                        "description": "Require tool use (forces the LLM to always call this tool)",
+                        "default": true
+                    }
+                }
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false
+        }
+    ],
+    "edges": [
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "3360ba53-ee55-437e-923b-4b9a6067ade6",
+            "sourceHandle": "right-source",
+            "target": "cae625cb-e8ed-407c-8552-0bbc7203367e",
+            "targetHandle": "left-target",
+            "id": "xy-edge__3360ba53-ee55-437e-923b-4b9a6067ade6right-source-cae625cb-e8ed-407c-8552-0bbc7203367eleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "3360ba53-ee55-437e-923b-4b9a6067ade6",
+            "sourceHandle": "right-source",
+            "target": "173be744-6758-4590-980c-d90e0b28da46",
+            "targetHandle": "left-target",
+            "id": "xy-edge__3360ba53-ee55-437e-923b-4b9a6067ade6right-source-173be744-6758-4590-980c-d90e0b28da46left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "68d69a06-12c0-4d97-8b39-8f26e2536688",
+            "sourceHandle": "right-source",
+            "target": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
+            "targetHandle": "left-target",
+            "id": "xy-edge__68d69a06-12c0-4d97-8b39-8f26e2536688right-source-a088d300-e9a1-4b03-b98c-a01be20aebe8left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
+            "sourceHandle": "right-source",
+            "target": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
+            "targetHandle": "left-target",
+            "id": "xy-edge__a088d300-e9a1-4b03-b98c-a01be20aebe8right-source-4b1d6abd-80d1-4cf3-9687-ba874eca9dbaleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
+            "sourceHandle": "right-source",
+            "target": "eeb99d89-81f8-4a4d-b2f7-e1ed1e3a6f8a",
+            "targetHandle": "left-target",
+            "id": "xy-edge__4b1d6abd-80d1-4cf3-9687-ba874eca9dbaright-source-eeb99d89-81f8-4a4d-b2f7-e1ed1e3a6f8aleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "cae625cb-e8ed-407c-8552-0bbc7203367e",
+            "sourceHandle": "right-source",
+            "target": "68d69a06-12c0-4d97-8b39-8f26e2536688",
+            "targetHandle": "left-target",
+            "id": "xy-edge__cae625cb-e8ed-407c-8552-0bbc7203367eright-source-68d69a06-12c0-4d97-8b39-8f26e2536688left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "173be744-6758-4590-980c-d90e0b28da46",
+            "sourceHandle": "right-source",
+            "target": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
+            "targetHandle": "left-target",
+            "id": "xy-edge__173be744-6758-4590-980c-d90e0b28da46right-source-a088d300-e9a1-4b03-b98c-a01be20aebe8left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
+            "sourceHandle": "right-source",
+            "target": "1e889652-dc86-4429-b8c9-c0d88740e461",
+            "targetHandle": "left-target",
+            "id": "xy-edge__4b1d6abd-80d1-4cf3-9687-ba874eca9dbaright-source-1e889652-dc86-4429-b8c9-c0d88740e461left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "3360ba53-ee55-437e-923b-4b9a6067ade6",
+            "sourceHandle": "right-source",
+            "target": "c1268f03-a6cf-4013-9282-e1739fc0f00d",
+            "targetHandle": "left-target",
+            "id": "xy-edge__3360ba53-ee55-437e-923b-4b9a6067ade6right-source-c1268f03-a6cf-4013-9282-e1739fc0f00dleft-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "5487ec93-620d-4093-9125-08e73030712b",
+            "sourceHandle": "right-source",
+            "target": "68d69a06-12c0-4d97-8b39-8f26e2536688",
+            "targetHandle": "tools-target",
+            "id": "xy-edge__5487ec93-620d-4093-9125-08e73030712bright-source-68d69a06-12c0-4d97-8b39-8f26e2536688tools-target"
+        }
+    ]
+}

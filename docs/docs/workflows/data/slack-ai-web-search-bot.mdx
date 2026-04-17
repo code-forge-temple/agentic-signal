@@ -1,0 +1,86 @@
+---
+sidebar_position: 10
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import slackAiWebSearchJson from '@site/static/workflows/slack-ai-web-search-bot.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Slack AI Web Search Bot Workflow
+
+This workflow listens for Slack slash commands, queries the web with DuckDuckGo, and returns the AI-generated response directly in Slack.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        This workflow uses the Slack Input Node to receive commands, an AI Data Processing node with the DuckDuckGo Search tool to gather web results, and the Slack Output Node to reply to the user.
+        ![Slack AI Web Search Bot Workflow](/img/workflows/slack-ai-web-search-bot-preview.webp)
+
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl('/workflows/slack-ai-web-search-bot.json')}>
+        {JSON.stringify(slackAiWebSearchJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Slack Input**](/docs/nodes/input/slack-input)  
+            - Command Filter: `/agentic-signal`  
+            - Routing ID: `web`  
+        - [**JSON Reformatter**](/docs/nodes/data/json-reformatter)  
+            - Expression: `message`  
+            - Purpose: Extracts the text payload from the Slack command for AI processing.  
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Model: `llama3.2:1b`  
+            - Prompt: `You MUST use all available tools to provide an answer. Tools available: "duckDuckGoSearch"`  
+            - Max Tool Retries: `3`  
+        - [**DuckDuckGo Search Tool**](/docs/nodes/ai/tools/duckduckgo-search)  
+            - Query: The AI tool uses the user message to search the web for relevant facts and context.  
+        - [**Async Data Aggregator**](/docs/nodes/data/async-data-aggregator)  
+            - Combines Slack metadata with the AI response before sending to Slack.  
+        - [**Slack Output**](/docs/nodes/output/slack-output)  
+            - Sends the final response back to Slack using `responseUrl` or `channelId`.  
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Optional debugging node to inspect intermediate workflow data.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Receive Slack command**
+   - The Slack Input Node listens for `/agentic-signal [web] ...` and captures the command payload.
+2. **Extract the message**
+   - A JSON Reformatter node pulls the text payload from the Slack input so the AI node can use it.
+3. **Search the web**
+   - The AI Data Processing node uses the DuckDuckGo Search tool to look up information relevant to the user's request.
+4. **Aggregate metadata**
+   - The Async Data Aggregator merges the AI response with Slack metadata such as `channelId`, `userId`, and `responseUrl`.
+5. **Send the response**
+   - The Slack Output Node sends the generated answer back to the user in Slack.
+
+---
+
+## Common Use Cases
+
+1. **Instant research assistant**: Ask Slack for quick summaries and web-backed answers.
+2. **Team support bot**: Provide helpful responses to common questions using live search data.
+3. **Command-based knowledge retrieval**: Use Slack commands to trigger on-demand web searches.
+4. **Multi-workflow bot**: Load multiple Slack Input workflows in parallel, each with a different Routing ID, to handle independent commands from a single bot — e.g., `/agentic-signal [web] ...` for web search, `/agentic-signal [weather] ...` for weather lookups, etc.
+
+## Best Practices
+
+- **Use a dedicated Routing ID**: Keep `web` isolated from other Slack workflows to avoid cross-triggering.
+- **Validate incoming commands**: Ensure the Slack Input node only accepts the intended command filter.
+- **Prefer `responseUrl` for replies**: When possible, use the Slack Output Node with `responseUrl` to ensure responses land in the correct context.
+- **Monitor with Data Flow Spy**: Add spy nodes when debugging command handling or AI output formatting.
+
+## Troubleshooting
+
+- **No response in Slack**: Verify the Slack Output node is configured and connected. Also confirm the Slack app bot token is valid.
+- **AI returns irrelevant search results**: Adjust the prompt or require the AI to use the DuckDuckGo tool more explicitly.
+- **Slack command not received**: Check that the Slack app is installed and Socket Mode is enabled for the Slack Input node.
+- **Missing web results**: Confirm the DuckDuckGo Search tool has the correct settings and that the AI prompt instructs tool usage.

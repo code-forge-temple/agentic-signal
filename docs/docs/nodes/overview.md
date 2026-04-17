@@ -16,7 +16,7 @@ Legend:
 ① **Input Data Connector**  
 ② **Output Data Connector**  
 ③ **Tool Connector**: Some nodes offer additional connectors, such as the [Tool Connector](/docs/nodes/ai/ai-tool) on the [AI Data Processing Node](/docs/nodes/ai/llm-process).  
-④ **Timer Connector**: Connects to a [Timer Node](/docs/nodes/input/timer-node) to trigger this node **Run** method automatically at a set interval.  
+④ **Timer Connector**: Connects to a [Timer Node](/docs/nodes/input/timer) to trigger this node **Run** method automatically at a set interval/schedule.  
 ⑤ **Settings**: Configure node-specific options (highlighted if configuration is missing or required).  
 ⑥ **Error Logs**: View errors when the node fails to process input data (highlighted if errors are present).  
 ⑦ **Output**: View processed results (e.g., see the [Display Chart Node](/docs/nodes/output/chart)); highlighted when new output is available.  
@@ -26,17 +26,20 @@ Legend:
 
 `Agentic Signal` supports a variety of node types for building workflows, including:
 
-- Data Source
-- AI Data Processing
-- AI Tool
-- HTTP Data
-- JSON Reformatter
-- Stock Analysis
-- Async Data Aggregator
-- Data Validation
-- Chart
-- Data Flow Spy
-- Timer Node
+- [Data Source](/docs/nodes/input/data-source)
+- [AI Data Processing](/docs/nodes/ai/llm-process)
+- [AI Tool](/docs/nodes/ai/ai-tool)
+- [HTTP Data](/docs/nodes/input/http-data)
+- [JSON Reformatter](/docs/nodes/data/json-reformatter)
+- [Stock Analysis](/docs/nodes/data/stock-analysis)
+- [Async Data Aggregator](/docs/nodes/data/async-data-aggregator)
+- [Data Validation](/docs/nodes/data/data-validation)
+- [Chart](/docs/nodes/output/chart)
+- [Data Flow Spy](/docs/nodes/output/data-flow-spy)
+- [Timer](/docs/nodes/input/timer)
+- [Reddit Post](/docs/nodes/output/reddit-post) <span className="pro-badge">PRO</span>
+- [Slack Input](/docs/nodes/input/slack-input) <span className="pro-badge">PRO</span>
+- [Slack Output](/docs/nodes/output/slack-output) <span className="pro-badge">PRO</span>
 
 ## AI & Tool Integrations
 
@@ -46,6 +49,8 @@ Legend:
 - **Search Engines**: DuckDuckGo, Brave Search.
 - **Financial Analysis**: Stock market data analysis with technical indicators.
 - **Date/Time Tools**: Get current date and time.
+- **Slack**: Send and receive messages via Slack slash commands using Socket Mode.
+- **Reddit**: Automatically post text or link content to subreddits via OAuth2.
 - **Custom APIs**: Integrate any REST API via HTTP Data node.
 
 ## Learn More

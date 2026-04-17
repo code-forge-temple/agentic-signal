@@ -46,12 +46,47 @@
 - **Conversation Memory** - Maintain context across workflow executions
 
 ### 🔗 **Rich Integrations**
-- See the [Nodes Reference](https://code-forge-temple.github.io/agentic-signal/docs/nodes/overview) for all supported integrations and node types.
-- **More integrations coming soon** - Discord, Slack, Notion, Airtable, and many more!
+
+#### Node Types
+
+- [Data Source](https://agentic-signal.com/docs/nodes/input/data-source)
+- [AI Data Processing](https://agentic-signal.com/docs/nodes/ai/llm-process)
+- [AI Tool](https://agentic-signal.com/docs/nodes/ai/ai-tool)
+- [HTTP Data](https://agentic-signal.com/docs/nodes/input/http-data)
+- [JSON Reformatter](https://agentic-signal.com/docs/nodes/data/json-reformatter)
+- [Stock Analysis](https://agentic-signal.com/docs/nodes/data/stock-analysis)
+- [Async Data Aggregator](https://agentic-signal.com/docs/nodes/data/async-data-aggregator)
+- [Data Validation](https://agentic-signal.com/docs/nodes/data/data-validation)
+- [Chart](https://agentic-signal.com/docs/nodes/output/chart)
+- [Data Flow Spy](https://agentic-signal.com/docs/nodes/output/data-flow-spy)
+- [Timer](https://agentic-signal.com/docs/nodes/input/timer)
+- [Reddit Post](https://agentic-signal.com/docs/nodes/output/reddit-post) *(PRO)*
+- [Slack Input](https://agentic-signal.com/docs/nodes/input/slack-input) *(PRO)*
+- [Slack Output](https://agentic-signal.com/docs/nodes/output/slack-output) *(PRO)*
+
+> See the full [Nodes Reference](https://agentic-signal.com/docs/nodes/overview) for details on all node types.
+
+#### Workflows
+
+Explore ready-to-use workflow templates in the [Workflow Examples](https://agentic-signal.com/docs/workflows/overview).
+
+#### AI & Tool Integrations
+
+- **Ollama LLMs**: Use local language models for text analysis and generation.
+- **Google Services**: Gmail, Google Drive, Google Calendar.
+- **Weather APIs**: Real-time weather data.
+- **Search Engines**: DuckDuckGo, Brave Search.
+- **Financial Analysis**: Stock market data analysis with technical indicators.
+- **Date/Time Tools**: Get current date and time.
+- **Slack**: Send and receive messages via Slack slash commands using Socket Mode. *(PRO)*
+- **Reddit**: Automatically post text or link content to subreddits via OAuth2. *(PRO)*
+- **Custom APIs**: Integrate any REST API via HTTP Data node.
+- **More integrations coming soon** - Discord, Notion, Airtable, and many more!
 
 ## 🚀 Quick Start
 
-See the [Quick Start](https://code-forge-temple.github.io/agentic-signal/docs/getting-started/windows-app/quick-start) for setup and configuration instructions.
+ - Windows/Linux/macOS App: [quick start](https://agentic-signal.com/docs/getting-started/windows-app/quick-start) for setup and configuration instructions, or
+ - Web App: [installation](https://agentic-signal.com/docs/getting-started/web-app/installation) & [quick start](https://agentic-signal.com/docs/getting-started/web-app/quick-start) (includes Docker option)
 
 ## 🤝 Contributing
 

@@ -64,6 +64,8 @@ The node outputs an **array** containing data from all connected sources, in the
 ## Example Usage
 For example usage, see the [Stock Analysis & AI Prediction workflow](/docs/workflows/data/stock-analysis-ai-prediction) which demonstrates a complete AI-powered stock trading analysis system that combines technical analysis, real-time news sentiment, and machine learning to generate BUY/SELL/HOLD predictions with confidence scores.
 
+You can also see the [Slack AI Web Search Bot workflow](/docs/workflows/data/slack-ai-web-search-bot) for a Slack-driven workflow that aggregates command metadata and AI results before sending a response back to Slack.
+
 ## Troubleshooting
 
 **Node Never Triggers**

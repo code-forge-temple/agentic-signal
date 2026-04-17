@@ -19,14 +19,18 @@ import {
     Legend
 } from "chart.js";
 import {BaseNode} from "../BaseNode";
-import {ChartDataSchema, type ChartData} from "./types/chart.types";
+import {ChartDataSchema, type ChartData, CHART_INPUT_JSON_SCHEMA} from "./types/chart.types";
 import {runTask} from "../BaseNode/utils";
 import {LogsDialog} from "../../LogsDialog";
 import {BaseDialog} from "../../BaseDialog";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
-import {ERROR_PREFIX, Icon} from "./constants";
+import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {CodeEditor} from "../../CodeEditor";
+import "ace-builds/src-noconflict/mode-json";
+import {FieldsetGroup} from "../../FieldsetGroup";
+import {formatFeedbackMessage} from "../StockAnalysisNode/utils";
 
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -47,6 +51,7 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
     const [error, setError] = useState<string | null>(null);
     const [openOutput, setOpenOutput] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
+    const [openSettings, setOpenSettings] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const {input, title, onResultUpdate, onFeedbackSend} = data;
 
@@ -62,15 +67,18 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
 
                     onResultUpdate(id, validationResult.data);
                 } else {
-                    setError(`${ERROR_PREFIX}Chart data validation failed: \n${JSON.stringify(validationResult.error, null, 4)}`);
+                    setError(`Chart data validation failed: \n${JSON.stringify(validationResult.error, null, 4)}`);
 
                     setChartData(null);
 
                     onFeedbackSend(
                         id,
-                        `Chart validation error: The data format is incorrect. Expected one of the supported formats but received: ${JSON.stringify(input, null, 4)
-                        }\n\nValidation errors: ${JSON.stringify(validationResult.error.errors, null, 4)
-                        }`
+                        formatFeedbackMessage(
+                            "Chart",
+                            CHART_INPUT_JSON_SCHEMA,
+                            JSON.stringify(input, null, 4),
+                            JSON.stringify(validationResult.error.errors, null, 4)
+                        )
                     )
                 }
             }, setIsRunning);
@@ -165,6 +173,7 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
                 title={title}
                 output={{callback: () => setOpenOutput(true), highlight: lineData !== undefined}}
                 logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
+                settings={() => setOpenSettings(true)}
             />
 
             <LogsDialog
@@ -173,6 +182,17 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
                 title={title}
                 error={error}
             />
+
+            <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>
+                <FieldsetGroup title="Expected Input Format *" height={"100%"}>
+                    <CodeEditor
+                        mode="json"
+                        value={CHART_INPUT_JSON_SCHEMA}
+                        readOnly={true}
+                        showLineNumbers={true}
+                    />
+                </FieldsetGroup>
+            </BaseDialog>
 
             <BaseDialog
                 open={openOutput}

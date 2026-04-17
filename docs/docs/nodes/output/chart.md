@@ -6,7 +6,7 @@ sidebar_position: 1
 
 The **Chart Node** visualizes data as interactive line charts. It accepts various data formats and automatically converts them into beautiful, responsive charts using Chart.js.
 
-![Display Chart Node](/img/nodes/display-chart-preview.jpg)
+![Display Chart Node](/img/nodes/display-chart-preview.webp)
 
 ## Supported Data Formats
 

@@ -9,7 +9,7 @@ import '@xyflow/react/dist/style.css';
 import './App.scss';
 import {useWorkflow} from '../../hooks/useWorkflow';
 import {nodeFactory, nodeTypes} from '../nodes';
-import {useCallback} from 'react';
+import {useCallback, useState} from 'react';
 import {Dock} from '../Dock';
 import {v4 as uuidv4} from 'uuid';
 import {useSnackbar} from 'notistack'
@@ -20,6 +20,7 @@ import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
 import {useFullscreen} from '../../hooks/useFullscreen';
 import {getDefaultUserConfigValues} from '../../types/ollama.types';
 import {Chip} from '@mui/material';
+import {ConfirmDialog} from '../ConfirmDialog';
 
 
 const getId = () => uuidv4();
@@ -44,6 +45,32 @@ function deleteByPath (obj: Record<string, any>, path: string): void {
     }
 }
 
+function remapNodeAndEdgeIds (nodes: any[], edges: any[]) {
+    const idMap = new Map<string, string>(
+        nodes.map((node: any) => [node.id, getId()])
+    );
+
+    const remappedNodes = nodes.map((node: any) => ({
+        ...node,
+        id: idMap.get(node.id)!
+    }));
+
+    const remappedEdges = edges.map((edge: any) => {
+        const newSource = idMap.get(edge.source) ?? edge.source;
+        const newTarget = idMap.get(edge.target) ?? edge.target;
+        const newId = `xy-edge__${newSource}${edge.sourceHandle ?? ''}-${newTarget}${edge.targetHandle ?? ''}`;
+
+        return {
+            ...edge,
+            source: newSource,
+            target: newTarget,
+            id: newId
+        };
+    });
+
+    return {remappedNodes, remappedEdges};
+}
+
 const descriptorMap = Object.fromEntries(
     nodeRegistry.map(desc => [desc.type, desc])
 );
@@ -62,10 +89,17 @@ function AppFlow () {
         setEdges,
     } = useWorkflow();
     const {enqueueSnackbar} = useSnackbar();
+    const [pendingWorkflow, setPendingWorkflow] = useState<{nodes: any[], edges: any[]} | null>(null);
 
     useFullscreen();
 
     const handleSave = () => {
+        if (nodes.length === 0 && edges.length === 0) {
+            enqueueSnackbar('Nothing to save.', {variant: 'info'});
+
+            return;
+        }
+
         const sanitizedNodes = nodes.map(node => {
             const nodeData = JSON.parse(JSON.stringify(node.data));
             const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize : [];
@@ -173,8 +207,14 @@ function AppFlow () {
                     return updatedNode;
                 });
 
-                setNodes(hydratedNodes);
-                setEdges(data.edges || []);
+                const {remappedNodes, remappedEdges} = remapNodeAndEdgeIds(hydratedNodes, data.edges || []);
+
+                if (nodes.length > 0) {
+                    setPendingWorkflow({nodes: remappedNodes, edges: remappedEdges});
+                } else {
+                    setNodes(remappedNodes);
+                    setEdges(remappedEdges);
+                }
             } catch (error) {
                 enqueueSnackbar('Failed to load workflow: ' + (error instanceof Error ? error.message : String(error)), {variant: 'error'});
             } finally {
@@ -182,6 +222,32 @@ function AppFlow () {
             }
         };
         reader.readAsText(file);
+    };
+
+    const handleMergeWorkflow = () => {
+        if (!pendingWorkflow) return;
+
+        const maxY = Math.max(...nodes.map(n => n.position.y + (n.measured?.height ?? 40)));
+        const minX = Math.min(...nodes.map(n => n.position.x));
+        const yOffset = maxY + 100;
+        const pendingMinY = Math.min(...pendingWorkflow.nodes.map((n: any) => n.position.y));
+        const pendingMinX = Math.min(...pendingWorkflow.nodes.map((n: any) => n.position.x));
+        const shiftedNodes = pendingWorkflow.nodes.map((node: any) => ({
+            ...node,
+            position: {
+                x: node.position.x - pendingMinX + minX,
+                y: node.position.y + yOffset - pendingMinY}
+        }));
+
+        setNodes([...nodes, ...shiftedNodes]);
+        setEdges([...edges, ...pendingWorkflow.edges]);
+    };
+
+    const handleReplaceWorkflow = () => {
+        if (!pendingWorkflow) return;
+
+        setNodes(pendingWorkflow.nodes);
+        setEdges(pendingWorkflow.edges);
     };
 
     const onDragOver = useCallback((event: React.DragEvent) => {
@@ -213,6 +279,16 @@ function AppFlow () {
     return (
         <>
             <Dock onSave={handleSave} onLoad={handleLoad} onClear={handleClear} />
+            <ConfirmDialog
+                open={pendingWorkflow !== null}
+                onClose={() => setPendingWorkflow(null)}
+                title="Load Workflow"
+                message="A workflow is already loaded. Would you like to add to the existing workflow or replace it?"
+                confirmLabel="Add to Existing"
+                cancelLabel="Replace"
+                onConfirm={handleMergeWorkflow}
+                onCancel={handleReplaceWorkflow}
+            />
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

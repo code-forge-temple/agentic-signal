@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
         'getting-started/configuration',
         'getting-started/google-oauth-client',
         'getting-started/reddit-oauth-client',
+        'getting-started/slack-bot-setup',
     ],
 
     nodesSidebar: [
@@ -41,7 +42,8 @@ const sidebars: SidebarsConfig = {
                         'nodes/input/data-source',
                         'nodes/input/http-data',
                         'nodes/input/get-data',
-                        'nodes/input/timer-node',
+                        'nodes/input/timer',
+                        'nodes/input/slack-input',
                     ],
                 },
                 {
@@ -87,6 +89,7 @@ const sidebars: SidebarsConfig = {
                         'nodes/output/chart',
                         'nodes/output/data-flow-spy',
                         'nodes/output/reddit-post',
+                        'nodes/output/slack-output',
                     ],
                 },
             ],
@@ -107,6 +110,8 @@ const sidebars: SidebarsConfig = {
                         'workflows/data/weather-dashboard',
                         'workflows/data/gdrive-listing',
                         'workflows/data/gcalendar-listing',
+                        'workflows/data/slack-ai-web-search-bot',
+                        'workflows/data/reddit-post',
                         'workflows/data/timeseries-chart',
                         'workflows/data/product-data-validation-and-visualization',
                         'workflows/data/ai-data-processing-overseer',

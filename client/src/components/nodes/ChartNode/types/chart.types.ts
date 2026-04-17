@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {z} from 'zod';
+import {zodToJsonSchema} from 'zod-to-json-schema';
 
 
 // Basic point structure for x,y data
@@ -55,3 +56,5 @@ export type ChartData = z.infer<typeof ChartDataSchema>;
 export type ChartPoint = z.infer<typeof ChartPointSchema>;
 
 export type ChartDataset = z.infer<typeof ChartDatasetSchema>;
+
+export const CHART_INPUT_JSON_SCHEMA = JSON.stringify(zodToJsonSchema(ChartDataSchema), null, 4);

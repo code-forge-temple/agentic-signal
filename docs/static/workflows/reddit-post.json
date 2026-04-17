@@ -1,0 +1,200 @@
+{
+    "nodes": [
+        {
+            "id": "c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9",
+            "type": "llm-process",
+            "position": {
+                "x": 844,
+                "y": 231.5
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "model": "gemma4:e2b",
+                "prompt": "You are a Reddit post writer.\nGather the latest AI technology news from the last week (you have access to \"duckDuckGoSearch\" tool to search the web - the tool use is mandatory), then create a Reddit text post summary (include the liks) with a catchy title.\nOutput only a single valid JSON object with these exact fields: `subreddit`, `postType`, `postTitle`, `postBody`, `postFlair`, `nsfw`, and `spoiler`.\n- `subreddit` must be `r/test`\n- `postType` must be `self`\n- `postFlair` must be an empty string\n- `nsfw` must be `false`\n- `spoiler` must be `false`\nDo not include any extra explanation, markdown, or text outside the JSON object.\n\nExample JSON output:\n{\n  \"subreddit\": \"r/test\",\n  \"postType\": \"self\",\n  \"postTitle\": post title,\n  \"postBody\": post body,\n  \"postFlair\": \"\",\n  \"nsfw\": false,\n  \"spoiler\": false\n}\n",
+                "message": {},
+                "format": {
+                    "onSuccess": ""
+                },
+                "maxFeedbackLoops": 1,
+                "maxToolRetries": 3
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "d442cdaa-15da-4f0b-867b-ae26ee996d8d",
+            "type": "reddit-post",
+            "position": {
+                "x": 1294,
+                "y": 206.5
+            },
+            "data": {
+                "title": "Reddit Post",
+                "subreddit": "",
+                "postType": "self",
+                "postTitle": "",
+                "postBody": "",
+                "postFlair": "",
+                "nsfw": false,
+                "spoiler": false,
+                "clientId": "",
+                "clientSecret": "",
+                "postProvidedByUpstream": true
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "ddd49c73-5b22-44c3-a105-dc2932aefe76",
+            "type": "ai-tool",
+            "position": {
+                "x": 792.5,
+                "y": 307.5
+            },
+            "data": {
+                "title": "DuckDuckGo Search Tool",
+                "toolSubtype": "duckduckgo-search",
+                "userConfig": {
+                    "maxResults": 5,
+                    "requireToolUse": true
+                },
+                "userConfigSchema": {
+                    "maxResults": {
+                        "type": "integer",
+                        "description": "Maximum number of results to return",
+                        "default": 5,
+                        "minimum": 1,
+                        "maximum": 20
+                    },
+                    "requireToolUse": {
+                        "type": "boolean",
+                        "description": "Require tool use (forces the LLM to always call this tool)",
+                        "default": true
+                    }
+                }
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "a312c98d-1904-4775-a370-7d8cb0640624",
+            "type": "data-validation",
+            "position": {
+                "x": 1086,
+                "y": 238
+            },
+            "data": {
+                "title": "Data Validation",
+                "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subreddit\": {\n      \"type\": \"string\",\n      \"const\": \"r/test\"\n    },\n    \"postType\": {\n      \"type\": \"string\",\n      \"const\": \"self\"\n    },\n    \"postTitle\": {\n      \"type\": \"string\"\n    },\n    \"postBody\": {\n      \"type\": \"string\"\n    },\n    \"postFlair\": {\n      \"type\": \"string\",\n      \"const\": \"\"\n    },\n    \"nsfw\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    },\n    \"spoiler\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    }\n  },\n  \"required\": [\"subreddit\", \"postType\", \"postTitle\", \"postBody\", \"postFlair\", \"nsfw\", \"spoiler\"],\n  \"additionalProperties\": false\n}"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "586facaf-6c70-4b30-87ed-604556a11d72",
+            "type": "llm-process",
+            "position": {
+                "x": 1065,
+                "y": 346
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "model": "llama3.2:3b",
+                "prompt": "You need to properly format the data received. Make sure you receive something similar to:\n{\n  \"subreddit\": \"r/test\",\n  \"postType\": \"self\",\n  \"postTitle\": post title,\n  \"postBody\": post body,\n  \"postFlair\": \"\",\n  \"nsfw\": false,\n  \"spoiler\": false\n}\n\nIf the data received is not like that, then you need to respond with an error.",
+                "format": {
+                    "onSuccess": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subreddit\": {\n      \"type\": \"string\",\n      \"const\": \"r/test\"\n    },\n    \"postType\": {\n      \"type\": \"string\",\n      \"const\": \"self\"\n    },\n    \"postTitle\": {\n      \"type\": \"string\"\n    },\n    \"postBody\": {\n      \"type\": \"string\"\n    },\n    \"postFlair\": {\n      \"type\": \"string\",\n      \"const\": \"\"\n    },\n    \"nsfw\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    },\n    \"spoiler\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    }\n  },\n  \"required\": [\"subreddit\", \"postType\", \"postTitle\", \"postBody\", \"postFlair\", \"nsfw\", \"spoiler\"],\n  \"additionalProperties\": false\n}",
+                    "onError": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"error\": { \"type\": \"string\" }\n  },\n  \"required\": [\"error\"]\n}"
+                },
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "d6dbd8d2-b017-486f-bdbf-a310b994d497",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 1293,
+                "y": 317
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "ddd49c73-5b22-44c3-a105-dc2932aefe76",
+            "sourceHandle": "right-source",
+            "target": "c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9",
+            "targetHandle": "tools-target",
+            "id": "xy-edge__ddd49c73-5b22-44c3-a105-dc2932aefe76right-source-c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9tools-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "586facaf-6c70-4b30-87ed-604556a11d72",
+            "sourceHandle": "right-source",
+            "target": "a312c98d-1904-4775-a370-7d8cb0640624",
+            "targetHandle": "left-target",
+            "id": "xy-edge__586facaf-6c70-4b30-87ed-604556a11d72right-source-a312c98d-1904-4775-a370-7d8cb0640624left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "d442cdaa-15da-4f0b-867b-ae26ee996d8d",
+            "sourceHandle": "right-source",
+            "target": "d6dbd8d2-b017-486f-bdbf-a310b994d497",
+            "targetHandle": "left-target",
+            "id": "xy-edge__d442cdaa-15da-4f0b-867b-ae26ee996d8dright-source-d6dbd8d2-b017-486f-bdbf-a310b994d497left-target",
+            "selected": false
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9",
+            "sourceHandle": "right-source",
+            "target": "586facaf-6c70-4b30-87ed-604556a11d72",
+            "targetHandle": "left-target",
+            "id": "xy-edge__c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9right-source-586facaf-6c70-4b30-87ed-604556a11d72left-target"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "a312c98d-1904-4775-a370-7d8cb0640624",
+            "sourceHandle": "right-source",
+            "target": "d442cdaa-15da-4f0b-867b-ae26ee996d8d",
+            "targetHandle": "left-target",
+            "id": "xy-edge__a312c98d-1904-4775-a370-7d8cb0640624right-source-d442cdaa-15da-4f0b-867b-ae26ee996d8dleft-target"
+        }
+    ]
+}

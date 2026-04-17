@@ -110,7 +110,7 @@ export type LlmProcessNode = Node<BaseNodeData & LlmProcessNodeData> & { type: t
 export const defaultLlmProcessNodeData = {
     model: "",
     prompt: "",
-    message: {},
+    message: undefined,
     format: {},
     maxFeedbackLoops: 0,
     maxToolRetries: 3,

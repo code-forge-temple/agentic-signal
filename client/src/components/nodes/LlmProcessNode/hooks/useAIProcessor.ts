@@ -181,7 +181,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
 
                 // Always add user message if we have input or message config
                 if (input !== undefined || message) {
-                    const serializedInput = serializeInput(input);
+                    const serializedInput = input ? serializeInput(input) : "";
 
                     assertIsSerializedInput(serializedInput);
 
@@ -213,7 +213,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
 
                     // Add new user message
                     if (input !== undefined || message) {
-                        const serializedInput = serializeInput(input);
+                        const serializedInput = input ? serializeInput(input) : "";
 
                         assertIsSerializedInput(serializedInput);
 

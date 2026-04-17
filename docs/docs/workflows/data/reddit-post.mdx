@@ -1,0 +1,92 @@
+---
+sidebar_position: 11
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import redditPostJson from '@site/static/workflows/reddit-post.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Reddit Post Workflow
+
+This workflow uses AI to gather the latest news, formats it into a Reddit post, validates the structure, and automatically submits it to a subreddit.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        This workflow chains a DuckDuckGo-powered AI node to research and draft a Reddit post, a second AI node to reformat the output, a Data Validation node to enforce the correct schema, and finally the Reddit Post node to submit the post.
+        ![Reddit Post Workflow](/img/workflows/reddit-post-preview.webp)
+
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl('/workflows/reddit-post.json')}>
+        {JSON.stringify(redditPostJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process) *(Writer)*
+            - Model: `gemma4:e2b`
+            - Prompt: Instructs the AI to search for the latest AI technology news using DuckDuckGo and output a single JSON object with the Reddit post fields.
+            - Max Feedback Loops: `1`
+            - Max Tool Retries: `3`
+        - [**DuckDuckGo Search Tool**](/docs/nodes/ai/tools/duckduckgo-search)
+            - Max Results: `5`
+            - Require Tool Use: `true`
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process) *(Formatter)*
+            - Model: `llama3.2:3b`
+            - Prompt: Reformats and validates the JSON structure from the writer node.
+            - Format on Success: JSON schema enforcing the Reddit post object shape.
+            - Format on Error: JSON schema returning an `error` field.
+            - Max Feedback Loops: `0`
+            - Max Tool Retries: `3`
+        - [**Data Validation**](/docs/nodes/data/data-validation)
+            - Schema: Enforces `subreddit`, `postType`, `postTitle`, `postBody`, `postFlair`, `nsfw`, and `spoiler` fields.
+        - [**Reddit Post**](/docs/nodes/output/reddit-post)
+            - Client ID: *(your Reddit app Client ID)*
+            - Client Secret: *(your Reddit app Client Secret)*
+            - Post Provided by Upstream: `true`
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)
+            - Inspects the Reddit Post node output for debugging.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Search and draft the post**
+   - The first AI Data Processing node uses the DuckDuckGo Search tool to gather the latest AI technology news, then drafts a Reddit post as a JSON object.
+2. **Reformat the output**
+   - A second AI Data Processing node (llama3.2:3b) receives the draft and ensures the JSON strictly conforms to the expected shape, returning an error object if it does not.
+3. **Validate the structure**
+   - The Data Validation node applies a JSON schema to guarantee all required fields are present and correctly typed before the post is submitted.
+4. **Submit to Reddit**
+   - The Reddit Post node reads the upstream JSON and submits the post using the configured OAuth credentials.
+5. **Inspect the result**
+   - The Data Flow Spy node captures the Reddit Post node output for debugging and verification.
+
+---
+
+## Common Use Cases
+
+1. **Automated news summaries**: Publish periodic AI-generated news digests to a subreddit.
+2. **Content pipeline testing**: Use `r/test` as a sandbox to validate the full post pipeline before switching to a real subreddit.
+3. **Research-to-post automation**: Chain any research source to the formatter and post the results to Reddit automatically.
+
+## Best Practices
+
+- **Authenticate before sharing**: Complete the Reddit OAuth flow in the Reddit Post node settings before running or exporting this workflow.
+- **Use `r/test` first**: Always test with `r/test` to avoid unintended posts to real subreddits.
+- **Never commit credentials**: The `clientId`, `clientSecret`, and `accessToken` fields are intentionally left empty in this template — fill them in at runtime only.
+- **Tune the writer prompt**: Adjust the writer node's prompt to target a different topic, subreddit, or post format.
+- **Increase `maxFeedbackLoops`**: If the writer model frequently produces malformed JSON, raising the feedback loop count gives it more attempts to self-correct.
+
+## Troubleshooting
+
+- **Post not submitted**: Verify that the Reddit OAuth flow has been completed and the access token is valid. Re-authenticate if needed.
+- **Validation fails**: Check the Data Validation node schema and ensure the formatter node's output exactly matches the required fields (including `postFlair: ""`).
+- **AI returns malformed JSON**: Increase `maxFeedbackLoops` on the writer node or switch to a larger/more instruction-following model.
+- **Missing news results**: Confirm the DuckDuckGo Search tool has `requireToolUse: true` and that the writer prompt explicitly instructs tool usage.
+- **`clientId`/`clientSecret` not persisted after save**: These fields are sanitized on workflow export by design — enter them directly in the node settings each session.

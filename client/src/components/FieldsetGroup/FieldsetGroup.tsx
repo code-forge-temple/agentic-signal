@@ -11,9 +11,10 @@ import {FormControl, FormLabel} from "@mui/material";
 type FieldsetGroupProps = {
     children: ReactNode;
     title: string;
+    height?: string;
 };
 
-export const FieldsetGroup = ({children, title}: FieldsetGroupProps) => {
+export const FieldsetGroup = ({children, title, height}: FieldsetGroupProps) => {
     return (
         <FormControl component="fieldset"
             sx={{
@@ -22,8 +23,9 @@ export const FieldsetGroup = ({children, title}: FieldsetGroupProps) => {
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 2,
-                pt: 2, pb: 0, pl: 2, pr: 2,
+                pt: 2, pb: 2, pl: 2, pr: 2,
                 mb: 2,
+                height: height || 'auto',
             }}
         >
             <FormLabel

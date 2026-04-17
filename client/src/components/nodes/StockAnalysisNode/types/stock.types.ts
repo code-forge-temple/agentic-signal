@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {z} from 'zod';
+import {zodToJsonSchema} from 'zod-to-json-schema';
 
 export const StockDataPointSchema = z.object({
     timestamp: z.string(),
@@ -23,5 +24,7 @@ export const StockAnalysisInputSchema = z.object({
 export type StockDataPoint = z.infer<typeof StockDataPointSchema>;
 
 export type StockAnalysisInput = z.infer<typeof StockAnalysisInputSchema>;
+
+export const STOCK_ANALYSIS_INPUT_JSON_SCHEMA = JSON.stringify(zodToJsonSchema(StockAnalysisInputSchema), null, 4);
 
 

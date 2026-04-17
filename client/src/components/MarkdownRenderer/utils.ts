@@ -30,31 +30,3 @@ export const extractFromMarkdown = (markdown: string, type: EXTRACTION_TYPE): st
 
     return results;
 }
-
-const extensionLangMap: Record<string, string> = {
-    js: 'javascript',
-    ts: 'typescript',
-    tsx: 'tsx',
-    json: 'json',
-    html: 'html',
-    css: 'css',
-    scss: 'scss',
-    md: 'markdown',
-    xml: 'xml',
-    csv: 'csv',
-    yaml: 'yaml',
-    yml: 'yaml',
-    ini: 'ini',
-    sh: 'bash',
-    sql: 'sql',
-    py: 'python',
-    java: 'java',
-    c: 'c',
-    cpp: 'cpp',
-    h: 'c',
-    bat: 'bat'
-};
-
-export const fileExtensionToCodeBlockLang = (extension: string | undefined): string => {
-    return extensionLangMap[extension?.toLowerCase() || ''] ?? '';
-};

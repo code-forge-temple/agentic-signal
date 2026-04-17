@@ -14,11 +14,13 @@ import {BaseDialog} from "../../BaseDialog";
 import {LogsDialog} from "../../LogsDialog";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
-import {Icon, IMAGE_EXTENSIONS} from "./constants";
+import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {JsonInput} from "./components/JsonInput";
 import {FilesInput} from "./components/FilesInput";
+import {IMAGE_FILE_EXTENSIONS} from "@shared/constants";
+import {markdownFilePrefix, markdownImageFilePrefix} from "@shared/utils";
 
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
@@ -56,10 +58,10 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                     const ext = file.name.split('.').pop()?.toLowerCase() || "";
                     let prefix;
 
-                    if (IMAGE_EXTENSIONS.includes(ext)) {
-                        prefix = `### Image ${imageCounter++} attached `;
+                    if (IMAGE_FILE_EXTENSIONS.has(ext)) {
+                        prefix = markdownImageFilePrefix(imageCounter++);
                     } else {
-                        prefix = `### File "${file.name}"\n`;
+                        prefix = markdownFilePrefix(file.name);
                     }
 
                     mergedOutput += `\n\n${prefix}${file.content}\n\n`;

@@ -16,7 +16,10 @@ This section contains ready-to-use workflow examples that you can download and i
 - [**Current Time**](/docs/workflows/data/current-time) – Get and display the current date and time  
 - [**Timeseries Chart**](/docs/workflows/data/timeseries-chart) – Fetch, reformat, and visualize time series data as a chart  
 - [**Product Data Validation and Visualization**](/docs/workflows/data/product-data-validation-and-visualization) – Validate and chart product data from an API  
+- [**Customer Total Spend Analysis**](/docs/workflows/data/customer-total-spend-analysis) – Analyze and visualize total customer spend from a dataset  
 - [**Stock Analysis & AI Prediction**](/docs/workflows/data/stock-analysis-ai-prediction) – AI-powered stock trading analysis combining technical indicators with news sentiment  
+- [**Slack AI Web Search Bot**](/docs/workflows/data/slack-ai-web-search-bot) – Respond to Slack slash commands with AI-generated web search answers *(PRO)*  
+- [**Reddit Post**](/docs/workflows/data/reddit-post) – AI-researched news post automatically submitted to Reddit *(PRO)*  
 - [**Gmail Summarizer**](/docs/workflows/email/gmail-summarizer) – Fetch and summarize recent emails from Gmail  
 - [**AI Data Processing Overseer**](/docs/workflows/data/ai-data-processing-overseer) – Chain AI nodes with validation and feedback loops
 

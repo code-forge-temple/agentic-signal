@@ -1,0 +1,90 @@
+---
+sidebar_position: 3
+title: Slack Output Node
+---
+
+:::info PRO Feature
+This feature is available in the <span className="pro-badge">PRO</span> subscription tier. [Learn more about PRO](https://pricing.agentic-signal.com/)
+:::
+
+# Slack Output Node
+
+The **Slack Output Node** sends messages to Slack channels or users. It supports plain text, [Block Kit](https://app.slack.com/block-kit-builder) JSON, thread replies, ephemeral messages, and both channel-based and slash command response URLs.
+
+![Slack Output Node](/img/nodes/slack-output-node-preview.webp)
+
+## Prerequisites
+
+Before using this node, you need to create and configure a Slack app. See the [Slack Bot Setup guide](../../getting-started/slack-bot-setup) for step-by-step instructions.
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="bot-token" label="Bot Token" default>
+        The **Bot User OAuth Token** for your Slack app (starts with `xoxb-`).
+
+        Obtain this from your Slack app's **OAuth & Permissions** page after installing the app to your workspace.
+
+        ![Slack Output Node Configuration](/img/nodes/slack-output-node-params.webp)
+    </TabItem>
+    <TabItem value="input-format" label="Expected Input Format">
+        The node expects a JSON object from upstream nodes matching the following schema:
+
+        | Field          | Type                              | Required | Description                                                                                     |
+        |----------------|-----------------------------------|----------|-------------------------------------------------------------------------------------------------|
+        | `channelId`    | string                            | Conditional | The Slack channel ID to send the message to. Required if `responseUrl` is not provided.      |
+        | `message`      | string \| array \| object         | Yes      | Plain text string, or a Block Kit JSON array/object.                                            |
+        | `threadTs`     | string                            | No       | Thread timestamp to post the message as a reply in a thread.                                    |
+        | `responseUrl`  | string                            | Conditional | Slash command response URL. Required if `channelId` is not provided.                         |
+        | `userId`       | string                            | Conditional | Slack user ID. Required when `postEphemeral` is `true` and `responseUrl` is not provided.    |
+        | `postEphemeral`| boolean                           | No       | If `true`, sends a message visible only to the target user.                                     |
+
+        > Either `channelId` or `responseUrl` must be provided.
+
+        :::tip Pairing with Slack Input Node
+        When used downstream of a **Slack Input Node**, the `channelId`, `responseUrl`, and `userId` fields are automatically available from the input node's output — making it easy to reply directly to the user who triggered the command.
+        :::
+
+        ![Slack Output Node Configuration](/img/nodes/slack-output-node-params.webp)
+    </TabItem>
+</Tabs>
+
+---
+
+## Example Usage
+
+For example usage, see the [Slack AI Web Search Bot Workflow](/docs/workflows/data/slack-ai-web-search-bot), which listens for Slack slash commands, queries the web with DuckDuckGo, and returns the AI-generated response directly in Slack.
+
+
+## Common Use Cases
+
+1. **Respond to Slash Commands**: Reply to users who trigger workflows via the Slack Input Node.
+2. **Send Channel Notifications**: Post automated messages or alerts to Slack channels.
+3. **Thread Replies**: Reply inside existing Slack threads using `threadTs`.
+4. **Ephemeral Messages**: Send private messages visible only to a specific user with `postEphemeral`.
+5. **Rich Formatting**: Use [Block Kit](https://app.slack.com/block-kit-builder) JSON to send visually structured messages.
+
+## Best Practices
+
+- **Use `responseUrl` when replying to slash commands**: It avoids needing to know the channel ID explicitly and ensures the reply is routed to the correct context.
+- **Prefer plain text for simple messages**: Block Kit is powerful but adds complexity; use it only when rich formatting is needed.
+- **Validate upstream data**: Ensure the connected upstream node always provides either `channelId` or `responseUrl`.
+- **Keep tokens secure**: Never share your Bot Token publicly or commit it to version control.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Message not sent**: Verify the Bot Token is correct and the bot has permission to post to the target channel (`chat:write` or `chat:write.public`).
+- **Invalid input format**: Check the upstream node output matches the expected JSON schema. The node logs will display detailed validation errors.
+- **Missing `channelId` or `responseUrl`**: Ensure the upstream node provides at least one of these fields.
+- **Ephemeral message not delivered**: When using `postEphemeral` without a `responseUrl`, the `userId` field must be present.
+- **Block Kit rendering issues**: Validate your Block Kit JSON using the [Block Kit Builder](https://app.slack.com/block-kit-builder).
+
+### Performance Tips
+
+- Chain directly after the **Slack Input Node** to use the `responseUrl` for immediate command responses.
+- Use the **AI Data Processing Node** between Slack Input and Slack Output to build intelligent Slack bots.

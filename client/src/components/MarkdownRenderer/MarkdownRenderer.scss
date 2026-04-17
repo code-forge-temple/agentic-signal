@@ -16,6 +16,10 @@
     display: flex;
     flex-direction: column;
 
+    img {
+        width: 100%;
+    }
+
     table {
         border-collapse: collapse;
         width: 100%;

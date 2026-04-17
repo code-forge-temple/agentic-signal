@@ -86,3 +86,9 @@ export function computeIndicators (data: StockDataPoint[]) {
         analysisPeriod
     };
 }
+
+export function formatFeedbackMessage (prefix:string, expextedJsonSchema:string, receivedData: string, validationErrors: string) {
+    return `${prefix} validation error: The data format is incorrect. Expected format:\n${expextedJsonSchema}\n\nReceived:\n${
+        receivedData
+    }\n\nValidation errors:\n${validationErrors}`;
+}

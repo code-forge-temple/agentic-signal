@@ -10,8 +10,9 @@ import {Attachment, Xmark} from 'iconoir-react';
 import './FilesInput.scss';
 import {useRef, useEffect, useState} from 'react';
 import {FileData, FilesDataSource} from '../../types/workflow';
-import {extractFromMarkdown, EXTRACTION_TYPE, fileExtensionToCodeBlockLang} from '../../../../MarkdownRenderer';
-import {IMAGE_EXTENSIONS, TRIPLE_BACKTICK} from '../../constants';
+import {extractFromMarkdown, EXTRACTION_TYPE} from '../../../../MarkdownRenderer';
+import {fileExtensionToCodeBlockLang} from "@shared/utils";
+import {IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS, TRIPLE_BACKTICK} from '@shared/constants';
 
 
 type FilesInputProps = {
@@ -93,7 +94,7 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                 const ext = file.name.split('.').pop()?.toLowerCase();
                 const reader = new FileReader();
 
-                if (IMAGE_EXTENSIONS.includes(ext || "")) {
+                if (IMAGE_FILE_EXTENSIONS.has(ext || "")) {
                     reader.onload = (e) => {
                         const base64 = (e.target?.result as string).split(',')[1];
                         const mime = file.type || `image/${ext}`;
@@ -168,8 +169,7 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    // eslint-disable-next-line max-len
-                    accept=".txt,.md,.html,.css,.scss,.js,.ts,.tsx,.json,.xml,.csv,.yaml,.yml,.ini,.log,.sh,.sql,.py,.java,.c,.cpp,.h,.bat,.env,.png,.jpg,.jpeg,.gif,.bmp,.webp,.svg"
+                    accept={Array.from(SUPPORTED_FILE_EXTENSIONS).map(ext => `.${ext}`).join(',')}
                     style={{display: "none"}}
                     onChange={handleFileChange}
                 />
@@ -184,7 +184,7 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                 />
             ) : (
                 attachedFiles[tab - 1] && (
-                    IMAGE_EXTENSIONS.includes(
+                    IMAGE_FILE_EXTENSIONS.has(
                         attachedFiles[tab - 1].name.split('.').pop()?.toLowerCase() || ""
                     ) ? (
                             <img

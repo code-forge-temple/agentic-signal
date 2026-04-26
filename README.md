@@ -51,7 +51,14 @@
 
 - [Data Source](https://agentic-signal.com/docs/nodes/input/data-source)
 - [AI Data Processing](https://agentic-signal.com/docs/nodes/ai/llm-process)
-- [AI Tool](https://agentic-signal.com/docs/nodes/ai/ai-tool)
+- [AI Tool](https://agentic-signal.com/docs/nodes/ai/ai-tool):
+  - Weather
+  - Search
+  - Google services
+  - CSV/data operations
+  - Stock analysis
+  - Date/time tools
+- [RAG](https://agentic-signal.com/docs/nodes/ai/rag)
 - [HTTP Data](https://agentic-signal.com/docs/nodes/input/http-data)
 - [JSON Reformatter](https://agentic-signal.com/docs/nodes/data/json-reformatter)
 - [Stock Analysis](https://agentic-signal.com/docs/nodes/data/stock-analysis)
@@ -63,6 +70,7 @@
 - [Reddit Post](https://agentic-signal.com/docs/nodes/output/reddit-post) *(PRO)*
 - [Slack Input](https://agentic-signal.com/docs/nodes/input/slack-input) *(PRO)*
 - [Slack Output](https://agentic-signal.com/docs/nodes/output/slack-output) *(PRO)*
+- _other integrations coming soon_
 
 > See the full [Nodes Reference](https://agentic-signal.com/docs/nodes/overview) for details on all node types.
 
@@ -113,7 +121,7 @@ See [LICENSE.md](LICENSE.md) for full details.
 - **Reddit**: [r/AgenticSignal](https://www.reddit.com/r/AgenticSignal/)
 - **Issues**: [GitHub Issues](https://github.com/code-forge-temple/agentic-signal/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/code-forge-temple/agentic-signal/discussions)
-- **Commercial Support**: please contact me on my Github email
+- **Commercial Support**: please contact me on my GitHub email
 
 ---
 

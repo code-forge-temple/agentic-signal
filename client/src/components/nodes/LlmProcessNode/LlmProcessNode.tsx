@@ -18,7 +18,7 @@ import {LogsDialog} from "../../LogsDialog";
 import {BasicTabs} from "../../Tabs/Tabs";
 import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hooks/useRunOnTriggerChange";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
-import {AI_TOOL_PORT_COLOR, TOOL_PORT_ID} from "../../../constants";
+import {AI_TOOL_PORT_COLOR, RAG_PORT_COLOR, RAG_PORT_ID, TOOL_PORT_ID} from "../../../constants";
 import {SystemUserConfigValues, ToolSchema} from "../../../types/ollama.types";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {DebouncedTextField} from "../../DebouncedTextField";
@@ -27,6 +27,8 @@ import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {NODE_TYPE as TOOL_NODE_TYPE} from "../ToolNode/constants";
+import {NODE_TYPE as RAG_NODE_TYPE} from "../RagNode/constants";
+import {assertIsRagNodeData, RagNode} from "../RagNode/types/workflow";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 
 
@@ -75,6 +77,25 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
             systemUserConfigValues: node.data.userConfig as SystemUserConfigValues || {}
         }));
 
+    const connectedRagNode = getEdges()
+        .filter(edge => edge.target === id && edge.targetHandle === RAG_PORT_ID)
+        .map(edge => getNodes().find(node => node.id === edge.source))
+        .find((node): node is RagNode => {
+            if (!node || node.type !== RAG_NODE_TYPE) return false;
+
+            try {
+                assertIsRagNodeData(node.data);
+
+                return true;
+            } catch {
+                return false;
+            }
+        });
+
+    const ragHandler = connectedRagNode && typeof connectedRagNode.data.handler === "function"
+        ? connectedRagNode.data.handler
+        : undefined;
+
     const {
         processAIRequest,
         fetchModels,
@@ -119,6 +140,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         tools,
                         feedback: feedback,
                         maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
+                        ragHandler,
                         conversationHistory: {
                             value: conversationHistory || [],
                             onChange: (newHistory) => {
@@ -149,6 +171,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                     format: format,
                     tools,
                     maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
+                    ragHandler,
                     conversationHistory: {
                         value: [],
                         onChange: (newHistory) => {
@@ -176,6 +199,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 tools,
                 feedback: feedback,
                 maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
+                ragHandler,
                 conversationHistory: {
                     value: [],
                     onChange: (newHistory) => {
@@ -184,7 +208,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 },
             });
         }, setIsRunning);
-    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, tools]);
+    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, tools]);
 
     const [systemPrompt, setSystemPrompt] = useDebouncedState({
         callback: (value: string) => {
@@ -241,16 +265,31 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 run={handleRun}
                 running={isRunning}
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
+                logs={{callback: () => setOpenLogs(true), highlight: error.length > 0}}
                 extraPorts = {
                     <>
                         <Handle
                             type="target"
                             id={TOOL_PORT_ID}
                             position={Position.Bottom}
-                            style={{left: 20, backgroundColor: AI_TOOL_PORT_COLOR}}
+                            style={{left: 30, backgroundColor: AI_TOOL_PORT_COLOR}}
                             isValidConnection={({source}) => {
                                 return getNode(source)?.type === TOOL_NODE_TYPE;
+                            }}
+                        />
+                        <Handle
+                            type="target"
+                            id={RAG_PORT_ID}
+                            position={Position.Bottom}
+                            style={{left: 10, backgroundColor: RAG_PORT_COLOR}}
+                            isValidConnection={({source}) => {
+                                if (getNode(source)?.type !== RAG_NODE_TYPE) return false;
+
+                                const alreadyConnected = getEdges().some(
+                                    edge => edge.target === id && edge.targetHandle === RAG_PORT_ID
+                                );
+
+                                return !alreadyConnected;
                             }}
                         />
                         <TimerTriggerPort />

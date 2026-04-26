@@ -18,6 +18,8 @@ import {reformatContent} from "./utils/contentParser";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {IconButton, Tooltip} from "@mui/material";
+import {Copy} from "iconoir-react";
 
 
 const NO_OUTPUT_AVAILABLE = "No output available";
@@ -32,6 +34,7 @@ export function DataFlowSpyNode ({id, data}: NodeProps<AppNode>) {
     const [isRunning, setIsRunning] = useState(false);
     const [formattedValue, setFormattedValue] = useState<string>("");
     const [formatting, setFormatting] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const {title, input, onResultUpdate} = data;
 
@@ -88,13 +91,30 @@ export function DataFlowSpyNode ({id, data}: NodeProps<AppNode>) {
                 onClose={() => setOpenOutput(false)}
                 title={title}
             >
-                {formatting ? (
-                    <div style={{textAlign: "center", padding: "2em"}}>
-                        <span>Formatting large content...</span>
-                    </div>
-                ) : (
-                    <MarkdownRenderer content={formattedValue} />
-                )}
+                <div style={{position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column"}}>
+                    <Tooltip title={copied ? "Copied!" : "Copy raw value"} placement="left">
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                navigator.clipboard.writeText(JSON.stringify(input, null, 4));
+
+                                setCopied(true);
+
+                                setTimeout(() => setCopied(false), 2000);
+                            }}
+                            sx={{position: "absolute", top: 4, right: 4, zIndex: 1}}
+                        >
+                            <Copy width={28} height={28} />
+                        </IconButton>
+                    </Tooltip>
+                    {formatting ? (
+                        <div style={{textAlign: "center", padding: "2em"}}>
+                            <span>Formatting large content...</span>
+                        </div>
+                    ) : (
+                        <MarkdownRenderer content={formattedValue} />
+                    )}
+                </div>
             </BaseDialog>
         </>
     );

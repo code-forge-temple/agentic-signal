@@ -6,6 +6,7 @@
     "npm:@tauri-apps/cli@^2.8.4": "2.8.4",
     "npm:@types/mustache@^4.2.6": "4.2.6",
     "npm:@types/node@*": "22.15.15",
+    "npm:arangojs@*": "10.3.0",
     "npm:city-timezones@*": "1.2.0",
     "npm:city-timezones@1.2.0": "1.2.0",
     "npm:concurrently@9.1.2": "9.1.2",
@@ -18,6 +19,7 @@
     "npm:graphql-yoga@*": "5.13.5_graphql@16.11.0",
     "npm:madge@8": "8.0.0",
     "npm:mustache@^4.2.0": "4.2.0",
+    "npm:ollama@*": "0.6.3",
     "npm:playwright@*": "1.53.1",
     "npm:playwright@1.53.1": "1.53.1",
     "npm:rimraf@^6.0.1": "6.0.1",
@@ -370,6 +372,12 @@
     "@types/mustache@4.2.6": {
       "integrity": "sha512-t+8/QWTAhOFlrF1IVZqKnMRJi84EgkIK5Kh0p2JV4OLywUvCwJPFxbJAl7XAow7DVIHsF+xW9f1MVzg0L6Szjw=="
     },
+    "@types/node@20.19.25": {
+      "integrity": "sha512-ZsJzA5thDQMSQO788d7IocwwQbI8B5OPzmqNvpf3NY/+MHDAS759Wo0gd2WQeXYt5AAAQjzcrTVC6SKCuYgoCQ==",
+      "dependencies": [
+        "undici-types"
+      ]
+    },
     "@types/node@22.15.15": {
       "integrity": "sha512-R5muMcZob3/Jjchn5LcO8jdKwSCbzqmPB6ruBxMcf9kbxtniZHP327s6C37iOfuw8mbKK3cAQa7sEl7afLrQ8A==",
       "dependencies": [
@@ -600,6 +608,12 @@
     },
     "app-module-path@2.2.0": {
       "integrity": "sha512-gkco+qxENJV+8vFcDiiFhuoSvRXb2a/QPqpSoWhVz829VNJfOTnELbBmPmNKFxf3xdNnw4DWCkzkDaavcX/1YQ=="
+    },
+    "arangojs@10.3.0": {
+      "integrity": "sha512-/5eTej1Od+4bSVWsfdTxf9B0rOYlmuonVpcFjxqkMP5rXs/OZcWykp2jkYkPKCiYszUNsu7X/26ZKRIyuxqz8A==",
+      "dependencies": [
+        "@types/node@20.19.25"
+      ]
     },
     "argparse@2.0.1": {
       "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q=="
@@ -2048,6 +2062,12 @@
         "es-object-atoms"
       ]
     },
+    "ollama@0.6.3": {
+      "integrity": "sha512-KEWEhIqE5wtfzEIZbDCLH51VFZ6Z3ZSa6sIOg/E/tBV8S51flyqBOXi+bRxlOYKDf8i327zG9eSTb8IJxvm3Zg==",
+      "dependencies": [
+        "whatwg-fetch"
+      ]
+    },
     "once@1.4.0": {
       "integrity": "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==",
       "dependencies": [
@@ -2755,6 +2775,9 @@
       "dependencies": [
         "defaults"
       ]
+    },
+    "whatwg-fetch@3.6.20": {
+      "integrity": "sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg=="
     },
     "which-boxed-primitive@1.1.1": {
       "integrity": "sha512-TbX3mj8n0odCBFVlY8AxkqcHASw3L60jIuF8jFP78az3C2YhmGvqbHBpAjTRH2/xqYunrJ9g1jSyjCjpoWzIAA==",

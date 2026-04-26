@@ -4,9 +4,5 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-export const EXTRACTION_TYPE = {
-    IMAGE: 'IMAGE',
-    CODE_BLOCK: 'CODE_BLOCK',
-} as const;
-
-export type EXTRACTION_TYPE = typeof EXTRACTION_TYPE[keyof typeof EXTRACTION_TYPE];
+export {EXTRACTION_TYPE} from '@shared/utils';
+export type {EXTRACTION_TYPE as ExtractionType} from '@shared/utils';

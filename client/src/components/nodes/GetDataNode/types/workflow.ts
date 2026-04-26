@@ -20,15 +20,18 @@ export const FetchDataType = {
 
 export type FetchDataType = typeof FetchDataType[keyof typeof FetchDataType];
 
+
 export type GetDataNodeData = {
     url: string;
     dataType: FetchDataType;
+    dataProvidedByUpstream: boolean;
 };
 
 export function assertIsGetDataNodeData (data: unknown): asserts data is GetDataNodeData {
     if (typeof data !== 'object' || data === null ||
         !('url' in data) || typeof data.url !== 'string' ||
-        !('dataType' in data) || typeof data.dataType !== 'string') {
+        !('dataType' in data) || typeof data.dataType !== 'string' ||
+        !('dataProvidedByUpstream' in data) || typeof data.dataProvidedByUpstream !== 'boolean') {
         throw new Error('Node data is not GetDataNodeData');
     }
 }

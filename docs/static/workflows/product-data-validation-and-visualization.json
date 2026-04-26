@@ -10,7 +10,8 @@
             "data": {
                 "title": "GET Data",
                 "url": "https://dummyjson.com/products",
-                "dataType": "json"
+                "dataType": "json",
+                "dataProvidedByUpstream": false
             },
             "measured": {
                 "width": 160,

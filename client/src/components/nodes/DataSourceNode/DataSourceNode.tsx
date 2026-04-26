@@ -59,7 +59,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                     let prefix;
 
                     if (IMAGE_FILE_EXTENSIONS.has(ext)) {
-                        prefix = markdownImageFilePrefix(imageCounter++);
+                        prefix = markdownImageFilePrefix(imageCounter++, file.name);
                     } else {
                         prefix = markdownFilePrefix(file.name);
                     }

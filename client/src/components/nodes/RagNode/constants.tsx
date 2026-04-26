@@ -4,15 +4,12 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+/* eslint-disable react-refresh/only-export-components */
 
-export const AI_TOOL_PORT_COLOR = "#9c27b0";
+import {Brain} from "iconoir-react";
 
-export const TIMER_TRIGGER_PORT_COLOR = "#0bb6e1ea";
+export {RAG_NODE_TYPE as NODE_TYPE} from "@shared/types.gen";
 
-export const RAG_PORT_COLOR = "#F44336";
+export const Icon = <Brain />;
 
-export const TOOL_PORT_ID = "tools-target";
-
-export const TIMER_TRIGGER_PORT_ID = "timer-trigger";
-
-export const RAG_PORT_ID = "rag-target";
+export const TITLE = "RAG";

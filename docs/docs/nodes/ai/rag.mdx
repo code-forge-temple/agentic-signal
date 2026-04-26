@@ -1,0 +1,128 @@
+---
+title: RAG Node
+---
+
+# RAG Node
+
+The **RAG Node** (Retrieval-Augmented Generation) ingests documents into a [Weaviate](https://weaviate.io) vector database and retrieves the most semantically relevant chunks to use as context for an [AI Data Processing Node](/docs/nodes/ai/llm-process).
+
+It connects exclusively to the **AI Data Processing Node** via a dedicated RAG port (right side of the node).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+    <TabItem value="inputs" label="Inputs" default>
+
+The node receives its input from a [Data Source Node](/docs/nodes/input/data-source) (or any upstream node) formatted as markdown with optional file blocks and a query:
+
+```
+Using the attached document, answer:
+
+What are the main topics covered?
+
+### File name "my-document.txt"
+<file content here>
+```
+
+- **File blocks** (optional): One or more `### File name "..."` sections — each is chunked, embedded, and stored in the collection.
+- **Query** (required for retrieval): The text preceding the first file block. Used to perform a vector similarity search against the stored chunks.
+
+If no files are provided, the node performs a query-only retrieval against the existing collection — useful for interrogating a database populated by other workflows or external tools.
+
+    </TabItem>
+    <TabItem value="outputs" label="Outputs">
+
+The node outputs the most relevant text chunks as a formatted context string, injected into the AI Data Processing Node's prompt:
+
+```
+[1] (my-document.txt)
+...chunk content...
+
+[2] (my-document.txt)
+...chunk content...
+```
+
+If no relevant chunks are found, the output is empty (`null` context) and the AI node proceeds without RAG context.
+
+    </TabItem>
+    <TabItem value="configuration" label="Configuration">
+
+| Field | Description | Default |
+|---|---|---|
+| **Embedding Model** | Ollama model used to generate embeddings. Must be a dedicated embedding model (e.g. `nomic-embed-text:latest`). Locked to the collection's model when an existing collection is selected. | — |
+| **Collection Name** | Namespace for the knowledge base in Weaviate (e.g. `rag_collection`). Use the browse button (🔍) to pick from existing collections. | `rag_collection` |
+| **Chunk Size (words)** | Number of words per chunk when splitting documents. | `200` |
+| **Chunk Overlap (words)** | Number of words shared between consecutive chunks (improves context continuity). | `20` |
+| **Top-K Results** | Number of most relevant chunks to inject as context. | `5` |
+| **Weaviate URL** | URL of the Weaviate instance (e.g. `http://localhost:8080`). | `http://localhost:8080` |
+| **API Key (optional)** | Weaviate API key. Leave blank for unauthenticated local instances. | — |
+
+> **Embedding model tip:** Use a dedicated embedding model like `nomic-embed-text:latest` rather than a general LLM. General LLMs produce lower-quality embeddings and may have dimension mismatches.
+
+    </TabItem>
+    <TabItem value="ingestion" label="Ingestion Lifecycle">
+
+The node uses **per-file content hashing** to avoid redundant re-embedding:
+
+| Scenario | Behavior |
+|---|---|
+| File is new to the collection | Embedded and inserted |
+| File content unchanged | Skipped — existing vectors reused |
+| File content changed | Old chunks for that file deleted, file re-embedded and re-inserted |
+| File removed from workflow input | Chunks remain in DB — preserved for other workflows |
+| Embedding model changed | Entire chunks class dropped and all current files re-ingested |
+| Query only (no files in input) | Queries whatever is already in the collection |
+
+This makes the node safe to use in a **shared knowledge base** scenario: multiple workflows can contribute documents to the same collection without overwriting each other's data.
+
+    </TabItem>
+    <TabItem value="weaviate-schema" label="Weaviate Schema">
+
+        Each collection is stored as two Weaviate classes. The class name is derived from the collection name by stripping non-alphanumeric characters and uppercasing the first letter (e.g. `rag_collection` → `Ragcollection`).
+
+        **Chunks class** (`{ClassName}`, e.g. `Ragcollection`):
+
+        ```json
+        {
+        "class": "Ragcollection",
+        "vectorizer": "none",
+        "properties": [
+            { "name": "content",    "dataType": ["text"] },
+            { "name": "sourceFile", "dataType": ["text"] },
+            { "name": "chunkIndex", "dataType": ["int"]  }
+        ]
+        }
+        ```
+
+        Each object also carries a `vector` (float array). Dimension depends on the embedding model — `nomic-embed-text:latest` produces 768-dimensional vectors.
+
+        **Meta class** (`{ClassName}Meta`, e.g. `RagcollectionMeta`):
+
+        ```json
+        {
+        "class": "RagcollectionMeta",
+        "vectorizer": "none",
+        "properties": [
+            { "name": "documentHash",   "dataType": ["text"] },
+            { "name": "embeddingModel", "dataType": ["text"] },
+            { "name": "originalName",   "dataType": ["text"] }
+        ]
+        }
+        ```
+
+        Exactly **one object** exists in the meta class per collection. `documentHash` is a JSON map of `{ "filename": "sha256hex", ... }` for per-file change detection. `originalName` stores the human-readable collection name (e.g. `rag_collection`) for display in the UI.
+
+        **Minimum viable external collection** (to be queryable from Agentic Signal without triggering re-ingestion):
+        1. Create `Ragcollection` with `content`, `sourceFile`, `chunkIndex` properties and correctly-dimensioned vectors.
+        2. Create `RagcollectionMeta` with one object: `{ documentHash: "{}", embeddingModel: "nomic-embed-text:latest", originalName: "rag_collection" }`.
+
+    </TabItem>
+
+    <TabItem value="node-type" label="Node Type">
+
+        - **Node type**: `rag`
+        - **Port**: RAG port (right side) — connects only to an [AI Data Processing Node](/docs/nodes/ai/llm-process)
+
+    </TabItem>
+</Tabs>

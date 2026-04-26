@@ -5,22 +5,20 @@
  ************************************************************************/
 
 import {NodeDescriptor} from "../types";
-import {GetDataNode as component} from "./GetDataNode";
+import {RagNode as component} from "./RagNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
-import {assertIsGetDataNodeData, GetDataNode} from "./types/workflow";
+import {assertIsRagNodeData, defaultRagNodeData, RagNode} from "./types/workflow";
 
 
-export const GetDataNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, GetDataNode> = {
+export const RagNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, RagNode> = {
     type: NODE_TYPE,
     component,
     icon: Icon,
     title: TITLE,
-    assertion: assertIsGetDataNodeData,
+    assertion: assertIsRagNodeData,
     defaultData: {
         title: TITLE,
-        url: "",
-        dataType: "json",
-        dataProvidedByUpstream: false,
-        toSanitize: ["input"],
+        ...defaultRagNodeData,
+        toSanitize: ["handler"],
     }
 };

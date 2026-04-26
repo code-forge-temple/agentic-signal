@@ -10,7 +10,8 @@
             "data": {
                 "title": "GET Data",
                 "url": "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=TSLA&outputsize=compact&apikey=demo",
-                "dataType": "json"
+                "dataType": "json",
+                "dataProvidedByUpstream": false
             },
             "measured": {
                 "width": 160,

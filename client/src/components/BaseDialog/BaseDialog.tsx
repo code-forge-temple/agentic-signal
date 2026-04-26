@@ -11,7 +11,7 @@ import {PaperComponent} from "../PaperComponent";
 import {ReactNode, useEffect, useState} from "react";
 
 const BASE_Z = 1000;
-const FOCUSED_Z = 1001;
+const FOCUSED_Z = 1009;
 const dialogSetters = new Set<(z: number) => void>();
 
 export interface BaseDialogProps {
@@ -80,6 +80,7 @@ export function BaseDialog ({
                 fullWidth={maximized ? false : fullWidth}
                 fullScreen={maximized}
                 hideBackdrop
+                disableEnforceFocus
                 disableEscapeKeyDown
                 sx={{
                     "& .MuiPaper-root": {

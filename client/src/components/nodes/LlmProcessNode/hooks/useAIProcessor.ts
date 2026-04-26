@@ -10,6 +10,7 @@ import {GenericNodeData} from '../../../../types/workflow';
 import {Message, MessageRole, SystemUserConfigValues, ToolSchema} from '../../../../types/ollama.types';
 import Ajv from "ajv";
 import {LlmProcessNodeData} from '../types/workflow';
+import {useFetchModels} from '../../../../hooks/useFetchModels';
 
 
 export interface UseAIProcessorOptions {
@@ -88,41 +89,14 @@ const buildUnifiedFormat = (format: {onSuccess?: string; onError?: string;}): st
 
 export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     const {onSuccess, onError} = options;
-    const [error, setError] = useState<string | null>(null);
-    const [models, setModels] = useState<string[]>([]);
-    const [isFetchingModels, setIsFetchingModels] = useState(false);
+    const [error, setError] = useState<string[]>([]);
 
-    const fetchModels = useCallback(async () => {
-        setIsFetchingModels(true);
-
-        try {
-            const fetchResponse = await OllamaService.getInstance().fetchModels();
-
-            if (fetchResponse.success) {
-                const modelNames = fetchResponse.models.map(model => model.name);
-
-                setModels(modelNames);
-
-                return modelNames;
-            } else {
-                const errorMsg = `Failed to fetch models: ${fetchResponse.error}`;
-
-                setError(errorMsg);
-                onError?.(errorMsg);
-
-                return [];
-            }
-        } catch (error) {
-            const errorMsg = `Failed to fetch models: ${error instanceof Error ? error.message : String(error)}`;
-
-            setError(errorMsg);
-            onError?.(errorMsg);
-
-            return [];
-        } finally {
-            setIsFetchingModels(false);
-        }
+    const handleFetchModelsError = useCallback((msg: string) => {
+        setError(prev => [...prev, msg]);
+        onError?.(msg);
     }, [onError]);
+
+    const {models, isFetchingModels, fetchModels} = useFetchModels(handleFetchModelsError);
 
     const processAIRequest = useCallback(async ({
         input,
@@ -133,6 +107,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         tools,
         feedback,
         maxToolRetries,
+        ragHandler,
         conversationHistory
     }: Pick<GenericNodeData & LlmProcessNodeData, 'input' | 'prompt' | 'message' | 'model' | 'format'> & {
     tools?: {
@@ -142,6 +117,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     }[];
     feedback?: string;
     maxToolRetries: number;
+    ragHandler?: (input: string) => Promise<string>;
     conversationHistory: {
         value: Message[];
         onChange: (history: Message[]) => void;
@@ -150,7 +126,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         if (!model) {
             const errorMsg = "Please select a model first.";
 
-            setError(errorMsg);
+            setError(prev => [...prev, errorMsg]);
             onError?.(errorMsg);
 
             return null;
@@ -159,13 +135,13 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         if (!prompt && !message && !input) {
             const errorMsg = "Please provide a prompt, message, or input data.";
 
-            setError(errorMsg);
+            setError(prev => [...prev, errorMsg]);
             onError?.(errorMsg);
 
             return null;
         }
 
-        setError(null);
+        setError([]);
 
         try {
             let messages: Message[] = [];
@@ -185,9 +161,28 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
 
                     assertIsSerializedInput(serializedInput);
 
-                    const userContent = message
+                    const baseUserContent = message
                         ? `${message.preffix || ''}${serializedInput}${message.suffix || ''}`
                         : serializedInput;
+
+                    let userContent = baseUserContent;
+
+                    if (ragHandler) {
+                        try {
+                            const ragContext = await ragHandler(baseUserContent);
+
+                            if (ragContext) {
+                                userContent = `## CONTEXT\n${ragContext}\n\n${baseUserContent}`;
+                            }
+                        } catch (ragError) {
+                            const errorMsg = `RAG retrieval failed: ${ragError instanceof Error ? ragError.message : String(ragError)}`;
+
+                            setError(prev => [...prev, errorMsg]);
+                            onError?.(errorMsg);
+
+                            return null;
+                        }
+                    }
 
                     messages.push({
                         role: MessageRole.USER,
@@ -257,7 +252,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 } catch (parseError) {
                     const errorMsg = `Invalid format JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
 
-                    setError(errorMsg);
+                    setError(prev => [...prev, errorMsg]);
                     onError?.(errorMsg);
 
                     return null;
@@ -275,7 +270,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             if (!response.success) {
                 const errorMsg = `Failed to fetch AI response: ${response.error}`;
 
-                setError(errorMsg);
+                setError(prev => [...prev, errorMsg]);
                 onError?.(errorMsg);
 
                 return null;
@@ -298,7 +293,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     if (onErrorValidator && onErrorValidator(result)) {
                         const errorMsg = `LLM returned an error response matching onError schema:\n${JSON.stringify(result, null, 4)}`;
 
-                        setError(errorMsg);
+                        setError(prev => [...prev, errorMsg]);
                         onError?.(errorMsg);
 
                         return null;
@@ -307,7 +302,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             } catch (parseError) {
                 const errorMsg = `Failed to parse AI response: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
 
-                setError(errorMsg);
+                setError(prev => [...prev, errorMsg]);
                 onError?.(errorMsg);
 
                 return null;
@@ -320,7 +315,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         } catch (error) {
             const errorMsg = `Unexpected error: ${error instanceof Error ? error.message : String(error)}`;
 
-            setError(errorMsg);
+            setError(prev => [...prev, errorMsg]);
             onError?.(errorMsg);
 
             return null;
@@ -333,6 +328,6 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         models,
         isFetchingModels,
         error,
-        clearError: () => setError(null),
+        clearError: () => setError([]),
     };
 }

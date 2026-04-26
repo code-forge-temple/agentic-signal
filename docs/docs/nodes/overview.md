@@ -16,11 +16,13 @@ Legend:
 ① **Input Data Connector**  
 ② **Output Data Connector**  
 ③ **Tool Connector**: Some nodes offer additional connectors, such as the [Tool Connector](/docs/nodes/ai/ai-tool) on the [AI Data Processing Node](/docs/nodes/ai/llm-process).  
-④ **Timer Connector**: Connects to a [Timer Node](/docs/nodes/input/timer) to trigger this node **Run** method automatically at a set interval/schedule.  
-⑤ **Settings**: Configure node-specific options (highlighted if configuration is missing or required).  
-⑥ **Error Logs**: View errors when the node fails to process input data (highlighted if errors are present).  
-⑦ **Output**: View processed results (e.g., see the [Display Chart Node](/docs/nodes/output/chart)); highlighted when new output is available.  
-⑧ **Run**: Manually trigger the workflow from this node onward.  
+④ **RAG Connector**: Connects a RAG source node to an AI Data Processing Node so retrieved document context can be included in the prompt.  
+
+⑤ **Timer Connector**: Connects to a [Timer Node](/docs/nodes/input/timer) to trigger this node **Run** method automatically at a set interval/schedule.  
+⑥ **Settings**: Configure node-specific options (highlighted if configuration is missing or required).  
+⑦ **Error Logs**: View errors when the node fails to process input data (highlighted if errors are present).  
+⑧ **Output**: View processed results (e.g., see the [Display Chart Node](/docs/nodes/output/chart)); highlighted when new output is available.  
+⑨ **Run**: Manually trigger the workflow from this node onward.  
 
 ## Node Types
 
@@ -29,6 +31,7 @@ Legend:
 - [Data Source](/docs/nodes/input/data-source)
 - [AI Data Processing](/docs/nodes/ai/llm-process)
 - [AI Tool](/docs/nodes/ai/ai-tool)
+- [RAG](/docs/nodes/ai/rag)
 - [HTTP Data](/docs/nodes/input/http-data)
 - [JSON Reformatter](/docs/nodes/data/json-reformatter)
 - [Stock Analysis](/docs/nodes/data/stock-analysis)

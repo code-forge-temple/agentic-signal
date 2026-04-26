@@ -6,7 +6,7 @@
 
 import {type NodeProps} from "@xyflow/react";
 import {assertIsStockAnalysisNodeData} from "./types/workflow";
-import {StockAnalysisInputSchema, StockDataPoint, STOCK_ANALYSIS_INPUT_JSON_SCHEMA} from "./types/stock.types";
+import {StockAnalysisInputSchema, StockDataPoint, STOCK_ANALYSIS_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {useState} from "react";
 import {BaseNode} from "../BaseNode";
 import {runTask} from "../BaseNode/utils";

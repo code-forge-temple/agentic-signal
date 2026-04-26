@@ -51,6 +51,7 @@ const sidebars: SidebarsConfig = {
                     label: 'AI Processing Nodes',
                     items: [
                         'nodes/ai/llm-process',
+                        'nodes/ai/rag',
                         {
                             type: 'category',
                             label: 'AI Tool Node',

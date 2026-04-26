@@ -19,7 +19,7 @@ import {
     Legend
 } from "chart.js";
 import {BaseNode} from "../BaseNode";
-import {ChartDataSchema, type ChartData, CHART_INPUT_JSON_SCHEMA} from "./types/chart.types";
+import {ChartDataSchema, type ChartData, CHART_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {runTask} from "../BaseNode/utils";
 import {LogsDialog} from "../../LogsDialog";
 import {BaseDialog} from "../../BaseDialog";

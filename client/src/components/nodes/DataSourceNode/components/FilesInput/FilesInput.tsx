@@ -10,7 +10,7 @@ import {Attachment, Xmark} from 'iconoir-react';
 import './FilesInput.scss';
 import {useRef, useEffect, useState} from 'react';
 import {FileData, FilesDataSource} from '../../types/workflow';
-import {extractFromMarkdown, EXTRACTION_TYPE} from '../../../../MarkdownRenderer';
+import {extractFromMarkdown, EXTRACTION_TYPE} from '@shared/utils';
 import {fileExtensionToCodeBlockLang} from "@shared/utils";
 import {IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS, TRIPLE_BACKTICK} from '@shared/constants';
 

@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
     addEdge,
     useNodesState,
@@ -188,14 +188,36 @@ export function useWorkflow () {
         );
     }, [setNodes]);
 
-    // Enhance nodes with handlers
-    const enhancedNodes: AppNode[] = nodes.map((node) =>
-        updateNodeData(node, {
-            onConfigChange: handleNodeConfigChange,
-            onResultUpdate: handleNodeResultUpdate,
-            onFeedbackSend: handleFeedbackSend,
-        }, nodeAssertions)
-    );
+    // Enhance nodes with handlers.
+    const enhancedNodesCacheRef = useRef<Map<AppNode, AppNode>>(new Map());
+    const enhancedNodes: AppNode[] = useMemo(() => {
+        const prevCache = enhancedNodesCacheRef.current;
+        const nextCache = new Map<AppNode, AppNode>();
+
+        const result = nodes.map((node) => {
+            const cached = prevCache.get(node);
+
+            if (cached) {
+                nextCache.set(node, cached);
+
+                return cached;
+            }
+
+            const enhanced = updateNodeData(node, {
+                onConfigChange: handleNodeConfigChange,
+                onResultUpdate: handleNodeResultUpdate,
+                onFeedbackSend: handleFeedbackSend,
+            }, nodeAssertions);
+
+            nextCache.set(node, enhanced);
+
+            return enhanced;
+        });
+
+        enhancedNodesCacheRef.current = nextCache;
+
+        return result;
+    }, [nodes, handleNodeConfigChange, handleNodeResultUpdate, handleFeedbackSend]);
 
     const addNode = useCallback(
         (node: AppNode) => setNodes((existingNodes) => [...existingNodes, node]),

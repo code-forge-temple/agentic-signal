@@ -4,17 +4,18 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
 
 
-export type DataFlowSpyNodeData = object;
+export const DataFlowSpyNodeDataSchema = z.object({});
+
+export type DataFlowSpyNodeData = z.infer<typeof DataFlowSpyNodeDataSchema>;
 
 export function assertIsDataFlowSpyNodeData (data: unknown): asserts data is DataFlowSpyNodeData {
-    if (typeof data !== 'object' || data === null) {
-        throw new Error('Node data is not DataFlowSpyNodeData');
-    }
+    DataFlowSpyNodeDataSchema.parse(data);
 }
 
 export type DataFlowSpyNode = Node<BaseNodeData & DataFlowSpyNodeData> & { type: typeof NODE_TYPE };

@@ -7,7 +7,9 @@
 import {NodeDescriptor} from "../types";
 import {StockAnalysisNode as component} from "./StockAnalysisNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
-import {assertIsStockAnalysisNodeData, StockAnalysisNode} from "./types/workflow";
+import {assertIsStockAnalysisNodeData, StockAnalysisNode, StockAnalysisNodeDataSchema} from "./types/workflow";
+import {StockAnalysisInputSchema} from "./types/input.types";
+import {NODE_PORT_IDS} from "../../../constants";
 
 export const StockAnalysisNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, StockAnalysisNode> = {
     type: NODE_TYPE,
@@ -15,6 +17,15 @@ export const StockAnalysisNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Stock
     icon: Icon,
     title: TITLE,
     assertion: assertIsStockAnalysisNodeData,
+    metadata: {
+        description: "Receives stock price data and renders a financial analysis chart with candlestick or line visualisation.",
+        ports: {
+            [NODE_PORT_IDS.FLOW]: {
+                inputSchema: StockAnalysisInputSchema.describe("Stock symbol and time-series price data input."),
+            },
+        },
+        configSchema: StockAnalysisNodeDataSchema,
+    },
     defaultData: {
         title: TITLE,
         toSanitize: ["input"]

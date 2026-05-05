@@ -22,7 +22,7 @@ export default defineConfig({
                 exportType: 'default',
             },
             include: '**/*.svg',
-        })
+        }),
     ],
     resolve: {
         preserveSymlinks: true,

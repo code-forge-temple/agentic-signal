@@ -16,7 +16,7 @@ import {
     TIMER_NODE_MODES,
     TimerNodeData
 } from "./types/workflow";
-import {TIMER_TRIGGER_PORT_COLOR, TIMER_TRIGGER_PORT_ID} from "../../../constants";
+import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {BaseDialog} from "../../BaseDialog";
 import {FormControlLabel, Switch, FormControl, InputLabel, Select, MenuItem, TextField, Stack} from "@mui/material";
 import {DebouncedTextField} from "../../DebouncedTextField";
@@ -162,10 +162,10 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
                 extraPorts={
                     <Handle
                         type="source"
-                        id={TIMER_TRIGGER_PORT_ID}
+                        id={NODE_PORT_IDS.TRIGGER}
                         position={Position.Right}
-                        style={{background: TIMER_TRIGGER_PORT_COLOR}}
-                        isValidConnection={({targetHandle}) => targetHandle === TIMER_TRIGGER_PORT_ID}
+                        style={{background: NODE_PORT_COLORS.TRIGGER}}
+                        isValidConnection={({targetHandle}) => targetHandle === NODE_PORT_IDS.TRIGGER}
                     />
                 }
             />

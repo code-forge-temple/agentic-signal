@@ -13,6 +13,7 @@ The **Data Validation Node** checks incoming data against a [JSON Schema](https:
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="schema" label="Schema" default>
@@ -44,6 +45,9 @@ import TabItem from '@theme/TabItem';
         </details>
 
         ![Data Validation Node Params](/img/nodes/data-validation-params.jpg)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="data-validation" />
     </TabItem>
 </Tabs>
 

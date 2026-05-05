@@ -4,20 +4,20 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
 
 
-export type JsonReformatterNodeData = {
-    jsonataExpression: string;
-};
+export const JsonReformatterNodeDataSchema = z.object({
+    jsonataExpression: z.string().describe("JSONata expression used to transform/reformat the input JSON"),
+});
+
+export type JsonReformatterNodeData = z.infer<typeof JsonReformatterNodeDataSchema>;
 
 export function assertIsJsonReformatterNodeData (data: unknown): asserts data is JsonReformatterNodeData {
-    if (typeof data !== 'object' || data === null ||
-    !('jsonataExpression' in data) || typeof (data as any).jsonataExpression !== 'string') {
-        throw new Error('Node data is not JsonReformatterNodeData');
-    }
+    JsonReformatterNodeDataSchema.parse(data);
 }
 
 export type JsonReformatterNode = Node<BaseNodeData & JsonReformatterNodeData> & { type: typeof NODE_TYPE };

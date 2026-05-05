@@ -9,6 +9,8 @@ import {DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {defaultRagNodeData} from "../types/workflow";
 
 
+export const FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX = "Failed to fetch collections";
+
 interface UseWeaviateCollectionsOptions {
     id: string;
     weaviateUrl: string | undefined;
@@ -126,7 +128,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
 
             setAvailableCollections(items);
         } catch (err) {
-            onError(`Failed to fetch collections: ${err instanceof Error ? err.message : String(err)}`);
+            onError(`${FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX}: ${err instanceof Error ? err.message : String(err)}`);
 
             setAvailableCollections([]);
         } finally {

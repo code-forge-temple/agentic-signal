@@ -140,7 +140,7 @@ export const Settings = () => {
                     <LinearProgress variant="determinate" value={progress} />
                 </Box>
             )}
-            <Box sx={{mt: 3, maxHeight: 240, overflowY: 'auto'}}>
+            <Box sx={{mt: 3, maxHeight: '100%', overflowY: 'auto'}}>
                 <List>
                     {
                         models.map((model, idx) => (

@@ -1,0 +1,80 @@
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #0a2438;
+    border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+
+    .chat-header-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #E91E63;
+        white-space: nowrap;
+        cursor: move;
+        user-select: none;
+        flex: 1;
+    }
+
+    .model-select-wrapper {
+        display: flex;
+        align-items: center;
+        min-width: 150px;
+    }
+
+    .chat-header-loading {
+        color: rgba(255, 255, 255, 0.5) !important;
+        margin: 0 auto;
+    }
+
+    .model-select {
+        width: 100%;
+
+        .MuiInputLabel-root {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+        }
+
+        .MuiOutlinedInput-root {
+            color: #fff;
+            font-size: 13px;
+
+            .MuiOutlinedInput-notchedOutline {
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            &:hover .MuiOutlinedInput-notchedOutline {
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+
+            &.Mui-focused .MuiOutlinedInput-notchedOutline {
+                border-color: #E91E63;
+            }
+
+            .MuiSelect-icon {
+                color: rgba(255, 255, 255, 0.5);
+            }
+        }
+    }
+
+    .minimize-btn {
+        color: rgba(255, 255, 255, 0.6) !important;
+        flex-shrink: 0;
+
+        &:hover {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+    }
+
+    .close-btn {
+        color: rgba(255, 255, 255, 0.6) !important;
+        flex-shrink: 0;
+
+        &:hover {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+    }
+}

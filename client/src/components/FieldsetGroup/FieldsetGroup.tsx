@@ -12,9 +12,10 @@ type FieldsetGroupProps = {
     children: ReactNode;
     title: string;
     height?: string;
+    style?: React.CSSProperties;
 };
 
-export const FieldsetGroup = ({children, title, height}: FieldsetGroupProps) => {
+export const FieldsetGroup = ({children, title, height, style}: FieldsetGroupProps) => {
     return (
         <FormControl component="fieldset"
             sx={{
@@ -25,6 +26,7 @@ export const FieldsetGroup = ({children, title, height}: FieldsetGroupProps) => 
                 borderRadius: 2,
                 pt: 2, pb: 2, pl: 2, pr: 2,
                 mb: 2,
+                ...style,
                 height: height || 'auto',
             }}
         >

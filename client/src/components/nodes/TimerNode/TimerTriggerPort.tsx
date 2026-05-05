@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {Handle, Position, useReactFlow} from "@xyflow/react";
-import {TIMER_TRIGGER_PORT_COLOR, TIMER_TRIGGER_PORT_ID} from "../../../constants";
+import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {NODE_TYPE} from "./constants";
 
 
@@ -15,9 +15,9 @@ export const TimerTriggerPort = () => {
     return (
         <Handle
             type="target"
-            id={TIMER_TRIGGER_PORT_ID}
+            id={NODE_PORT_IDS.TRIGGER}
             position={Position.Bottom}
-            style={{left: "auto", right: 13, backgroundColor: TIMER_TRIGGER_PORT_COLOR}}
+            style={{left: "auto", right: 13, backgroundColor: NODE_PORT_COLORS.TRIGGER}}
             isValidConnection={({source}) => {
                 return getNode(source)?.type === NODE_TYPE;
             }}

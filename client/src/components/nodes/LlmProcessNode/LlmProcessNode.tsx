@@ -9,7 +9,7 @@ import {assertIsLlmProcessNodeData, defaultLlmProcessNodeData} from "./types/wor
 import {assertIsToolNodeData, ToolNode} from "../ToolNode/types/workflow";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {BaseNode} from "../BaseNode";
-import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
+import {Box, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Slider, Switch, Typography} from "@mui/material";
 import {CodeEditor} from "../../CodeEditor";
 import {useAIProcessor} from "./hooks/useAIProcessor";
 import {runTask} from "../BaseNode/utils";
@@ -18,7 +18,7 @@ import {LogsDialog} from "../../LogsDialog";
 import {BasicTabs} from "../../Tabs/Tabs";
 import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hooks/useRunOnTriggerChange";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
-import {AI_TOOL_PORT_COLOR, RAG_PORT_COLOR, RAG_PORT_ID, TOOL_PORT_ID} from "../../../constants";
+import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {SystemUserConfigValues, ToolSchema} from "../../../types/ollama.types";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {DebouncedTextField} from "../../DebouncedTextField";
@@ -54,13 +54,16 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         feedback,
         maxFeedbackLoops,
         maxToolRetries,
+        think,
+        temperatureEnabled,
+        temperature,
         onResultUpdate,
         onConfigChange,
         onFeedbackSend
     } = data;
 
     const connectedToolNodes = getEdges()
-        .filter(edge => edge.target === id && edge.targetHandle === TOOL_PORT_ID)
+        .filter(edge => edge.target === id && edge.targetHandle === NODE_PORT_IDS.TOOL)
         .map(edge => getNodes().find(node => node.id === edge.source))
         .filter((node): node is ToolNode => !!node && node.type === TOOL_NODE_TYPE)
         .map(node => {
@@ -78,7 +81,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         }));
 
     const connectedRagNode = getEdges()
-        .filter(edge => edge.target === id && edge.targetHandle === RAG_PORT_ID)
+        .filter(edge => edge.target === id && edge.targetHandle === NODE_PORT_IDS.CONTEXT)
         .map(edge => getNodes().find(node => node.id === edge.source))
         .find((node): node is RagNode => {
             if (!node || node.type !== RAG_NODE_TYPE) return false;
@@ -141,6 +144,8 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         feedback: feedback,
                         maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                         ragHandler,
+                        think: think ?? defaultLlmProcessNodeData.think,
+                        temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
                         conversationHistory: {
                             value: conversationHistory || [],
                             onChange: (newHistory) => {
@@ -172,6 +177,8 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                     tools,
                     maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                     ragHandler,
+                    think: think ?? defaultLlmProcessNodeData.think,
+                    temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
                     conversationHistory: {
                         value: [],
                         onChange: (newHistory) => {
@@ -200,6 +207,8 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 feedback: feedback,
                 maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                 ragHandler,
+                think: think ?? defaultLlmProcessNodeData.think,
+                temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
                 conversationHistory: {
                     value: [],
                     onChange: (newHistory) => {
@@ -208,7 +217,8 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 },
             });
         }, setIsRunning);
-    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, tools]);
+    // eslint-disable-next-line max-len
+    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, tools]);
 
     const [systemPrompt, setSystemPrompt] = useDebouncedState({
         callback: (value: string) => {
@@ -270,23 +280,23 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                     <>
                         <Handle
                             type="target"
-                            id={TOOL_PORT_ID}
+                            id={NODE_PORT_IDS.TOOL}
                             position={Position.Bottom}
-                            style={{left: 30, backgroundColor: AI_TOOL_PORT_COLOR}}
+                            style={{left: 30, backgroundColor: NODE_PORT_COLORS.TOOL}}
                             isValidConnection={({source}) => {
                                 return getNode(source)?.type === TOOL_NODE_TYPE;
                             }}
                         />
                         <Handle
                             type="target"
-                            id={RAG_PORT_ID}
+                            id={NODE_PORT_IDS.CONTEXT}
                             position={Position.Bottom}
-                            style={{left: 10, backgroundColor: RAG_PORT_COLOR}}
+                            style={{left: 10, backgroundColor: NODE_PORT_COLORS.CONTEXT}}
                             isValidConnection={({source}) => {
                                 if (getNode(source)?.type !== RAG_NODE_TYPE) return false;
 
                                 const alreadyConnected = getEdges().some(
-                                    edge => edge.target === id && edge.targetHandle === RAG_PORT_ID
+                                    edge => edge.target === id && edge.targetHandle === NODE_PORT_IDS.CONTEXT
                                 );
 
                                 return !alreadyConnected;
@@ -359,6 +369,44 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         sx={{mb: 2}}
                         helperText="Maximum number of retry attempts for each required tool"
                     />
+                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, ml: 1.5}}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    size="small"
+                                    checked={think ?? defaultLlmProcessNodeData.think}
+                                    onChange={e => onConfigChange(id, {think: e.target.checked})}
+                                />
+                            }
+                            label={<Typography variant="body2">Thinking</Typography>}
+                        />
+                    </Box>
+                    <Box sx={{display: 'flex', alignItems: 'center', gap: 2, mb: 2, ml: 1.5}}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    size="small"
+                                    checked={temperatureEnabled ?? defaultLlmProcessNodeData.temperatureEnabled}
+                                    onChange={e => onConfigChange(id, {temperatureEnabled: e.target.checked})}
+                                />
+                            }
+                            label={<Typography variant="body2">Temperature</Typography>}
+                        />
+                        <Slider
+                            size="small"
+                            disabled={!(temperatureEnabled ?? defaultLlmProcessNodeData.temperatureEnabled)}
+                            min={0}
+                            max={2}
+                            step={0.1}
+                            value={temperature ?? defaultLlmProcessNodeData.temperature}
+                            onChange={(_, value) => onConfigChange(id, {temperature: value as number})}
+                            valueLabelDisplay="auto"
+                            sx={{flex: 1}}
+                        />
+                        <Typography variant="body2" sx={{minWidth: 28, textAlign: 'right'}}>
+                            {(temperature ?? defaultLlmProcessNodeData.temperature).toFixed(1)}
+                        </Typography>
+                    </Box>
                     <Box sx={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
                         <BasicTabs tabs={[
                             {

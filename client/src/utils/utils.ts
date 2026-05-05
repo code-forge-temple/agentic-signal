@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {createTheme} from "@mui/material";
-import {BACKEND_PORT} from "@shared/constants";
+import {BACKEND_PORT, TRIPLE_BACKTICK} from "@shared/constants";
 
 export const darkTheme = createTheme({
     palette: {
@@ -56,13 +56,13 @@ export const formatContentForDisplay = (input: any): string | undefined => {
         try {
             const parsed = JSON.parse(input);
 
-            return `\`\`\`json\n${JSON.stringify(parsed, null, 4)}\n\`\`\``;
+            return `${TRIPLE_BACKTICK}json\n${JSON.stringify(parsed, null, 4)}\n${TRIPLE_BACKTICK}`;
         } catch {
             return input;
         }
     }
 
-    return `\`\`\`json\n${JSON.stringify(input, null, 4)}\n\`\`\``;
+    return `${TRIPLE_BACKTICK}json\n${JSON.stringify(input, null, 4)}\n${TRIPLE_BACKTICK}`;
 };
 
 export const parseUrl = (initialUrl: string): string => {
@@ -123,4 +123,18 @@ export function localDatetimeToIso (localDatetime: string): string {
     const date = new Date(localDatetime);
 
     return date.toISOString();
+}
+
+
+export function excludeKeysFromObject<T extends Record<string, any>, K extends string> (
+    obj: T | undefined,
+    exclude: readonly K[]
+): Omit<T, Extract<keyof T, K>> {
+    if (!obj) {
+        return {} as Omit<T, Extract<keyof T, K>>;
+    }
+
+    return Object.fromEntries(
+        Object.entries(obj).filter(([key]) => !exclude.includes(key as K))
+    ) as Omit<T, Extract<keyof T, K>>;
 }

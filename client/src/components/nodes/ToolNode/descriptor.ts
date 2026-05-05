@@ -7,7 +7,7 @@
 import {NodeDescriptor} from "../types";
 import {ToolNode as component} from "./ToolNode";
 import {Icon, NODE_TYPE} from "./constants";
-import {assertIsToolNodeData, ToolNode} from "./types/workflow";
+import {assertIsToolNodeData, ToolNode, ToolNodeDataSchema} from "./types/workflow";
 
 
 export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {
@@ -16,6 +16,13 @@ export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {
     icon: Icon,
     title: "AI Tool",
     assertion: assertIsToolNodeData,
+    metadata: {
+        description: "Wraps a registered tool (e.g. web search, date/time) and exposes it to an adjacent LlmProcessNode for function calling.",
+        ports: {
+            tool: true,
+        },
+        configSchema: ToolNodeDataSchema,
+    },
     defaultData: {
         title: "AI Tool",
         toolSubtype: "",

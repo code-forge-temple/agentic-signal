@@ -51,7 +51,8 @@
                 "title": "AI Data Processing",
                 "prompt": "Provide all answers in Markdown format.",
                 "model": "",
-                "maxFeedbackLoops": 0
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3
             },
             "measured": {
                 "width": 160,
@@ -80,13 +81,16 @@
             "id": "f0e05088-09fb-44dc-b6d0-3c433d237d88",
             "source": "b3d137fa-6534-4fc0-a6e0-15ee919be276",
             "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "targetHandle": "flow",
+            "sourceHandle": "flow",
             "animated": false
         },
         {
             "id": "3eb73176-bb89-4a3e-955e-fd5d1d0492a3",
             "source": "ca0be528-34f5-48e2-8d89-3c50260998c3",
             "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "targetHandle": "tools-target"
+            "targetHandle": "tool",
+            "sourceHandle": "tool"
         },
         {
             "id": "3c6892d46-614b-4a1e-a9f7-6970579860bd",

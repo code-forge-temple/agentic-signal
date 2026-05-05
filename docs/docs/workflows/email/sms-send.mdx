@@ -1,0 +1,53 @@
+---
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import smsSendJson from '@site/static/workflows/sms-send.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# SMS Send Workflow
+
+This workflow sends an SMS message using the SMS output node.
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        - Sends a text message to a phone number
+        - Uses a JSON Data Source node for `phoneNumber` and `message`
+        - Uses the SMS output node to deliver the SMS
+
+        ![SMS Send Workflow](/img/workflows/sms-send-preview.webp)
+
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/sms-send.json")}>
+            {JSON.stringify(smsSendJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: JSON object containing `phoneNumber` and `message`
+        - [**SMS**](/docs/nodes/output/sms)  
+            - Output: Sends the message to the configured phone number
+            - Requirements: SMS delivery configuration must be set up in `Agentic Signal`
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Load the workflow** in `Agentic Signal`.
+2. **Review the Data Source** node JSON and update the `phoneNumber` and `message` values.
+3. **Verify SMS delivery settings** in `Agentic Signal`, if required by your SMS provider.
+4. **Run the workflow** to send the SMS message.
+
+## Customization
+
+- Change the `phoneNumber` value to the destination phone number.
+- Update the `message` text to send a custom notification.
+- Add additional nodes upstream to generate dynamic SMS content from other sources.

@@ -6,19 +6,25 @@
 
 import {ActionsDock} from "./components/ActionsDock";
 import {NodesDock} from "./components/NodesDock";
+import {AIAssistantDock} from "./components/AIAssistantDock";
 import './Dock.scss';
 
 type DockProps = {
     onSave: () => void;
     onClear: () => void;
     onLoad: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onLoadWorkflow: (json: string, onError?: (error: string) => void) => void;
+    getWorkflowJson: () => string;
 };
 
-export const Dock = ({onSave, onLoad, onClear}: DockProps) => {
+export const Dock = ({onSave, onLoad, onClear, onLoadWorkflow, getWorkflowJson}: DockProps) => {
     return (
-        <div className="dock">
-            <ActionsDock onSave={onSave} onLoad={onLoad} onClear={onClear} />
-            <NodesDock />
-        </div>
+        <>
+            <div className="dock">
+                <AIAssistantDock onLoadWorkflow={onLoadWorkflow} getWorkflowJson={getWorkflowJson} />
+                <ActionsDock onSave={onSave} onLoad={onLoad} onClear={onClear} />
+                <NodesDock />
+            </div>
+        </>
     );
 };

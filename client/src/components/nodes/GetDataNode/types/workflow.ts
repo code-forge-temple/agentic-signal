@@ -4,9 +4,10 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
 
 
 export const FetchDataType = {
@@ -20,20 +21,16 @@ export const FetchDataType = {
 
 export type FetchDataType = typeof FetchDataType[keyof typeof FetchDataType];
 
+export const GetDataNodeDataSchema = z.object({
+    url: z.string().describe("The URL to fetch data from"),
+    dataType: z.enum(['json', 'text', 'csv', 'xml', 'blob', 'arrayBuffer']).describe("Expected format of the fetched data"),
+    dataProvidedByUpstream: z.boolean().describe("When true, data content ('url', 'dataType') is provided by an upstream node instead of being configured here"),
+});
 
-export type GetDataNodeData = {
-    url: string;
-    dataType: FetchDataType;
-    dataProvidedByUpstream: boolean;
-};
+export type GetDataNodeData = z.infer<typeof GetDataNodeDataSchema>;
 
 export function assertIsGetDataNodeData (data: unknown): asserts data is GetDataNodeData {
-    if (typeof data !== 'object' || data === null ||
-        !('url' in data) || typeof data.url !== 'string' ||
-        !('dataType' in data) || typeof data.dataType !== 'string' ||
-        !('dataProvidedByUpstream' in data) || typeof data.dataProvidedByUpstream !== 'boolean') {
-        throw new Error('Node data is not GetDataNodeData');
-    }
+    GetDataNodeDataSchema.parse(data);
 }
 
 export type GetDataNode = Node<BaseNodeData & GetDataNodeData> & { type: typeof NODE_TYPE };

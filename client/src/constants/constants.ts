@@ -5,14 +5,44 @@
  ************************************************************************/
 
 
-export const AI_TOOL_PORT_COLOR = "#9c27b0";
+export const NODE_PORT_IDS = {
+    FLOW: "flow",
+    TOOL: "tool",
+    TRIGGER: "trigger",
+    CONTEXT: "context",
+} as const;
 
-export const TIMER_TRIGGER_PORT_COLOR = "#0bb6e1ea";
+export const NODE_PORT_COLORS = {
+    FLOW: "#ffc107",
+    TOOL: "#9c27b0",
+    TRIGGER: "#0bb6e1ea",
+    CONTEXT: "#F44336",
+} as const;
 
-export const RAG_PORT_COLOR = "#F44336";
+export const AI_ASSISTANT_KEYWORDS = {
+    PREPARE_WORKFLOW: "@prepare-workflow",
+    CURRENT_WORKFLOW: "@current-workflow",
+} as const;
 
-export const TOOL_PORT_ID = "tools-target";
+export const ROLE = {
+    USER: "user",
+    SYSTEM: "system",
+    ASSISTANT: "assistant"
+} as const;
 
-export const TIMER_TRIGGER_PORT_ID = "timer-trigger";
-
-export const RAG_PORT_ID = "rag-target";
+export const DRAG_CANCEL_SELECTOR = [
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'label',
+    '.MuiSlider-root',
+    '.MuiInputBase-root',
+    '.MuiSelect-root',
+    '.MuiButton-root',
+    '.MuiIconButton-root',
+    "[role='combobox']",
+    '.markdown-renderer',
+    '.ace_editor',
+    '.ace_text-input',
+].join(', ');

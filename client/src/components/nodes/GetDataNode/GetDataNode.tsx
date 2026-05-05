@@ -154,11 +154,12 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
                 onClose={() => setOpenSettings(false)}
                 title={title}
             >
-                <FieldsetGroup title="Expected Input Format (when Provided by Upstream)">
+                <FieldsetGroup title={`Expected Input Format ${dataProvidedByUpstream ? "*" : "(when Provided by Upstream)"}`} height={"100%"}>
                     <CodeEditor
                         mode="json"
                         value={GET_DATA_NODE_INPUT_JSON_SCHEMA}
                         readOnly={true}
+                        disabled={!dataProvidedByUpstream}
                         showLineNumbers={true}
                     />
                 </FieldsetGroup>

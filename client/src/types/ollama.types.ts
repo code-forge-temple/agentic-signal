@@ -27,8 +27,15 @@ export type FetchModelResponse =
     | {success: true; reply: number}
     | ErrorResponse;
 
+export type FetchAiResponseSuccess = {
+    success: true;
+    reply: string;
+    thinking?: string;
+    final: boolean
+}
+
 export type FetchAiResponse =
-    | {success: true; reply: string; final: boolean}
+    | FetchAiResponseSuccess
     | ErrorResponse;
 
 export type ToolSchema = {

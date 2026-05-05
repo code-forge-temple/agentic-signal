@@ -1,9 +1,13 @@
 {
     "name": "agentic-signal",
-    "version": "2.6.0",
+    "version": "3.0.0",
     "description": "Visual AI Workflow Automation Platform with Local Agent Intelligence",
     "author": "Code Forge Temple",
     "type": "module",
+    "private": true,
+    "workspaces": [
+        "client"
+    ],
     "keywords": [
         "ai",
         "workflow",
@@ -37,7 +41,9 @@
         "circular": "bunx madge --circular --extensions ts,tsx ./client/src"
     },
     "dependencies": {
-        "concurrently": "^9.1.2"
+        "concurrently": "^9.1.2",
+        "zod": "3.25.64",
+        "zod-to-json-schema": "^3.25.2"
     },
     "devDependencies": {
         "@eslint/js": "^9.29.0",

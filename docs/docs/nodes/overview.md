@@ -1,10 +1,9 @@
 ---
-title: Intro
 description: Explore all available node types and integrations in Agentic Signal. Learn how to configure data sources, AI processors, validation, and output nodes for your workflows.
 sidebar_position: 1
 ---
 
-# Intro
+# Overview
 
 This section provides an overview of all available node types and integrations in `Agentic Signal`. Each node represents a building block for your workflow, enabling data input, AI processing, external API calls, validation, and output.
 
@@ -43,6 +42,7 @@ Legend:
 - [Reddit Post](/docs/nodes/output/reddit-post) <span className="pro-badge">PRO</span>
 - [Slack Input](/docs/nodes/input/slack-input) <span className="pro-badge">PRO</span>
 - [Slack Output](/docs/nodes/output/slack-output) <span className="pro-badge">PRO</span>
+- [SMS](/docs/nodes/output/sms) <span className="pro-badge">PRO</span>
 
 ## AI & Tool Integrations
 

@@ -12,6 +12,9 @@ import {CloudStorageFileResult} from "@shared/types.gen";
 import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput, sanitizeJsonInput} from "../utils/sanitize";
+import {GoogleToolOauthConfigFields} from "../utils/GoogleToolOauthConfigFields";
+import {UserConfigFields} from "../../UserConfigFields";
+import {excludeKeysFromObject} from "../../../../../utils";
 
 
 export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
@@ -56,6 +59,25 @@ export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
         }
     }),
     toSanitize: ["userConfig.accessToken"],
+    renderConfig: function ({userConfig, onConfigChange}){
+        return (
+            <>
+                <GoogleToolOauthConfigFields
+                    toolSubtype="gdrive-fetch-files"
+                    scope={OAUTH_PROVIDER_SCOPE}
+                    provider={OAUTH_PROVIDER}
+                    oauthHandler={oauthHandler}
+                    description="Google Drive Authentication"
+                    userConfig={userConfig}
+                    onConfigChange={onConfigChange}
+                />
+                <UserConfigFields
+                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, ["accessToken", "googleClientId"])}
+                    userConfig={userConfig}
+                    onConfigChange={onConfigChange}
+                />
+            </>
+        )},
     handlerFactory: (
         userConfig: { accessToken?: string, maxResults?: number }
     ) => async ({query}: { query: string }): Promise<CloudStorageFileResult[] | { error: string }> => {

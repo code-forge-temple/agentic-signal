@@ -44,7 +44,8 @@
                     "onSuccess": "{\r\n    \"type\": \"object\",\r\n    \"properties\": {\r\n        \"request\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The original user request but without any file contents.\"\r\n        },\r\n        \"csvArray\": {\r\n            \"type\": \"array\",\r\n            \"description\": \"Array of objects representing the parsed CSV rows.\",\r\n            \"items\": { \"type\": \"object\" }\r\n        }\r\n    },\r\n    \"required\": [\"csvArray\", \"request\"]\r\n}",
                     "onError": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"error\": { \"type\": \"string\" }\r\n  },\r\n  \"required\": [\"error\"]\r\n}"
                 },
-                "maxFeedbackLoops": 0
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3
             },
             "measured": {
                 "width": 160,
@@ -70,7 +71,8 @@
                 "format": {
                     "onSuccess": ""
                 },
-                "maxFeedbackLoops": 0
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3
             },
             "measured": {
                 "width": 160,
@@ -175,18 +177,18 @@
             "type": "smoothstep",
             "animated": false,
             "source": "723e5744-13a0-43ca-bdbf-8eae5cd5aaea",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "78c30e71-bd24-481c-af7b-e9f09e080e0f",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__723e5744-13a0-43ca-bdbf-8eae5cd5aaearight-source-78c30e71-bd24-481c-af7b-e9f09e080e0fleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "c6bf709b-cbd0-479f-af4b-5946b294d128",
-            "sourceHandle": "right-source",
             "target": "78c30e71-bd24-481c-af7b-e9f09e080e0f",
-            "targetHandle": "tools-target",
+            "targetHandle": "tool",
+            "sourceHandle": "tool",
             "id": "xy-edge__c6bf709b-cbd0-479f-af4b-5946b294d128right-source-78c30e71-bd24-481c-af7b-e9f09e080e0ftools-target",
             "selected": false
         },
@@ -194,9 +196,9 @@
             "type": "smoothstep",
             "animated": false,
             "source": "72772a41-da6d-413a-9744-f98e4cd30e2b",
-            "sourceHandle": "right-source",
+            "sourceHandle": "tool",
             "target": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            "targetHandle": "tools-target",
+            "targetHandle": "tool",
             "id": "xy-edge__72772a41-da6d-413a-9744-f98e4cd30e2bright-source-a1b2c3d4-e5f6-7890-abcd-ef1234567890tools-target",
             "selected": false
         },
@@ -204,27 +206,27 @@
             "type": "smoothstep",
             "animated": false,
             "source": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "1fa136ea-b63b-4cce-933b-4b4d11820ea3",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__a1b2c3d4-e5f6-7890-abcd-ef1234567890right-source-1fa136ea-b63b-4cce-933b-4b4d11820ea3left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "78c30e71-bd24-481c-af7b-e9f09e080e0f",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "927ef4aa-94ef-4806-b389-8996b589ffaf",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__78c30e71-bd24-481c-af7b-e9f09e080e0fright-source-927ef4aa-94ef-4806-b389-8996b589ffafleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "78c30e71-bd24-481c-af7b-e9f09e080e0f",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__78c30e71-bd24-481c-af7b-e9f09e080e0fright-source-a1b2c3d4-e5f6-7890-abcd-ef1234567890left-target"
         }
     ]

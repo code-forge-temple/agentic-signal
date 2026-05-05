@@ -4,9 +4,10 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
 
 
 export const DATA_SOURCE_TYPES = {
@@ -16,62 +17,37 @@ export const DATA_SOURCE_TYPES = {
 
 export type DATA_SOURCE_TYPES = typeof DATA_SOURCE_TYPES[keyof typeof DATA_SOURCE_TYPES];
 
-type JsonDataSource = {
-    type: typeof DATA_SOURCE_TYPES.JSON,
-    value: string
-};
+export const FileDataSchema = z.object({
+    name: z.string(),
+    content: z.string(),
+});
 
-export type FileData = {
-    name: string;
-    content: string;
-}
+export type FileData = z.infer<typeof FileDataSchema>;
 
-export type FilesDataSource = {
-    type: typeof DATA_SOURCE_TYPES.MARKDOWN,
-    value: {
-        text: string;
-        files: FileData[]
-    }
-};
+const JsonDataSourceSchema = z.object({
+    type: z.literal('json'),
+    value: z.string().describe("Raw JSON string to use as data source"),
+});
 
+const FilesDataSourceSchema = z.object({
+    type: z.literal('markdown'),
+    value: z.object({
+        text: z.string().describe("Markdown text content"),
+        files: z.array(FileDataSchema).describe("Attached files"),
+    }),
+});
 
-export type DataSourceNodeData = {
-    dataSource: JsonDataSource | FilesDataSource
-};
+export type FilesDataSource = z.infer<typeof FilesDataSourceSchema>;
+
+export const DataSourceNodeDataSchema = z.object({
+    dataSource: z.discriminatedUnion('type', [JsonDataSourceSchema, FilesDataSourceSchema])
+        .describe("The data source — either raw JSON or markdown with optional files"),
+});
+
+export type DataSourceNodeData = z.infer<typeof DataSourceNodeDataSchema>;
 
 export function assertIsDataSourceNodeData (data: unknown): asserts data is DataSourceNodeData {
-    if (
-        typeof data !== 'object' ||
-        data === null ||
-        !('dataSource' in data) ||
-        typeof (data as any).dataSource !== 'object' ||
-        (data as any).dataSource === null ||
-        !('type' in (data as any).dataSource)
-    ) {
-        throw new Error('Node data is not DataSourceNodeData');
-    }
-
-    const ds = (data as any).dataSource;
-
-    if (ds.type === DATA_SOURCE_TYPES.JSON) {
-        if (!('value' in ds) || typeof ds.value !== 'string') {
-            throw new Error('Node data is not DataSourceNodeData');
-        }
-    } else if (ds.type === DATA_SOURCE_TYPES.MARKDOWN) {
-        if (
-            !('value' in ds) ||
-            typeof ds.value !== 'object' ||
-            ds.value === null ||
-            !('text' in ds.value) ||
-            typeof ds.value.text !== 'string' ||
-            !('files' in ds.value) ||
-            !Array.isArray(ds.value.files)
-        ) {
-            throw new Error('Node data is not DataSourceNodeData');
-        }
-    } else {
-        throw new Error('Node data is not DataSourceNodeData');
-    }
+    DataSourceNodeDataSchema.parse(data);
 }
 
 export type DataSourceNode = Node<BaseNodeData & DataSourceNodeData> & { type: typeof NODE_TYPE };

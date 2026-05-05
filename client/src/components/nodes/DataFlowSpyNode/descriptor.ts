@@ -4,10 +4,12 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from 'zod';
 import {NodeDescriptor} from "../types";
 import {DataFlowSpyNode as component} from "./DataFlowSpyNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
-import {assertIsDataFlowSpyNodeData, DataFlowSpyNode} from "./types/workflow";
+import {assertIsDataFlowSpyNodeData, DataFlowSpyNode, DataFlowSpyNodeDataSchema} from "./types/workflow";
+import {NODE_PORT_IDS} from '../../../constants';
 
 
 export const DataFlowSpyNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataFlowSpyNode> = {
@@ -16,6 +18,15 @@ export const DataFlowSpyNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataFlo
     icon: Icon,
     title: TITLE,
     assertion: assertIsDataFlowSpyNodeData,
+    metadata: {
+        description: "Passthrough debugging node. Logs the data passing through it without modifying it.",
+        ports: {
+            [NODE_PORT_IDS.FLOW]: {
+                inputSchema: z.any().describe("Incoming data to log and inspect."),
+            },
+        },
+        configSchema: DataFlowSpyNodeDataSchema,
+    },
     defaultData: {
         title: TITLE,
         toSanitize: ["input"],

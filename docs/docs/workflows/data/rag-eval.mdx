@@ -1,0 +1,44 @@
+---
+sidebar_position: 12
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import ragEvalJson from '@site/static/workflows/rag-eval.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# RAG Eval Workflow
+
+This workflow demonstrates Retrieval-Augmented Generation in `Agentic Signal` by ingesting a text document into a RAG collection, retrieving the most relevant passages, and generating an answer from the retrieved evidence.
+
+<Tabs>
+    <TabItem value="json" label="JSON" default>
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/rag-eval.json")}>
+        {JSON.stringify(ragEvalJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Input: query prompt plus the attached `rag_test_large_document.txt` file
+        - [**RAG**](/docs/nodes/ai/rag)  
+            - Embedding Model: `nomic-embed-text:latest`  
+            - Collection: `test_collection`  
+            - Chunk Size: `64`, Chunk Overlap: `16`, Top K: `5`  
+            - Weaviate URL: `http://localhost:8080`
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Generates the final answer from retrieved passages
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Displays the generated response
+    </TabItem>
+</Tabs>
+
+---
+
+## Workflow Steps
+
+1. **Load input** with the Data Source node using a query prompt and the attached text document.
+2. **Index and retrieve** passages with the RAG node from the `test_collection` vector store.
+3. **Generate an answer** with the AI Data Processing node using the retrieved evidence.
+4. **Inspect the final output** in the Data Flow Spy node.

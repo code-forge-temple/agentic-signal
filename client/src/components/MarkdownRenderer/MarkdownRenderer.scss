@@ -1,18 +1,16 @@
 .markdown-renderer-container {
     flex: 1;
     min-height: 0;
-    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .markdown-renderer {
     border-radius: 4px;
-    min-height: 50px;
     padding: 30px;
     background: #000000;
-    flex: 1 1 auto;
-    height: 100%;
+    flex: 1 0 auto;
     display: flex;
     flex-direction: column;
 

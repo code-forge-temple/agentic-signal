@@ -8,12 +8,16 @@ The **Fetch Web Page Node** fetches and renders the HTML content of a web page f
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="url" label="URL" default>
         The web page to fetch and render (e.g., `https://example.com`).
 
         ![AI Data Processing Node Model](/img/nodes/fetch-web-page-params.jpg)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="http-data" />
     </TabItem>
 </Tabs>
 

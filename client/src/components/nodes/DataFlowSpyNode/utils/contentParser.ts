@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {TRIPLE_BACKTICK} from "@shared/constants";
+
 const CSV_BLOCK_REGEX = /```csv\s*([\s\S]*?)```/gi;
 
 export function reformatContent (value: string): string {
@@ -30,14 +32,14 @@ export function reformatContent (value: string): string {
     try {
         JSON.parse(trimmed);
 
-        return `\`\`\`json\n${trimmed}\n\`\`\``;
+        return `${TRIPLE_BACKTICK}json\n${trimmed}\n${TRIPLE_BACKTICK}`;
     } catch {
         if (/<html[\s\S]*?>[\s\S]*<\/html>/i.test(trimmed) || /<body[\s\S]*?>[\s\S]*<\/body>/i.test(trimmed)) {
-            return `\`\`\`html\n${trimmed}\n\`\`\``;
+            return `${TRIPLE_BACKTICK}html\n${trimmed}\n${TRIPLE_BACKTICK}`;
         }
 
         if (/function\s*\(|=>|\bconst\b|\blet\b|\bvar\b/.test(trimmed)) {
-            return `\`\`\`javascript\n${trimmed}\n\`\`\``;
+            return `${TRIPLE_BACKTICK}javascript\n${trimmed}\n${TRIPLE_BACKTICK}`;
         }
 
         return trimmed;

@@ -16,12 +16,12 @@ import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {assertIsRagNodeData, defaultRagNodeData} from "./types/workflow";
 import {ragService} from "./services/ragService";
-import {RAG_PORT_COLOR, RAG_PORT_ID} from "../../../constants";
+import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
 import {useFetchModels} from "../../../hooks/useFetchModels";
 import {DropdownButton} from "../../DropdownButton/DropdownButton";
 import {DocMagnifyingGlass} from "iconoir-react";
-import {useWeaviateCollections} from "./hooks/useWeaviateCollections";
+import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from "./hooks/useWeaviateCollections";
 
 
 const EMBEDDING_MODEL_LABEL = "Embedding Model";
@@ -132,18 +132,18 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                 extraPorts={
                     <Handle
                         type="source"
-                        id={RAG_PORT_ID}
+                        id={NODE_PORT_IDS.CONTEXT}
                         position={Position.Right}
-                        style={{backgroundColor: RAG_PORT_COLOR}}
+                        style={{backgroundColor: NODE_PORT_COLORS.CONTEXT}}
                         isValidConnection={({target, targetHandle}) => {
                             const targetNode = getNode(target);
 
                             if (!targetNode || targetNode.type !== LLM_NODE_TYPE) return false;
 
-                            if (targetHandle !== RAG_PORT_ID) return false;
+                            if (targetHandle !== NODE_PORT_IDS.CONTEXT) return false;
 
                             const alreadyConnected = getEdges().some(
-                                edge => edge.target === target && edge.targetHandle === RAG_PORT_ID
+                                edge => edge.target === target && edge.targetHandle === NODE_PORT_IDS.CONTEXT
                             );
 
                             return !alreadyConnected;
@@ -224,7 +224,13 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                             disabled={!weaviateUrl}
                             noItemsAvailable="No collections found"
                             onButtonClick={fetchCollections}
-                            onMenuItemClick={item => selectCollection(item)}
+                            onMenuItemClick={item => {
+                                setError(prev =>
+                                    prev.filter(err => !err.includes(FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX))
+                                );
+
+                                selectCollection(item);
+                            }}
                             sx={{height: 40, minWidth: 40, p: 0, flexShrink: 0}}
                         />
                     </Box>

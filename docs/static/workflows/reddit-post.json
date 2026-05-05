@@ -154,27 +154,27 @@
             "type": "smoothstep",
             "animated": false,
             "source": "ddd49c73-5b22-44c3-a105-dc2932aefe76",
-            "sourceHandle": "right-source",
+            "sourceHandle": "tool",
             "target": "c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9",
-            "targetHandle": "tools-target",
+            "targetHandle": "tool",
             "id": "xy-edge__ddd49c73-5b22-44c3-a105-dc2932aefe76right-source-c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9tools-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "586facaf-6c70-4b30-87ed-604556a11d72",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "a312c98d-1904-4775-a370-7d8cb0640624",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__586facaf-6c70-4b30-87ed-604556a11d72right-source-a312c98d-1904-4775-a370-7d8cb0640624left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "d442cdaa-15da-4f0b-867b-ae26ee996d8d",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "d6dbd8d2-b017-486f-bdbf-a310b994d497",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__d442cdaa-15da-4f0b-867b-ae26ee996d8dright-source-d6dbd8d2-b017-486f-bdbf-a310b994d497left-target",
             "selected": false
         },
@@ -182,18 +182,18 @@
             "type": "smoothstep",
             "animated": false,
             "source": "c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "586facaf-6c70-4b30-87ed-604556a11d72",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__c94d442b-c03b-4101-a2ab-5d8a8a9b6cb9right-source-586facaf-6c70-4b30-87ed-604556a11d72left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "a312c98d-1904-4775-a370-7d8cb0640624",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "d442cdaa-15da-4f0b-867b-ae26ee996d8d",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__a312c98d-1904-4775-a370-7d8cb0640624right-source-d442cdaa-15da-4f0b-867b-ae26ee996d8dleft-target"
         }
     ]

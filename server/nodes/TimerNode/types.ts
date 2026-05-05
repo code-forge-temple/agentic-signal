@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
+
 export const TIMER_NODE_TYPE = "timer";
 
 export const TIMER_NODE_MODES = {
@@ -13,25 +15,17 @@ export const TIMER_NODE_MODES = {
 
 export type TIMER_NODE_MODES = typeof TIMER_NODE_MODES[keyof typeof TIMER_NODE_MODES];
 
-export type IntervalTimerConfig = {
-    mode: typeof TIMER_NODE_MODES.INTERVAL;
-    interval: number;
-    immediate: boolean;
-    runOnce: boolean;
-};
+export const IntervalTimerConfigSchema = z.object({
+    mode: z.literal(TIMER_NODE_MODES.INTERVAL),
+    interval: z.number(),
+    immediate: z.boolean(),
+    runOnce: z.boolean()
+});
+
+export type IntervalTimerConfig = z.infer<typeof IntervalTimerConfigSchema>;
 
 export function assertIsIntervalTimerConfig (data: unknown): asserts data is IntervalTimerConfig {
-    if (typeof data !== 'object' || data === null || (data as any).mode !== TIMER_NODE_MODES.INTERVAL) {
-        throw new Error('Data is not IntervalTimerConfig');
-    }
-
-    if (
-        !(TIMER_NODE_MODES.INTERVAL in data) || typeof (data as any).interval !== 'number' ||
-        !('immediate' in data) || typeof (data as any).immediate !== 'boolean' ||
-        !('runOnce' in data) || typeof (data as any).runOnce !== 'boolean'
-    ) {
-        throw new Error('Invalid IntervalTimerConfig');
-    }
+    IntervalTimerConfigSchema.parse(data);
 }
 
 export const SCHEDULED_TIMER_REPEATS = {
@@ -43,27 +37,29 @@ export const SCHEDULED_TIMER_REPEATS = {
 
 export type SCHEDULED_TIMER_REPEATS = typeof SCHEDULED_TIMER_REPEATS[keyof typeof SCHEDULED_TIMER_REPEATS];
 
-export type ScheduledTimerConfig = {
-    mode: typeof TIMER_NODE_MODES.SCHEDULED;
-    scheduledDateTime: string; // ISO 8601 format
-    repeat: SCHEDULED_TIMER_REPEATS;
-    timezone?: string;
-};
+export const ScheduledTimerConfigSchema = z.object({
+    mode: z.literal(TIMER_NODE_MODES.SCHEDULED),
+    scheduledDateTime: z.string(),
+    repeat: z.nativeEnum(SCHEDULED_TIMER_REPEATS),
+    timezone: z.string().optional()
+});
+
+export type ScheduledTimerConfig = z.infer<typeof ScheduledTimerConfigSchema>;
 
 export function assertIsScheduledTimerConfig (data: unknown): asserts data is ScheduledTimerConfig {
-    if (typeof data !== 'object' || data === null || (data as any).mode !== TIMER_NODE_MODES.SCHEDULED) {
-        throw new Error('Data is not ScheduledTimerConfig');
-    }
-
-    if (
-        !('scheduledDateTime' in data) || typeof (data as any).scheduledDateTime !== 'string' ||
-        !('repeat' in data) || !Object.values(SCHEDULED_TIMER_REPEATS).includes((data as any).repeat)
-    ) {
-        throw new Error('Invalid ScheduledTimerConfig');
-    }
+    ScheduledTimerConfigSchema.parse(data);
 }
 
-export type TimerConfig = IntervalTimerConfig | ScheduledTimerConfig;
+export const TimerConfigSchema = z.discriminatedUnion("mode", [
+    IntervalTimerConfigSchema,
+    ScheduledTimerConfigSchema
+]);
+
+export function assertIsTimerConfig (data: unknown): asserts data is TimerConfig {
+    TimerConfigSchema.parse(data);
+}
+
+export type TimerConfig = z.infer<typeof TimerConfigSchema>;
 
 export type TimerTriggerEvent = {
     nodeId: string;

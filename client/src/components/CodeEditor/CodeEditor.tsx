@@ -33,6 +33,7 @@ type CodeEditorProps = {
     onChange?: (value: string) => void;
     placeholder?: string;
     readOnly?: boolean;
+    disabled?: boolean;
     mode?: AceEditorMode;
     height?: string;
     width?: string;
@@ -45,6 +46,7 @@ export function CodeEditor ({
     onChange,
     placeholder = "",
     readOnly = false,
+    disabled = false,
     mode = "json",
     height = "100%",
     width = "100%",
@@ -52,7 +54,7 @@ export function CodeEditor ({
     showLineNumbers = false
 }: CodeEditorProps) {
     return (
-        <div className="code-editor-container">
+        <div className={`code-editor-container${disabled ? " disabled" : ""}`}>
             <AceEditor
                 placeholder={placeholder}
                 mode={mode}
@@ -64,7 +66,7 @@ export function CodeEditor ({
                 highlightActiveLine={true}
                 value={value}
                 onChange={onChange}
-                readOnly={readOnly}
+                readOnly={readOnly || disabled}
                 width={width}
                 height={height}
                 style={{minHeight}}

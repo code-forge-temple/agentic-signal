@@ -1,5 +1,4 @@
 ---
-sidebar_position: 3
 title: Slack Output Node
 ---
 
@@ -33,6 +32,8 @@ import TabItem from '@theme/TabItem';
     <TabItem value="input-format" label="Expected Input Format">
         The node expects a JSON object from upstream nodes matching the following schema:
 
+        <div className="fullWidthTable">
+
         | Field          | Type                              | Required | Description                                                                                     |
         |----------------|-----------------------------------|----------|-------------------------------------------------------------------------------------------------|
         | `channelId`    | string                            | Conditional | The Slack channel ID to send the message to. Required if `responseUrl` is not provided.      |
@@ -42,6 +43,8 @@ import TabItem from '@theme/TabItem';
         | `userId`       | string                            | Conditional | Slack user ID. Required when `postEphemeral` is `true` and `responseUrl` is not provided.    |
         | `postEphemeral`| boolean                           | No       | If `true`, sends a message visible only to the target user.                                     |
 
+        </div>
+        
         > Either `channelId` or `responseUrl` must be provided.
 
         :::tip Pairing with Slack Input Node

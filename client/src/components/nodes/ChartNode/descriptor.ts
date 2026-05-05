@@ -7,7 +7,9 @@
 import {NodeDescriptor} from "../types";
 import {ChartNode as component} from "./ChartNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
-import {assertIsChartNodeData, ChartNode} from "./types/workflow";
+import {assertIsChartNodeData, ChartNode, ChartNodeDataSchema} from "./types/workflow";
+import {ChartDataSchema} from "./types/input.types";
+import {NODE_PORT_IDS} from "../../../constants";
 
 
 export const ChartNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ChartNode> = {
@@ -16,6 +18,15 @@ export const ChartNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ChartNode> = 
     icon: Icon,
     title: TITLE,
     assertion: assertIsChartNodeData,
+    metadata: {
+        description: "Renders a chart from incoming data. Expects chart configuration in Chart.js format.",
+        ports: {
+            [NODE_PORT_IDS.FLOW]: {
+                inputSchema: ChartDataSchema.describe("Incoming chart data and configuration in Chart.js format."),
+            },
+        },
+        configSchema: ChartNodeDataSchema,
+    },
     defaultData: {
         title: TITLE,
         toSanitize: ["input"],

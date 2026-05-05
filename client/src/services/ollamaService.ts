@@ -89,7 +89,9 @@ export class OllamaService {
         model,
         format,
         tools,
-        maxToolRetries
+        maxToolRetries,
+        think,
+        temperature
     }: {
         messages: Message[],
         model: string,
@@ -99,7 +101,9 @@ export class OllamaService {
             systemUserConfigValues: SystemUserConfigValues,
             handler: (params: any) => Promise<any>
         }[],
-        maxToolRetries: number
+        maxToolRetries: number,
+        think?: boolean,
+        temperature?: number
     }): Promise<FetchAiResponse> => {
         try {
             const ollama = await this.getOllama();
@@ -140,7 +144,7 @@ export class OllamaService {
             const maxConversationRetries = requiredToolsCount > 0
                 ? maxToolRetries * requiredToolsCount
                 : maxToolRetries;
-            let response = await this.callOllamaChat(ollama, conversationMessages, model, format, toolSchemas);
+            let response = await this.callOllamaChat(ollama, conversationMessages, model, format, toolSchemas, think, temperature);
 
             while (true) {
                 if (++totalIterations > maxConversationRetries) break;
@@ -195,7 +199,7 @@ export class OllamaService {
                     }
                 }
 
-                response = await this.callOllamaChat(ollama, conversationMessages, model, format, toolSchemas);
+                response = await this.callOllamaChat(ollama, conversationMessages, model, format, toolSchemas, think, temperature);
 
                 if (response.message.content && response.message.content.trim() !== "") {
                     conversationMessages.push({
@@ -207,7 +211,7 @@ export class OllamaService {
             }
 
             if (tools && tools.length > 0) {
-                response = await this.callOllamaChat(ollama, conversationMessages, model, format);
+                response = await this.callOllamaChat(ollama, conversationMessages, model, format, undefined, think, temperature);
 
                 if (response.message.content && response.message.content.trim() !== "") {
                     conversationMessages.push({
@@ -263,7 +267,9 @@ export class OllamaService {
         messages: Message[],
         model: string,
         format?: object,
-        tools?: any[]
+        tools?: any[],
+        think?: boolean,
+        temperature?: number
     ) {
         const result = await ollama.chat({
             model,
@@ -271,7 +277,9 @@ export class OllamaService {
             format,
             stream: false,
             keep_alive: "60m",
-            tools
+            tools,
+            ...(think !== undefined ? {think} : {}),
+            ...(temperature !== undefined ? {options: {temperature}} : {})
         });
 
         return result;
@@ -319,6 +327,50 @@ export class OllamaService {
             },
             toolName
         };
+    }
+
+    async *streamAIResponse (
+        messages: Message[],
+        model: string
+    ): AsyncGenerator<FetchAiResponse, void, unknown> {
+        try {
+            const ollama = await this.getOllama();
+            const updatedMessages = messages.map((message) => {
+                const {content, images} = extractImagesAndRemove(message.content);
+
+                return {...message, content, images};
+            });
+            const stream = await ollama.chat({model, messages: updatedMessages, stream: true, keep_alive: "60m"});
+            let fullReply = "";
+            let fullThinking = "";
+
+            for await (const part of stream) {
+                if ((part.message as any).thinking) {
+                    fullThinking += (part.message as any).thinking;
+                }
+
+                fullReply += part.message.content;
+
+                yield {
+                    success: true,
+                    final: false,
+                    reply: fullReply,
+                    thinking: fullThinking || undefined
+                };
+            }
+
+            yield {
+                success: true,
+                final: true,
+                reply: fullReply,
+                thinking: fullThinking || undefined
+            };
+        } catch (error) {
+            yield {
+                success: false,
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
     }
 
     async *pullModel (

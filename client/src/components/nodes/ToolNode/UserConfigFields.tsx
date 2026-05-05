@@ -4,8 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, Typography, Button, Chip, FormControlLabel, Switch} from "@mui/material";
-import {FieldsetGroup} from "../../FieldsetGroup";
+import {Box, FormControlLabel, Switch} from "@mui/material";
 import {DebouncedTextField} from "../../DebouncedTextField";
 
 type UserConfigSchema = {
@@ -16,13 +15,7 @@ type UserConfigSchema = {
         maximum?: number;
         default?: any;
         required?: boolean;
-        provider?: string;
-        scope?: string;
-        oauthHandler?: (params: {
-            clientId?: string;
-            scope?: string;
-            onConfigChange: (key: string, value: string) => void;
-        }) => void;
+        [key: string]: any;
     } | undefined;
 };
 
@@ -47,58 +40,9 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
                 const isRequired = schema.required || false;
                 const fieldLabel = `${schema.description || key}${isRequired ? ' *' : ''}`;
 
+                // oauth fields require tool-specific renderConfig — skip here
                 if (type === "oauth") {
-                    const isConnected = userConfig?.accessToken && userConfig.accessToken.length > 0;
-                    const oauthHandler = schema.oauthHandler;
-
-                    return (
-                        <FieldsetGroup key={key} title="OAuth Settings">
-                            <Box key={key} sx={{mb: 2}}>
-                                <Typography variant="body2" sx={{mb: 1}}>
-                                    {schema.description || `${schema.provider || 'OAuth'} Authentication`}
-                                </Typography>
-                                <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1}}>
-                                    <Button
-                                        variant={isConnected ? "outlined" : "contained"}
-                                        color={isConnected ? "success" : "primary"}
-                                        onClick={() => {
-                                            if (oauthHandler) {
-                                                oauthHandler({
-                                                    clientId: userConfig?.googleClientId,
-                                                    scope: schema.scope,
-                                                    onConfigChange: (key: string, value: string) => onConfigChange(key, value)
-                                                });
-                                            } else {
-                                                alert("No OAuth handler defined for this tool.");
-                                            }
-                                        }}
-                                        size="small"
-                                    >
-                                        {isConnected ? 'Reconnect' : 'Connect'} {schema.provider || 'Account'}
-                                    </Button>
-                                    {isConnected && (
-                                        <Chip
-                                            label="Connected"
-                                            color="success"
-                                            size="small"
-                                            onDelete={() => onConfigChange('accessToken', '')}
-                                        />
-                                    )}
-                                </Box>
-                                {/* Fallback: Manual token input */}
-                                <DebouncedTextField
-                                    label={`Access Token (Manual)${isRequired ? ' *' : ''}`}
-                                    value={userConfig?.accessToken || ""}
-                                    onChange={value => onConfigChange('accessToken', value)}
-                                    fullWidth
-                                    size="small"
-                                    sx={{mt: 1}}
-                                    type="password"
-                                    helperText="Or paste your OAuth2 access token manually"
-                                />
-                            </Box>
-                        </FieldsetGroup>
-                    );
+                    return null;
                 }
 
                 if (type === "boolean") {

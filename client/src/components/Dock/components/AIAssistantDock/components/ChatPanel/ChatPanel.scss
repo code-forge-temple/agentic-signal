@@ -1,0 +1,32 @@
+.chat-panel {
+    position: fixed;
+    width: 700px;
+    height: calc(100vh - 80px);
+    max-height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+    background: #0e2f4a;
+    border-radius: 8px;
+    box-shadow: 6px 6px 20px rgba(0, 0, 0, 0.6);
+    z-index: 25;
+    overflow: hidden;
+    transition: height 0.2s ease, max-height 0.2s ease;
+
+    &.minimized {
+        height: auto;
+        max-height: none;
+    }
+
+    &.dragging {
+        box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.8);
+        transition: none;
+    }
+}
+
+.chat-panel {
+    cursor: move;
+}
+
+.chat-header {
+    cursor: move;
+}

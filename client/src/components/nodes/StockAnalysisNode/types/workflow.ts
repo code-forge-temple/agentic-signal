@@ -4,9 +4,9 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
 
 
 export type StockDataPoint = {
@@ -31,12 +31,14 @@ export const isStockDataPointArray = (data: unknown): data is StockDataPoint[] =
     );
 };
 
-export type StockAnalysisNodeData = object;
+import {z} from 'zod';
+
+export const StockAnalysisNodeDataSchema = z.object({});
+
+export type StockAnalysisNodeData = z.infer<typeof StockAnalysisNodeDataSchema>;
 
 export function assertIsStockAnalysisNodeData (data: unknown): asserts data is StockAnalysisNodeData {
-    if (typeof data !== 'object' || data === null) {
-        throw new Error('Node data is not StockAnalysisNodeData');
-    }
+    StockAnalysisNodeDataSchema.parse(data);
 }
 
 export type StockAnalysisNode = Node<BaseNodeData & StockAnalysisNodeData> & { type: typeof NODE_TYPE };

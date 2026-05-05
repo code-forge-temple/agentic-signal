@@ -16,6 +16,7 @@ The **Reddit Post Node** allows you to automatically post content to Reddit subr
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="oauth" label="OAuth Settings" default>
@@ -39,6 +40,9 @@ import TabItem from '@theme/TabItem';
         - **Spoiler**: Mark as spoiler content
 
         ![Reddit Post Node Configuration](/img/nodes/reddit-post-params.webp)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="reddit-post" />
     </TabItem>
 </Tabs>
 

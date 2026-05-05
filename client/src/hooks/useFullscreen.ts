@@ -5,12 +5,12 @@
  ************************************************************************/
 
 import {useEffect} from 'react';
-import {getCurrentWindow} from '@tauri-apps/api/window';
 import {isTauri} from '../utils';
 
 
 async function toggleFullscreen () {
     if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+        const {getCurrentWindow} = await import('@tauri-apps/api/window');
         const appWindow = getCurrentWindow();
         const isFullscreen = await appWindow.isFullscreen();
 

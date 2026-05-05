@@ -108,7 +108,9 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         feedback,
         maxToolRetries,
         ragHandler,
-        conversationHistory
+        conversationHistory,
+        think,
+        temperature
     }: Pick<GenericNodeData & LlmProcessNodeData, 'input' | 'prompt' | 'message' | 'model' | 'format'> & {
     tools?: {
         schema: ToolSchema,
@@ -122,6 +124,8 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         value: Message[];
         onChange: (history: Message[]) => void;
     };
+    think?: boolean;
+    temperature?: number;
 }) => {
         if (!model) {
             const errorMsg = "Please select a model first.";
@@ -264,7 +268,9 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 model,
                 ...(parsedFormat ? {format: parsedFormat} : {}),
                 tools,
-                maxToolRetries
+                maxToolRetries,
+                think,
+                temperature
             });
 
             if (!response.success) {

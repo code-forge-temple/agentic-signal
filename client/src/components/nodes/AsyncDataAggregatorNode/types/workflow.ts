@@ -4,17 +4,18 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
 
 
-export type AsyncDataAggregatorNodeData = object;
+export const AsyncDataAggregatorNodeDataSchema = z.object({});
+
+export type AsyncDataAggregatorNodeData = z.infer<typeof AsyncDataAggregatorNodeDataSchema>;
 
 export function assertIsAsyncDataAggregatorNodeData (data: unknown): asserts data is AsyncDataAggregatorNodeData {
-    if (typeof data !== 'object' || data === null) {
-        throw new Error('Node data is not AsyncDataAggregatorNodeData');
-    }
+    AsyncDataAggregatorNodeDataSchema.parse(data);
 }
 
 export type AsyncDataAggregatorNode = Node<BaseNodeData & AsyncDataAggregatorNodeData> & { type: typeof NODE_TYPE };

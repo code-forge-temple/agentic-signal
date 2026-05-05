@@ -9,6 +9,7 @@ import {Xmark, Expand, Compress} from "iconoir-react";
 import {darkTheme} from "../../utils";
 import {PaperComponent} from "../PaperComponent";
 import {ReactNode, useEffect, useState} from "react";
+import {DRAG_CANCEL_SELECTOR} from "../../constants";
 
 const BASE_Z = 1000;
 const FOCUSED_Z = 1009;
@@ -71,8 +72,7 @@ export function BaseDialog ({
                     root: {style: {zIndex, pointerEvents: "none"}},
                     paper: {
                         enableDragging: !maximized,
-                        // eslint-disable-next-line max-len
-                        cancel: "input, textarea, select, button, label, .MuiInputBase-root, .MuiSelect-root, .MuiButton-root, .MuiIconButton-root, [role='combobox'], .markdown-renderer, .ace_editor, .ace_text-input"
+                        cancel: DRAG_CANCEL_SELECTOR,
                     } as any
                 }}
                 aria-labelledby="draggable-dialog-title"

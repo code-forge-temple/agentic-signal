@@ -1,0 +1,203 @@
+.chat-log {
+    position: relative;
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .chat-panel-keyword-tip {
+        background: #222;
+        color: #fff;
+        padding: 8px 14px;
+        font-size: 0.95em;
+        border-radius: 8px;
+
+        ul {
+            margin-left: 20px;
+        }
+
+        code {
+            color: #90caf9;
+            font-family: inherit;
+            font-size: 1em;
+            background: none;
+            padding: 0;
+        }
+
+        a {
+            color: #90caf9;
+            text-decoration: underline;
+
+            &:hover {
+                color: #64b5f6;
+            }
+        }
+    }
+
+    .chat-log-empty {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 13px;
+        margin: auto;
+    }
+
+    .chat-log-row {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 0;
+        max-width: 92%;
+
+        &.user {
+            align-self: flex-end;
+            flex-direction: row;
+        }
+
+        &.assistant {
+            align-self: flex-start;
+            flex-direction: row-reverse;
+        }
+
+        .chat-message-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .chat-message-action-btn {
+            color: rgba(255, 255, 255, 0.3);
+            padding: 2px;
+            border-radius: 4px;
+            transition: color 0.15s ease, background 0.15s ease;
+
+            &:hover {
+                color: rgba(255, 100, 100, 0.9);
+                background: rgba(255, 80, 80, 0.12);
+            }
+        }
+    }
+
+    .chat-log-message {
+        min-width: 0;
+        max-width: 100%;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+        word-break: break-word;
+        overflow-x: hidden;
+
+        pre {
+            overflow-x: auto;
+        }
+
+        &.user {
+            background: #1565c0;
+            color: #fff;
+            border-bottom-right-radius: 2px;
+
+            p {
+                margin: 0;
+            }
+        }
+
+        &.assistant {
+            background: #1a3d56;
+            color: rgba(255, 255, 255, 0.9);
+            border-bottom-left-radius: 2px;
+        }
+
+        .import-workflow-btn {
+            display: block;
+            width: 100%;
+            margin-top: 4px;
+            padding: 6px 12px;
+            background: rgba(21, 101, 192, 0.25);
+            border: 1px solid rgba(21, 101, 192, 0.5);
+            border-radius: 0 0 4px 4px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s ease, color 0.15s ease;
+
+            &:hover {
+                background: rgba(21, 101, 192, 0.45);
+                color: #fff;
+            }
+
+            &:disabled {
+                background: rgba(128, 128, 128, 0.18);
+                border-color: rgba(128, 128, 128, 0.35);
+                color: rgba(255, 255, 255, 0.5);
+                cursor: not-allowed;
+            }
+        }
+
+        .import-workflow-btn-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 4px;
+            min-height: 32px;
+        }
+    }
+
+    .chat-log-loading {
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+
+        .MuiCircularProgress-root {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    }
+
+    .chat-log-inline-spinner {
+        color: rgba(255, 255, 255, 0.4) !important;
+        margin-top: 4px;
+    }
+
+    .markdown-renderer-container {
+        .markdown-renderer {
+            background: transparent;
+            padding: 5px;
+            cursor: default;
+        }
+    }
+}
+
+.chat-log-scroll-end {
+    position: absolute;
+    right: 17px;
+    bottom: 80px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    background: rgba(26, 61, 86, 0.56);
+    color: rgba(255, 255, 255, 0.66);
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
+    font-size: 14px;
+    line-height: 1;
+    z-index: 1;
+
+    &:hover {
+        background: rgba(33, 78, 118, 0.95);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+}

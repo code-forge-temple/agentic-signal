@@ -43,3 +43,8 @@
   display: inline-block;
   margin-left: 4px;
 }
+
+.fullWidthTable table {
+  width: 100%;
+  display: table;
+}

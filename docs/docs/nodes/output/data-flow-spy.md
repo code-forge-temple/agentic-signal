@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Data Flow Spy Node
 
 The **Data Flow Spy Node** lets you inspect, debug, and visualize the data flowing through your workflow at any point. It displays the incoming data in a readable Markdown format, making it easy to understand and troubleshoot your workflow.

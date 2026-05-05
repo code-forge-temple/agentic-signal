@@ -11,16 +11,10 @@ import React, {useEffect} from "react";
 import {ThemeProvider, Tooltip} from "@mui/material";
 import {darkTheme} from "../../../utils";
 import {NODE_TYPE as ASYNC_DATA_AGGREGATOR_NODE_TYPE} from "../AsyncDataAggregatorNode/constants";
+import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 
-
-const DEFAULT_PORT_COLOR = "#ffc107";
 
 const ISVALID_CONNECTION_FUNCTION_NAME = "isValidConnection";
-
-const PORT_IDS = {
-    input: "left-target",
-    output: "right-source",
-};
 
 type OnClick = (() => void) | {callback: () => void; highlight: boolean};
 
@@ -79,13 +73,13 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
     const handleStyleInput = {
         backgroundColor: typeof ports.input === "object" && "color" in ports.input
             ? ports.input.color
-            : DEFAULT_PORT_COLOR
+            : NODE_PORT_COLORS.FLOW
     };
 
     const handleStyleOutput = {
         backgroundColor: typeof ports.output === "object" && "color" in ports.output
             ? ports.output.color
-            : DEFAULT_PORT_COLOR
+            : NODE_PORT_COLORS.FLOW
     };
 
     const inputIsValidConnection = (params: Parameters<IsValidConnection>[0]) => {
@@ -93,14 +87,16 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
             return ports.input.isValidConnection(params);
         }
 
-        if (params.sourceHandle !== PORT_IDS.output) return false;
+        if (params.sourceHandle !== NODE_PORT_IDS.FLOW || params.targetHandle !== NODE_PORT_IDS.FLOW) return false;
+
+        if (params.source === params.target) return false;
 
         const node = getNode(id);
 
         if (node && node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) return true;
 
         const edges = getEdges();
-        const incoming = edges.filter(e => e.target === id && e.targetHandle === PORT_IDS.input);
+        const incoming = edges.filter(e => e.target === id && e.targetHandle === NODE_PORT_IDS.FLOW);
 
         return incoming.length < 1;
     };
@@ -110,7 +106,9 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
             return ports.output.isValidConnection(params);
         }
 
-        if (params.targetHandle !== PORT_IDS.input) return false;
+        if (params.sourceHandle !== NODE_PORT_IDS.FLOW || params.targetHandle !== NODE_PORT_IDS.FLOW) return false;
+
+        if (params.source === params.target) return false;
 
         const targetNode = getNode(params.target);
 
@@ -119,7 +117,7 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
         if (!targetNode) return true;
 
         const edges = getEdges();
-        const incoming = edges.filter(e => e.target === params.target && e.targetHandle === PORT_IDS.input);
+        const incoming = edges.filter(e => e.target === params.target && e.targetHandle === NODE_PORT_IDS.FLOW);
 
         return incoming.length < 1;
     };
@@ -159,7 +157,7 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
             {ports.input ? (
                 <Handle
                     type="target"
-                    id={PORT_IDS.input}
+                    id={NODE_PORT_IDS.FLOW}
                     position={Position.Left}
                     style={handleStyleInput}
                     isValidConnection={inputIsValidConnection}
@@ -168,7 +166,7 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
             {ports.output ? (
                 <Handle
                     type="source"
-                    id={PORT_IDS.output}
+                    id={NODE_PORT_IDS.FLOW}
                     position={Position.Right}
                     style={handleStyleOutput}
                     isValidConnection={outputIsValidConnection}

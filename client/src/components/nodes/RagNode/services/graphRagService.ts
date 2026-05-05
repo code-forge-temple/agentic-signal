@@ -70,8 +70,6 @@ class RagService {
             throw new Error(result.error || "RAG operation failed");
         }
 
-        console.log("RAG Result:", data);
-
         return result.context || "";
     }
 }

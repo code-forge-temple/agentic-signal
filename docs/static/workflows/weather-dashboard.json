@@ -90,7 +90,8 @@
                 "title": "AI Data Processing",
                 "prompt": "Based on the next message request, you need to use dateTimeNow tool to obtain the current date time.\nYour sole responsibility is to provide more context to the original request from the date time point of view and nothing else.\nYou are to respond ONLY with the augmented request that includes the exact date and time information.\nDo NOT include any explanations, preambles, or descriptions about what you did.\nJust output the enhanced request directly.",
                 "model": "",
-                "maxFeedbackLoops": 0
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3
             },
             "measured": {
                 "width": 160,
@@ -161,51 +162,53 @@
             "id": "f0e05088-09fb-44dc-b6d0-3c433d237d88",
             "source": "b3d137fa-6534-4fc0-a6e0-15ee919be276",
             "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "targetHandle": "flow",
+            "sourceHandle": "flow",
             "animated": false
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "8a0dd721-4139-4ca4-bcc9-2624aad5b309",
-            "sourceHandle": "right-source",
+            "sourceHandle": "tool",
             "target": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
-            "targetHandle": "tools-target",
+            "targetHandle": "tool",
             "id": "xy-edge__8a0dd721-4139-4ca4-bcc9-2624aad5b309right-source-e94b755b-fcd8-4a87-9174-d33e44c9db7btools-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "ca0be528-34f5-48e2-8d89-3c50260998c3",
-            "sourceHandle": "right-source",
+            "sourceHandle": "tool",
             "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "targetHandle": "tools-target",
+            "targetHandle": "tool",
             "id": "xy-edge__ca0be528-34f5-48e2-8d89-3c50260998c3right-source-7b0f7a40-769c-4406-a90b-2717db038e78tools-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__7b0f7a40-769c-4406-a90b-2717db038e78right-source-e94b755b-fcd8-4a87-9174-d33e44c9db7bleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__e94b755b-fcd8-4a87-9174-d33e44c9db7bright-source-3211e250-9339-4d0f-afaf-9fa3f8ce1ddc1left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__7b0f7a40-769c-4406-a90b-2717db038e78right-source-bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1left-target"
         }
     ]

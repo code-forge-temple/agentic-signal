@@ -4,110 +4,44 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from "../../../../types/workflow";
+import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
-import {MessageRole} from "../../../../types/ollama.types";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
+import {ROLE} from "../../../../constants";
 
 
-export type LlmProcessNodeData = {
-    format?: {onSuccess?: string; onError?: string;};
-    model: string;
-    prompt?: string;
-    message?: {
-        preffix?: string;
-        suffix?: string;
-    };
-    maxFeedbackLoops: number;
-    maxToolRetries: number;
-    conversationHistory?: Array<{
-        role: MessageRole;
-        content: string;
-    }>;
-};
+export const LlmProcessNodeDataSchema = z.object({
+    model: z.string().describe("Ollama model name to use for LLM processing"),
+    prompt: z.string().optional().describe("System prompt to guide the LLM behaviour"),
+    format: z.object({
+        onSuccess: z.string().optional().describe("JSON Schema string for Ollama structured output on success — constrains the LLM reply shape for successful responses"),
+        onError: z.string().optional().describe("JSON Schema string for Ollama structured output on error — constrains the LLM reply shape when the node is handling an error"),
+    }).optional().describe("Structured output schemas passed to Ollama to constrain LLM response format"),
+    message: z.object({
+        preffix: z.string().optional().describe("Text prepended to the user message before sending to the LLM"),
+        suffix: z.string().optional().describe("Text appended to the user message before sending to the LLM"),
+    }).optional().describe("Message wrapper applied around the incoming data"),
+    maxFeedbackLoops: z.number().int().nonnegative().describe("Maximum number of feedback iterations before stopping"),
+    maxToolRetries: z.number().int().nonnegative().describe("Maximum number of retries when a tool call fails"),
+    conversationHistory: z.array(z.object({
+        role: z.enum([ROLE.SYSTEM, ROLE.USER, ROLE.ASSISTANT]),
+        content: z.string(),
+    })).optional().describe("Retained conversation history for multi-turn interactions"),
+    think: z.boolean().optional().describe("Enable thinking mode for supported models (e.g. deepseek-r1)"),
+    temperatureEnabled: z.boolean().optional().describe("Whether to override the default model temperature"),
+    temperature: z.number().min(0).max(2).optional().default(0.8).describe("Sampling temperature (0 = deterministic, 2 = very random)"),
+});
+
+export type LlmProcessNodeData = z.infer<typeof LlmProcessNodeDataSchema>;
 
 export function assertIsLlmProcessNodeData (data: unknown): asserts data is LlmProcessNodeData {
-    if (typeof data !== 'object' || data === null ||
-        !('model' in data) || typeof data.model !== 'string') {
-        throw new Error('Node data is not LlmProcessNodeData');
-    }
-
-    // Validate format field if present
-    if ('format' in data && data.format !== undefined) {
-        if (typeof data.format !== 'object' || data.format === null) {
-            throw new Error('Node data format must be an object if provided');
-        }
-
-        if ('onSuccess' in data.format && data.format.onSuccess !== undefined && typeof data.format.onSuccess !== 'string') {
-            throw new Error('Node data format.onSuccess must be a string if provided');
-        }
-
-        if ('onError' in data.format && data.format.onError !== undefined && typeof data.format.onError !== 'string') {
-            throw new Error('Node data format.onError must be a string if provided');
-        }
-    }
-
-    // Validate prompt field if present
-    if ('prompt' in data && data.prompt !== undefined && typeof data.prompt !== 'string') {
-        throw new Error('Node data prompt must be a string if provided');
-    }
-
-    // Validate message field if present
-    if ('message' in data && data.message !== undefined) {
-        if (typeof data.message !== 'object' || data.message === null) {
-            throw new Error('Node data message must be an object if provided');
-        }
-
-        // Validate message properties
-        if ('preffix' in data.message && data.message.preffix !== undefined && typeof data.message.preffix !== 'string') {
-            throw new Error('Node data message.preffix must be a string if provided');
-        }
-
-        if ('suffix' in data.message && data.message.suffix !== undefined && typeof data.message.suffix !== 'string') {
-            throw new Error('Node data message.suffix must be a string if provided');
-        }
-    }
-
-    // Validate maxFeedbackLoops field if present
-    if ('maxFeedbackLoops' in data && data.maxFeedbackLoops !== undefined && typeof data.maxFeedbackLoops !== 'number') {
-        throw new Error('Node data maxFeedbackLoops must be a number if provided');
-    }
-
-    // Validate maxToolRetries field if present
-    if ('maxToolRetries' in data && data.maxToolRetries !== undefined && typeof data.maxToolRetries !== 'number') {
-        throw new Error('Node data maxToolRetries must be a number if provided');
-    }
-
-    // Validate conversationHistory field if present
-    if ('conversationHistory' in data && data.conversationHistory !== undefined) {
-        if (!Array.isArray(data.conversationHistory)) {
-            throw new Error('Node data conversationHistory must be an array if provided');
-        }
-
-        // Validate each message in the conversation history
-        data.conversationHistory.forEach((message, index) => {
-            if (typeof message !== 'object' || message === null) {
-                throw new Error(`Node data conversationHistory[${index}] must be an object`);
-            }
-
-            if (!('role' in message) || typeof message.role !== 'string') {
-                throw new Error(`Node data conversationHistory[${index}].role must be a string`);
-            }
-
-            if (message.role !== MessageRole.SYSTEM && message.role !== MessageRole.USER && message.role !== MessageRole.ASSISTANT) {
-                throw new Error(`Node data conversationHistory[${index}].role must be one of ${Object.values(MessageRole).join(', ')}`);
-            }
-
-            if (!('content' in message) || typeof message.content !== 'string') {
-                throw new Error(`Node data conversationHistory[${index}].content must be a string`);
-            }
-        });
-    }
+    LlmProcessNodeDataSchema.parse(data);
 }
 
 export type LlmProcessNode = Node<BaseNodeData & LlmProcessNodeData> & { type: typeof NODE_TYPE };
 
-export const defaultLlmProcessNodeData = {
+export const defaultLlmProcessNodeData: LlmProcessNodeData = {
     model: "",
     prompt: "",
     message: undefined,
@@ -115,4 +49,7 @@ export const defaultLlmProcessNodeData = {
     maxFeedbackLoops: 0,
     maxToolRetries: 3,
     conversationHistory: [],
+    think: false,
+    temperatureEnabled: false,
+    temperature: 0.8,
 }

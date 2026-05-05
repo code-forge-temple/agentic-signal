@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import React, {useMemo, FC, useState, useEffect, Suspense} from "react";
+import React, {useMemo, FC, useState, useEffect, Suspense, ReactNode} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
@@ -15,6 +15,8 @@ import "./MarkdownRenderer.scss";
 interface MarkdownRendererProps {
     content: string;
     style?: React.CSSProperties;
+    disableLoadingDelay?: boolean;
+    codeBlockSuffix?: (codeBlock: string) => ReactNode;
 }
 
 const LoadingSpinner = () => (
@@ -28,23 +30,31 @@ const LoadingSpinner = () => (
     </Box>
 );
 
-const LazyMarkdownContent = React.memo(({content}: {content: string}) => {
-    const [isReady, setIsReady] = useState(false);
+type LazyMarkdownContentProps = {
+    content: string;
+    disableLoadingDelay?: boolean;
+    codeBlockSuffix?: (codeBlock: string) => ReactNode;
+};
+
+const LazyMarkdownContent = React.memo(({content, disableLoadingDelay, codeBlockSuffix}: LazyMarkdownContentProps) => {
+    const [isReady, setIsReady] = useState(disableLoadingDelay ?? false);
 
     useEffect(() => {
+        if (disableLoadingDelay) return;
+
         // We need to allow the UI to render the loading state first
         const timer = setTimeout(() => {
             setIsReady(true);
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, []);
+    }, [disableLoadingDelay]);
 
     const components = useMemo(() => ({
         pre: PreBlock,
-        code: CodeBlock,
+        code: (props: any) => <CodeBlock {...props} codeBlockSuffix={codeBlockSuffix} />,
         a: LinkRenderer
-    }), []);
+    }), [codeBlockSuffix]);
 
     if (!isReady) {
         return <LoadingSpinner />;
@@ -61,22 +71,36 @@ const LazyMarkdownContent = React.memo(({content}: {content: string}) => {
             components={components}
         />
     );
-});
+}, (prev, next) => prev.content === next.content && prev.disableLoadingDelay === next.disableLoadingDelay && prev.codeBlockSuffix === next.codeBlockSuffix);
 
-const CodeBlock: FC<any> = React.memo(({inline, className, children, ...props}) => {
+const CodeBlock: FC<any> = React.memo(({inline, className, children, codeBlockSuffix, ...props}) => {
     const codeString = useMemo(() => String(children).replace(/\n$/, ""), [children]);
     const match = /language-(\w+)/.exec(className || "");
 
-    if (!inline && match) {
-        return (
-            <div className="code-wrapper">
-                <Suspense fallback={<LoadingSpinner />}>
-                    <SyntaxHighlighter style={oneDark} language={match[1]} {...props}>
-                        {codeString}
-                    </SyntaxHighlighter>
-                </Suspense>
-            </div>
-        );
+    if (!inline) {
+        const suffix = codeBlockSuffix ? codeBlockSuffix(codeString) : null;
+
+        if (match) {
+            return (
+                <div className="code-wrapper">
+                    <Suspense fallback={<LoadingSpinner />}>
+                        <SyntaxHighlighter style={oneDark} language={match[1]} {...props}>
+                            {codeString}
+                        </SyntaxHighlighter>
+                    </Suspense>
+                    {suffix}
+                </div>
+            );
+        }
+
+        if (suffix) {
+            return (
+                <div className="code-wrapper">
+                    <code className={className} {...props}>{children}</code>
+                    {suffix}
+                </div>
+            );
+        }
     }
 
     return <code className={className} {...props}>{children}</code>;
@@ -92,11 +116,11 @@ const LinkRenderer: FC<any> = React.memo(({href, children, ...props}) => {
 
 const PreBlock: FC<any> = React.memo(({children, ...props}) => <div {...props}>{children}</div>);
 
-export const MarkdownRenderer = React.memo(({content, style}: MarkdownRendererProps) => {
+export const MarkdownRenderer = React.memo(({content, style, disableLoadingDelay, codeBlockSuffix}: MarkdownRendererProps) => {
     return (
         <div style={style} className="markdown-renderer-container">
             <Suspense fallback={<LoadingSpinner />}>
-                <LazyMarkdownContent content={content} />
+                <LazyMarkdownContent content={content} disableLoadingDelay={disableLoadingDelay} codeBlockSuffix={codeBlockSuffix} />
             </Suspense>
         </div>
     );

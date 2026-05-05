@@ -6,18 +6,19 @@ sidebar_position: 1
 
 The **GET Data Node** fetches data from any HTTP or HTTPS endpoint using a GET request. It is commonly used to retrieve JSON, text, or binary data from APIs or static URLs as the starting point for your workflow.
 
-![GET Data Node](/img/nodes/get-data-preview.jpg)
+![GET Data Node](/img/nodes/get-data-preview.webp)
 
 ## Configuration
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="url" label="URL" default>
         The endpoint to fetch data from (e.g., `https://api.example.com/data`).
 
-        ![AI Data Processing Node Model](/img/nodes/get-data-params.jpg)
+        ![AI Data Processing Node Model](/img/nodes/get-data-params.webp)
     </TabItem>
     <TabItem value="data-type" label="Data Type">
         Choose the expected response type:
@@ -26,7 +27,16 @@ import TabItem from '@theme/TabItem';
         - `blob`: Download as binary blob.
         - `arrayBuffer`: Download as raw binary data.
 
-        ![AI Data Processing Node Model](/img/nodes/get-data-params.jpg)
+        ![AI Data Processing Node Model](/img/nodes/get-data-params.webp)
+    </TabItem>
+    <TabItem value="upstream" label="Upstream Input">
+        Enable `dataProvidedByUpstream` to receive `url` and `dataType` from an upstream node instead of configuring them directly.
+        This is useful when the request target or format should be determined dynamically by earlier workflow steps.
+
+        ![AI Data Processing Node Model](/img/nodes/get-data-params.webp)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="get-data" />
     </TabItem>
 </Tabs>
 

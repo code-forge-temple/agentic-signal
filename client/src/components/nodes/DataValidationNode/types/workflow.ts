@@ -4,20 +4,20 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {BaseNodeData} from '../../../../types/workflow';
+import type {BaseNodeData} from '../../../../types/workflow';
 import type {Node} from '@xyflow/react';
-import {NODE_TYPE} from "../constants";
+import type {NODE_TYPE} from "../constants";
+import {z} from 'zod';
 
 
-export type DataValidationNodeData = {
-    schema: string;
-};
+export const DataValidationNodeDataSchema = z.object({
+    schema: z.string().describe("JSON Schema string used to validate the incoming data"),
+});
+
+export type DataValidationNodeData = z.infer<typeof DataValidationNodeDataSchema>;
 
 export function assertIsDataValidationNodeData (data: unknown): asserts data is DataValidationNodeData {
-    if (typeof data !== 'object' || data === null ||
-    !('schema' in data) || typeof (data as any).schema !== 'string') {
-        throw new Error('Node data is not DataValidationNodeData');
-    }
+    DataValidationNodeDataSchema.parse(data);
 }
 
 export type DataValidationNode = Node<BaseNodeData & DataValidationNodeData> & { type: typeof NODE_TYPE };

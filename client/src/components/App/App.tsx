@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, ReactFlowProvider} from '@xyflow/react';
+import {flushSync} from 'react-dom';
 import '@xyflow/react/dist/style.css';
 import './App.scss';
 import {useWorkflow} from '../../hooks/useWorkflow';
@@ -18,10 +19,16 @@ import {toolRegistry} from '../nodes/ToolNode/tools/toolRegistry.gen';
 import {nodeRegistry} from '../nodes/nodeRegistry.gen';
 import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
 import {useFullscreen} from '../../hooks/useFullscreen';
+import {assertValidWorkflowEdges} from './utils/workflowUtils';
 import {getDefaultUserConfigValues} from '../../types/ollama.types';
-import {Chip} from '@mui/material';
+import {z} from 'zod';
+import {Chip, Backdrop, CircularProgress} from '@mui/material';
 import {ConfirmDialog} from '../ConfirmDialog';
+import {ErrorBoundary} from '../ErrorBoundary/ErrorBoundary';
 
+
+// Separator for error paths in Zod validation messages
+const ZOD_PATH_SEPARATOR = '→';
 
 const getId = () => uuidv4();
 
@@ -75,6 +82,23 @@ const descriptorMap = Object.fromEntries(
     nodeRegistry.map(desc => [desc.type, desc])
 );
 
+const NodeSchema = z.object({
+    id: z.string().min(1, '"id" must be a non-empty string'),
+    type: z.string().min(1, '"type" must be a non-empty string'),
+    data: z.record(z.unknown()),
+    position: z.object({x: z.number(), y: z.number()}, {required_error: '"position" with {x, y} is required'}),
+}).passthrough();
+
+const EdgeSchema = z.object({
+    source: z.string().min(1, '"source" must be a non-empty string'),
+    target: z.string().min(1, '"target" must be a non-empty string'),
+}).passthrough();
+
+const WorkflowSchema = z.object({
+    nodes: z.array(NodeSchema),
+    edges: z.array(EdgeSchema).optional().default([]),
+});
+
 function AppFlow () {
     const {
         nodes,
@@ -90,16 +114,11 @@ function AppFlow () {
     } = useWorkflow();
     const {enqueueSnackbar} = useSnackbar();
     const [pendingWorkflow, setPendingWorkflow] = useState<{nodes: any[], edges: any[]} | null>(null);
+    const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
 
     useFullscreen();
 
-    const handleSave = () => {
-        if (nodes.length === 0 && edges.length === 0) {
-            enqueueSnackbar('Nothing to save.', {variant: 'info'});
-
-            return;
-        }
-
+    const handleGetWorkflowJson = useCallback((): string => {
         const sanitizedNodes = nodes.map(node => {
             const nodeData = JSON.parse(JSON.stringify(node.data));
             const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize : [];
@@ -116,7 +135,17 @@ function AppFlow () {
             };
         });
 
-        const data = JSON.stringify({nodes: sanitizedNodes, edges}, null, 4);
+        return JSON.stringify({nodes: sanitizedNodes, edges}, null, 2);
+    }, [nodes, edges]);
+
+    const handleSave = () => {
+        if (nodes.length === 0 && edges.length === 0) {
+            enqueueSnackbar('Nothing to save.', {variant: 'info'});
+
+            return;
+        }
+
+        const data = handleGetWorkflowJson();
         const blob = new Blob([data], {type: "application/json"});
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -135,24 +164,32 @@ function AppFlow () {
         setEdges([]);
     };
 
-    const handleLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+    const handleLoadWorkflowFromJson = useCallback((jsonString: string, onError?: (error: string) => void) => {
+        flushSync(() => setIsLoadingWorkflow(true));
 
-        if (!file) return;
-
-        const reader = new FileReader();
-
-        reader.onload = (e) => {
+        setTimeout(() => {
             try {
-                const data = JSON.parse(e.target?.result as string);
+                const raw = JSON.parse(jsonString);
 
-                if (!data.nodes || !Array.isArray(data.nodes)) {
-                    throw new Error("missing or invalid 'nodes' array.");
+                // Auto-assign positions for nodes missing them (models often omit position)
+                if (Array.isArray(raw.nodes)) {
+                    raw.nodes = raw.nodes.map((node: any, idx: number) => {
+                        const x = typeof node.position?.x === 'number' ? node.position.x : idx * 300;
+                        const y = typeof node.position?.y === 'number' ? node.position.y : 0;
+
+                        return {...node, position: {x, y}};
+                    });
                 }
 
-                const hydratedNodes = data.nodes.map((node: any) => {
-                    if (!node.type || !node.data) {
-                        throw new Error("missing or invalid <node>.data or <node>.type");
+                const {nodes: parsedNodes, edges: parsedEdges} = WorkflowSchema.parse(raw);
+
+                assertValidWorkflowEdges(parsedNodes, parsedEdges);
+
+                const hydratedNodes = parsedNodes.map((node: any, idx: number) => {
+                    if (!descriptorMap[node.type]) {
+                        const valid = Object.keys(descriptorMap).join(', ');
+
+                        throw new Error(`unknown node type "${node.type}". Valid types are: ${valid}`);
                     }
 
                     const descriptor = descriptorMap[node.type];
@@ -202,12 +239,27 @@ function AppFlow () {
                         };
                     }
 
-                    descriptor?.assertion(updatedNode.data);
+                    try {
+                        descriptor?.assertion(updatedNode.data);
+                    } catch (assertionError) {
+                        if (assertionError instanceof z.ZodError) {
+
+                            const fields = assertionError.errors.map(e => {
+                                const path = ['data', ...e.path].join(ZOD_PATH_SEPARATOR);
+
+                                return `${path}: ${e.message}`;
+                            }).join('; ');
+
+                            throw new Error(`nodes[${idx}] (type "${node.type}"): ${fields}`);
+                        }
+
+                        throw assertionError;
+                    }
 
                     return updatedNode;
                 });
 
-                const {remappedNodes, remappedEdges} = remapNodeAndEdgeIds(hydratedNodes, data.edges || []);
+                const {remappedNodes, remappedEdges} = remapNodeAndEdgeIds(hydratedNodes, parsedEdges);
 
                 if (nodes.length > 0) {
                     setPendingWorkflow({nodes: remappedNodes, edges: remappedEdges});
@@ -216,10 +268,38 @@ function AppFlow () {
                     setEdges(remappedEdges);
                 }
             } catch (error) {
-                enqueueSnackbar('Failed to load workflow: ' + (error instanceof Error ? error.message : String(error)), {variant: 'error'});
+                let rawMessage: string;
+
+                if (error instanceof z.ZodError) {
+                    rawMessage = error.errors.map(e => {
+                        const path = e.path.join(ZOD_PATH_SEPARATOR);
+
+                        return path ? `${path}: ${e.message}` : e.message;
+                    }).join('; ');
+                } else {
+                    rawMessage = error instanceof Error ? error.message : String(error);
+                }
+
+                const message = 'Failed to load workflow: ' + rawMessage;
+
+                enqueueSnackbar(message, {variant: 'error'});
+                onError?.(message);
             } finally {
-                event.target.value = '';
+                setIsLoadingWorkflow(false);
             }
+        }, 100);
+    }, [nodes, setNodes, setEdges, enqueueSnackbar]);
+
+    const handleLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            handleLoadWorkflowFromJson(e.target?.result as string);
+            event.target.value = '';
         };
         reader.readAsText(file);
     };
@@ -227,27 +307,52 @@ function AppFlow () {
     const handleMergeWorkflow = () => {
         if (!pendingWorkflow) return;
 
-        const maxY = Math.max(...nodes.map(n => n.position.y + (n.measured?.height ?? 40)));
-        const minX = Math.min(...nodes.map(n => n.position.x));
-        const yOffset = maxY + 100;
-        const pendingMinY = Math.min(...pendingWorkflow.nodes.map((n: any) => n.position.y));
-        const pendingMinX = Math.min(...pendingWorkflow.nodes.map((n: any) => n.position.x));
-        const shiftedNodes = pendingWorkflow.nodes.map((node: any) => ({
-            ...node,
-            position: {
-                x: node.position.x - pendingMinX + minX,
-                y: node.position.y + yOffset - pendingMinY}
-        }));
+        const pending = pendingWorkflow;
 
-        setNodes([...nodes, ...shiftedNodes]);
-        setEdges([...edges, ...pendingWorkflow.edges]);
+        flushSync(() => {
+            setPendingWorkflow(null);
+            setIsLoadingWorkflow(true);
+        });
+
+        setTimeout(() => {
+            try {
+                const maxY = Math.max(...nodes.map(n => n.position.y + (n.measured?.height ?? 40)));
+                const minX = Math.min(...nodes.map(n => n.position.x));
+                const yOffset = maxY + 100;
+                const pendingMinY = Math.min(...pending.nodes.map((n: any) => n.position.y));
+                const pendingMinX = Math.min(...pending.nodes.map((n: any) => n.position.x));
+                const shiftedNodes = pending.nodes.map((node: any) => ({
+                    ...node,
+                    position: {
+                        x: node.position.x - pendingMinX + minX,
+                        y: node.position.y + yOffset - pendingMinY
+                    }
+                }));
+
+                setNodes([...nodes, ...shiftedNodes]);
+                setEdges([...edges, ...pending.edges]);
+            } finally {
+                setIsLoadingWorkflow(false);
+            }
+        }, 100);
     };
 
     const handleReplaceWorkflow = () => {
         if (!pendingWorkflow) return;
 
-        setNodes(pendingWorkflow.nodes);
-        setEdges(pendingWorkflow.edges);
+        flushSync(() => {
+            setPendingWorkflow(null);
+            setIsLoadingWorkflow(true);
+        });
+
+        setTimeout(() => {
+            try {
+                setNodes(pendingWorkflow.nodes);
+                setEdges(pendingWorkflow.edges);
+            } finally {
+                setIsLoadingWorkflow(false);
+            }
+        }, 100);
     };
 
     const onDragOver = useCallback((event: React.DragEvent) => {
@@ -278,7 +383,10 @@ function AppFlow () {
 
     return (
         <>
-            <Dock onSave={handleSave} onLoad={handleLoad} onClear={handleClear} />
+            <Backdrop open={isLoadingWorkflow} sx={{zIndex: 9999, color: '#fff'}}>
+                <CircularProgress color="inherit" />
+            </Backdrop>
+            <Dock onSave={handleSave} onLoad={handleLoad} onClear={handleClear} onLoadWorkflow={handleLoadWorkflowFromJson} getWorkflowJson={handleGetWorkflowJson} />
             <ConfirmDialog
                 open={pendingWorkflow !== null}
                 onClose={() => setPendingWorkflow(null)}
@@ -321,6 +429,19 @@ function AppFlow () {
     );
 }
 
+function AppFlowWithBoundary () {
+    const {enqueueSnackbar} = useSnackbar();
+
+    return (
+        <ErrorBoundary onError={(error) => enqueueSnackbar(
+            'An unexpected error occurred: ' + error.message,
+            {variant: 'error'}
+        )}>
+            <AppFlow />
+        </ErrorBoundary>
+    );
+}
+
 export function App () {
     return (
         <div style={{width: '100vw', height: '100vh', position: 'relative'}}>
@@ -330,7 +451,7 @@ export function App () {
                 className="version-tag"
             />
             <ReactFlowProvider>
-                <AppFlow />
+                <AppFlowWithBoundary />
             </ReactFlowProvider>
         </div>
     );

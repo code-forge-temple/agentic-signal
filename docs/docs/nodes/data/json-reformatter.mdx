@@ -13,6 +13,7 @@ The **JSON Reformatter Node** transforms incoming data using [JSONata](https://j
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="expression" label="JSONata Expression" default>
@@ -25,6 +26,9 @@ import TabItem from '@theme/TabItem';
         </details>
 
         ![JSON Reformatter Node Params](/img/nodes/json-reformatter-params.jpg)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="json-reformatter" />
     </TabItem>
 </Tabs>
 

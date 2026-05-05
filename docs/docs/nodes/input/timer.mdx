@@ -13,23 +13,28 @@ The **Timer Node** triggers workflow execution at a specified interval. Use it t
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
+
 
 <Tabs>
-  <TabItem value="interval" label="Interval Mode" default>
-    **Interval Mode** triggers the node at a fixed interval (in seconds).  
-    - `Interval(s)` (number): field to specify how often the node should trigger.
-    - `Run once` (boolean): option to trigger only a single time.
-    - `Trigger immediately, then repeat` (boolean): option to run once as soon as the timer starts.
+    <TabItem value="interval" label="Interval Mode" default>
+        **Interval Mode** triggers the node at a fixed interval (in seconds).  
+        - `Interval(s)` (number): field to specify how often the node should trigger.
+        - `Run once` (boolean): option to trigger only a single time.
+        - `Trigger immediately, then repeat` (boolean): option to run once as soon as the timer starts.
 
-    ![Timer Node Interval](/img/nodes/timer-node-params-interval.webp)
-  </TabItem>
-  <TabItem value="scheduled" label="Scheduled Mode">
-    **Scheduled Mode** triggers the node at a specific date and time, with optional repeat settings.
-    - `Scheduled Date & Time` (datetime): field to choose when the node should trigger.
-    - `Repeat` (string): set to "Once", "Daily", "Weekly", or "Monthly" for recurring triggers.
+        ![Timer Node Interval](/img/nodes/timer-node-params-interval.webp)
+    </TabItem>
+    <TabItem value="scheduled" label="Scheduled Mode">
+        **Scheduled Mode** triggers the node at a specific date and time, with optional repeat settings.
+        - `Scheduled Date & Time` (datetime): field to choose when the node should trigger.
+        - `Repeat` (string): set to "Once", "Daily", "Weekly", or "Monthly" for recurring triggers.
 
-    ![Timer Node Scheduled](/img/nodes/timer-node-params-scheduled.webp)
-  </TabItem>
+        ![Timer Node Scheduled](/img/nodes/timer-node-params-scheduled.webp)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="timer" />
+    </TabItem>
 </Tabs>
 
 ---

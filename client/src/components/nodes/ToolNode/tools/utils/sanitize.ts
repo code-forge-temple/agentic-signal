@@ -36,7 +36,6 @@ export const sanitizeJsonInput = (input: any): any => {
             const sanitized = (input as string)
                 .replace(/["“”]/g, '"')
                 .replace(/['‘’]/g, "'")
-                .replace(/'/g, '"')
                 .replace(/\bTrue\b/g, 'true')
                 .replace(/\bFalse\b/g, 'false');
 

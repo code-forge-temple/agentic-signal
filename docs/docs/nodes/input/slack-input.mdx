@@ -21,6 +21,7 @@ Before using this node, you need to create and configure a Slack app. See the [S
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="bot-token" label="Bot Token" default>
@@ -57,6 +58,9 @@ import TabItem from '@theme/TabItem';
 
         ![Slack Input Node Configuration](/img/nodes/slack-input-node-params.webp)
     </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="slack-input" />
+    </TabItem>
 </Tabs>
 
 ---
@@ -65,12 +69,16 @@ import TabItem from '@theme/TabItem';
 
 When a matching slash command is received, the node passes the following data to connected downstream nodes:
 
-| Field        | Type   | Description                                         |
-|--------------|--------|-----------------------------------------------------|
-| `channelId`  | string | The Slack channel ID where the command was sent     |
-| `responseUrl`| string | URL to send a delayed response to the slash command |
-| `userId`     | string | The Slack user ID who sent the command              |
-| `message`    | string | The text following the command (and routing ID)     |
+<div className="fullWidthTable">
+
+    | Field        | Type   | Description                                         |
+    |--------------|--------|-----------------------------------------------------|
+    | `channelId`  | string | The Slack channel ID where the command was sent     |
+    | `responseUrl`| string | URL to send a delayed response to the slash command |
+    | `userId`     | string | The Slack user ID who sent the command              |
+    | `message`    | string | The text following the command (and routing ID)     |
+
+</div>
 
 ---
 

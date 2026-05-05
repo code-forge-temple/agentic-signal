@@ -12,6 +12,9 @@ import {OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler} from "./constants";
 import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
+import {GoogleToolOauthConfigFields} from "../utils/GoogleToolOauthConfigFields";
+import {UserConfigFields} from "../../UserConfigFields";
+import {excludeKeysFromObject} from "../../../../../utils";
 
 
 export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
@@ -66,6 +69,25 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
         }
     }),
     toSanitize: ["userConfig.accessToken"],
+    renderConfig: function ({userConfig, onConfigChange}){
+        return (
+            <>
+                <GoogleToolOauthConfigFields
+                    toolSubtype="gcalendar-fetch-events"
+                    scope={OAUTH_PROVIDER_SCOPE}
+                    provider={OAUTH_PROVIDER}
+                    oauthHandler={oauthHandler}
+                    userConfig={userConfig}
+                    description="Google Calendar Authentication"
+                    onConfigChange={onConfigChange}
+                />
+                <UserConfigFields
+                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, ["accessToken", "googleClientId"])}
+                    userConfig={userConfig}
+                    onConfigChange={onConfigChange}
+                />
+            </>
+        )},
     handlerFactory: (
         userConfig: { accessToken?: string, maxResults?: number }
     ) => async ({query, timeMin, timeMax}: {

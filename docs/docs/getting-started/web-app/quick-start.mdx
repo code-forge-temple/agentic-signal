@@ -2,36 +2,36 @@
 
 Choose your preferred method to start Agentic Signal:
 
-import Tabs from '@theme/Tabs';
+import { UrlDefaultTabs } from '@site/src/components/UrlDefaultTabs';
 import TabItem from '@theme/TabItem';
 
-<Tabs>
-<TabItem value="docker" label="🐳 Docker (Recommended)" default>
+<UrlDefaultTabs defaultTab="docker">
+    <TabItem value="docker" label="🐳 Docker (Recommended)" default>
 
-## 1. Start with Docker
+    ## 1. Start with Docker
 
-```bash
-# Run the Docker image
-docker run -it -p 8080:8080 -p 8000:8000 agentic-signal
+    ```bash
+    # Run the Docker image
+    docker run -it -p 8080:8080 -p 8000:8000 agentic-signal
 
-# Or with Docker Compose
-docker-compose up
-```
-</TabItem>
-<TabItem value="manual" label="🔧 Manual Development">
+    # Or with Docker Compose
+    docker-compose up
+    ```
+    </TabItem>
+    <TabItem value="manual" label="🔧 Manual Development">
 
-## 1. Start the Development Servers
+    ## 1. Start the Development Servers
 
-```bash
-# Start both client and server concurrently
-bun run dev
+    ```bash
+    # Start both client and server concurrently
+    bun run dev
 
-# Or start them separately:
-bun run client:dev  # Frontend (http://localhost:8080)
-bun run server:dev  # Backend (http://localhost:8000)
-```
-</TabItem>
-</Tabs>
+    # Or start them separately:
+    bun run client:dev  # Frontend (http://localhost:8080)
+    bun run server:dev  # Backend (http://localhost:8000)
+    ```
+    </TabItem>
+</UrlDefaultTabs>
 
 ---
 

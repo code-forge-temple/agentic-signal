@@ -203,90 +203,90 @@
             "type": "smoothstep",
             "animated": false,
             "source": "3360ba53-ee55-437e-923b-4b9a6067ade6",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "cae625cb-e8ed-407c-8552-0bbc7203367e",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__3360ba53-ee55-437e-923b-4b9a6067ade6right-source-cae625cb-e8ed-407c-8552-0bbc7203367eleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "3360ba53-ee55-437e-923b-4b9a6067ade6",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "173be744-6758-4590-980c-d90e0b28da46",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__3360ba53-ee55-437e-923b-4b9a6067ade6right-source-173be744-6758-4590-980c-d90e0b28da46left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "68d69a06-12c0-4d97-8b39-8f26e2536688",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__68d69a06-12c0-4d97-8b39-8f26e2536688right-source-a088d300-e9a1-4b03-b98c-a01be20aebe8left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__a088d300-e9a1-4b03-b98c-a01be20aebe8right-source-4b1d6abd-80d1-4cf3-9687-ba874eca9dbaleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "eeb99d89-81f8-4a4d-b2f7-e1ed1e3a6f8a",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__4b1d6abd-80d1-4cf3-9687-ba874eca9dbaright-source-eeb99d89-81f8-4a4d-b2f7-e1ed1e3a6f8aleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "cae625cb-e8ed-407c-8552-0bbc7203367e",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "68d69a06-12c0-4d97-8b39-8f26e2536688",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__cae625cb-e8ed-407c-8552-0bbc7203367eright-source-68d69a06-12c0-4d97-8b39-8f26e2536688left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "173be744-6758-4590-980c-d90e0b28da46",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "a088d300-e9a1-4b03-b98c-a01be20aebe8",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__173be744-6758-4590-980c-d90e0b28da46right-source-a088d300-e9a1-4b03-b98c-a01be20aebe8left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "4b1d6abd-80d1-4cf3-9687-ba874eca9dba",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "1e889652-dc86-4429-b8c9-c0d88740e461",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__4b1d6abd-80d1-4cf3-9687-ba874eca9dbaright-source-1e889652-dc86-4429-b8c9-c0d88740e461left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "3360ba53-ee55-437e-923b-4b9a6067ade6",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "c1268f03-a6cf-4013-9282-e1739fc0f00d",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__3360ba53-ee55-437e-923b-4b9a6067ade6right-source-c1268f03-a6cf-4013-9282-e1739fc0f00dleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "5487ec93-620d-4093-9125-08e73030712b",
-            "sourceHandle": "right-source",
+            "sourceHandle": "tool",
             "target": "68d69a06-12c0-4d97-8b39-8f26e2536688",
-            "targetHandle": "tools-target",
+            "targetHandle": "tool",
             "id": "xy-edge__5487ec93-620d-4093-9125-08e73030712bright-source-68d69a06-12c0-4d97-8b39-8f26e2536688tools-target"
         }
     ]

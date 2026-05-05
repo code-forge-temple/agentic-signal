@@ -116,7 +116,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>
-                <FieldsetGroup title="Expected Input Format">
+                <FieldsetGroup title="Expected Input Format *" height={"100%"}>
                     <CodeEditor
                         mode="json"
                         value={STOCK_ANALYSIS_INPUT_JSON_SCHEMA}

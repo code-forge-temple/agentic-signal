@@ -1,10 +1,9 @@
 ---
-title: Intro
 description: Discover ready-to-use workflow templates for Agentic Signal. Download, import, and customize visual AI workflows for data processing, automation, and integration.
 sidebar_position: 1
 ---
 
-# Intro
+# Overview
 
 This section contains ready-to-use workflow examples that you can download and import into `Agentic Signal`.
 
@@ -18,9 +17,11 @@ This section contains ready-to-use workflow examples that you can download and i
 - [**Product Data Validation and Visualization**](/docs/workflows/data/product-data-validation-and-visualization) – Validate and chart product data from an API  
 - [**Customer Total Spend Analysis**](/docs/workflows/data/customer-total-spend-analysis) – Analyze and visualize total customer spend from a dataset  
 - [**Stock Analysis & AI Prediction**](/docs/workflows/data/stock-analysis-ai-prediction) – AI-powered stock trading analysis combining technical indicators with news sentiment  
+- [**RAG Eval**](/docs/workflows/data/rag-eval) – Evaluate RAG retrieval and answer generation with a sample document and query  
 - [**Slack AI Web Search Bot**](/docs/workflows/data/slack-ai-web-search-bot) – Respond to Slack slash commands with AI-generated web search answers *(PRO)*  
 - [**Reddit Post**](/docs/workflows/data/reddit-post) – AI-researched news post automatically submitted to Reddit *(PRO)*  
 - [**Gmail Summarizer**](/docs/workflows/email/gmail-summarizer) – Fetch and summarize recent emails from Gmail  
+- [**SMS Send**](/docs/workflows/email/sms-send) – Send an SMS message from a workflow using structured JSON input  
 - [**AI Data Processing Overseer**](/docs/workflows/data/ai-data-processing-overseer) – Chain AI nodes with validation and feedback loops
 
 ## How to Use

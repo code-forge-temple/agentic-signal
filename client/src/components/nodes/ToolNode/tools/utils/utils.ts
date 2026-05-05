@@ -1,0 +1,1 @@
+export const globalToolProp = (toolSubtype: string, key: string) => `${toolSubtype}.${key}`;

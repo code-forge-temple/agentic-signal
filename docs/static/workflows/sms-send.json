@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "04986b25-83f4-443a-80d3-4ab37f03ead3",
+      "type": "sms",
+      "data": {
+        "title": "SMS",
+        "serialPort": "",
+        "baudRate": "115200"
+      },
+      "position": {
+        "x": 544,
+        "y": 154.5
+      },
+      "measured": {
+        "width": 120,
+        "height": 40
+      },
+      "selected": false
+    },
+    {
+      "id": "edb31da8-f866-4211-b2f3-cbedddece248",
+      "type": "data-source",
+      "data": {
+        "title": "Data Source",
+        "dataSource": {
+          "type": "json",
+          "value": "{\n  \"phoneNumber\": \"+12345678901\",\n  \"message\": \"Hello from Agentic Signal.\"\n}"
+        }
+      },
+      "position": {
+        "x": 201.5,
+        "y": 131.5
+      },
+      "measured": {
+        "width": 160,
+        "height": 40
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "edb31da8-f866-4211-b2f3-cbedddece248",
+      "target": "04986b25-83f4-443a-80d3-4ab37f03ead3",
+      "type": "smoothstep",
+      "animated": false,
+      "sourceHandle": "flow",
+      "targetHandle": "flow",
+      "id": "xy-edge__edb31da8-f866-4211-b2f3-cbedddece248right-source-04986b25-83f4-443a-80d3-4ab37f03ead3left-target"
+    }
+  ]
+}

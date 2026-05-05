@@ -35,7 +35,8 @@
                 "title": "AI Data Processing",
                 "prompt": "Summarize the input data. Output a summary as plain text.",
                 "model": "",
-                "maxFeedbackLoops": 2
+                "maxFeedbackLoops": 2,
+                "maxToolRetries": 3
             },
             "measured": {
                 "width": 160,
@@ -56,6 +57,7 @@
                 "prompt": "If the input is not a valid summary respond with an error.",
                 "model": "",
                 "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
                 "format": {
                     "onSuccess": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"output\": { \"type\": \"string\" }\r\n  },\r\n  \"required\": [\"output\"]\r\n}\r\n",
                     "onError": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"error\": { \"type\": \"string\" }\r\n  },\r\n  \"required\": [\"error\"]\r\n}"
@@ -108,36 +110,36 @@
             "type": "smoothstep",
             "animated": false,
             "source": "1f718672-ced2-492d-925a-933c02a3f4a1",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__1f718672-ced2-492d-925a-933c02a3f4a1right-source-e40a9b65-dc2b-41e8-a1e5-88bb365d2ffeleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "02613504-6c72-4ef1-b638-ff57a4eaff1a",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__e40a9b65-dc2b-41e8-a1e5-88bb365d2fferight-source-02613504-6c72-4ef1-b638-ff57a4eaff1aleft-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "02613504-6c72-4ef1-b638-ff57a4eaff1a",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "d5c8c0c5-21c6-436e-8ee8-362704927af9",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__02613504-6c72-4ef1-b638-ff57a4eaff1aright-source-d5c8c0c5-21c6-436e-8ee8-362704927af9left-target"
         },
         {
             "type": "smoothstep",
             "animated": false,
             "source": "e40a9b65-dc2b-41e8-a1e5-88bb365d2ffe",
-            "sourceHandle": "right-source",
+            "sourceHandle": "flow",
             "target": "799eba41-c42d-47af-9d4e-bb6a52efba29",
-            "targetHandle": "left-target",
+            "targetHandle": "flow",
             "id": "xy-edge__e40a9b65-dc2b-41e8-a1e5-88bb365d2fferight-source-799eba41-c42d-47af-9d4e-bb6a52efba29left-target"
         }
     ]

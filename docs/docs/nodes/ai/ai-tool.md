@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: overview
+title: Overview
 ---
 
 # AI Tool Node

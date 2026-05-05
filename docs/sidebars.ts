@@ -91,6 +91,7 @@ const sidebars: SidebarsConfig = {
                         'nodes/output/data-flow-spy',
                         'nodes/output/reddit-post',
                         'nodes/output/slack-output',
+                        'nodes/output/sms',
                     ],
                 },
             ],
@@ -115,6 +116,7 @@ const sidebars: SidebarsConfig = {
                         'workflows/data/reddit-post',
                         'workflows/data/timeseries-chart',
                         'workflows/data/product-data-validation-and-visualization',
+                        'workflows/data/rag-eval',
                         'workflows/data/ai-data-processing-overseer',
                         'workflows/data/customer-total-spend-analysis',
                         'workflows/data/stock-analysis-ai-prediction',
@@ -125,6 +127,7 @@ const sidebars: SidebarsConfig = {
                     label: 'Email Management',
                     items: [
                         'workflows/email/gmail-summarizer',
+                        'workflows/email/sms-send',
                     ],
                 },
             ],

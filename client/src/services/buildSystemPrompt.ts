@@ -12,6 +12,7 @@ import {toolRegistry} from '../components/nodes/ToolNode/tools/toolRegistry.gen'
 import {TRIPLE_BACKTICK} from '@shared/constants';
 import {AI_ASSISTANT_KEYWORDS, NODE_PORT_IDS} from '../constants/constants';
 
+let cachedSystemPrompt: string | null = null;
 
 const WORKFLOW_FORMAT = `
 ## Workflow JSON format
@@ -181,6 +182,10 @@ function buildToolDocs (): string {
 }
 
 export function buildSystemPrompt (): string {
+    if (cachedSystemPrompt) {
+        return cachedSystemPrompt;
+    }
+
     const prompt = `You are a helpful AI Assistant.
 ⚠️ **STRICT RULE: ONLY generate a workflow JSON if and ONLY IF the user's message contains the special keyword \`${AI_ASSISTANT_KEYWORDS.PREPARE_WORKFLOW}\`.**
 
@@ -247,7 +252,7 @@ ${buildToolDocs()}
 **You are STRICTLY FORBIDDEN from generating a workflow JSON unless the user's message contains the keyword \`${AI_ASSISTANT_KEYWORDS.PREPARE_WORKFLOW}\`.**
 `;
 
-    console.log('Generated system prompt:\n', prompt);
+    cachedSystemPrompt = prompt;
 
     return prompt;
 }

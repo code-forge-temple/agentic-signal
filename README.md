@@ -70,6 +70,7 @@
 - [Reddit Post](https://agentic-signal.com/docs/nodes/output/reddit-post) *(PRO)*
 - [Slack Input](https://agentic-signal.com/docs/nodes/input/slack-input) *(PRO)*
 - [Slack Output](https://agentic-signal.com/docs/nodes/output/slack-output) *(PRO)*
+- [SMS](https://agentic-signal.com/docs/nodes/output/sms) *(PRO)*
 - _other integrations coming soon_
 
 > See the full [Nodes Reference](https://agentic-signal.com/docs/nodes/overview) for details on all node types.
@@ -88,6 +89,7 @@ Explore ready-to-use workflow templates in the [Workflow Examples](https://agent
 - **Date/Time Tools**: Get current date and time.
 - **Slack**: Send and receive messages via Slack slash commands using Socket Mode. *(PRO)*
 - **Reddit**: Automatically post text or link content to subreddits via OAuth2. *(PRO)*
+- **SMS**: Send SMS messages through a Waveshare SIM7600G-H 4G dongle connected via serial port. *(PRO)*
 - **Custom APIs**: Integrate any REST API via HTTP Data node.
 - **More integrations coming soon** - Discord, Notion, Airtable, and many more!
 

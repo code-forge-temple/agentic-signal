@@ -5,10 +5,11 @@
     "npm:@emotion/styled@^11.14.0": "11.14.1_@emotion+react@11.14.0__react@19.2.6_react@19.2.6",
     "npm:@eslint/js@^9.25.0": "9.39.4",
     "npm:@eslint/js@^9.29.0": "9.39.4",
+    "npm:@graphql-tools/schema@*": "10.0.33_graphql@16.14.0",
     "npm:@mui/lab@^7.0.0-beta.13": "7.0.0_@emotion+react@11.14.0__react@19.2.6_@emotion+styled@11.14.1__@emotion+react@11.14.0___react@19.2.6__react@19.2.6_@mui+material@7.3.11__@emotion+react@11.14.0___react@19.2.6__@emotion+styled@11.14.1___@emotion+react@11.14.0____react@19.2.6___react@19.2.6__@types+react@19.2.15__react@19.2.6__react-dom@19.2.6___react@19.2.6_@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:@mui/material@^7.1.0": "7.3.11_@emotion+react@11.14.0__react@19.2.6_@emotion+styled@11.14.1__@emotion+react@11.14.0___react@19.2.6__react@19.2.6_@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:@tauri-apps/api@^2.9.0": "2.11.0",
-    "npm:@tauri-apps/cli@^2.8.4": "2.11.2",
+    "npm:@tauri-apps/cli@^2.11.2": "2.11.2",
     "npm:@tauri-apps/plugin-shell@^2.3.4": "2.3.5",
     "npm:@types/js-beautify@^1.14.3": "1.14.3",
     "npm:@types/jsonata@^1.3.1": "1.5.1",
@@ -22,6 +23,7 @@
     "npm:ace-builds@^1.42.0": "1.44.0",
     "npm:ajv@^8.17.1": "8.20.0",
     "npm:chart.js@^4.4.9": "4.5.1",
+    "npm:city-timezones@*": "1.3.4",
     "npm:concurrently@^9.1.2": "9.2.1",
     "npm:cpx2@8": "8.0.2",
     "npm:dirty-json@~0.9.2": "0.9.2",
@@ -33,13 +35,16 @@
     "npm:globals@16": "16.5.0",
     "npm:googleapis@^150.0.1": "150.0.1",
     "npm:graphql-ws@^6.0.6": "6.0.8_graphql@16.14.0",
+    "npm:graphql-yoga@*": "5.21.0_graphql@16.14.0",
     "npm:iconoir-react@^7.11.0": "7.11.0_react@19.2.6",
     "npm:js-beautify@^1.15.4": "1.15.4",
     "npm:jsonata@^2.0.6": "2.2.1",
     "npm:madge@8": "8.0.0_typescript@5.9.3",
     "npm:mustache@^4.2.0": "4.2.0",
     "npm:notistack@^3.0.2": "3.0.2_react@19.2.6_react-dom@19.2.6__react@19.2.6",
+    "npm:ollama@*": "0.5.18",
     "npm:ollama@~0.5.16": "0.5.18",
+    "npm:playwright@*": "1.60.0",
     "npm:react-ace@^14.0.1": "14.0.1_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:react-chartjs-2@^5.3.0": "5.3.1_chart.js@4.5.1_react@19.2.6",
     "npm:react-dom@^19.2.3": "19.2.6_react@19.2.6",
@@ -307,6 +312,29 @@
     "@emotion/weak-memoize@0.4.0": {
       "integrity": "sha512-snKqtPW01tN0ui7yu9rGv69aJXr/a/Ywvl11sUjNtEcRc+ng/mQriFL0wLXMef74iHa/EkftbDzU9F8iFbH+zg=="
     },
+    "@envelop/core@5.5.1": {
+      "integrity": "sha512-3DQg8sFskDo386TkL5j12jyRAdip/8yzK3x7YGbZBgobZ4aKXrvDU0GppU0SnmrpQnNaiTUsxBs9LKkwQ/eyvw==",
+      "dependencies": [
+        "@envelop/instrumentation",
+        "@envelop/types",
+        "@whatwg-node/promise-helpers",
+        "tslib"
+      ]
+    },
+    "@envelop/instrumentation@1.0.0": {
+      "integrity": "sha512-cxgkB66RQB95H3X27jlnxCRNTmPuSTgmBAq6/4n2Dtv4hsk4yz8FadA1ggmd0uZzvKqWD6CR+WFgTjhDqg7eyw==",
+      "dependencies": [
+        "@whatwg-node/promise-helpers",
+        "tslib"
+      ]
+    },
+    "@envelop/types@5.2.1": {
+      "integrity": "sha512-CsFmA3u3c2QoLDTfEpGr4t25fjMU31nyvse7IzWTvb0ZycuPjMjb0fjlheh+PbhBYb9YLugnT2uY6Mwcg1o+Zg==",
+      "dependencies": [
+        "@whatwg-node/promise-helpers",
+        "tslib"
+      ]
+    },
     "@esbuild/aix-ppc64@0.25.12": {
       "integrity": "sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==",
       "os": ["aix"],
@@ -492,6 +520,86 @@
       "dependencies": [
         "@eslint/core",
         "levn"
+      ]
+    },
+    "@fastify/busboy@3.2.0": {
+      "integrity": "sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA=="
+    },
+    "@graphql-tools/executor@1.5.3_graphql@16.14.0": {
+      "integrity": "sha512-mgBFC0bsrZPZLu9EnydpMnAuQ8Iiq0CEbUcsmvXsm2/iYektGHDN/+bmb7hicA6dWZtdPfklYJmr21WD0GnOfA==",
+      "dependencies": [
+        "@graphql-tools/utils@11.1.0_graphql@16.14.0",
+        "@graphql-typed-document-node/core",
+        "@repeaterjs/repeater",
+        "@whatwg-node/disposablestack",
+        "@whatwg-node/promise-helpers",
+        "graphql",
+        "tslib"
+      ]
+    },
+    "@graphql-tools/merge@9.1.9_graphql@16.14.0": {
+      "integrity": "sha512-iHUWNjRHeQRYdgIMIuChThOwoKzA9vrzYeslgfBo5eUYEyHGZCoDPjAavssoYXLwstYt1dZj2J22jSzc2DrN0Q==",
+      "dependencies": [
+        "@graphql-tools/utils@11.1.0_graphql@16.14.0",
+        "graphql",
+        "tslib"
+      ]
+    },
+    "@graphql-tools/schema@10.0.33_graphql@16.14.0": {
+      "integrity": "sha512-O6P3RIftO0jafnSsFAqpjurUuUxJ43s/AdPVLQsBkI6y4Ic/tKm4C1Qm1KKQsCDTOxXPJClh/v3g7k7yLKCFBQ==",
+      "dependencies": [
+        "@graphql-tools/merge",
+        "@graphql-tools/utils@11.1.0_graphql@16.14.0",
+        "graphql",
+        "tslib"
+      ]
+    },
+    "@graphql-tools/utils@10.11.0_graphql@16.14.0": {
+      "integrity": "sha512-iBFR9GXIs0gCD+yc3hoNswViL1O5josI33dUqiNStFI/MHLCEPduasceAcazRH77YONKNiviHBV8f7OgcT4o2Q==",
+      "dependencies": [
+        "@graphql-typed-document-node/core",
+        "@whatwg-node/promise-helpers",
+        "cross-inspect",
+        "graphql",
+        "tslib"
+      ]
+    },
+    "@graphql-tools/utils@11.1.0_graphql@16.14.0": {
+      "integrity": "sha512-PtFVG4r8Z2LEBSaPYQMusBiB3o6kjLVJyjCLbnWem/SpSuM21v6LTmgpkXfYU1qpBV2UGsFyuEnSJInl8fR1Ag==",
+      "dependencies": [
+        "@graphql-typed-document-node/core",
+        "@whatwg-node/promise-helpers",
+        "cross-inspect",
+        "graphql",
+        "tslib"
+      ]
+    },
+    "@graphql-typed-document-node/core@3.2.0_graphql@16.14.0": {
+      "integrity": "sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==",
+      "dependencies": [
+        "graphql"
+      ]
+    },
+    "@graphql-yoga/logger@2.0.1": {
+      "integrity": "sha512-Nv0BoDGLMg9QBKy9cIswQ3/6aKaKjlTh87x3GiBg2Z4RrjyrM48DvOOK0pJh1C1At+b0mUIM67cwZcFTDLN4sA==",
+      "dependencies": [
+        "tslib"
+      ]
+    },
+    "@graphql-yoga/subscription@5.0.5": {
+      "integrity": "sha512-oCMWOqFs6QV96/NZRt/ZhTQvzjkGB4YohBOpKM4jH/lDT4qb7Lex/aGCxpi/JD9njw3zBBtMqxbaC22+tFHVvw==",
+      "dependencies": [
+        "@graphql-yoga/typed-event-target",
+        "@repeaterjs/repeater",
+        "@whatwg-node/events",
+        "tslib"
+      ]
+    },
+    "@graphql-yoga/typed-event-target@3.0.2": {
+      "integrity": "sha512-ZpJxMqB+Qfe3rp6uszCQoag4nSw42icURnBRfFYSOmTgEeOe4rD0vYlbA8spvCu2TlCesNTlEN9BLWtQqLxabA==",
+      "dependencies": [
+        "@repeaterjs/repeater",
+        "tslib"
       ]
     },
     "@humanfs/core@0.19.2": {
@@ -788,6 +896,9 @@
     },
     "@popperjs/core@2.11.8": {
       "integrity": "sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A=="
+    },
+    "@repeaterjs/repeater@3.0.6": {
+      "integrity": "sha512-Javneu5lsuhwNCryN+pXH93VPQ8g0dBX7wItHFgYiwQmzE1sVdg5tWHiOgHywzL2W21XQopa7IwIEnNbmeUJYA=="
     },
     "@rolldown/pluginutils@1.0.0-beta.27": {
       "integrity": "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA=="
@@ -1428,6 +1539,51 @@
     "@vue/shared@3.5.35": {
       "integrity": "sha512-zSbjL7gRXwks2ZQLRGCajBtBXEOXW9Ddhn/HvSdrGkE2dqGnumzW8XtusRrxrE9LvqtiqDXQ+A60Hp6mvdYxfA=="
     },
+    "@whatwg-node/disposablestack@0.0.6": {
+      "integrity": "sha512-LOtTn+JgJvX8WfBVJtF08TGrdjuFzGJc4mkP8EdDI8ADbvO7kiexYep1o8dwnt0okb0jYclCDXF13xU7Ge4zSw==",
+      "dependencies": [
+        "@whatwg-node/promise-helpers",
+        "tslib"
+      ]
+    },
+    "@whatwg-node/events@0.1.2": {
+      "integrity": "sha512-ApcWxkrs1WmEMS2CaLLFUEem/49erT3sxIVjpzU5f6zmVcnijtDSrhoK2zVobOIikZJdH63jdAXOrvjf6eOUNQ==",
+      "dependencies": [
+        "tslib"
+      ]
+    },
+    "@whatwg-node/fetch@0.10.13": {
+      "integrity": "sha512-b4PhJ+zYj4357zwk4TTuF2nEe0vVtOrwdsrNo5hL+u1ojXNhh1FgJ6pg1jzDlwlT4oBdzfSwaBwMCtFCsIWg8Q==",
+      "dependencies": [
+        "@whatwg-node/node-fetch",
+        "urlpattern-polyfill"
+      ]
+    },
+    "@whatwg-node/node-fetch@0.8.5": {
+      "integrity": "sha512-4xzCl/zphPqlp9tASLVeUhB5+WJHbuWGYpfoC2q1qh5dw0AqZBW7L27V5roxYWijPxj4sspRAAoOH3d2ztaHUQ==",
+      "dependencies": [
+        "@fastify/busboy",
+        "@whatwg-node/disposablestack",
+        "@whatwg-node/promise-helpers",
+        "tslib"
+      ]
+    },
+    "@whatwg-node/promise-helpers@1.3.2": {
+      "integrity": "sha512-Nst5JdK47VIl9UcGwtv2Rcgyn5lWtZ0/mhRQ4G8NN2isxpq2TO30iqHzmwoJycjWuyUfg3GFXqP/gFHXeV57IA==",
+      "dependencies": [
+        "tslib"
+      ]
+    },
+    "@whatwg-node/server@0.10.18": {
+      "integrity": "sha512-kMwLlxUbduttIgaPdSkmEarFpP+mSY8FEm+QWMBRJwxOHWkri+cxd8KZHO9EMrB9vgUuz+5WEaCawaL5wGVoXg==",
+      "dependencies": [
+        "@envelop/instrumentation",
+        "@whatwg-node/disposablestack",
+        "@whatwg-node/fetch",
+        "@whatwg-node/promise-helpers",
+        "tslib"
+      ]
+    },
     "@xyflow/react@12.10.2_react@19.2.6_react-dom@19.2.6__react@19.2.6_@types+react@19.2.15": {
       "integrity": "sha512-CgIi6HwlcHXwlkTpr0fxLv/0sRVNZ8IdwKLzzeCscaYBwpvfcH1QFOCeaTCuEn1FQEs/B8CjnTSjhs8udgmBgQ==",
       "dependencies": [
@@ -1746,6 +1902,9 @@
         "readdirp"
       ]
     },
+    "city-timezones@1.3.4": {
+      "integrity": "sha512-yLmtCxU4y5HLAw9XGIMcGEXO+R2KH1sb595wEQC/E9BxSDpazCD7v9ZQRySO7367IXWsWqt3z2xFVh3OkZdgEQ=="
+    },
     "classcat@5.0.5": {
       "integrity": "sha512-JhZUT7JFcQy/EzW605k/ktHtncoo9vnyW/2GspNYwFlN1C/WmjuV/xtS04e9SOkL2sTdw0VAZ2UGCcQ9lR6p6w=="
     },
@@ -1870,6 +2029,12 @@
         "subarg"
       ],
       "bin": true
+    },
+    "cross-inspect@1.0.1": {
+      "integrity": "sha512-Pcw1JTvZLSJH83iiGWt6fRcT+BjZlCDRVwYLbUcHzv/CRpB7r0MlSrGbIyQvVSNyGnbt7G4AXuyCiDR3POvZ1A==",
+      "dependencies": [
+        "tslib"
+      ]
     },
     "cross-spawn@7.0.6": {
       "integrity": "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==",
@@ -2582,6 +2747,11 @@
         "fetch-blob"
       ]
     },
+    "fsevents@2.3.2": {
+      "integrity": "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==",
+      "os": ["darwin"],
+      "scripts": true
+    },
     "fsevents@2.3.3": {
       "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
       "os": ["darwin"],
@@ -2769,6 +2939,24 @@
       "integrity": "sha512-m3EOaNsUBXwAnkBWbzPfe0Nq8pXUfxsWnolC54sru3FzHvhTZL0Ouf/BoQsaGAXqM+YPerXOJ47BUnmgmoupCw==",
       "dependencies": [
         "graphql"
+      ]
+    },
+    "graphql-yoga@5.21.0_graphql@16.14.0": {
+      "integrity": "sha512-PS37UoDihx8209RRl1ogttzWevNYDnGvP7beHkwHzUpUdfZTHsVRTVe1ysGXre1EjwUAePbpez302YSrq70Ngw==",
+      "dependencies": [
+        "@envelop/core",
+        "@envelop/instrumentation",
+        "@graphql-tools/executor",
+        "@graphql-tools/schema",
+        "@graphql-tools/utils@10.11.0_graphql@16.14.0",
+        "@graphql-yoga/logger",
+        "@graphql-yoga/subscription",
+        "@whatwg-node/fetch",
+        "@whatwg-node/promise-helpers",
+        "@whatwg-node/server",
+        "graphql",
+        "lru-cache@10.4.3",
+        "tslib"
       ]
     },
     "graphql@16.14.0": {
@@ -4039,6 +4227,20 @@
     "picomatch@4.0.4": {
       "integrity": "sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A=="
     },
+    "playwright-core@1.60.0": {
+      "integrity": "sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==",
+      "bin": true
+    },
+    "playwright@1.60.0": {
+      "integrity": "sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==",
+      "dependencies": [
+        "playwright-core"
+      ],
+      "optionalDependencies": [
+        "fsevents@2.3.2"
+      ],
+      "bin": true
+    },
     "pluralize@8.0.0": {
       "integrity": "sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA=="
     },
@@ -4400,7 +4602,7 @@
         "@rollup/rollup-win32-ia32-msvc",
         "@rollup/rollup-win32-x64-gnu",
         "@rollup/rollup-win32-x64-msvc",
-        "fsevents"
+        "fsevents@2.3.3"
       ],
       "bin": true
     },
@@ -5072,6 +5274,9 @@
     "url-template@2.0.8": {
       "integrity": "sha512-XdVKMF4SJ0nP/O7XIPB0JwAEuT9lDIYnNsK8yGVe43y0AWoKeJNdv3ZNWh7ksJ6KqQFjOO6ox/VEitLnaVNufw=="
     },
+    "urlpattern-polyfill@10.1.0": {
+      "integrity": "sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw=="
+    },
     "use-sync-external-store@1.6.0_react@19.2.6": {
       "integrity": "sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==",
       "dependencies": [
@@ -5127,7 +5332,7 @@
         "tinyglobby"
       ],
       "optionalDependencies": [
-        "fsevents"
+        "fsevents@2.3.3"
       ],
       "optionalPeers": [
         "@types/node",
@@ -5291,6 +5496,21 @@
       "integrity": "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="
     }
   },
+  "remote": {
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/mod.ts": "98f4844551a51f47308c39cf33e741760916225a556123286be4722fb2b85cbe",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/ffi/libc.ts": "82f4c750085ab5d11e6180894c7cab3c49748c019916083cb1488ce04763d5f0",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/ffi/termios.ts": "9eb38c495c00638776d718b08a4a851a7a920d6f262d52d46cec9510059fd023",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/ffi/types.ts": "e2c92463e482dfafe4abcda5593c6295966795339e64f6c0d8d5ab0a6e3978c7",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/ffi/windows.ts": "59bb39a096f1862836389b923a2a623e5e2e12d5f2a853c5494222f76a2d53da",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/SerialPortList.ts": "f6d52bf4a70e4f2a9843f96617d348bf2400f5f7e190b61fbe93ac7444708f22",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/posixList.ts": "d1f55c5e3248b1e813ad4f206039abb9b09a5717ae93866861c678f2b877d1f4",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/windowsList.ts": "6c65ea96627bf2d8d151e65b62a7219417c1c9ee3f71b7f3bd3bd12e9d3757db",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/port/SerialPort.ts": "63ae56fd2d2a094c509c8f4825036740dccd4f2098876545607d59fc72bf4b29",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/port/common.ts": "7f6c1bdfd2736d9143c4e45e3bcb59045f0d1e791cabe4c42ae6d72fd97e2587",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/port/posixSerialPort.ts": "3f9191e8dc803ff03e624738119bcd1af32191e984f09692dc7153e3019fa12f",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/port/windowsSerialPort.ts": "2ed9103aa30d95fa16bfc875d75bfc5031b7aed22b6ba7cfb2f00c0c4a558af1",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/utils/platform.ts": "2eaf77fc88b1c79b33a20aff940c2261b411f86c09fa5fe15aee3ca0c021475b"
+  },
   "workspace": {
     "dependencies": [
       "npm:zod@3.25.64"
@@ -5298,7 +5518,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@eslint/js@^9.29.0",
-        "npm:@tauri-apps/cli@^2.8.4",
+        "npm:@tauri-apps/cli@^2.11.2",
         "npm:@types/mustache@^4.2.6",
         "npm:concurrently@^9.1.2",
         "npm:cpx2@8",

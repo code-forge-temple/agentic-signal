@@ -1,4 +1,4 @@
-name: Build Agentic Signal
+﻿name: Build Agentic Signal
 
 permissions:
   contents: write
@@ -20,36 +20,31 @@ jobs:
     strategy:
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
+
     runs-on: ${{ matrix.platform }}
+
     steps:
       - uses: actions/checkout@v5
 
-      # Extract version from package.json
       - name: Get Package Version
         id: pkg_version
         shell: bash
         run: |
           VERSION=$(jq -r '.version' package.json)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      # Install Bun
       - uses: oven-sh/setup-bun@v2
 
-      # Install root dependencies
       - name: Install root dependencies
         run: bun install
 
-      # Install client dependencies
       - name: Install client dependencies
         run: cd client && bun install
 
-      # Install Deno
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
 
-      # Custom: Build your backend for each platform
       - name: Build backend (Windows)
         if: matrix.platform == 'windows-latest'
         run: bun run build:windows
@@ -62,7 +57,8 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt update
-          sudo apt install libwebkit2gtk-4.1-dev \
+          sudo apt install -y \
+            libwebkit2gtk-4.1-dev \
             build-essential \
             curl \
             wget \
@@ -76,19 +72,56 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: bun run build:linux
 
-      # Official Tauri build & release upload
-      - uses: tauri-apps/tauri-action@v0
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          tagName: v${{ steps.pkg_version.outputs.VERSION }}
-          releaseName: Agentic Signal v${{ steps.pkg_version.outputs.VERSION }}
-          releaseDraft: false
-          prerelease: false
-          projectPath: .
-          includeDebug: false
-          includeRelease: true
-          includeUpdaterJson: true
-          updaterJsonKeepUniversal: false
+          name: agentic-signal-${{ matrix.platform }}
+          path: src-tauri/target/release/bundle/**
+
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Get Package Version
+        id: pkg_version
+        shell: bash
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: agentic-signal-windows-latest
+          path: dist/windows
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: agentic-signal-macos-latest
+          path: dist/macos
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: agentic-signal-ubuntu-latest
+          path: dist/linux
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg_version.outputs.VERSION }}
+          name: Agentic Signal v${{ steps.pkg_version.outputs.VERSION }}
+          files: |
+            dist/windows/**/*
+            dist/macos/**/*
+            dist/linux/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-# Artifacts will be uploaded automatically by tauri-action to the release for all platforms.

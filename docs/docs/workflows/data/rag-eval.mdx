@@ -13,7 +13,11 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 This workflow demonstrates Retrieval-Augmented Generation in `Agentic Signal` by ingesting a text document into a RAG collection, retrieving the most relevant passages, and generating an answer from the retrieved evidence.
 
 <Tabs>
-    <TabItem value="json" label="JSON" default>
+    <TabItem value="preview" label="Preview" default>
+        ![RAG Eval Workflow Preview](/img/workflows/rag-eval-preview.webp)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
         <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/rag-eval.json")}>
         {JSON.stringify(ragEvalJson, null, 4)}
         </WorkflowJsonTab>

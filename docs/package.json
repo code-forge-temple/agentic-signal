@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "bun ../scripts/generate-docs-schemas.ts && docusaurus start",
+    "precompile": "bun run ../scripts/generate-docs-schemas.ts",
+    "start": "bun run precompile && docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",

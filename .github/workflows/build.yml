@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Get Package Version
         id: pkg_version
@@ -73,7 +73,7 @@ jobs:
         run: bun run build:linux
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: agentic-signal-${{ matrix.platform }}
           path: |
@@ -85,7 +85,6 @@ jobs:
             src-tauri/target/release/bundle/**/*.deb
             src-tauri/target/release/bundle/**/*.rpm
             src-tauri/target/release/bundle/**/*.zip
-            src-tauri/target/release/bundle/**/*.tar.gz
 
 
   release:
@@ -96,7 +95,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Get Package Version
         id: pkg_version
@@ -106,25 +105,25 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Download Windows artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: agentic-signal-windows-latest
           path: dist/windows
 
       - name: Download macOS artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: agentic-signal-macos-latest
           path: dist/macos
 
       - name: Download Linux artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: agentic-signal-ubuntu-latest
           path: dist/linux
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.pkg_version.outputs.VERSION }}
           name: Agentic Signal v${{ steps.pkg_version.outputs.VERSION }}
@@ -137,6 +136,5 @@ jobs:
             dist/linux/**/*.deb
             dist/linux/**/*.rpm
             dist/linux/**/*.zip
-            dist/linux/**/*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

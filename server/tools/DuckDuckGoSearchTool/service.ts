@@ -5,7 +5,6 @@
  ************************************************************************/
 
 import {DuckDuckGoResult} from "./types.ts";
-import {chromium, LaunchOptions, Page} from "npm:playwright";
 import {launchBrowser} from "../../utils/browserUtils.ts";
 
 

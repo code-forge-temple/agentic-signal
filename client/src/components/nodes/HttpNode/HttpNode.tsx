@@ -44,6 +44,10 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
                     throw new Error("URL is required");
                 }
 
+                if(!settings.browserPath){
+                    throw new Error("Browser executable path must be specified. Please set Browser Executable Path in the app Settings.");
+                }
+
                 const parsedUrl = parseUrl(url);
                 const html = await GraphQLService.renderHtml(parsedUrl, settings.browserPath);
 

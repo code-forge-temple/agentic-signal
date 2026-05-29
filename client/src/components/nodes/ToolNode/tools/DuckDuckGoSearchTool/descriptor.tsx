@@ -36,6 +36,10 @@ export const DuckDuckGoSearchToolDescriptor: ToolDefinition = {
     }),
     toSanitize: [],
     handlerFactory: (userConfig: { maxResults?: number, browserPath?: string }) => async ({query}: { query: string }) => {
+        if(!userConfig.browserPath){
+            return {error: "Browser executable path must be specified. Please set Browser Executable Path in the app Settings."};
+        }
+
         if (!userConfig.maxResults) {
             return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
         }

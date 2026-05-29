@@ -73,7 +73,11 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
                         return configWithFallbacks;
                     }, {...(userConfig || {})} as Record<string, any>);
-                    const newHandler = selectedTool.handlerFactory(effectiveUserConfig);
+
+                    const newHandler = selectedTool.handlerFactory({
+                        ...effectiveUserConfig,
+                        browserPath: settings.browserPath
+                    });
 
                     onConfigChange(id, {handler: newHandler});
                 }
@@ -82,7 +86,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedTool, userConfig, onConfigChange, id, globalData, toolSubtype]);
+    }, [selectedTool, userConfig, onConfigChange, id, globalData, settings.browserPath, toolSubtype]);
 
     const hasMissingConfig = !toolSubtype ||
         (selectedTool?.userConfigSchema && Object.entries(selectedTool.userConfigSchema).some(
@@ -96,7 +100,6 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
         const newUserConfig = {
             ...(userConfig || {}),
             [key]: value,
-            browserPath: settings.browserPath
         };
 
         let handler: ((params: any) => Promise<any>) | undefined = undefined;
@@ -129,7 +132,10 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                     return configWithFallbacks;
                 }, {...newUserConfig} as Record<string, any>);
 
-                handler = selectedTool.handlerFactory(effectiveNewUserConfig);
+                handler = selectedTool.handlerFactory({
+                    ...effectiveNewUserConfig,
+                    browserPath: settings.browserPath
+                });
 
                 setError(null);
             }

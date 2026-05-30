@@ -1,6 +1,6 @@
 {
     "name": "agentic-signal",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "description": "Visual AI Workflow Automation Platform with Local Agent Intelligence",
     "author": "Code Forge Temple",
     "type": "module",
@@ -18,6 +18,7 @@
     ],
     "license": "AGPL-3.0-with-Commercial-Exception",
     "scripts": {
+        "postinstall": "bunx playwright install chromium",
         "precompile": "bun run scripts/generate-files.ts",
         "client:build": "bun run precompile && cd client && bun run build",
         "client:preview": "bun run precompile && cd client && bun run preview",

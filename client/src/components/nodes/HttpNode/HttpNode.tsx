@@ -11,7 +11,7 @@ import {BaseNode} from "../BaseNode";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
 import {LogsDialog} from "../../LogsDialog";
-import {parseUrl} from "../../../utils";
+import {isTauri, parseUrl} from "../../../utils";
 import {html as beautifyHtml} from 'js-beautify';
 import {GraphQLService} from "./services/graphqlService";
 import {DebouncedTextField} from "../../DebouncedTextField";
@@ -44,7 +44,7 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
                     throw new Error("URL is required");
                 }
 
-                if(!settings.browserPath){
+                if(!settings.browserPath && isTauri()){
                     throw new Error("Browser executable path must be specified. Please set Browser Executable Path in the app Settings.");
                 }
 

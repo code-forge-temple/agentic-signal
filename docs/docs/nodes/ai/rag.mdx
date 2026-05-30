@@ -14,6 +14,13 @@ The **RAG Node** (Retrieval-Augmented Generation) ingests documents into a [Weav
 
 It connects exclusively to the **AI Data Processing Node** via a dedicated RAG port (right side of the node).
 
+## Prerequisites
+
+- A running Weaviate instance that Agentic Signal can reach. For a an example of installation, see the [Weaviate Setup](/docs/getting-started/weaviate-setup) guide.
+- Weaviate should be configured for external embedding input, typically with `DEFAULT_VECTORIZER_MODULE=none`.
+- If your Weaviate instance requires authentication, provide the credentials using the node's `API Key (optional)` field.
+- A working Ollama host if you are using an Ollama embedding model in the node.
+
 ## Configuration
 
 <UrlDefaultTabs defaultTab="embedding-model">

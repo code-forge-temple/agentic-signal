@@ -45,6 +45,7 @@
     "npm:ollama@*": "0.5.18",
     "npm:ollama@~0.5.16": "0.5.18",
     "npm:playwright@*": "1.60.0",
+    "npm:playwright@1.60.0": "1.60.0",
     "npm:react-ace@^14.0.1": "14.0.1_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:react-chartjs-2@^5.3.0": "5.3.1_chart.js@4.5.1_react@19.2.6",
     "npm:react-dom@^19.2.3": "19.2.6_react@19.2.6",

@@ -8,6 +8,7 @@ import DuckDuckGo from "./assets/duckduckgo.svg";
 import {ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {isTauri} from "../../../../../utils";
 
 
 export const DuckDuckGoSearchToolDescriptor: ToolDefinition = {
@@ -36,7 +37,7 @@ export const DuckDuckGoSearchToolDescriptor: ToolDefinition = {
     }),
     toSanitize: [],
     handlerFactory: (userConfig: { maxResults?: number, browserPath?: string }) => async ({query}: { query: string }) => {
-        if(!userConfig.browserPath){
+        if(!userConfig.browserPath && isTauri()){
             return {error: "Browser executable path must be specified. Please set Browser Executable Path in the app Settings."};
         }
 

@@ -27,6 +27,7 @@ const sidebars: SidebarsConfig = {
         'getting-started/google-oauth-client',
         'getting-started/reddit-oauth-client',
         'getting-started/slack-bot-setup',
+        'getting-started/weaviate-setup',
     ],
 
     nodesSidebar: [

@@ -47,6 +47,15 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 </Tabs>
 :::
 
+## Prerequisites
+- A Waveshare SIM7600G-H 4G dongle (or compatible)
+- Install the Waveshare driver if needed for your OS (double-check with https://www.waveshare.com/wiki/SIM7600G-H_4G_DONGLE):
+  - Windows: [`https://files.waveshare.com/upload/2/24/SIMCOM_Windows_USB_Drivers_V1.0.2.zip`](https://files.waveshare.com/upload/2/24/SIMCOM_Windows_USB_Drivers_V1.0.2.zip)
+  - Linux: [`https://files.waveshare.com/upload/4/42/SIM7X00-Driver.7z`](https://files.waveshare.com/upload/4/42/SIM7X00-Driver.7z)
+- SIM card with SMS capability
+- The dongle must be connected to your server/PC and recognized as a serial port (e.g. `/dev/ttyUSB2` on Linux, `COM3` on Windows)
+- SIM PIN must be unlocked by the OS or modem manager before use
+
 ## Configuration
 
 The SMS Node is configured using the serial port and optional baud rate settings. The node also validates the upstream JSON payload before sending the message.
@@ -83,15 +92,6 @@ The SMS Node is configured using the serial port and optional baud rate settings
 - Supports serial port autodiscovery (dropdown selection)
 - Configurable baud rate
 - Input validation and error reporting
-
-## PREREQUISITES
-- A Waveshare SIM7600G-H 4G dongle (or compatible)
-- Install the Waveshare driver if needed for your OS (double-check with https://www.waveshare.com/wiki/SIM7600G-H_4G_DONGLE):
-  - Windows: [`https://files.waveshare.com/upload/2/24/SIMCOM_Windows_USB_Drivers_V1.0.2.zip`](https://files.waveshare.com/upload/2/24/SIMCOM_Windows_USB_Drivers_V1.0.2.zip)
-  - Linux: [`https://files.waveshare.com/upload/4/42/SIM7X00-Driver.7z`](https://files.waveshare.com/upload/4/42/SIM7X00-Driver.7z)
-- SIM card with SMS capability
-- The dongle must be connected to your server/PC and recognized as a serial port (e.g. `/dev/ttyUSB2` on Linux, `COM3` on Windows)
-- SIM PIN must be unlocked by the OS or modem manager before use
 
 ## How it works
 1. The node opens the selected serial port and communicates with the dongle using AT commands.

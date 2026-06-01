@@ -193,7 +193,7 @@
       "message": {
         "type": "object",
         "properties": {
-          "preffix": {
+          "prefix": {
             "type": "string",
             "description": "Text prepended to the user message before sending to the LLM"
           },
@@ -254,6 +254,10 @@
         "maximum": 2,
         "default": 0.8,
         "description": "Sampling temperature (0 = deterministic, 2 = very random)"
+      },
+      "orchestrationMode": {
+        "type": "boolean",
+        "description": "When enabled, an AI orchestrator decomposes the input (string or array) into individual agent tasks, runs them sequentially, then synthesizes a final aggregated response"
       }
     },
     "required": [

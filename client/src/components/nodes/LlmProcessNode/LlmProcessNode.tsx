@@ -57,6 +57,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         think,
         temperatureEnabled,
         temperature,
+        orchestrationMode,
         onResultUpdate,
         onConfigChange,
         onFeedbackSend
@@ -146,6 +147,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         ragHandler,
                         think: think ?? defaultLlmProcessNodeData.think,
                         temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
+                        orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
                         conversationHistory: {
                             value: conversationHistory || [],
                             onChange: (newHistory) => {
@@ -179,6 +181,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                     ragHandler,
                     think: think ?? defaultLlmProcessNodeData.think,
                     temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
+                    orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
                     conversationHistory: {
                         value: [],
                         onChange: (newHistory) => {
@@ -209,6 +212,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 ragHandler,
                 think: think ?? defaultLlmProcessNodeData.think,
                 temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
+                orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
                 conversationHistory: {
                     value: [],
                     onChange: (newHistory) => {
@@ -218,7 +222,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
             });
         }, setIsRunning);
     // eslint-disable-next-line max-len
-    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, tools]);
+    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, tools, orchestrationMode]);
 
     const [systemPrompt, setSystemPrompt] = useDebouncedState({
         callback: (value: string) => {
@@ -229,10 +233,10 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
     });
     const [messagePrefix, setMessagePrefix] = useDebouncedState({
         callback: (value: string) => {
-            onConfigChange(id, {message: {...message, preffix: value}});
+            onConfigChange(id, {message: {...message, prefix: value}});
         },
         delay: 300,
-        initialValue: message?.preffix || ""
+        initialValue: message?.prefix || ""
     });
     const [messageSuffix, setMessageSuffix] = useDebouncedState({
         callback: (value: string) => {
@@ -369,6 +373,18 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         sx={{mb: 2}}
                         helperText="Maximum number of retry attempts for each required tool"
                     />
+                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, ml: 1.5}}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    size="small"
+                                    checked={orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode}
+                                    onChange={e => onConfigChange(id, {orchestrationMode: e.target.checked})}
+                                />
+                            }
+                            label={<Typography variant="body2">AI Orchestration Mode</Typography>}
+                        />
+                    </Box>
                     <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, ml: 1.5}}>
                         <FormControlLabel
                             control={

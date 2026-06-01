@@ -9,6 +9,13 @@ import {schema} from "./graphql/schema.ts";
 import {BACKEND_PORT} from "../shared/constants.ts";
 import {webSocketManager} from "./ws/webSocketManager.ts";
 
+// Prevent uncaught promise rejections from bringing down the entire Deno backend.
+globalThis.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
+    console.error("Unhandled promise rejection:", event.reason);
+
+    event.preventDefault();
+});
+
 
 const yoga = createYoga({
     schema,

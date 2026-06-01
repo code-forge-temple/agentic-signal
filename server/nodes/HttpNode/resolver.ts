@@ -16,9 +16,17 @@ export const resolver = {
             {url, browserPath}: { url: string, browserPath?: string },
             _context: GraphQLContext
         ): Promise<string> => {
-            if (!url) throw new Error("Missing url parameter");
+            if (!url) {
+                throw new Error("Missing url parameter");
+            }
 
-            return await fetchRenderedHtml(url, browserPath);
+            try {
+                return await fetchRenderedHtml(url, browserPath);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+
+                throw new Error(`Fetch rendered HTML failed: ${message}`);
+            }
         }
     }
 };

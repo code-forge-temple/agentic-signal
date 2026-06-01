@@ -36,7 +36,7 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
             maximum: 20
         }
     }),
-    toSanitize: [],
+    toSanitize: ["userConfig.apiKey"],
     handlerFactory: (userConfig: { apiKey?: string, maxResults?: number }) => async ({query}: { query: string }) => {
         if (!userConfig.apiKey) {
             return {error: "API key must be specified. Please set apiKey in the configuration."};

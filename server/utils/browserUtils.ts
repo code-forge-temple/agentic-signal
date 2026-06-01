@@ -7,13 +7,33 @@ export async function launchBrowser<T> (
     options: LaunchOptions,
     callback: (page: Page) => Promise<T>
 ): Promise<T> {
-    const browser = await chromium.launch(options);
-    const page = await browser.newPage();
+    let browser;
+    let page;
 
     try {
+        browser = await chromium.launch(options);
+        page = await browser.newPage();
+
         return await callback(page);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+
+        throw new Error(`Browser launch or page initialization failed: ${message}`);
     } finally {
-        await page.close();
-        await browser.close();
+        if (page) {
+            try {
+                await page.close();
+            } catch (_error) {
+                // Ignore failures during cleanup.
+            }
+        }
+
+        if (browser) {
+            try {
+                await browser.close();
+            } catch (_error) {
+                // Ignore cleanup failures when browser launch already failed.
+            }
+        }
     }
 }

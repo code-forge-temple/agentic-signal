@@ -19,7 +19,8 @@ export const LlmProcessNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, LlmProce
     title: TITLE,
     assertion: assertIsLlmProcessNodeData,
     metadata: {
-        description: "Sends data to an Ollama LLM with a configurable prompt. Supports tool calling, feedback loops, and conversation history.",
+        // eslint-disable-next-line max-len
+        description: "Sends data to an Ollama LLM with a configurable prompt. Supports tool calling, feedback loops, and conversation history. When 'AI Orchestration Mode' is enabled, an AI orchestrator decomposes the input (string or array) into individual sequential agent tasks and synthesizes a final aggregated response.",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
                 inputSchema: z.any().describe("Incoming data, tools, and context for prompt execution."),

@@ -5,87 +5,18 @@
  ************************************************************************/
 
 import {useState, useCallback} from 'react';
-import {OllamaService} from '../../../../services/ollamaService';
 import {GenericNodeData} from '../../../../types/workflow';
 import {Message, MessageRole, SystemUserConfigValues, ToolSchema} from '../../../../types/ollama.types';
-import Ajv from "ajv";
 import {LlmProcessNodeData} from '../types/workflow';
 import {useFetchModels} from '../../../../hooks/useFetchModels';
+import {runOrchestration, runSingleCall} from '../utils/aiOrchestration';
+import {assertIsSerializedInput, getExpectedOutputType, parseFormat, serializeInput} from '../utils/formatUtils';
 
 
 export interface UseAIProcessorOptions {
     onSuccess?: (result: any) => void;
     onError?: (error: string) => void;
 }
-
-function getExpectedOutputType (format: any): string {
-    try {
-        const schema = typeof format === "string" ? JSON.parse(format) : format;
-
-        if (!schema || typeof schema !== "object") return "unknown";
-
-        if (schema.type) {
-            return schema.type;
-        }
-
-        for (const key of ["oneOf", "anyOf", "allOf"]) {
-            if (Array.isArray(schema[key])) {
-                for (const subschema of schema[key]) {
-                    const type = getExpectedOutputType(subschema);
-
-                    if (type !== "unknown") return type;
-                }
-            }
-        }
-    } catch (e) {
-        throw new Error(`Invalid format schema: ${e instanceof Error ? e.message : String(e)}`);
-    }
-
-    return "unknown";
-}
-
-const serializeInput = (inputData: any): string | undefined => {
-    if (inputData == undefined) {
-        return undefined;
-    }
-
-    if (typeof inputData === 'string') {
-        return inputData;
-    }
-
-    if (typeof inputData === 'object') {
-        return JSON.stringify(inputData, null, 4);
-    }
-
-    return String(inputData);
-};
-
-function assertIsSerializedInput (input: any): asserts input is string {
-    if (typeof input !== 'string') {
-        throw new Error(`Expected serialized input to be a string, but got ${typeof input}`);
-    }
-}
-
-const buildUnifiedFormat = (format: {onSuccess?: string; onError?: string;}): string | undefined => {
-    if (!format) return undefined;
-
-    const {onSuccess, onError} = format;
-
-    if (onSuccess && onError) {
-        return JSON.stringify({
-            oneOf: [
-                JSON.parse(onSuccess),
-                JSON.parse(onError)
-            ]
-        });
-    }
-
-    if (onSuccess) return onSuccess;
-
-    // in case of only onError provided, we ignore it because we don't want to return an error as a success response
-
-    return undefined;
-};
 
 export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     const {onSuccess, onError} = options;
@@ -110,7 +41,8 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         ragHandler,
         conversationHistory,
         think,
-        temperature
+        temperature,
+        orchestrationMode
     }: Pick<GenericNodeData & LlmProcessNodeData, 'input' | 'prompt' | 'message' | 'model' | 'format'> & {
     tools?: {
         schema: ToolSchema,
@@ -126,6 +58,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     };
     think?: boolean;
     temperature?: number;
+    orchestrationMode?: boolean;
 }) => {
         if (!model) {
             const errorMsg = "Please select a model first.";
@@ -134,6 +67,32 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             onError?.(errorMsg);
 
             return null;
+        }
+
+        if (orchestrationMode && (Array.isArray(input) || typeof input === "string")) {
+            setError([]);
+
+            const orchestrationResult = await runOrchestration({
+                input,
+                prompt,
+                model,
+                format,
+                tools,
+                maxToolRetries,
+                think,
+                temperature,
+            });
+
+            if (!orchestrationResult.success) {
+                setError(prev => [...prev, orchestrationResult.error]);
+                onError?.(orchestrationResult.error);
+
+                return null;
+            }
+
+            onSuccess?.(orchestrationResult.result);
+
+            return orchestrationResult.result;
         }
 
         if (!prompt && !message && !input) {
@@ -166,7 +125,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     assertIsSerializedInput(serializedInput);
 
                     const baseUserContent = message
-                        ? `${message.preffix || ''}${serializedInput}${message.suffix || ''}`
+                        ? `${message.prefix || ''}${serializedInput}${message.suffix || ''}`
                         : serializedInput;
 
                     let userContent = baseUserContent;
@@ -217,7 +176,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                         assertIsSerializedInput(serializedInput);
 
                         const userContent = message
-                            ? `${message.preffix || ''}${serializedInput}${message.suffix || ''}`
+                            ? `${message.prefix || ''}${serializedInput}${message.suffix || ''}`
                             : serializedInput;
 
                         messages.push({
@@ -228,42 +187,21 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 }
             }
 
-            let parsedFormat;
-            let onErrorSchema;
+            let parsedFormat: object | undefined;
             let onErrorValidator: ((data: any) => boolean) | undefined;
 
-            if (format) {
-                try {
-                    let unifiedFormat: string | undefined;
+            try {
+                ({parsedFormat, onErrorValidator} = parseFormat(format));
+            } catch (parseError) {
+                const errorMsg = `Invalid format JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
 
-                    if (typeof format === "object" && (format.onSuccess || format.onError)) {
-                        unifiedFormat = buildUnifiedFormat(format);
+                setError(prev => [...prev, errorMsg]);
+                onError?.(errorMsg);
 
-                        if (format.onError) {
-                            onErrorSchema = JSON.parse(format.onError);
-
-                            const ajv = new Ajv();
-
-                            onErrorValidator = ajv.compile(onErrorSchema);
-                        }
-                    } else if (typeof format === "string") {
-                        unifiedFormat = format;
-                    }
-
-                    if (unifiedFormat) {
-                        parsedFormat = JSON.parse(unifiedFormat);
-                    }
-                } catch (parseError) {
-                    const errorMsg = `Invalid format JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
-
-                    setError(prev => [...prev, errorMsg]);
-                    onError?.(errorMsg);
-
-                    return null;
-                }
+                return null;
             }
 
-            const response = await OllamaService.getInstance().fetchAIResponse({
+            const response = await runSingleCall({
                 messages,
                 model,
                 ...(parsedFormat ? {format: parsedFormat} : {}),
@@ -293,10 +231,10 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             try {
                 const expectedOutputType = getExpectedOutputType(parsedFormat);
 
-                if (expectedOutputType === "object") {
+                if (expectedOutputType === "object" || expectedOutputType === "array") {
                     result = JSON.parse(result);
 
-                    if (onErrorValidator && onErrorValidator(result)) {
+                    if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
                         const errorMsg = `LLM returned an error response matching onError schema:\n${JSON.stringify(result, null, 4)}`;
 
                         setError(prev => [...prev, errorMsg]);

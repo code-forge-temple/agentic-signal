@@ -31,6 +31,29 @@ The **AI Data Processing Node** is the main AI component in your workflow. It us
 
         ![AI Data Processing Node Max Tool Retries](/img/nodes/llm-process-node-system-prompt.webp)
     </TabItem>
+    <TabItem value="orchestration" label="AI Orchestration Mode">
+        When enabled, the node first asks the model to decompose the input into a structured plan of sequential tasks using a JSON-constrained planner response.
+        Each task is then executed as a separate agent call, and the results are aggregated into the final response.
+
+        This is useful for complex, multi-step inputs, but it depends on the model being able to produce valid structured JSON for the orchestrator plan.
+
+        :::info Note
+            If you see an error like `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`, the selected model may not support strict structured output. Try a different model or disable AI Orchestration Mode.
+        :::
+
+        ![AI Data Processing Node Orchestration Mode](/img/nodes/llm-process-node-system-prompt.webp)
+    </TabItem>
+    <TabItem value="reasoning" label="Thinking & Temperature">
+        Enable **Thinking** to let the node use the model's internal reasoning mode during response generation.
+        This can help the model produce more structured, step-by-step responses for difficult tasks.
+
+        Use **Temperature** to control response randomness:
+        - Lower values make output more deterministic.
+        - Higher values make output more creative and varied.
+        - Toggle temperature on to use the slider; when off, the node uses the model default.
+
+        ![AI Data Processing Node Thinking Temperature](/img/nodes/llm-process-node-system-prompt.webp)
+    </TabItem>
     <TabItem value="prompt" label="System Prompt">
         Provide instructions that guide the AI's behavior and responses.
 
@@ -83,7 +106,8 @@ For an example usage, see the [Weather Dashboard workflow](/docs/workflows/data/
 - **Model not found**: Make sure the model is installed in Ollama.
 - **Slow responses**: Try a smaller model or check your system resources.
 - **Inconsistent output**: Use structured output schemas for consistency.
-- **Structured output not supported**: Some language models do not reliably follow structured output instructions. In some cases, the Ollama server will respond with an error indicating that the selected model does not support structured output. If this happens, try using a different model or simplify your output schema.
+- **Structured output not supported**: Some language models do not reliably follow structured output instructions (leading to errors as `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`). In some cases, the Ollama server will respond with an error indicating that the selected model does not support structured output. If this happens, try using a different model or simplify your output schema.
+- **AI Orchestration Mode errors**: This mode internally uses structured output for orchestration. If a model cannot handle that restriction, you may see errors such as `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`. Try a different model or disable AI Orchestration Mode.
 - **Date/time understanding issues**: Some LLMs, especially smaller models, may have difficulty interpreting or reasoning about dates and times provided in the input. If you notice problems with date handling, try rephrasing your prompt, providing more context, or using a larger/more capable model.
 
 ### Performance Tips

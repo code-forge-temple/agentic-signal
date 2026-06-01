@@ -147,7 +147,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
         });
     }, [globalData, id, onConfigChange, selectedTool, settings.browserPath, toolSubtype, userConfig]);
 
-    const {getNode, getEdges} = useReactFlow();
+    const {getNode} = useReactFlow();
 
 
     return (
@@ -169,11 +169,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
                             if (targetHandle !== NODE_PORT_IDS.TOOL) return false;
 
-                            const alreadyConnected = getEdges().some(
-                                edge => edge.target === target && edge.targetHandle === NODE_PORT_IDS.TOOL
-                            );
-
-                            return !alreadyConnected;
+                            return true;
                         }}
                     />
                 }

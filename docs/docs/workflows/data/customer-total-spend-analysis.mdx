@@ -14,8 +14,8 @@ This workflow analyzes customer order data to determine which customer spent the
 
 > **Note:**  
 > This workflow uses **two AI Data Processing nodes**, each with a tool, because the output of the first tool (CSV to Array) is required as input for the second tool (Max Tool).  
-> Current smaller models (≤ 8B parameters) are not able to call the available tools sequentially—they attempt to call both tools at the same time, which leads to incorrect results.  
-> If you use a larger LLM (more than 8B parameters), you can combine both tools in a single AI Data Processing node, as larger models can more reliably call tools one after the other.
+> Current smaller models (≤ 27B parameters) are not able to call the available tools sequentially—they attempt to call both tools at the same time, which leads to incorrect results.  
+> If you use a larger LLM (more than 27B parameters), you can combine both tools in a single AI Data Processing node, as larger models can more reliably call tools one after the other.
 
 <Tabs>
     <TabItem value="preview" label="Preview" default>

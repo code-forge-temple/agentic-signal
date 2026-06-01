@@ -20,7 +20,15 @@ export const resolver = {
                 throw new Error("Missing query or maxResults parameter");
             }
 
-            const results = await fetchDuckDuckGoResults(query, browserPath);
+            let results: DuckDuckGoResult[];
+
+            try {
+                results = await fetchDuckDuckGoResults(query, browserPath);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+
+                throw new Error(`DuckDuckGo query failed: ${message}`);
+            }
 
             return results.slice(0, maxResults);
         }

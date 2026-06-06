@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import Ajv from "ajv";
+import {sanitizeJsonInput} from "../../ToolNode/tools/utils/sanitize";
 
 
 // ---------------------------------------------------------------------------
@@ -109,6 +110,55 @@ export function parseFormat (
     const parsedFormat = unifiedFormat ? JSON.parse(unifiedFormat) : undefined;
 
     return {parsedFormat, onErrorValidator};
+}
+
+/**
+ * Parses LLM response text into JSON, unwrapping optional markdown code fences.
+ *
+ * Supported input forms:
+ * - raw JSON
+ * - ```json\n{...}\n```
+ * - ```\n{...}\n```
+ * - fenced arrays
+ * - leading/trailing whitespace
+ */
+export function llmResponseJsonParse<T = any> (reply: string): T {
+    if (typeof reply !== "string") {
+        throw new TypeError(
+            `Expected string response, received ${typeof reply}`
+        );
+    }
+
+    let jsonText = reply.trim();
+
+    // Remove UTF-8 BOM if present
+    jsonText = jsonText.replace(/^\uFEFF/, "");
+
+    // Remove opening fence
+    jsonText = jsonText.replace(/^```(?:json)?\s*/i, "");
+
+    // Remove closing fence
+    jsonText = jsonText.replace(/\s*```$/, "");
+
+    jsonText = jsonText.trim();
+
+    try {
+        return JSON.parse(jsonText) as T;
+    }
+    catch (error) {
+        try {
+            return sanitizeJsonInput(jsonText) as T;
+        }
+        catch (sanitizeError) {
+            throw new Error(
+                `Failed to parse JSON: ${
+                    error instanceof Error ? error.message : String(error)
+                }; sanitization fallback failed: ${
+                    sanitizeError instanceof Error ? sanitizeError.message : String(sanitizeError)
+                }`
+            );
+        }
+    }
 }
 
 

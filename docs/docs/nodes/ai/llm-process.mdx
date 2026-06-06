@@ -37,10 +37,6 @@ The **AI Data Processing Node** is the main AI component in your workflow. It us
 
         This is useful for complex, multi-step inputs, but it depends on the model being able to produce valid structured JSON for the orchestrator plan.
 
-        :::info Note
-            If you see an error like `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`, the selected model may not support strict structured output. Try a different model or disable AI Orchestration Mode.
-        :::
-
         ![AI Data Processing Node Orchestration Mode](/img/nodes/llm-process-node-system-prompt.webp)
     </TabItem>
     <TabItem value="reasoning" label="Thinking & Temperature">
@@ -63,6 +59,10 @@ The **AI Data Processing Node** is the main AI component in your workflow. It us
         The input the node receives can be customized before processing by adding text before or after  it:
         - **Message Prefix**: Text added before the input.
         - **Message Suffix**: Text added after the input.
+
+        :::info Note
+        If the node receives an input array or object, it is serialized as pretty-printed JSON before being sent to the model. In orchestration mode, the array is also embedded into the orchestrator planning prompt as JSON.
+        :::
 
         ![AI Data Processing Node User Message](/img/nodes/llm-process-node-user-message.webp)
     </TabItem>
@@ -106,8 +106,6 @@ For an example usage, see the [Weather Dashboard workflow](/docs/workflows/data/
 - **Model not found**: Make sure the model is installed in Ollama.
 - **Slow responses**: Try a smaller model or check your system resources.
 - **Inconsistent output**: Use structured output schemas for consistency.
-- **Structured output not supported**: Some language models do not reliably follow structured output instructions (leading to errors as `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`). In some cases, the Ollama server will respond with an error indicating that the selected model does not support structured output. If this happens, try using a different model or simplify your output schema.
-- **AI Orchestration Mode errors**: This mode internally uses structured output for orchestration. If a model cannot handle that restriction, you may see errors such as `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`. Try a different model or disable AI Orchestration Mode.
 - **Date/time understanding issues**: Some LLMs, especially smaller models, may have difficulty interpreting or reasoning about dates and times provided in the input. If you notice problems with date handling, try rephrasing your prompt, providing more context, or using a larger/more capable model.
 
 ### Performance Tips

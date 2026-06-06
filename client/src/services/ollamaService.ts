@@ -144,7 +144,20 @@ export class OllamaService {
             const maxConversationRetries = requiredToolsCount > 0
                 ? maxToolRetries * requiredToolsCount
                 : maxToolRetries;
+
+            /* #if LOGS */
+            console.group("[OllamaService] fetchAIResponse");
+            console.log("Model:", model);
+            console.log("Format:", format ?? "(none)");
+            console.log("Tools:", tools?.map(t => t.schema.name) ?? "(none)");
+            console.log("Messages:", conversationMessages);
+            /* #endif */
+
             let response = await this.callOllamaChat(ollama, conversationMessages, model, format, toolSchemas, think, temperature);
+
+            /* #if LOGS */
+            console.log("Initial response — content:", response.message.content || "(empty)", "| tool_calls:", response.message.tool_calls ?? "(none)");
+            /* #endif */
 
             while (true) {
                 if (++totalIterations > maxConversationRetries) break;
@@ -153,11 +166,12 @@ export class OllamaService {
 
                 if (response.message && Array.isArray(response.message.tool_calls) && tools) {
                     for (const toolCall of response.message.tool_calls) {
-                        toolCallsMade = true;
                         const toolName = toolCall.function.name;
                         const status = toolStatus[toolName];
 
                         if (status && !status.succeeded && status.retryCount < maxToolRetries) {
+                            toolCallsMade = true;
+
                             const {hasError, toolCallMessage, toolResultMessage} = await this.executeToolCallWithTracking(
                                 toolCall,
                                 tools,
@@ -175,6 +189,10 @@ export class OllamaService {
 
                             conversationMessages.push(toolCallMessage);
                             conversationMessages.push(toolResultMessage);
+
+                            /* #if LOGS */
+                            console.log(`Tool "${toolName}" — args:`, toolCall.function.arguments, "| result:", toolResultMessage.content, "| error:", hasError);
+                            /* #endif */
                         }
                     }
                 }
@@ -191,6 +209,10 @@ export class OllamaService {
                         .map(([name]) => name);
 
                     if (unfinishedTools.length > 0) {
+                        /* #if LOGS */
+                        console.log("Nudging LLM to call missing tools:", unfinishedTools);
+                        /* #endif */
+
                         conversationMessages.push({
                             role: MessageRole.USER,
                             content: `You must call the following tools: ${unfinishedTools.join(", ")}. Please make the tool calls now.`,
@@ -200,6 +222,10 @@ export class OllamaService {
                 }
 
                 response = await this.callOllamaChat(ollama, conversationMessages, model, format, toolSchemas, think, temperature);
+
+                /* #if LOGS */
+                console.log(`Iteration ${totalIterations} response — content:`, response.message.content || "(empty)", "| tool_calls:", response.message.tool_calls ?? "(none)");
+                /* #endif */
 
                 if (response.message.content && response.message.content.trim() !== "") {
                     conversationMessages.push({
@@ -211,7 +237,18 @@ export class OllamaService {
             }
 
             if (tools && tools.length > 0) {
+                /* #if LOGS */
+                console.group("[OllamaService] Final summary call (no tools)");
+                console.log("Format:", format ?? "(none)");
+                console.log("Messages:", conversationMessages);
+                /* #endif */
+
                 response = await this.callOllamaChat(ollama, conversationMessages, model, format, undefined, think, temperature);
+
+                /* #if LOGS */
+                console.log("Final summary response:", response.message.content);
+                console.groupEnd();
+                /* #endif */
 
                 if (response.message.content && response.message.content.trim() !== "") {
                     conversationMessages.push({
@@ -249,12 +286,22 @@ export class OllamaService {
                 }
             }
 
+            /* #if LOGS */
+            console.log("Returning reply:", response.message.content);
+            console.groupEnd();
+            /* #endif */
+
             return {
                 success: true,
                 final: true,
                 reply: response.message.content
             };
         } catch (error) {
+            /* #if LOGS */
+            console.error("fetchAIResponse error:", error);
+            console.groupEnd();
+            /* #endif */
+
             return {
                 success: false,
                 error: error instanceof Error ? error.message : String(error)

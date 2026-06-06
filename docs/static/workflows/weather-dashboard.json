@@ -1,12 +1,8 @@
 {
     "nodes": [
         {
-            "id": "b3d137fa-6534-4fc0-a6e0-15ee919be276",
+            "id": "bba67841-6e5e-44c8-94ff-08681b21229b",
             "type": "data-source",
-            "position": {
-                "x": 100,
-                "y": 100
-            },
             "data": {
                 "title": "Data Source",
                 "dataSource": {
@@ -17,6 +13,10 @@
                     "type": "markdown"
                 }
             },
+            "position": {
+                "x": 153.5,
+                "y": 465
+            },
             "measured": {
                 "width": 160,
                 "height": 40
@@ -24,12 +24,8 @@
             "selected": false
         },
         {
-            "id": "8a0dd721-4139-4ca4-bcc9-2624aad5b309",
+            "id": "e91a9a75-b71d-4456-84ac-5107419c1bf9",
             "type": "ai-tool",
-            "position": {
-                "x": 640,
-                "y": 220
-            },
             "data": {
                 "title": "Fetch Weather Data Tool",
                 "toolSubtype": "fetch-weather-data",
@@ -37,12 +33,21 @@
                     "requireToolUse": true
                 },
                 "userConfigSchema": {
+                    "apiKey": {
+                        "type": "string",
+                        "description": "WeatherAPI.com API Key",
+                        "required": true
+                    },
                     "requireToolUse": {
                         "type": "boolean",
                         "description": "Require tool use (forces the LLM to always call this tool)",
                         "default": true
                     }
                 }
+            },
+            "position": {
+                "x": 693.5,
+                "y": 585
             },
             "measured": {
                 "width": 120,
@@ -52,12 +57,8 @@
             "dragging": false
         },
         {
-            "id": "ca0be528-34f5-48e2-8d89-3c50260998c3",
+            "id": "a3cd74e3-f0f7-45de-8618-e59ddb1acc42",
             "type": "ai-tool",
-            "position": {
-                "x": 420,
-                "y": 220
-            },
             "data": {
                 "title": "Date/Time Now Tool",
                 "toolSubtype": "date-time-now",
@@ -72,65 +73,9 @@
                     }
                 }
             },
-            "measured": {
-                "width": 120,
-                "height": 40
-            },
-            "selected": false,
-            "dragging": false
-        },
-        {
-            "id": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "type": "llm-process",
             "position": {
-                "x": 400,
-                "y": 100
-            },
-            "data": {
-                "title": "AI Data Processing",
-                "prompt": "Based on the next message request, you need to use dateTimeNow tool to obtain the current date time.\nYour sole responsibility is to provide more context to the original request from the date time point of view and nothing else.\nYou are to respond ONLY with the augmented request that includes the exact date and time information.\nDo NOT include any explanations, preambles, or descriptions about what you did.\nJust output the enhanced request directly.",
-                "model": "",
-                "maxFeedbackLoops": 0,
-                "maxToolRetries": 3
-            },
-            "measured": {
-                "width": 160,
-                "height": 40
-            },
-            "selected": false,
-            "dragging": false
-        },
-        {
-            "id": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
-            "type": "llm-process",
-            "position": {
-                "x": 620,
-                "y": 100
-            },
-            "data": {
-                "title": "AI Data Processing",
-                "model": "",
-                "prompt": "You need to use fetchWeatherData tool to get current weather information for the requested location.\nOutput the weather data including temperature, conditions, humidity, and wind speed.\nFormat the output in Markdown.\nDo NOT include any explanations, preambles, or descriptions about what you did.\nJust output the weather information directly.",
-                "message": {},
-                "format": {},
-                "maxFeedbackLoops": 0,
-                "maxToolRetries": 5
-            },
-            "measured": {
-                "width": 160,
-                "height": 40
-            },
-            "selected": false
-        },
-        {
-            "id": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
-            "type": "data-flow-spy",
-            "position": {
-                "x": 860,
-                "y": 100
-            },
-            "data": {
-                "title": "Data Flow Spy"
+                "x": 473.5,
+                "y": 585
             },
             "measured": {
                 "width": 120,
@@ -140,14 +85,36 @@
             "dragging": false
         },
         {
-            "id": "bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1",
-            "type": "data-flow-spy",
-            "position": {
-                "x": 640,
-                "y": 0
+            "id": "0582e5a0-0cdd-489e-aad2-7a9bcde929bd",
+            "type": "llm-process",
+            "data": {
+                "title": "AI Data Processing",
+                "prompt": "",
+                "model": "gemma4:e4b",
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "orchestrationMode": true
             },
+            "position": {
+                "x": 453.5,
+                "y": 465
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "afea6e54-c370-4579-a13d-bc74de1e372a",
+            "type": "data-flow-spy",
             "data": {
                 "title": "Data Flow Spy"
+            },
+            "position": {
+                "x": 693.5,
+                "y": 365
             },
             "measured": {
                 "width": 120,
@@ -159,57 +126,39 @@
     ],
     "edges": [
         {
-            "id": "f0e05088-09fb-44dc-b6d0-3c433d237d88",
-            "source": "b3d137fa-6534-4fc0-a6e0-15ee919be276",
-            "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "source": "bba67841-6e5e-44c8-94ff-08681b21229b",
+            "target": "0582e5a0-0cdd-489e-aad2-7a9bcde929bd",
+            "id": "xy-edge__bba67841-6e5e-44c8-94ff-08681b21229bflow-0582e5a0-0cdd-489e-aad2-7a9bcde929bdflow",
             "targetHandle": "flow",
             "sourceHandle": "flow",
             "animated": false
         },
         {
+            "source": "a3cd74e3-f0f7-45de-8618-e59ddb1acc42",
+            "target": "0582e5a0-0cdd-489e-aad2-7a9bcde929bd",
             "type": "smoothstep",
             "animated": false,
-            "source": "8a0dd721-4139-4ca4-bcc9-2624aad5b309",
             "sourceHandle": "tool",
-            "target": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
             "targetHandle": "tool",
-            "id": "xy-edge__8a0dd721-4139-4ca4-bcc9-2624aad5b309right-source-e94b755b-fcd8-4a87-9174-d33e44c9db7btools-target"
+            "id": "xy-edge__a3cd74e3-f0f7-45de-8618-e59ddb1acc42tool-0582e5a0-0cdd-489e-aad2-7a9bcde929bdtool"
+        },
+        {
+            "source": "0582e5a0-0cdd-489e-aad2-7a9bcde929bd",
+            "target": "afea6e54-c370-4579-a13d-bc74de1e372a",
+            "type": "smoothstep",
+            "animated": false,
+            "sourceHandle": "flow",
+            "targetHandle": "flow",
+            "id": "xy-edge__0582e5a0-0cdd-489e-aad2-7a9bcde929bdflow-afea6e54-c370-4579-a13d-bc74de1e372aflow"
         },
         {
             "type": "smoothstep",
             "animated": false,
-            "source": "ca0be528-34f5-48e2-8d89-3c50260998c3",
+            "source": "e91a9a75-b71d-4456-84ac-5107419c1bf9",
             "sourceHandle": "tool",
-            "target": "7b0f7a40-769c-4406-a90b-2717db038e78",
+            "target": "0582e5a0-0cdd-489e-aad2-7a9bcde929bd",
             "targetHandle": "tool",
-            "id": "xy-edge__ca0be528-34f5-48e2-8d89-3c50260998c3right-source-7b0f7a40-769c-4406-a90b-2717db038e78tools-target"
-        },
-        {
-            "type": "smoothstep",
-            "animated": false,
-            "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "sourceHandle": "flow",
-            "target": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
-            "targetHandle": "flow",
-            "id": "xy-edge__7b0f7a40-769c-4406-a90b-2717db038e78right-source-e94b755b-fcd8-4a87-9174-d33e44c9db7bleft-target"
-        },
-        {
-            "type": "smoothstep",
-            "animated": false,
-            "source": "e94b755b-fcd8-4a87-9174-d33e44c9db7b",
-            "sourceHandle": "flow",
-            "target": "3211e250-9339-4d0f-afaf-9fa3f8ce1ddc",
-            "targetHandle": "flow",
-            "id": "xy-edge__e94b755b-fcd8-4a87-9174-d33e44c9db7bright-source-3211e250-9339-4d0f-afaf-9fa3f8ce1ddc1left-target"
-        },
-        {
-            "type": "smoothstep",
-            "animated": false,
-            "source": "7b0f7a40-769c-4406-a90b-2717db038e78",
-            "sourceHandle": "flow",
-            "target": "bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1",
-            "targetHandle": "flow",
-            "id": "xy-edge__7b0f7a40-769c-4406-a90b-2717db038e78right-source-bf2f5b07-0afd-46c6-ba4f-6b0f37665dd1left-target"
+            "id": "xy-edge__e91a9a75-b71d-4456-84ac-5107419c1bf9tool-0582e5a0-0cdd-489e-aad2-7a9bcde929bdtool"
         }
     ]
 }

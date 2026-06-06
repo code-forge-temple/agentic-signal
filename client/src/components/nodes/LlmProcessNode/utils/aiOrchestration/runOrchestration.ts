@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {Message, MessageRole} from "../../../../../types/ollama.types";
-import {getExpectedOutputType, parseFormat} from "../formatUtils";
+import {getExpectedOutputType, llmResponseJsonParse, parseFormat} from "../formatUtils";
 import {AgentTaskResult, OrchestrationParams, OrchestrationResult, OrchestratorPlan} from "./types";
 import {buildAggregationMessage, buildDependencyContext} from "./messageBuilders";
 import {runSingleCall} from "./runSingleCall";
@@ -40,6 +40,8 @@ const ORCHESTRATOR_PLAN_SCHEMA = {
     required: ["tasks"]
 };
 
+export const JSON_SCHEMA_PROMPT_PREFIX = 'Your response must be valid JSON matching the following schema exactly:';
+
 /**
  * When the input is an array:
  *  1. Planning call  — orchestrator (using the node's system prompt) decomposes
@@ -57,12 +59,16 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
     // ------------------------------------------------------------------
     // 1. Planning call
     // ------------------------------------------------------------------
+    const planningSystemPrompt = prompt
+        ? `${prompt}\n\n${JSON_SCHEMA_PROMPT_PREFIX}\n${JSON.stringify(ORCHESTRATOR_PLAN_SCHEMA, null, 4)}`
+        : `${JSON_SCHEMA_PROMPT_PREFIX}\n${JSON.stringify(ORCHESTRATOR_PLAN_SCHEMA, null, 4)}`;
+
     const planningMessages: Message[] = [
-        ...(prompt ? [{role: MessageRole.SYSTEM, content: prompt}] : []),
+        {role: MessageRole.SYSTEM, content: planningSystemPrompt},
         {
             role: MessageRole.USER,
             // eslint-disable-next-line max-len
-            content: `Analyze the following input and decompose it into a list of individual tasks to be processed by separate agents. For each task provide: the content to process, an optional custom systemPrompt if the task requires specialized instructions, a tools array with the exact names of any tools that task needs (leave empty if none), and a dependsOn array with the zero-based indices of any earlier tasks whose output this task requires as input (only backward references allowed — a task can only reference tasks that appear before it in the list; omit if independent).${buildToolsDescription(tools)}\n\nInput:\n${JSON.stringify(input, null, 2)}`
+            content: `Analyze the following input and decompose it into a list of individual tasks to be processed by separate agents. For each task provide: the content to process, an optional custom systemPrompt if the task requires specialized instructions, a tools array with the exact names of any tools that task needs (leave empty if none), and a dependsOn array with the zero-based indices of any earlier tasks whose output this task requires as input (only backward references allowed — a task can only reference tasks that appear before it in the list; omit if independent).${buildToolsDescription(tools)}\n\nInput:\n${JSON.stringify(input, null, 4)}`
         }
     ];
 
@@ -92,7 +98,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
     let plan: OrchestratorPlan;
 
     try {
-        plan = JSON.parse(planningResponse.reply) as OrchestratorPlan;
+        plan = llmResponseJsonParse(planningResponse.reply) as OrchestratorPlan;
 
         const totalTasks = plan.tasks.length;
 
@@ -208,11 +214,6 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
     console.log("Aggregating", taskResults.length, "result(s):", taskResults.map(r => ({task: r.task.content, response: r.response})));
     /* #endif */
 
-    const aggregationMessages: Message[] = [
-        ...(prompt ? [{role: MessageRole.SYSTEM, content: prompt}] : []),
-        {role: MessageRole.USER, content: buildAggregationMessage(taskResults)}
-    ];
-
     let parsedFormat: object | undefined;
     let onErrorValidator: ((data: any) => boolean) | undefined;
 
@@ -227,6 +228,18 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
             error: `Invalid aggregation format schema: ${e instanceof Error ? e.message : String(e)}`
         };
     }
+
+    const aggregationSystemPrompt = parsedFormat
+        ? `${ prompt
+            ? `${prompt}\n\n`
+            : "" }${JSON_SCHEMA_PROMPT_PREFIX}\n${JSON.stringify(parsedFormat, null, 4)}`
+        : prompt;
+
+
+    const aggregationMessages: Message[] = [
+        ...(aggregationSystemPrompt ? [{role: MessageRole.SYSTEM, content: aggregationSystemPrompt}] : []),
+        {role: MessageRole.USER, content: buildAggregationMessage(taskResults)}
+    ];
 
     // Aggregation has all task results in-context — no tools needed.
     const aggregationResponse = await runSingleCall({
@@ -251,7 +264,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
         const expectedOutputType = getExpectedOutputType(parsedFormat);
 
         if (expectedOutputType === "object" || expectedOutputType === "array") {
-            result = JSON.parse(result);
+            result = llmResponseJsonParse(result);
 
             if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
                 return {

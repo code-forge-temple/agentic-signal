@@ -9,8 +9,9 @@ import {GenericNodeData} from '../../../../types/workflow';
 import {Message, MessageRole, SystemUserConfigValues, ToolSchema} from '../../../../types/ollama.types';
 import {LlmProcessNodeData} from '../types/workflow';
 import {useFetchModels} from '../../../../hooks/useFetchModels';
-import {runOrchestration, runSingleCall} from '../utils/aiOrchestration';
-import {assertIsSerializedInput, getExpectedOutputType, parseFormat, serializeInput} from '../utils/formatUtils';
+import Ajv from 'ajv';
+import {runOrchestration, runSingleCall, JSON_SCHEMA_PROMPT_PREFIX} from '../utils/aiOrchestration';
+import {assertIsSerializedInput, getExpectedOutputType, llmResponseJsonParse, parseFormat, serializeInput} from '../utils/formatUtils';
 
 
 export interface UseAIProcessorOptions {
@@ -108,13 +109,37 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
 
         try {
             let messages: Message[] = [];
+            let parsedFormat: object | undefined;
+            let onErrorValidator: ((data: any) => boolean) | undefined;
+
+            try {
+                ({parsedFormat, onErrorValidator} = parseFormat(format));
+            } catch (parseError) {
+                const errorMsg = `Invalid format JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+
+                setError(prev => [...prev, errorMsg]);
+                onError?.(errorMsg);
+
+                return null;
+            }
+
+            const enhancedSystemPrompt = parsedFormat
+                ? `${prompt ? `${prompt}\n\n` : ""}${JSON_SCHEMA_PROMPT_PREFIX}\n${JSON.stringify(parsedFormat, null, 4)}`
+                : prompt;
+
+            // Two-phase mode: when tools AND structured output are both present some LLMs
+            // fail to call tools if a structured output format is also requested.
+            // Phase 1 runs the tool-calling pass with only the plain prompt;
+            // Phase 2 reformats the raw reply into the required JSON schema without tools.
+            const needsTwoPhase = !!(parsedFormat && tools?.length);
+            const phase1SystemPrompt = needsTwoPhase ? prompt : enhancedSystemPrompt;
 
             if (conversationHistory.value.length === 0) {
                 // First run - initialize conversation
-                if (prompt) {
+                if (phase1SystemPrompt) {
                     messages.push({
                         role: MessageRole.SYSTEM,
-                        content: prompt
+                        content: phase1SystemPrompt
                     });
                 }
 
@@ -187,52 +212,120 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 }
             }
 
-            let parsedFormat: object | undefined;
-            let onErrorValidator: ((data: any) => boolean) | undefined;
+            let result: any;
 
-            try {
-                ({parsedFormat, onErrorValidator} = parseFormat(format));
-            } catch (parseError) {
-                const errorMsg = `Invalid format JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+            if (needsTwoPhase) {
+                // Phase 1: tool-calling pass — no structured output format so tools fire correctly
+                const phase1Response = await runSingleCall({
+                    messages,
+                    model,
+                    tools,
+                    maxToolRetries,
+                    think,
+                    temperature
+                });
 
-                setError(prev => [...prev, errorMsg]);
-                onError?.(errorMsg);
+                if (!phase1Response.success) {
+                    const errorMsg = `Failed to fetch AI response (phase 1): ${phase1Response.error}`;
 
-                return null;
+                    setError(prev => [...prev, errorMsg]);
+                    onError?.(errorMsg);
+
+                    return null;
+                }
+
+                const phase1Reply = phase1Response.reply;
+
+                // Short-circuit: if Phase 1 already produced valid structured output, skip Phase 2
+                let phase2Reply: string | undefined;
+
+                try {
+                    const ajv = new Ajv();
+                    const validate = ajv.compile(parsedFormat!);
+                    const phase1Parsed = llmResponseJsonParse(phase1Reply);
+
+                    if (validate(phase1Parsed)) {
+                        phase2Reply = phase1Reply;
+                    }
+                } catch {
+                    // Not valid JSON or schema mismatch — proceed to Phase 2
+                }
+
+                if (phase2Reply === undefined) {
+                    // Phase 2: reformat pass — structured output, no tools
+                    const phase2Messages: Message[] = [
+                        {
+                            role: MessageRole.SYSTEM,
+                            content: enhancedSystemPrompt ?? `${JSON_SCHEMA_PROMPT_PREFIX}\n${JSON.stringify(parsedFormat, null, 4)}`
+                        },
+                        {
+                            role: MessageRole.USER,
+                            content: `Here is the response to reformat:\n\n${phase1Reply}\n\nPlease reformat it to strictly match the required JSON schema.`
+                        }
+                    ];
+
+                    const phase2Response = await runSingleCall({
+                        messages: phase2Messages,
+                        model,
+                        format: parsedFormat,
+                        maxToolRetries,
+                        think,
+                        temperature
+                    });
+
+                    if (!phase2Response.success) {
+                        const errorMsg = `Failed to fetch AI response (phase 2): ${phase2Response.error}`;
+
+                        setError(prev => [...prev, errorMsg]);
+                        onError?.(errorMsg);
+
+                        return null;
+                    }
+
+                    phase2Reply = phase2Response.reply;
+                }
+
+                result = phase2Reply;
+
+                // Store Phase 1 messages + final structured reply in history
+                conversationHistory.onChange([...messages, {
+                    role: MessageRole.ASSISTANT,
+                    content: result
+                }]);
+            } else {
+                // Single-call path: no tools, or no structured output — no conflict
+                const response = await runSingleCall({
+                    messages,
+                    model,
+                    ...(parsedFormat ? {format: parsedFormat} : {}),
+                    tools,
+                    maxToolRetries,
+                    think,
+                    temperature
+                });
+
+                if (!response.success) {
+                    const errorMsg = `Failed to fetch AI response: ${response.error}`;
+
+                    setError(prev => [...prev, errorMsg]);
+                    onError?.(errorMsg);
+
+                    return null;
+                }
+
+                result = response.reply;
+
+                conversationHistory.onChange([...messages, {
+                    role: MessageRole.ASSISTANT,
+                    content: result
+                }]);
             }
-
-            const response = await runSingleCall({
-                messages,
-                model,
-                ...(parsedFormat ? {format: parsedFormat} : {}),
-                tools,
-                maxToolRetries,
-                think,
-                temperature
-            });
-
-            if (!response.success) {
-                const errorMsg = `Failed to fetch AI response: ${response.error}`;
-
-                setError(prev => [...prev, errorMsg]);
-                onError?.(errorMsg);
-
-                return null;
-            }
-
-            let result = response.reply;
-            const updatedHistory = [...messages, {
-                role: MessageRole.ASSISTANT,
-                content: result
-            }];
-
-            conversationHistory.onChange(updatedHistory);
 
             try {
                 const expectedOutputType = getExpectedOutputType(parsedFormat);
 
                 if (expectedOutputType === "object" || expectedOutputType === "array") {
-                    result = JSON.parse(result);
+                    result = llmResponseJsonParse(result);
 
                     if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
                         const errorMsg = `LLM returned an error response matching onError schema:\n${JSON.stringify(result, null, 4)}`;
@@ -251,7 +344,6 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
 
                 return null;
             }
-
 
             onSuccess?.(result);
 

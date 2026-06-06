@@ -11,7 +11,7 @@ import {OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler} from "./constants";
 import {CloudStorageFileResult} from "@shared/types.gen";
 import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
-import {sanitizeStringInput, sanitizeJsonInput} from "../utils/sanitize";
+import {sanitizeStringInput} from "../utils/sanitize";
 import {GoogleToolOauthConfigFields} from "../utils/GoogleToolOauthConfigFields";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
@@ -90,20 +90,8 @@ export const GdriveFetchFilesToolDescriptor:ToolDefinition = {
                 return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
             }
 
-            if(!query || String(query).trim() === ""){
-                return {error: "`query` tool parameter must be specified"};
-            }
-
-            const jsonQueryError = "`query` tool parameter must be a string, not a JSON object";
-
-            try {
-                sanitizeJsonInput(query);
-
-                throw new Error(jsonQueryError);
-            } catch (err) {
-                if (err instanceof Error && err.message === jsonQueryError) {
-                    throw err;
-                }
+            if (typeof query !== "string" || query.trim() === "") {
+                return {error: "`query` tool parameter must be a non-empty string"};
             }
 
             // data received from the LLM needs to be sanitized to avoid issues:

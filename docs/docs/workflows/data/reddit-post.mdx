@@ -19,7 +19,7 @@ This workflow uses AI to gather the latest news, formats it into a Reddit post, 
 
 <Tabs>
     <TabItem value="preview" label="Preview" default>
-        This workflow chains a DuckDuckGo-powered AI node to research and draft a Reddit post, a second AI node to reformat the output, a Data Validation node to enforce the correct schema, and finally the Reddit Post node to submit the post.
+        This workflow uses a single DuckDuckGo-powered AI node to research and draft a Reddit post, a Data Validation node to enforce the correct schema, and finally the Reddit Post node to submit the post.
         ![Reddit Post Workflow](/img/workflows/reddit-post-preview.webp)
 
     </TabItem>
@@ -33,19 +33,13 @@ This workflow uses AI to gather the latest news, formats it into a Reddit post, 
     <TabItem value="config" label="Node Configuration">
         - [**AI Data Processing**](/docs/nodes/ai/llm-process) *(Writer)*
             - Model: `gemma4:e2b`
-            - Prompt: Instructs the AI to search for the latest AI technology news using DuckDuckGo and output a single JSON object with the Reddit post fields.
+            - Prompt: Uses DuckDuckGo Search tool to gather the latest AI technology news and output a single valid JSON object with the Reddit post fields.
+            - Format on Success: JSON schema enforcing the Reddit post object shape.
             - Max Feedback Loops: `1`
             - Max Tool Retries: `3`
         - [**DuckDuckGo Search Tool**](/docs/nodes/ai/tools/duckduckgo-search)
             - Max Results: `5`
             - Require Tool Use: `true`
-        - [**AI Data Processing**](/docs/nodes/ai/llm-process) *(Formatter)*
-            - Model: `llama3.2:3b`
-            - Prompt: Reformats and validates the JSON structure from the writer node.
-            - Format on Success: JSON schema enforcing the Reddit post object shape.
-            - Format on Error: JSON schema returning an `error` field.
-            - Max Feedback Loops: `0`
-            - Max Tool Retries: `3`
         - [**Data Validation**](/docs/nodes/data/data-validation)
             - Schema: Enforces `subreddit`, `postType`, `postTitle`, `postBody`, `postFlair`, `nsfw`, and `spoiler` fields.
         - [**Reddit Post**](/docs/nodes/output/reddit-post)
@@ -62,14 +56,12 @@ This workflow uses AI to gather the latest news, formats it into a Reddit post, 
 ## Steps
 
 1. **Search and draft the post**
-   - The first AI Data Processing node uses the DuckDuckGo Search tool to gather the latest AI technology news, then drafts a Reddit post as a JSON object.
-2. **Reformat the output**
-   - A second AI Data Processing node (llama3.2:3b) receives the draft and ensures the JSON strictly conforms to the expected shape, returning an error object if it does not.
-3. **Validate the structure**
+   - The AI Data Processing node uses the DuckDuckGo Search tool to gather the latest AI technology news, then drafts and validates the Reddit post as a single JSON object.
+2. **Validate the structure**
    - The Data Validation node applies a JSON schema to guarantee all required fields are present and correctly typed before the post is submitted.
-4. **Submit to Reddit**
+3. **Submit to Reddit**
    - The Reddit Post node reads the upstream JSON and submits the post using the configured OAuth credentials.
-5. **Inspect the result**
+4. **Inspect the result**
    - The Data Flow Spy node captures the Reddit Post node output for debugging and verification.
 
 ---

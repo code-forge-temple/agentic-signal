@@ -8,4 +8,4 @@ export * from "./types";
 
 export {runSingleCall} from "./runSingleCall";
 
-export {runOrchestration} from "./runOrchestration";
+export {runOrchestration, JSON_SCHEMA_PROMPT_PREFIX} from "./runOrchestration";

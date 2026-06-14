@@ -1,0 +1,119 @@
+{
+    "nodes": [
+        {
+            "id": "f06a84b1-fa7c-4e8a-b10d-b1ae9fada698",
+            "type": "data-source",
+            "position": {
+                "x": 242,
+                "y": 234
+            },
+            "data": {
+                "title": "Data Source",
+                "dataSource": {
+                    "value": {
+                        "text": "What does https://theconversation.com/aliens-might-exist-but-there-are-three-reasons-why-theyre-not-visiting-us-283984 say?",
+                        "files": []
+                    },
+                    "type": "markdown"
+                }
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "a7e502e1-feea-4137-a5c6-b052ab5d0b3b",
+            "type": "data-flow-spy",
+            "position": {
+                "x": 741,
+                "y": 224.5
+            },
+            "data": {
+                "title": "Data Flow Spy"
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "e23e0468-44f8-4739-a856-775c13344296",
+            "type": "ai-tool",
+            "position": {
+                "x": 470,
+                "y": 299.5
+            },
+            "data": {
+                "title": "Web Page to Markdown Tool",
+                "toolSubtype": "web-page-to-markdown",
+                "userConfig": {
+                    "requireToolUse": true
+                }
+            },
+            "measured": {
+                "width": 120,
+                "height": 40
+            },
+            "selected": false
+        },
+        {
+            "id": "f5322748-a894-4f0f-b7f8-c9f01d689f82",
+            "type": "llm-process",
+            "position": {
+                "x": 474.5,
+                "y": 177.5
+            },
+            "data": {
+                "title": "AI Data Processing",
+                "model": "gemma4:31b-cloud",
+                "prompt": "",
+                "format": {},
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "think": false,
+                "temperatureEnabled": false,
+                "temperature": 0.8,
+                "orchestrationMode": false
+            },
+            "measured": {
+                "width": 160,
+                "height": 40
+            },
+            "selected": false
+        }
+    ],
+    "edges": [
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "f06a84b1-fa7c-4e8a-b10d-b1ae9fada698",
+            "sourceHandle": "flow",
+            "target": "f5322748-a894-4f0f-b7f8-c9f01d689f82",
+            "targetHandle": "flow",
+            "id": "xy-edge__f06a84b1-fa7c-4e8a-b10d-b1ae9fada698flow-f5322748-a894-4f0f-b7f8-c9f01d689f82flow"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "f5322748-a894-4f0f-b7f8-c9f01d689f82",
+            "sourceHandle": "flow",
+            "target": "a7e502e1-feea-4137-a5c6-b052ab5d0b3b",
+            "targetHandle": "flow",
+            "id": "xy-edge__f5322748-a894-4f0f-b7f8-c9f01d689f82flow-a7e502e1-feea-4137-a5c6-b052ab5d0b3bflow"
+        },
+        {
+            "type": "smoothstep",
+            "animated": false,
+            "source": "e23e0468-44f8-4739-a856-775c13344296",
+            "sourceHandle": "tool",
+            "target": "f5322748-a894-4f0f-b7f8-c9f01d689f82",
+            "targetHandle": "tool",
+            "id": "xy-edge__e23e0468-44f8-4739-a856-775c13344296tool-f5322748-a894-4f0f-b7f8-c9f01d689f82tool"
+        }
+    ]
+}

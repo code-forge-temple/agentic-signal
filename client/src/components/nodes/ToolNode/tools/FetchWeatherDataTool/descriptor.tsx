@@ -8,6 +8,7 @@ import {Thunderstorm} from "iconoir-react";
 import {ToolDefinition} from "../types";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
+import {FetchWeatherDataToolConfigFields} from "./components/FetchWeatherDataToolConfigFields";
 
 
 export const FetchWeatherDataToolDescriptor:ToolDefinition = {
@@ -37,6 +38,14 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
         apiKey: {type: "string", description: "WeatherAPI.com API Key", required: true}
     }),
     toSanitize: ["userConfig.apiKey"],
+    renderConfig: function ({userConfig, onConfigChange}) {
+        return (
+            <FetchWeatherDataToolConfigFields
+                userConfig={userConfig}
+                onConfigChange={onConfigChange}
+            />
+        );
+    },
     handlerFactory: (userConfig: { apiKey?: string }) => async ({city, date}: { city: string, date?: string }) => {
         if (!userConfig.apiKey) {
             return {error: "API key must be specified. Please set apiKey in the configuration."};

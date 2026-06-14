@@ -59,6 +59,7 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
     } = useWeaviateCollections({
         id,
         weaviateUrl,
+        weaviateApiKey,
         onConfigChange,
         onError: (msg) => setError(prev => [...prev, msg]),
     });

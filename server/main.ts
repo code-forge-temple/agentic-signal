@@ -11,7 +11,22 @@ import {webSocketManager} from "./ws/webSocketManager.ts";
 
 // Prevent uncaught promise rejections from bringing down the entire Deno backend.
 globalThis.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-    console.error("Unhandled promise rejection:", event.reason);
+    const reason = event.reason;
+
+    // Playwright internally spawns Chromium as a child process and monitors it with
+    // background async tasks. On Windows, when Deno itself is spawned as a child process
+    // (e.g. by `bun run dev`), the inherited stdio handles are pipes and are considered
+    // invalid by the OS (EBADF / error 6). Playwright throws this from a background task
+    // that is not connected to any user-visible promise chain, so it surfaces here.
+    // Suppress it — the browser launch try/catch in browserUtils.ts handles real errors.
+    const isPlaywrightSpawnNoise =
+        reason instanceof Error &&
+        (reason as { code?: string }).code === "EBADF" &&
+        reason.stack?.includes("playwright");
+
+    if (!isPlaywrightSpawnNoise) {
+        console.error("Unhandled promise rejection:", reason);
+    }
 
     event.preventDefault();
 });

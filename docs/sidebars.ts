@@ -61,6 +61,7 @@ const sidebars: SidebarsConfig = {
                                 'nodes/ai/tools/fetch-weather-data',
                                 'nodes/ai/tools/duckduckgo-search',
                                 'nodes/ai/tools/brave-search',
+                                'nodes/ai/tools/web-page-to-markdown',
                                 'nodes/ai/tools/csv-to-array',
                                 'nodes/ai/tools/max',
                                 'nodes/ai/tools/min',
@@ -121,6 +122,7 @@ const sidebars: SidebarsConfig = {
                         'workflows/data/ai-data-processing-overseer',
                         'workflows/data/customer-total-spend-analysis',
                         'workflows/data/stock-analysis-ai-prediction',
+                        'workflows/data/extract-web-page-data',
                     ],
                 },
                 {

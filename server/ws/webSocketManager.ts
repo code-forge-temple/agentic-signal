@@ -17,6 +17,8 @@ export class WebSocketManager {
 
     private subscriptionFactories = new Map<string, SubscriptionFactory>();
 
+    private pingIntervals = new Map<WebSocket, ReturnType<typeof setInterval>>();
+
     private yogaHandler: ((request: Request) => Promise<Response>) | null = null;
 
     private socketSubscriptions = new Map<WebSocket, Map<string, string>>();
@@ -83,6 +85,17 @@ export class WebSocketManager {
     private setupSocketHandlers (socket: WebSocket): void {
         this.socketSubscriptions.set(socket, new Map());
 
+        const pingInterval = setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({type: 'ping'}));
+            } else {
+                clearInterval(pingInterval);
+                this.pingIntervals.delete(socket);
+            }
+        }, 30_000);
+
+        this.pingIntervals.set(socket, pingInterval);
+
         socket.onopen = () => { };
 
         socket.onmessage = async (event) => {
@@ -126,6 +139,7 @@ export class WebSocketManager {
 
         socket.onerror = (error) => {
             console.error('[WebSocketManager] ❌ Socket error:', error);
+            this.clearPingInterval(socket);
         };
     }
 
@@ -212,7 +226,18 @@ export class WebSocketManager {
         socket.addEventListener('close', closeHandler, {once: true});
     }
 
+    private clearPingInterval (socket: WebSocket): void {
+        const interval = this.pingIntervals.get(socket);
+
+        if (interval !== undefined) {
+            clearInterval(interval);
+            this.pingIntervals.delete(socket);
+        }
+    }
+
     private cleanupSocket (socket: WebSocket): void {
+        this.clearPingInterval(socket);
+
         for (const [key, sockets] of this.activeSubscriptions.entries()) {
             sockets.delete(socket);
 

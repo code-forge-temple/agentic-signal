@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useMemo, useRef, useState} from "react";
 import {DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {defaultRagNodeData} from "../types/workflow";
 
@@ -14,11 +14,12 @@ export const FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX = "Failed to fetch collect
 interface UseWeaviateCollectionsOptions {
     id: string;
     weaviateUrl: string | undefined;
+    weaviateApiKey: string | undefined;
     onConfigChange: (id: string, patch: Record<string, unknown>) => void;
     onError: (msg: string) => void;
 }
 
-export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onError}: UseWeaviateCollectionsOptions) {
+export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConfigChange, onError}: UseWeaviateCollectionsOptions) {
     const [availableCollections, setAvailableCollections] = useState<DropdownMenuItem[]>([]);
     const [loadingCollections, setLoadingCollections] = useState(false);
     const [isEmbeddingModelLocked, setIsEmbeddingModelLocked] = useState(false);
@@ -26,11 +27,16 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
 
     isEmbeddingModelLockedRef.current = isEmbeddingModelLocked;
 
+    const headers = useMemo(
+        () => weaviateApiKey ? {"X-Weaviate-Api-Key": weaviateApiKey} : undefined,
+        [weaviateApiKey]
+    );
+
     const checkAndApplyCollectionLock = useCallback(async (weaviateClass: string) => {
         const url = (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, "");
 
         try {
-            const res = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`);
+            const res = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
             if (res.ok) {
                 const result = await res.json();
@@ -46,7 +52,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
         } catch { /* ignore — not critical */ }
 
         setIsEmbeddingModelLocked(false);
-    }, [id, onConfigChange, weaviateUrl]);
+    }, [id, headers, onConfigChange, weaviateUrl]);
 
     const checkCollectionLockByName = useCallback(async (name: string) => {
         if (!name) {
@@ -58,7 +64,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
         const url = (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, "");
 
         try {
-            const res = await fetch(`${url}/v1/schema`);
+            const res = await fetch(`${url}/v1/schema`, {headers});
 
             if (!res.ok) return;
 
@@ -69,7 +75,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
 
             for (const weaviateClass of weaviateClasses) {
                 try {
-                    const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`);
+                    const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
                     if (metaRes.ok) {
                         const meta = await metaRes.json();
@@ -86,7 +92,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
         } catch { /* ignore */ }
 
         setIsEmbeddingModelLocked(false);
-    }, [checkAndApplyCollectionLock, weaviateUrl]);
+    }, [checkAndApplyCollectionLock, headers, weaviateUrl]);
 
     // item.id = Weaviate class name (e.g. "Ragcollection"), item.value = original name (e.g. "rag_collection")
     const selectCollection = useCallback(async (item: DropdownMenuItem) => {
@@ -101,7 +107,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
         setLoadingCollections(true);
 
         try {
-            const res = await fetch(`${url}/v1/schema`);
+            const res = await fetch(`${url}/v1/schema`, {headers});
 
             if (!res.ok) throw new Error(`Weaviate returned ${res.status}`);
 
@@ -113,7 +119,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
             // Fetch original names from each meta class in parallel
             const items = await Promise.all(weaviateClasses.map(async (weaviateClass) => {
                 try {
-                    const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`);
+                    const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
                     if (metaRes.ok) {
                         const meta = await metaRes.json();
@@ -134,7 +140,7 @@ export function useWeaviateCollections ({id, weaviateUrl, onConfigChange, onErro
         } finally {
             setLoadingCollections(false);
         }
-    }, [weaviateUrl, onError]);
+    }, [headers, weaviateUrl, onError]);
 
     return {
         availableCollections,

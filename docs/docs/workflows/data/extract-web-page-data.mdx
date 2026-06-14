@@ -1,0 +1,62 @@
+---
+sidebar_position: 13
+title: Extract Web Page Data Workflow
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import extractWebPageDataJson from '@site/static/workflows/extract-web-page-data.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Extract Web Page Data Workflow
+
+This workflow asks an AI node to read a URL, use the Web Page to Markdown Tool, and return the main points of the page content.
+
+<Tabs>
+
+    <TabItem value="preview" label="Preview" default>
+        ![Extract Web Page Data Workflow](/img/workflows/extract-web-page-data-preview.webp)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl('/workflows/extract-web-page-data.json')}>
+        {JSON.stringify(extractWebPageDataJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)
+            - Input: `"What does https://theconversation.com/aliens-might-exist-but-there-are-three-reasons-why-theyre-not-visiting-us-283984 say?"`
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)
+            - Model: `gemma4:31b-cloud`
+            - Max Tool Retries: `3`
+            - Purpose: Interprets the request, calls the page-reading tool, and summarizes the result.
+        - [**Web Page to Markdown Tool**](/docs/nodes/ai/tools/web-page-to-markdown)
+            - Reads the target URL in a real browser, follows redirects, dismisses common consent screens, and returns cleaned Markdown.
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)
+            - Output: Displays the AI-generated summary of the fetched page content.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide the URL request**: The workflow begins with a Data Source node containing a natural-language request about a specific web page.
+2. **Call the page-reading tool**: The AI Data Processing node decides that it needs the Web Page to Markdown Tool and passes the URL to it.
+3. **Fetch and normalize the article**: The tool opens the page in Chromium, follows redirects, handles common consent walls, extracts the main content, and converts it to Markdown.
+4. **Summarize the result**: The AI node reads the returned Markdown and produces a concise answer describing what the page says.
+5. **Inspect the output**: The Data Flow Spy node shows the final response for debugging or reuse.
+
+## Common Use Cases
+
+1. Summarizing a single article found through a search workflow.
+2. Reading redirect-heavy links such as Google News `read/` URLs.
+3. Turning long-form web content into structured text before feeding it into later workflow steps.
+
+## Best Practices
+
+- Prefer direct article URLs when available, even though the tool can handle many redirects.
+- Keep `maxToolRetries` enabled so the AI has room to retry when a page initially fails to load.
+- Use Data Flow Spy while tuning prompts so you can inspect whether the AI is summarizing the page content or merely restating the input.

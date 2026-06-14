@@ -16,7 +16,8 @@ export async function fetchRenderedHtml (url: string, browserPath?: string): Pro
             async (page) => {
                 await page.goto(url, {waitUntil: "load"});
                 content = await page.content();
-            }
+            },
+            30_000
         );
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

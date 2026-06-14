@@ -146,7 +146,7 @@ export class OllamaService {
                 : maxToolRetries;
 
             /* #if LOGS */
-            console.group("[OllamaService] fetchAIResponse");
+            console.groupCollapsed("[OllamaService] fetchAIResponse");
             console.log("Model:", model);
             console.log("Format:", format ?? "(none)");
             console.log("Tools:", tools?.map(t => t.schema.name) ?? "(none)");
@@ -238,7 +238,7 @@ export class OllamaService {
 
             if (tools && tools.length > 0) {
                 /* #if LOGS */
-                console.group("[OllamaService] Final summary call (no tools)");
+                console.groupCollapsed("[OllamaService] Final summary call (no tools)");
                 console.log("Format:", format ?? "(none)");
                 console.log("Messages:", conversationMessages);
                 /* #endif */

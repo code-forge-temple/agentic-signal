@@ -9,7 +9,7 @@ import {GraphQLService} from "./services/graphqlService";
 import {ToolDefinition} from "../types";
 import Brave from "./assets/brave.svg";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
-
+import {BraveSearchToolConfigFields} from "./components/BraveSearchToolConfigFields";
 
 export const BraveSearchToolDescriptor:ToolDefinition = {
     toolSubtype: "brave-search",
@@ -37,6 +37,14 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
         }
     }),
     toSanitize: ["userConfig.apiKey"],
+    renderConfig: function ({userConfig, onConfigChange}) {
+        return (
+            <BraveSearchToolConfigFields
+                userConfig={userConfig}
+                onConfigChange={onConfigChange}
+            />
+        );
+    },
     handlerFactory: (userConfig: { apiKey?: string, maxResults?: number }) => async ({query}: { query: string }) => {
         if (!userConfig.apiKey) {
             return {error: "API key must be specified. Please set apiKey in the configuration."};

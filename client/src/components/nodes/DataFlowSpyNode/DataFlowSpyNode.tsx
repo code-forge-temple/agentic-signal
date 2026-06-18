@@ -96,7 +96,9 @@ export function DataFlowSpyNode ({id, data}: NodeProps<AppNode>) {
                         <IconButton
                             size="small"
                             onClick={() => {
-                                navigator.clipboard.writeText(JSON.stringify(input, null, 4));
+                                const textToCopy = typeof input === 'string' ? input : JSON.stringify(input, null, 4);
+
+                                navigator.clipboard.writeText(textToCopy);
 
                                 setCopied(true);
 

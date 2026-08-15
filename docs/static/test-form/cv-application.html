@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Application — Agentic Signal Test Form</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 15px;
+            background: #f4f6f9;
+            color: #1a1a2e;
+            padding: 32px 16px;
+        }
+
+        .card {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, .10);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #2563eb;
+            color: #fff;
+            padding: 28px 36px;
+        }
+
+        .card-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .card-header p {
+            font-size: 13px;
+            opacity: .85;
+            margin-top: 4px;
+        }
+
+        form {
+            padding: 32px 36px;
+        }
+
+        fieldset {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        legend {
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: #2563eb;
+            padding: 0 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 200px;
+            margin-top: 14px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="url"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1a1a2e;
+            transition: border-color .15s;
+            background: #fff;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #9ca3af;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 110px;
+        }
+
+        input[type="file"] {
+            padding: 8px 10px;
+            border: 1px dashed #93c5fd;
+            border-radius: 6px;
+            background: #eff6ff;
+            cursor: pointer;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #2563eb;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .15s;
+        }
+
+        .radio-option:has(input:checked) {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
+            font-weight: 500;
+        }
+
+        .radio-option input {
+            accent-color: #2563eb;
+        }
+
+        .helper {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .submit-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        button[type="submit"] {
+            padding: 11px 32px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        button[type="submit"]:hover {
+            background: #1d4ed8;
+        }
+
+        #successBanner {
+            display: none;
+            margin-top: 24px;
+            padding: 16px 20px;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            color: #166534;
+            font-weight: 500;
+        }
+
+        .rich-text-editor {
+            min-height: 110px;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1a1a2e;
+            outline: none;
+            line-height: 1.6;
+            cursor: text;
+        }
+
+        .rich-text-editor:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+
+        .rich-text-editor:empty::before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+            display: block;
+        }
+
+        .rich-text-editor {
+            min-height: 110px;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1a1a2e;
+            outline: none;
+            line-height: 1.6;
+            cursor: text;
+        }
+
+        .rich-text-editor:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+
+        .rich-text-editor:empty::before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="card-header">
+            <h1>Job Application</h1>
+            <p>Agentic Signal · Test Form · All fields are for testing purposes only</p>
+        </div>
+
+        <form id="applicationForm">
+
+            <!-- ── Personal Information ─────────────────────────── -->
+            <fieldset>
+                <legend>Personal Information</legend>
+                <div class="row">
+                    <div class="field">
+                        <label for="firstName">First Name <span class="req">*</span></label>
+                        <input type="text" id="firstName" name="firstName" placeholder="Jane" required />
+                    </div>
+                    <div class="field">
+                        <label for="lastName">Last Name <span class="req">*</span></label>
+                        <input type="text" id="lastName" name="lastName" placeholder="Smith" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="email">Email Address <span class="req">*</span></label>
+                        <input type="email" id="email" name="email" placeholder="jane.smith@example.com" required />
+                    </div>
+                    <div class="field">
+                        <label for="phone">Phone Number <span class="req">*</span></label>
+                        <input type="tel" id="phone" name="phone" placeholder="+1 555 000 0000" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="dateOfBirth">Date of Birth</label>
+                        <input type="date" id="dateOfBirth" name="dateOfBirth" />
+                    </div>
+                    <div class="field">
+                        <label for="nationality">Nationality</label>
+                        <input type="text" id="nationality" name="nationality" placeholder="e.g. British" />
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- ── Location ────────────────────────────────────── -->
+            <fieldset>
+                <legend>Location</legend>
+                <div class="row">
+                    <div class="field">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" placeholder="London" />
+                    </div>
+                    <div class="field">
+                        <label for="country">Country</label>
+                        <select id="country" name="country">
+                            <option value="">— Select Country —</option>
+                            <option value="US">United States</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="DE">Germany</option>
+                            <option value="FR">France</option>
+                            <option value="CA">Canada</option>
+                            <option value="AU">Australia</option>
+                            <option value="RO">Romania</option>
+                            <option value="NL">Netherlands</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- ── Professional Details ────────────────────────── -->
+            <fieldset>
+                <legend>Professional Details</legend>
+                <div class="row">
+                    <div class="field">
+                        <label for="position">Position Applied For <span class="req">*</span></label>
+                        <select id="position" name="position" required>
+                            <option value="">— Select Position —</option>
+                            <option value="junior-swe">Junior Software Engineer</option>
+                            <option value="swe">Software Engineer</option>
+                            <option value="senior-swe">Senior Software Engineer</option>
+                            <option value="lead-swe">Lead / Staff Engineer</option>
+                            <option value="pm">Product Manager</option>
+                            <option value="ux">UX / Product Designer</option>
+                            <option value="ds">Data Scientist</option>
+                            <option value="devops">DevOps / Platform Engineer</option>
+                            <option value="qa">QA Engineer</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="experience">Years of Experience</label>
+                        <input type="number" id="experience" name="experience" min="0" max="50" placeholder="e.g. 5" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="education">Highest Education Level</label>
+                        <select id="education" name="education">
+                            <option value="">— Select —</option>
+                            <option value="hs">High School / GED</option>
+                            <option value="associate">Associate's Degree</option>
+                            <option value="bachelor">Bachelor's Degree</option>
+                            <option value="master">Master's Degree</option>
+                            <option value="phd">PhD / Doctorate</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="currentCompany">Current / Most Recent Company</label>
+                        <input type="text" id="currentCompany" name="currentCompany" placeholder="e.g. Acme Corp" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="skills">Key Skills</label>
+                        <input type="text" id="skills" name="skills"
+                            placeholder="e.g. TypeScript, React, Node.js, Python" />
+                        <span class="helper">Comma-separated list of your main technical and soft skills</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="linkedIn">LinkedIn Profile URL</label>
+                        <input type="url" id="linkedIn" name="linkedIn"
+                            placeholder="https://linkedin.com/in/yourprofile" />
+                    </div>
+                    <div class="field">
+                        <label for="portfolio">Portfolio / GitHub URL</label>
+                        <input type="url" id="portfolio" name="portfolio"
+                            placeholder="https://github.com/yourusername" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="salaryExpectation">Expected Annual Salary (USD)</label>
+                        <input type="number" id="salaryExpectation" name="salaryExpectation" min="0"
+                            placeholder="e.g. 90000" />
+                    </div>
+                    <div class="field">
+                        <label for="startDate">Earliest Start Date</label>
+                        <input type="date" id="startDate" name="startDate" />
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- ── Work Preferences ────────────────────────────── -->
+            <fieldset>
+                <legend>Work Preferences</legend>
+                <div class="field" style="margin-top:0">
+                    <label>Work Arrangement</label>
+                    <div class="radio-group" id="workArrangement">
+                        <label class="radio-option">
+                            <input type="radio" name="workArrangement" value="onsite" id="workOnsite" /> On-site
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="workArrangement" value="hybrid" id="workHybrid" /> Hybrid
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="workArrangement" value="remote" id="workRemote" /> Fully Remote
+                        </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="howHeard">How did you hear about this role?</label>
+                        <select id="howHeard" name="howHeard">
+                            <option value="">— Select —</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="indeed">Indeed / Glassdoor</option>
+                            <option value="website">Company Website</option>
+                            <option value="referral">Referral</option>
+                            <option value="social">Social Media</option>
+                            <option value="recruiter">Recruiter / Headhunter</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="checkbox-row" style="margin-top:16px">
+                    <input type="checkbox" id="willingToRelocate" name="willingToRelocate" />
+                    <label for="willingToRelocate">Willing to relocate if required</label>
+                </div>
+            </fieldset>
+
+            <!-- ── Application Questions ──────────────────────── -->
+            <fieldset>
+                <legend>Application Questions</legend>
+                <div class="field" style="margin-top:0">
+                    <label for="whyInterested">What interests you about this role and our company? <span
+                            class="req">*</span></label>
+                    <div id="whyInterested" contenteditable="true" role="textbox" aria-multiline="true"
+                        aria-required="true" class="rich-text-editor"
+                        placeholder="Tell us what excites you about this position and our company..."></div>
+                </div>
+                <div class="field">
+                    <label for="relevantProject">Describe a relevant project that demonstrates your experience (max 200
+                        words) <span class="req">*</span></label>
+                    <div id="relevantProject" contenteditable="true" role="textbox" aria-multiline="true"
+                        aria-required="true" class="rich-text-editor"
+                        placeholder="Describe a project, your role, the challenges, and the measurable impact..."></div>
+                </div>
+            </fieldset>
+
+            <!-- ── Cover Letter & Documents ───────────────────── -->
+            <fieldset>
+                <legend>Cover Letter &amp; Documents</legend>
+                <div class="field" style="margin-top:0">
+                    <label for="coverLetter">Cover Letter <span class="req">*</span></label>
+                    <textarea id="coverLetter" name="coverLetter"
+                        placeholder="Introduce yourself and explain why you are a great fit for this role…"
+                        required></textarea>
+                </div>
+                <div class="row" style="margin-top:4px">
+                    <div class="field">
+                        <label for="cvFile">Upload CV <span class="req">*</span></label>
+                        <input type="file" id="cvFile" name="cvFile" accept=".pdf,.doc,.docx" required />
+                        <span class="helper">PDF or DOCX, max 5 MB</span>
+                    </div>
+                    <div class="field">
+                        <label for="coverLetterFile">Upload Cover Letter (optional)</label>
+                        <input type="file" id="coverLetterFile" name="coverLetterFile" accept=".pdf,.doc,.docx" />
+                        <span class="helper">PDF or DOCX, max 5 MB</span>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- ── Declaration ─────────────────────────────────── -->
+            <fieldset>
+                <legend>Declaration</legend>
+                <div class="checkbox-row" style="margin-top:0">
+                    <input type="checkbox" id="agreeTerms" name="agreeTerms" required />
+                    <label for="agreeTerms">
+                        I confirm that the information provided is accurate and I agree to the
+                        processing of my personal data for recruitment purposes. <span class="req">*</span>
+                    </label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="agreeMarketing" name="agreeMarketing" />
+                    <label for="agreeMarketing">
+                        I would like to receive updates about future job openings.
+                    </label>
+                </div>
+            </fieldset>
+
+            <div class="submit-area">
+                <button type="submit" id="submitBtn">Submit Application</button>
+                <span style="font-size:12px;color:#6b7280">Fields marked <span style="color:#ef4444">*</span> are
+                    required</span>
+            </div>
+
+            <div id="successBanner">
+                ✅ Application submitted successfully! (This is a test form — no data was sent.)
+            </div>
+
+            <div id="errorBanner"
+                style="display:none;margin-top:24px;padding:16px 20px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-weight:500;">
+            </div>
+
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('applicationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            // Collect unfilled required fields for feedback
+            const missing = [];
+            this.querySelectorAll('[required]').forEach(el => {
+                const isCheckbox = el.type === 'checkbox';
+                const isEmpty = isCheckbox ? !el.checked : !el.value.trim();
+
+                if (isEmpty) {
+                    const label = document.querySelector(`label[for="${el.id}"]`);
+                    missing.push(label ? label.innerText.replace('*', '').trim() : (el.name || el.id));
+                }
+            });
+
+            // Also check contenteditable rich-text required fields
+            this.querySelectorAll('[contenteditable="true"][aria-required="true"]').forEach(el => {
+                if (!el.innerText.trim()) {
+                    const label = document.querySelector(`label[for="${el.id}"]`);
+                    missing.push(label ? label.innerText.replace('*', '').trim() : el.id);
+                }
+            });
+
+            // Also check contenteditable rich-text fields
+            this.querySelectorAll('[contenteditable="true"][aria-required="true"]').forEach(el => {
+                if (!el.innerText.trim()) {
+                    const label = document.querySelector(`label[for="${el.id}"]`);
+                    missing.push(label ? label.innerText.replace('*', '').trim() : el.id);
+                }
+            });
+
+            if (missing.length > 0) {
+                const banner = document.getElementById('errorBanner');
+
+                banner.textContent = '❌ Required fields missing: ' + missing.join(', ');
+                banner.style.display = 'block';
+                document.getElementById('successBanner').style.display = 'none';
+
+                return;
+            }
+
+            document.getElementById('errorBanner').style.display = 'none'; document.getElementById('successBanner').style.display = 'block';
+            document.getElementById('submitBtn').textContent = 'Submitted ✓';
+            document.getElementById('submitBtn').disabled = true;
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        });
+    </script>
+</body>
+
+</html>

@@ -20,6 +20,7 @@ import {computeIndicators, formatFeedbackMessage} from "./utils";
 import {CodeEditor} from "../../CodeEditor";
 import "ace-builds/src-noconflict/mode-json";
 import {FieldsetGroup} from "../../FieldsetGroup";
+import {formatErrorMessage} from "../../../utils/utils";
 
 
 export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
@@ -43,7 +44,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
                     if (!validation.success) {
                         setError(prev => {
 
-                            const newError = `Stock analysis input validation failed: ` + JSON.stringify(validation.error.errors, null, 4);
+                            const newError = formatErrorMessage("Stock analysis input validation failed", validation.error.errors);
 
                             return prev ? [...prev, newError] : [newError];
                         });
@@ -82,7 +83,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
                     onResultUpdate(id, {symbol, ...analysis});
                 } catch (err) {
                     setError(prev => {
-                        const newError = err instanceof Error ? err.message : `Unknown error:\n${JSON.stringify(err, null, 4)}`;
+                        const newError = err instanceof Error ? err.message : formatErrorMessage("Unknown error", err);
 
                         return prev ? [...prev, newError] : [newError];
                     });
@@ -116,7 +117,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>
-                <FieldsetGroup title="Expected Input Format *" height={"100%"}>
+                <FieldsetGroup title="Expected Input Format *" height={"100%"} collapsible defaultCollapsed>
                     <CodeEditor
                         mode="json"
                         value={STOCK_ANALYSIS_INPUT_JSON_SCHEMA}

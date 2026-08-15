@@ -14,7 +14,7 @@
                         "text": "What's the time now ?",
                         "files": []
                     },
-                    "type": "markdown"
+                    "type": "markdown-and-files"
                 }
             },
             "measured": {

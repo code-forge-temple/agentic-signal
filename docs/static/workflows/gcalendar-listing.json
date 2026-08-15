@@ -14,7 +14,7 @@
                         "text": "Get me the next 3 calendar events coming up.",
                         "files": []
                     },
-                    "type": "markdown"
+                    "type": "markdown-and-files"
                 }
             },
             "measured": {

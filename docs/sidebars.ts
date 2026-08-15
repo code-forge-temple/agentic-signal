@@ -71,6 +71,7 @@ const sidebars: SidebarsConfig = {
                                 'nodes/ai/tools/gdrive-fetch-files',
                                 'nodes/ai/tools/gcalendar-fetch-events',
                                 'nodes/ai/tools/stock-analysis',
+                                'nodes/ai/tools/form-interaction',
                             ],
                         },
                     ],
@@ -123,6 +124,9 @@ const sidebars: SidebarsConfig = {
                         'workflows/data/customer-total-spend-analysis',
                         'workflows/data/stock-analysis-ai-prediction',
                         'workflows/data/extract-web-page-data',
+                        'workflows/data/form-filling-cv',
+                        'workflows/data/form-filling-cv-multi-page',
+                        'workflows/data/form-filling-orchestration',
                     ],
                 },
                 {

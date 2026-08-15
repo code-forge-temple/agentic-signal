@@ -30,6 +30,8 @@ import {NODE_TYPE as TOOL_NODE_TYPE} from "../ToolNode/constants";
 import {NODE_TYPE as RAG_NODE_TYPE} from "../RagNode/constants";
 import {assertIsRagNodeData, RagNode} from "../RagNode/types/workflow";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {v4 as uuidv4} from "uuid";
+import {isNodeInputWithToolsPayload} from "./types/input.types";
 
 
 const LLM_MODEL_LABEL = "LLM Model";
@@ -73,13 +75,31 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
             return node;
         });
 
-    const tools = connectedToolNodes
+    const toolsPayload: unknown = isNodeInputWithToolsPayload(input) ? input.toolsPayload : undefined;
+
+    const inputContent: typeof input = isNodeInputWithToolsPayload(input) ? input.payload : input;
+
+    const buildTools = useCallback((sessionId: string) => connectedToolNodes
         .filter(node => typeof node.data.handler === "function")
         .map(node => ({
             schema: node.data.toolSchema as ToolSchema,
-            handler: node.data.handler as (params: any) => Promise<any>,
+            handler: async (params: any) =>
+                (node.data.handler as (params: any) => Promise<any>)({
+                    ...params,
+                    toolsPayload,
+                    sessionId,
+                }),
             systemUserConfigValues: node.data.userConfig as SystemUserConfigValues || {}
-        }));
+        })), [connectedToolNodes, toolsPayload]);
+
+    // Runs once per run-trigger, after processAIRequest has resolved (output already
+    // updated) — lets a tool release resources it opened for this sessionId (e.g. a
+    // browser session) without this node knowing anything tool-specific.
+    const cleanupTools = useCallback((sessionId: string) => Promise.all(
+        connectedToolNodes
+            .filter(node => typeof node.data.cleanup === "function")
+            .map(node => (node.data.cleanup as (sessionId: string) => Promise<void>)(sessionId))
+    ), [connectedToolNodes]);
 
     const connectedRagNode = getEdges()
         .filter(edge => edge.target === id && edge.targetHandle === NODE_PORT_IDS.CONTEXT)
@@ -134,30 +154,36 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         clearOutput: () => { if(currentRetryRef.current < maxFeedbackLoops) onResultUpdate(id); },
         runCallback: async () => {
             if (currentRetryRef.current++ < maxFeedbackLoops) {
+                const sessionId = uuidv4();
+
                 await runTask(async () => {
-                    await processAIRequest({
-                        input: input,
-                        prompt: prompt,
-                        message: message,
-                        model: model,
-                        format: format,
-                        tools,
-                        feedback: feedback,
-                        maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
-                        ragHandler,
-                        think: think ?? defaultLlmProcessNodeData.think,
-                        temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
-                        orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
-                        conversationHistory: {
-                            value: conversationHistory || [],
-                            onChange: (newHistory) => {
-                                onConfigChange(id, {
-                                    conversationHistory: currentRetryRef.current < maxFeedbackLoops ? newHistory : [],
-                                    feedback: undefined
-                                });
+                    try {
+                        await processAIRequest({
+                            input: inputContent,
+                            prompt: prompt,
+                            message: message,
+                            model: model,
+                            format: format,
+                            tools: buildTools(sessionId),
+                            feedback: feedback,
+                            maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
+                            ragHandler,
+                            think: think ?? defaultLlmProcessNodeData.think,
+                            temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
+                            orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
+                            conversationHistory: {
+                                value: conversationHistory || [],
+                                onChange: (newHistory) => {
+                                    onConfigChange(id, {
+                                        conversationHistory: currentRetryRef.current < maxFeedbackLoops ? newHistory : [],
+                                        feedback: undefined
+                                    });
+                                }
                             }
-                        }
-                    });
+                        });
+                    } finally {
+                        await cleanupTools(sessionId);
+                    }
                 }, setIsRunning);
             }
         }
@@ -169,14 +195,54 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         runCallback: async () => {
             currentRetryRef.current = 0;
 
+            const sessionId = uuidv4();
+
             await runTask(async () => {
+                try {
+                    await processAIRequest({
+                        input: inputContent,
+                        prompt: prompt,
+                        message: message,
+                        model: model,
+                        format: format,
+                        tools: buildTools(sessionId),
+                        maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
+                        ragHandler,
+                        think: think ?? defaultLlmProcessNodeData.think,
+                        temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
+                        orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
+                        conversationHistory: {
+                            value: [],
+                            onChange: (newHistory) => {
+                                onConfigChange(id, {conversationHistory: newHistory, feedback: undefined});
+                            }
+                        },
+                    });
+                } finally {
+                    await cleanupTools(sessionId);
+                }
+            }, setIsRunning);
+        }
+    }, [input]);
+
+    const handleRun = useCallback(async () => {
+        clearError();
+        onResultUpdate(id);
+
+        currentRetryRef.current = 0;
+
+        const sessionId = uuidv4();
+
+        await runTask(async () => {
+            try {
                 await processAIRequest({
-                    input: input,
+                    input: inputContent,
                     prompt: prompt,
                     message: message,
                     model: model,
                     format: format,
-                    tools,
+                    tools: buildTools(sessionId),
+                    feedback: feedback,
                     maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
                     ragHandler,
                     think: think ?? defaultLlmProcessNodeData.think,
@@ -189,40 +255,12 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         }
                     },
                 });
-            }, setIsRunning);
-        }
-    }, [input]);
-
-    const handleRun = useCallback(async () => {
-        clearError();
-        onResultUpdate(id);
-
-        currentRetryRef.current = 0;
-
-        await runTask(async () => {
-            await processAIRequest({
-                input: input,
-                prompt: prompt,
-                message: message,
-                model: model,
-                format: format,
-                tools,
-                feedback: feedback,
-                maxToolRetries: maxToolRetries ?? defaultLlmProcessNodeData.maxToolRetries,
-                ragHandler,
-                think: think ?? defaultLlmProcessNodeData.think,
-                temperature: temperatureEnabled ? (temperature ?? defaultLlmProcessNodeData.temperature) : undefined,
-                orchestrationMode: orchestrationMode ?? defaultLlmProcessNodeData.orchestrationMode,
-                conversationHistory: {
-                    value: [],
-                    onChange: (newHistory) => {
-                        onConfigChange(id, {conversationHistory: newHistory, feedback: undefined});
-                    }
-                },
-            });
+            } finally {
+                await cleanupTools(sessionId);
+            }
         }, setIsRunning);
     // eslint-disable-next-line max-len
-    }, [clearError, feedback, format, id, input, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, tools, orchestrationMode]);
+    }, [buildTools, cleanupTools, clearError, feedback, format, id, inputContent, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, orchestrationMode]);
 
     const [systemPrompt, setSystemPrompt] = useDebouncedState({
         callback: (value: string) => {

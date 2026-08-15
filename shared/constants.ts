@@ -4,6 +4,9 @@ export const TRIPLE_BACKTICK = "```";
 
 export const IMAGE_FILE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg"]);
 
+/** Extensions that must be read as binary (base64) rather than UTF-8 text. */
+export const BINARY_FILE_EXTENSIONS = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "gz", "rar", "tar", "7z"]);
+
 export const CODE_BLOCK_LANG_BY_EXTENSION: Record<string, string> = {
     js: "javascript",
     ts: "typescript",
@@ -33,5 +36,6 @@ export const CODE_BLOCK_LANG_BY_EXTENSION: Record<string, string> = {
 
 export const SUPPORTED_FILE_EXTENSIONS = new Set([
     ...Object.keys(CODE_BLOCK_LANG_BY_EXTENSION),
-    ...IMAGE_FILE_EXTENSIONS
+    ...IMAGE_FILE_EXTENSIONS,
+    ...BINARY_FILE_EXTENSIONS,
 ]);

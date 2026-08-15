@@ -14,6 +14,7 @@ import {NODE_PORT_IDS} from '../../../constants';
 
 export const DataFlowSpyNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataFlowSpyNode> = {
     type: NODE_TYPE,
+    order: 9,
     component,
     icon: Icon,
     title: TITLE,

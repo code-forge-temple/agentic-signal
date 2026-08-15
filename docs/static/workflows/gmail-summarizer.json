@@ -14,7 +14,7 @@
                         "text": "Can you tell me the latest emails I have received?",
                         "files": []
                     },
-                    "type": "markdown"
+                    "type": "markdown-and-files"
                 }
             },
             "measured": {

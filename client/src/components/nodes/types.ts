@@ -25,10 +25,20 @@ export type NodePorts = {
 
 export type NodeDescriptor<T extends string, N extends DataNode> = {
     type: T;
+    /** Controls display order in the nodes dock (ascending). */
+    order: number;
     component: React.ComponentType<any>;
     icon: React.ReactElement<{className?: string}>;
     title: string;
     assertion: (data: unknown) => void;
+    /**
+     * Rewrites legacy data shapes (e.g. a renamed field/value) into the current shape,
+     * applied on workflow load before `assertion` runs. Optional — most nodes have no
+     * legacy baggage to carry. Must be a pure function: return new data, don't mutate
+     * the input, and it should be a no-op (return unchanged) when data is already current
+     * so it's safe to run unconditionally on every load.
+     */
+    migrate?: (data: any) => any;
     defaultData: N["data"];
     metadata: {
         description: string;

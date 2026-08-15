@@ -15,6 +15,7 @@ import {NODE_PORT_IDS} from '../../../constants';
 
 export const GetDataNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, GetDataNode> = {
     type: NODE_TYPE,
+    order: 4,
     component,
     icon: Icon,
     title: TITLE,

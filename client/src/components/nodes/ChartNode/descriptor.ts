@@ -14,6 +14,7 @@ import {NODE_PORT_IDS} from "../../../constants";
 
 export const ChartNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ChartNode> = {
     type: NODE_TYPE,
+    order: 14,
     component,
     icon: Icon,
     title: TITLE,

@@ -16,6 +16,7 @@ export const ToolNodeDataSchema = z.object({
     toolSubtype: z.string().describe("Identifier of the specific tool to use (e.g. 'brave-search', 'datetime-now')"),
     userConfig: z.record(z.any()).optional().describe("Tool-specific user configuration values (API keys, settings, etc.)"),
     handler: z.function().optional(),
+    cleanup: z.function().optional(),
 });
 
 export type ToolNodeData = z.infer<typeof ToolNodeDataSchema> & {

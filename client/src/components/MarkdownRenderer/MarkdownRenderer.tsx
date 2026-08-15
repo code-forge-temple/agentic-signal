@@ -4,13 +4,26 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import React, {useMemo, FC, useState, useEffect, Suspense, ReactNode} from "react";
+import React, {useMemo, FC, useState, useEffect, Suspense, ReactNode, lazy} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
-import {oneDark} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {CircularProgress, Box} from "@mui/material";
 import "./MarkdownRenderer.scss";
+
+
+const LazySyntaxHighlighter = lazy(() =>
+    Promise.all([
+        import("react-syntax-highlighter"),
+        import("react-syntax-highlighter/dist/esm/styles/prism")
+    ]).then(([syntaxModule, styleModule]) => ({
+        default: ({language, children, ...props}: any) => {
+            const SyntaxHighlighter = syntaxModule.Prism;
+            const oneDark = styleModule.oneDark;
+
+            return <SyntaxHighlighter style={oneDark} language={language} {...props}>{children}</SyntaxHighlighter>;
+        }
+    }))
+);
 
 interface MarkdownRendererProps {
     content: string;
@@ -84,9 +97,9 @@ const CodeBlock: FC<any> = React.memo(({inline, className, children, codeBlockSu
             return (
                 <div className="code-wrapper">
                     <Suspense fallback={<LoadingSpinner />}>
-                        <SyntaxHighlighter style={oneDark} language={match[1]} {...props}>
+                        <LazySyntaxHighlighter language={match[1]} {...props}>
                             {codeString}
-                        </SyntaxHighlighter>
+                        </LazySyntaxHighlighter>
                     </Suspense>
                     {suffix}
                 </div>

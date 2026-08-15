@@ -12,6 +12,7 @@ import {assertIsToolNodeData, ToolNode, ToolNodeDataSchema} from "./types/workfl
 
 export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {
     type: NODE_TYPE,
+    order: 12,
     component,
     icon: Icon,
     title: "AI Tool",
@@ -29,6 +30,7 @@ export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {
         toolSchema: {} as any,
         userConfig: {},
         handler: undefined,
-        toSanitize: ["input", "handler", "toolSchema"]
+        cleanup: undefined,
+        toSanitize: ["input", "handler", "toolSchema", "cleanup"]
     }
 };

@@ -204,7 +204,7 @@
                         "text": "The stock name is TESLA.",
                         "files": []
                     },
-                    "type": "markdown"
+                    "type": "markdown-and-files"
                 }
             },
             "measured": {

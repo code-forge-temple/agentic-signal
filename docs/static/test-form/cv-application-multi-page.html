@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Application (Multi-Step) — Agentic Signal Test Form</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 15px;
+            background: #f4f6f9;
+            color: #1a1a2e;
+            padding: 32px 16px;
+        }
+
+        .card {
+            max-width: 680px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, .10);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #0a66c2;
+            color: #fff;
+            padding: 24px 36px 20px;
+        }
+
+        .card-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .card-header p {
+            font-size: 13px;
+            opacity: .85;
+            margin-top: 3px;
+        }
+
+        /* ── Progress bar ── */
+        .progress-bar {
+            display: flex;
+            padding: 0 36px;
+            background: #e9f0f8;
+            border-bottom: 1px solid #d0dce8;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #8899aa;
+            position: relative;
+            cursor: default;
+        }
+
+        .step::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: transparent;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .step.active {
+            color: #0a66c2;
+        }
+
+        .step.active::after {
+            background: #0a66c2;
+        }
+
+        .step.done {
+            color: #057642;
+        }
+
+        .step.done::after {
+            background: #057642;
+        }
+
+        /* ── Pages ── */
+        .page {
+            display: none;
+            padding: 28px 36px 20px;
+        }
+
+        .page.visible {
+            display: block;
+        }
+
+        .page-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1a1a2e;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        label .req {
+            color: #cc1016;
+            margin-left: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="url"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1a1a2e;
+            background: #fff;
+            transition: border-color .15s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #0a66c2;
+            box-shadow: 0 0 0 3px rgba(10, 102, 194, .12);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #9ca3af;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        input[type="file"] {
+            padding: 8px 10px;
+            border: 1px dashed #93c5fd;
+            border-radius: 6px;
+            background: #eff6ff;
+            cursor: pointer;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .15s;
+        }
+
+        .radio-option:has(input:checked) {
+            border-color: #0a66c2;
+            background: #eff6ff;
+            color: #0a66c2;
+            font-weight: 500;
+        }
+
+        .radio-option input {
+            accent-color: #0a66c2;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #0a66c2;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+            font-size: 13px;
+        }
+
+        .rich-text-editor {
+            min-height: 100px;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1a1a2e;
+            outline: none;
+            line-height: 1.6;
+            cursor: text;
+        }
+
+        .rich-text-editor:focus {
+            border-color: #0a66c2;
+            box-shadow: 0 0 0 3px rgba(10, 102, 194, .12);
+        }
+
+        .rich-text-editor:empty::before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+            display: block;
+        }
+
+        .helper {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        /* ── Navigation buttons ── */
+        .nav-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 36px 24px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .btn {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s, opacity .15s;
+        }
+
+        .btn-back {
+            background: transparent;
+            color: #0a66c2;
+            border: 1px solid #0a66c2;
+        }
+
+        .btn-back:hover {
+            background: #eff6ff;
+        }
+
+        .btn-next {
+            background: #0a66c2;
+            color: #fff;
+        }
+
+        .btn-next:hover {
+            background: #004182;
+        }
+
+        .btn-next:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+
+        /* ── Banners ── */
+        #successBanner {
+            display: none;
+            margin: 0 36px 24px;
+            padding: 16px 20px;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            color: #166534;
+            font-weight: 500;
+        }
+
+        #errorBanner {
+            display: none;
+            margin: 0 36px 24px;
+            padding: 16px 20px;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            border-radius: 8px;
+            color: #991b1b;
+            font-weight: 500;
+        }
+
+        .page-counter {
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="card-header">
+            <h1>Senior Software Engineer</h1>
+            <p>Agentic Signal · Multi-Step Test Form · All fields are for testing purposes only</p>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-bar">
+            <div class="step active" id="step-1">1. Contact</div>
+            <div class="step" id="step-2">2. Experience</div>
+            <div class="step" id="step-3">3. Questions</div>
+            <div class="step" id="step-4">4. Documents</div>
+        </div>
+
+        <!-- Page 1: Contact Info -->
+        <div class="page visible" id="page-1">
+            <p class="page-title">Contact Information</p>
+            <div class="row">
+                <div class="field">
+                    <label for="p1-firstName">First Name <span class="req">*</span></label>
+                    <input type="text" id="p1-firstName" name="firstName" placeholder="Jane" required />
+                </div>
+                <div class="field">
+                    <label for="p1-lastName">Last Name <span class="req">*</span></label>
+                    <input type="text" id="p1-lastName" name="lastName" placeholder="Smith" required />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="p1-email">Email Address <span class="req">*</span></label>
+                    <input type="email" id="p1-email" name="email" placeholder="jane.smith@example.com" required />
+                </div>
+                <div class="field">
+                    <label for="p1-phone">Phone Number <span class="req">*</span></label>
+                    <input type="tel" id="p1-phone" name="phone" placeholder="+1 555 000 0000" required />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="p1-city">City <span class="req">*</span></label>
+                    <input type="text" id="p1-city" name="city" placeholder="London" required />
+                </div>
+                <div class="field">
+                    <label for="p1-country">Country <span class="req">*</span></label>
+                    <select id="p1-country" name="country" required>
+                        <option value="">— Select —</option>
+                        <option value="US">United States</option>
+                        <option value="GB">United Kingdom</option>
+                        <option value="DE">Germany</option>
+                        <option value="FR">France</option>
+                        <option value="CA">Canada</option>
+                        <option value="AU">Australia</option>
+                        <option value="RO">Romania</option>
+                        <option value="NL">Netherlands</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label for="p1-linkedin">LinkedIn Profile URL</label>
+                <input type="url" id="p1-linkedin" name="linkedIn" placeholder="https://linkedin.com/in/yourprofile" />
+            </div>
+        </div>
+
+        <!-- Page 2: Professional Experience -->
+        <div class="page" id="page-2">
+            <p class="page-title">Professional Experience</p>
+            <div class="row">
+                <div class="field">
+                    <label for="p2-currentTitle">Current Job Title <span class="req">*</span></label>
+                    <input type="text" id="p2-currentTitle" name="currentTitle" placeholder="e.g. Software Engineer"
+                        required />
+                </div>
+                <div class="field">
+                    <label for="p2-currentCompany">Current Company</label>
+                    <input type="text" id="p2-currentCompany" name="currentCompany" placeholder="e.g. Acme Corp" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="p2-experience">Years of Experience <span class="req">*</span></label>
+                    <input type="number" id="p2-experience" name="experience" min="0" max="50" placeholder="e.g. 7"
+                        required />
+                </div>
+                <div class="field">
+                    <label for="p2-education">Education Level</label>
+                    <select id="p2-education" name="education">
+                        <option value="">— Select —</option>
+                        <option value="hs">High School / GED</option>
+                        <option value="bachelor">Bachelor's Degree</option>
+                        <option value="master">Master's Degree</option>
+                        <option value="phd">PhD / Doctorate</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="p2-skills">Key Skills <span class="req">*</span></label>
+                    <input type="text" id="p2-skills" name="skills" placeholder="e.g. TypeScript, React, Node.js"
+                        required />
+                    <span class="helper">Comma-separated list</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="p2-salary">Expected Annual Salary (USD)</label>
+                    <input type="number" id="p2-salary" name="salaryExpectation" min="0" placeholder="e.g. 110000" />
+                </div>
+                <div class="field">
+                    <label for="p2-startDate">Earliest Start Date</label>
+                    <input type="date" id="p2-startDate" name="startDate" />
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:16px">
+                <label>Preferred Work Arrangement <span class="req">*</span></label>
+                <div class="radio-group" id="p2-workArrangement">
+                    <label class="radio-option">
+                        <input type="radio" name="workArrangement" value="onsite" id="p2-workOnsite" required /> On-site
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="workArrangement" value="hybrid" id="p2-workHybrid" /> Hybrid
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="workArrangement" value="remote" id="p2-workRemote" /> Fully Remote
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Application Questions -->
+        <div class="page" id="page-3">
+            <p class="page-title">Application Questions</p>
+            <div class="field" style="margin-bottom:16px">
+                <label for="p3-whyUs">Why do you want to work here? <span class="req">*</span></label>
+                <div id="p3-whyUs" contenteditable="true" role="textbox" aria-multiline="true" aria-required="true"
+                    class="rich-text-editor" placeholder="Tell us what attracts you to this role and our company...">
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:16px">
+                <label for="p3-relevantExp">Describe your most relevant experience (max 200 words) <span
+                        class="req">*</span></label>
+                <div id="p3-relevantExp" contenteditable="true" role="textbox" aria-multiline="true"
+                    aria-required="true" class="rich-text-editor"
+                    placeholder="Describe a project or role that best demonstrates your fit for this position..."></div>
+            </div>
+            <div class="field" style="margin-bottom:16px">
+                <label for="p3-howHeard">How did you hear about this role? <span class="req">*</span></label>
+                <select id="p3-howHeard" name="howHeard" required>
+                    <option value="">— Select —</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="indeed">Indeed / Glassdoor</option>
+                    <option value="website">Company Website</option>
+                    <option value="referral">Referral</option>
+                    <option value="recruiter">Recruiter</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Are you legally authorised to work in the country of this role? <span
+                        class="req">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="workAuth" value="yes" id="p3-workAuthYes" required /> Yes
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="workAuth" value="no" id="p3-workAuthNo" /> No
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 4: Documents & Submit -->
+        <div class="page" id="page-4">
+            <p class="page-title">Documents &amp; Confirmation</p>
+            <div class="field" style="margin-bottom:16px">
+                <label for="p4-resume">Upload Resume / CV <span class="req">*</span></label>
+                <input type="file" id="p4-resume" name="resume" accept=".pdf,.doc,.docx" required />
+                <span class="helper">PDF or DOCX, max 5 MB</span>
+            </div>
+            <div class="field" style="margin-bottom:16px">
+                <label for="p4-coverLetter">Cover Letter (optional)</label>
+                <textarea id="p4-coverLetter" name="coverLetter" placeholder="Add an optional cover letter…"></textarea>
+            </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="p4-agreeTerms" name="agreeTerms" required />
+                <label for="p4-agreeTerms">
+                    I confirm that the information provided is accurate and I consent to the processing of my personal
+                    data for recruitment purposes. <span class="req">*</span>
+                </label>
+            </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="p4-agreeMarketing" name="agreeMarketing" />
+                <label for="p4-agreeMarketing">I would like to receive updates about future job openings.</label>
+            </div>
+        </div>
+
+        <!-- Banners -->
+        <div id="successBanner">✅ Application submitted successfully! (Test form — no data was sent.)</div>
+        <div id="errorBanner"></div>
+
+        <!-- Navigation -->
+        <div class="nav-area">
+            <button class="btn btn-back" id="backBtn" style="visibility:hidden" onclick="prevPage()">Back</button>
+            <span class="page-counter" id="pageCounter">Step 1 of 4</span>
+            <button class="btn btn-next" id="nextBtn" onclick="nextPage()">Next</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const totalPages = 4;
+
+        function updateUI() {
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                document.getElementById('page-' + i).classList.toggle('visible', i === currentPage);
+            }
+
+            // Steps
+            for (let i = 1; i <= totalPages; i++) {
+                const s = document.getElementById('step-' + i);
+                s.className = 'step';
+                if (i < currentPage) s.classList.add('done');
+                if (i === currentPage) s.classList.add('active');
+            }
+
+            // Nav buttons
+            document.getElementById('backBtn').style.visibility = currentPage === 1 ? 'hidden' : 'visible';
+            document.getElementById('pageCounter').textContent = 'Step ' + currentPage + ' of ' + totalPages;
+
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentPage === totalPages) {
+                nextBtn.textContent = 'Submit Application';
+                nextBtn.onclick = submitForm;
+            } else {
+                nextBtn.textContent = 'Next';
+                nextBtn.onclick = nextPage;
+            }
+        }
+
+        function validateCurrentPage() {
+            const page = document.getElementById('page-' + currentPage);
+            const missing = [];
+
+            page.querySelectorAll('[required]').forEach(el => {
+                const isCheckbox = el.type === 'checkbox';
+                const isRadioGroup = el.type === 'radio';
+
+                if (isCheckbox && !el.checked) {
+                    const lbl = document.querySelector(`label[for="${el.id}"]`);
+                    missing.push(lbl ? lbl.innerText.replace('*', '').trim() : el.name);
+                } else if (isRadioGroup) {
+                    const anyChecked = page.querySelector(`input[type="radio"][name="${el.name}"]:checked`);
+                    if (!anyChecked) {
+                        missing.push(el.name);
+                    }
+                } else if (!isCheckbox && !el.value.trim()) {
+                    const lbl = document.querySelector(`label[for="${el.id}"]`);
+                    missing.push(lbl ? lbl.innerText.replace('*', '').trim() : el.name);
+                }
+            });
+
+            page.querySelectorAll('[contenteditable="true"][aria-required="true"]').forEach(el => {
+                if (!el.innerText.trim()) {
+                    const lbl = document.querySelector(`label[for="${el.id}"]`);
+                    missing.push(lbl ? lbl.innerText.replace('*', '').trim() : el.id);
+                }
+            });
+
+            // Deduplicate radio group names
+            return [...new Set(missing)];
+        }
+
+        function nextPage() {
+            const missing = validateCurrentPage();
+            if (missing.length > 0) {
+                const banner = document.getElementById('errorBanner');
+                banner.textContent = '❌ Please fill in required fields: ' + missing.join(', ');
+                banner.style.display = 'block';
+                return;
+            }
+            document.getElementById('errorBanner').style.display = 'none';
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateUI();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevPage() {
+            document.getElementById('errorBanner').style.display = 'none';
+            if (currentPage > 1) {
+                currentPage--;
+                updateUI();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function submitForm() {
+            // Final validation across all visible page (page 4 at this point)
+            const missing = validateCurrentPage();
+            if (missing.length > 0) {
+                const banner = document.getElementById('errorBanner');
+                banner.textContent = '❌ Please fill in required fields: ' + missing.join(', ');
+                banner.style.display = 'block';
+                return;
+            }
+            document.getElementById('errorBanner').style.display = 'none';
+            document.getElementById('successBanner').style.display = 'block';
+            document.getElementById('nextBtn').textContent = 'Submitted ✓';
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('backBtn').style.visibility = 'hidden';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        updateUI();
+    </script>
+</body>
+
+</html>

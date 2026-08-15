@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ThemeProvider, Tooltip} from "@mui/material";
-import {Xmark, Expand, Compress} from "iconoir-react";
+import {Xmark, Expand, Collapse} from "iconoir-react";
 import {darkTheme} from "../../utils";
 import {PaperComponent} from "../PaperComponent";
 import {ReactNode, useEffect, useState} from "react";
@@ -102,7 +102,7 @@ export function BaseDialog ({
                         <span style={{flex: 1}}>{title}</span>
                         <Tooltip title={maximized ? "Restore" : "Maximize"}>
                             <IconButton size="medium" onClick={() => setMaximized(m => !m)} sx={{mr: 0.5}}>
-                                {maximized ? <Compress width={24} height={24} /> : <Expand width={24} height={24} />}
+                                {maximized ? <Collapse width={24} height={24} /> : <Expand width={24} height={24} />}
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Close">
@@ -111,17 +111,19 @@ export function BaseDialog ({
                             </IconButton>
                         </Tooltip>
                     </DialogTitle>
-                    <DialogContent sx={{
-                        pt: '16px !important', pb: 0, pl: 0, pr: 0, m: 2,
-                        flex: 1,
-                        minHeight: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%'
-                    }}>
+                    <DialogContent
+                        sx={{
+                            pt: '16px !important', pb: 0, pl: '10px', pr: '10px', m: 2,
+                            flex: 1,
+                            minHeight: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '100%'
+                        }}
+                    >
                         {children}
                     </DialogContent>
-                    <DialogActions>
+                    <DialogActions sx={{pl: '16px', pr: '16px'}}>
                         {actions || (
                             <Button autoFocus onClick={onClose}>
                                 Close

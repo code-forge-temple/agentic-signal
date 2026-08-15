@@ -12,6 +12,7 @@ import {useFetchModels} from '../../../../hooks/useFetchModels';
 import Ajv from 'ajv';
 import {runOrchestration, runSingleCall, JSON_SCHEMA_PROMPT_PREFIX} from '../utils/aiOrchestration';
 import {assertIsSerializedInput, getExpectedOutputType, llmResponseJsonParse, parseFormat, serializeInput} from '../utils/formatUtils';
+import {formatErrorMessage} from '../../../../utils/utils';
 
 
 export interface UseAIProcessorOptions {
@@ -328,7 +329,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     result = llmResponseJsonParse(result);
 
                     if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
-                        const errorMsg = `LLM returned an error response matching onError schema:\n${JSON.stringify(result, null, 4)}`;
+                        const errorMsg = formatErrorMessage("LLM returned an error response matching onError schema", result);
 
                         setError(prev => [...prev, errorMsg]);
                         onError?.(errorMsg);

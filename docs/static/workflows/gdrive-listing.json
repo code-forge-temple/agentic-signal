@@ -14,7 +14,7 @@
                         "text": "Can you tell me the latest document that was created?",
                         "files": []
                     },
-                    "type": "markdown"
+                    "type": "markdown-and-files"
                 }
             },
             "measured": {

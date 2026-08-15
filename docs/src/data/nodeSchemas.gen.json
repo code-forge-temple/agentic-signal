@@ -42,7 +42,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "const": "markdown"
+                "const": "markdown-and-files"
               },
               "value": {
                 "type": "object",
@@ -61,6 +61,15 @@
                         },
                         "content": {
                           "type": "string"
+                        },
+                        "base64": {
+                          "type": "string"
+                        },
+                        "mimeType": {
+                          "type": "string"
+                        },
+                        "isToolsPayload": {
+                          "type": "boolean"
                         }
                       },
                       "required": [

@@ -14,6 +14,7 @@ import {NODE_PORT_IDS} from '../../../constants';
 
 export const DataValidationNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataValidationNode> = {
     type: NODE_TYPE,
+    order: 6,
     component,
     icon: Icon,
     title: TITLE,

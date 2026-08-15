@@ -22,7 +22,10 @@ This section contains ready-to-use workflow examples that you can download and i
 - [**Reddit Post**](/docs/workflows/data/reddit-post) – AI-researched news post automatically submitted to Reddit *(PRO)*  
 - [**Gmail Summarizer**](/docs/workflows/email/gmail-summarizer) – Fetch and summarize recent emails from Gmail  
 - [**SMS Send**](/docs/workflows/email/sms-send) – Send an SMS message from a workflow using structured JSON input  
-- [**AI Data Processing Overseer**](/docs/workflows/data/ai-data-processing-overseer) – Chain AI nodes with validation and feedback loops
+- [**AI Data Processing Overseer**](/docs/workflows/data/ai-data-processing-overseer) – Chain AI nodes with validation and feedback loops  
+- [**Form Filling (CV Application)**](/docs/workflows/data/form-filling-cv) – Fill out and submit a single-page job application form from an applicant profile and CV  
+- [**Form Filling (Multi-Page CV Application)**](/docs/workflows/data/form-filling-cv-multi-page) – Fill out and submit a multi-step job application form, one page at a time  
+- [**Form Filling (Multi-Form Orchestration)**](/docs/workflows/data/form-filling-orchestration) – Fill out and submit multiple job application forms in parallel tasks using AI Orchestration Mode
 
 ## How to Use
 

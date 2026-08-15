@@ -14,6 +14,7 @@ import {NODE_PORT_IDS} from '../../../constants';
 
 export const HttpNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, HttpNode> = {
     type: NODE_TYPE,
+    order: 5,
     component,
     icon: Icon,
     title: TITLE,

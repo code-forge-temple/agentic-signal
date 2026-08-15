@@ -135,7 +135,7 @@ function AppFlow () {
             };
         });
 
-        return JSON.stringify({nodes: sanitizedNodes, edges}, null, 2);
+        return JSON.stringify({nodes: sanitizedNodes, edges}, null, 4);
     }, [nodes, edges]);
 
     const handleSave = () => {
@@ -193,6 +193,11 @@ function AppFlow () {
                     }
 
                     const descriptor = descriptorMap[node.type];
+
+                    if (descriptor?.migrate) {
+                        node = {...node, data: descriptor.migrate(node.data)};
+                    }
+
                     let updatedNode = node;
 
                     if (node.type === TOOL_NODE_TYPE) {

@@ -15,6 +15,7 @@ const defaultIntervalTimerNodeData = defaultTimerNodeData[TIMER_NODE_MODES.INTER
 
 export const TimerNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, TimerNode> = {
     type: NODE_TYPE,
+    order: 1,
     component,
     icon: Icon,
     title: TITLE,

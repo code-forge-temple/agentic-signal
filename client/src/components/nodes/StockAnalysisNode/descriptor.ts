@@ -13,6 +13,7 @@ import {NODE_PORT_IDS} from "../../../constants";
 
 export const StockAnalysisNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, StockAnalysisNode> = {
     type: NODE_TYPE,
+    order: 13,
     component,
     icon: Icon,
     title: TITLE,

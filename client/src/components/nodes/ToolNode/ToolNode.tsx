@@ -35,7 +35,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
     const [openSettings, setOpenSettings] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const {title, toolSubtype, userConfig, handler, onConfigChange, toSanitize} = data;
+    const {title, toolSubtype, userConfig, handler, cleanup, onConfigChange, toSanitize} = data;
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
     const {settings} = useSettings();
     const {globalData} = useGlobalConfig();
@@ -63,13 +63,15 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
                 setError(errorMessage);
 
-                if (handler) {
-                    onConfigChange(id, {handler: undefined});
+                if (handler || cleanup) {
+                    onConfigChange(id, {handler: undefined, cleanup: undefined});
                 }
             } else {
                 if (selectedTool.handlerFactory && (!handler || missingKeys.length === 0)) {
                     const effectiveUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                        configWithFallbacks[configKey] = userConfig?.[configKey] || globalData[globalToolProp(toolSubtype, configKey)];
+                        const localConfig = userConfig?.[configKey];
+
+                        configWithFallbacks[configKey] = (localConfig != null && localConfig !== "") ? localConfig : globalData[globalToolProp(toolSubtype, configKey)];
 
                         return configWithFallbacks;
                     }, {...(userConfig || {})} as Record<string, any>);
@@ -78,8 +80,12 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                         ...effectiveUserConfig,
                         browserPath: settings.browserPath
                     });
+                    const newCleanup = selectedTool.runtimeCleanup?.({
+                        ...effectiveUserConfig,
+                        browserPath: settings.browserPath
+                    });
 
-                    onConfigChange(id, {handler: newHandler});
+                    onConfigChange(id, {handler: newHandler, cleanup: newCleanup});
                 }
 
                 setError(null);
@@ -103,6 +109,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
         };
 
         let handler: ((params: any) => Promise<any>) | undefined = undefined;
+        let cleanup: ((sessionId: string) => Promise<void>) | undefined = undefined;
 
         if (selectedTool?.handlerFactory) {
             const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
@@ -127,12 +134,18 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                 setError(errorMessage);
             } else {
                 const effectiveNewUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                    configWithFallbacks[configKey] = newUserConfig[configKey] || globalData[globalToolProp(toolSubtype, configKey)];
+                    const localConfig = newUserConfig[configKey];
+
+                    configWithFallbacks[configKey] = (localConfig != null && localConfig !== "") ? localConfig : globalData[globalToolProp(toolSubtype, configKey)];
 
                     return configWithFallbacks;
                 }, {...newUserConfig} as Record<string, any>);
 
                 handler = selectedTool.handlerFactory({
+                    ...effectiveNewUserConfig,
+                    browserPath: settings.browserPath
+                });
+                cleanup = selectedTool.runtimeCleanup?.({
                     ...effectiveNewUserConfig,
                     browserPath: settings.browserPath
                 });
@@ -143,7 +156,8 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
         onConfigChange(id, {
             userConfig: newUserConfig,
-            handler
+            handler,
+            cleanup
         });
     }, [globalData, id, onConfigChange, selectedTool, settings.browserPath, toolSubtype, userConfig]);
 
@@ -202,9 +216,11 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
                                 if (tool) {
                                     let handler: ((params: any) => Promise<any>) | undefined = undefined;
+                                    let cleanup: ((sessionId: string) => Promise<void>) | undefined = undefined;
 
                                     if (!tool.userConfigSchema || Object.keys(tool.userConfigSchema).length === 0) {
                                         handler = tool.handlerFactory({});
+                                        cleanup = tool.runtimeCleanup?.({});
                                     }
 
                                     const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
@@ -215,6 +231,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                                         title: tool.title,
                                         userConfig: defaultUserConfig,
                                         handler,
+                                        cleanup,
                                         toSanitize: [...toSanitize, ...tool.toSanitize] // important to merge the the generic ToolNode toSanitize with the tool specific ones
                                     });
                                 }
@@ -244,12 +261,16 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                             }
                         </FieldsetGroup>
                     )}
-                    <CodeEditor
-                        mode="json"
-                        value={JSON.stringify(selectedTool?.toolSchema || {}, null, 4)}
-                        readOnly={true}
-                        showLineNumbers={true}
-                    />
+                    {selectedTool && (
+                        <FieldsetGroup title="Tool Schema" collapsible defaultCollapsed fillAvailableSpace>
+                            <CodeEditor
+                                mode="json"
+                                value={JSON.stringify(selectedTool.toolSchema, null, 4)}
+                                readOnly={true}
+                                showLineNumbers={true}
+                            />
+                        </FieldsetGroup>
+                    )}
                 </div>
             </BaseDialog>
         </>

@@ -28,6 +28,7 @@ Each AI Tool node must specify a `toolSubtype`. Available subtypes include:
 - `gdrive-fetch-files` — Fetches files from Google Drive using search queries
 - `gcalendar-fetch-events` — Fetches events from Google Calendar within a specified date range
 - `stock-analysis` — Analyzes historical stock data and computes technical indicators (SMA, volatility, trend, etc.)
+- `form-interaction` — Navigates to a web form, discovers its fields and clickable buttons, and fills/submits it via browser automation
 
 ## Inputs
 

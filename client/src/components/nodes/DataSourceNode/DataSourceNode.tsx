@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {type NodeProps} from "@xyflow/react";
-import {assertIsDataSourceNodeData, DATA_SOURCE_TYPES} from "./types/workflow";
+import {assertIsDataSourceNodeData, DATA_SOURCE_TYPE_LABELS, DATA_SOURCE_TYPES} from "./types/workflow";
 import {useCallback, useState} from "react";
 import {BaseNode} from "../BaseNode";
 import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
@@ -13,14 +13,20 @@ import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
 import {LogsDialog} from "../../LogsDialog";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
+import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {JsonInput} from "./components/JsonInput";
 import {FilesInput} from "./components/FilesInput";
-import {IMAGE_FILE_EXTENSIONS} from "@shared/constants";
+import {IMAGE_FILE_EXTENSIONS, BINARY_FILE_EXTENSIONS} from "@shared/constants";
 import {markdownFilePrefix, markdownImageFilePrefix} from "@shared/utils";
+import {isNodeInputWithToolsPayload, NodeInputWithToolsPayload} from "../LlmProcessNode/types/input.types";
+import {DataSourceToolsPayloadSchema, DATASOURCE_INPUT_JSON_SCHEMA} from "./types/input.types";
+import {formatContentForDisplay, formatErrorMessage} from "../../../utils/utils";
+import {CodeEditor} from "../../CodeEditor";
+import {FieldsetGroup} from "../../FieldsetGroup";
 
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
@@ -40,9 +46,47 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
         onResultUpdate(id);
 
         runTask(async () => {
+            // An upstream DataSourceNode's output is prefixed onto this node's own data — it
+            // may arrive as a plain value (string/JSON) or the { payload, toolsPayload }
+            // wrapper when an earlier node in the chain carries binary file attachments.
+            let upstreamPayload: unknown = input;
+            let upstreamToolsPayload: Array<{name: string; base64: string; mimeType: string}> = [];
+
+            if (isNodeInputWithToolsPayload(input)) {
+                // Unlike payload (intentionally open-ended), toolsPayload has a concrete shape here —
+                // validate it strictly so a malformed upstream attachment fails loudly now instead of
+                // silently corrupting whatever tool consumes it later in the workflow.
+                const validation = DataSourceToolsPayloadSchema.safeParse(input);
+
+                if (!validation.success) {
+                    setError(formatErrorMessage("Invalid upstream file attachments", validation.error.errors));
+
+                    onResultUpdate(id);
+
+                    return;
+                }
+
+                upstreamPayload = validation.data.payload;
+                upstreamToolsPayload = validation.data.toolsPayload;
+            }
+
             if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
                 try {
-                    onResultUpdate(id, JSON.parse(dataSource.value || "{}"));
+                    const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+                        typeof v === 'object' && v !== null && !Array.isArray(v);
+
+                    const current = JSON.parse(dataSource.value || "{}");
+                    const merged = isPlainObject(upstreamPayload) && isPlainObject(current)
+                        ? {...upstreamPayload, ...current}
+                        : current;
+
+                    if (upstreamToolsPayload.length > 0) {
+                        const output: NodeInputWithToolsPayload = {payload: merged, toolsPayload: upstreamToolsPayload};
+
+                        onResultUpdate(id, output);
+                    } else {
+                        onResultUpdate(id, merged);
+                    }
                 } catch (e) {
                     setError("Invalid JSON data: " + (e instanceof Error ? e.message : String(e)));
 
@@ -50,27 +94,51 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 }
 
                 return;
-            } else if(dataSource.type === DATA_SOURCE_TYPES.MARKDOWN) {
+            } else if(dataSource.type === DATA_SOURCE_TYPES.MARKDOWN_AND_FILES) {
                 let mergedOutput = dataSource.value?.text || "";
                 let imageCounter = 1;
+                // Upstream file attachments come first — this node's own attachments (below) are appended.
+                const binaryAttachments: Array<{name: string; base64: string; mimeType: string}> = [...upstreamToolsPayload];
 
                 for (const file of dataSource.value?.files || []) {
                     const ext = file.name.split('.').pop()?.toLowerCase() || "";
-                    let prefix;
+                    // isToolsPayload=undefined means infer from extension (backward compat with saved workflows)
+                    const isToolsPayload = file.isToolsPayload ?? BINARY_FILE_EXTENSIONS.has(ext);
 
-                    if (IMAGE_FILE_EXTENSIONS.has(ext)) {
-                        prefix = markdownImageFilePrefix(imageCounter++, file.name);
+                    if (isToolsPayload && file.base64) {
+                        // Binary attachment: add a note the LLM can read, collect for tool use.
+                        mergedOutput += `\n\n[Binary attachment: ${file.name} — available for form file-upload fields]\n\n`;
+                        binaryAttachments.push({name: file.name, base64: file.base64, mimeType: file.mimeType || "application/octet-stream"});
+                    } else if (isToolsPayload) {
+                        // isToolsPayload=true but no base64 — skip silently (shouldn't happen with new files)
+                    } else if (IMAGE_FILE_EXTENSIONS.has(ext)) {
+                        mergedOutput += `\n\n${markdownImageFilePrefix(imageCounter++, file.name)}${file.content}\n\n`;
                     } else {
-                        prefix = markdownFilePrefix(file.name);
+                        mergedOutput += `\n\n${markdownFilePrefix(file.name)}${file.content}\n\n`;
                     }
-
-                    mergedOutput += `\n\n${prefix}${file.content}\n\n`;
                 }
 
-                onResultUpdate(id, mergedOutput);
+                // Prefix upstream content before this node's own — chaining multiple DataSourceNodes
+                // accumulates each one's text in order.
+                const upstreamText = formatContentForDisplay(upstreamPayload);
+                const combinedOutput = upstreamText ? `${upstreamText}\n\n${mergedOutput}` : mergedOutput;
+
+                if (binaryAttachments.length > 0) {
+                    const output: NodeInputWithToolsPayload = {payload: combinedOutput, toolsPayload: binaryAttachments};
+
+                    onResultUpdate(id, output);
+                } else {
+                    onResultUpdate(id, combinedOutput);
+                }
             }
         }, setIsRunning);
-    }, [dataSource.type, dataSource.value, id, onResultUpdate]);
+    }, [dataSource.type, dataSource.value, id, onResultUpdate, input]);
+
+    useAutoRunOnInputChange({
+        clearError: () => { setError(null); },
+        clearOutput: () => { onResultUpdate(id); },
+        runCallback: handleRun
+    }, [input]);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 
@@ -78,7 +146,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
 
     if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
         content = <JsonInput value={dataSource.value} onChange={value => onConfigChange(id, {dataSource: {...dataSource, value}})} />;
-    } else if (dataSource.type === DATA_SOURCE_TYPES.MARKDOWN) {
+    } else if (dataSource.type === DATA_SOURCE_TYPES.MARKDOWN_AND_FILES) {
         content = <FilesInput value={dataSource.value} onChange={value => onConfigChange(id, {dataSource: {...dataSource, value}})} />;
     }
 
@@ -88,6 +156,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 id={id}
                 nodeIcon={Icon}
                 ports={{
+                    input: true,
                     output: true
                 }}
                 extraPorts = {
@@ -112,30 +181,41 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 onClose={() => setOpenSettings(false)}
                 title={title}
             >
-                <div style={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}>
-                    <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
-                        <InputLabel id="data-source-type-label">{DATA_SOURCE_TYPE_LABEL}</InputLabel>
-                        <Select
-                            labelId="data-source-type-label"
-                            label={DATA_SOURCE_TYPE_LABEL}
-                            value={dataSource.type}
-                            onChange={e => {
-                                if(e.target.value === DATA_SOURCE_TYPES.JSON) {
-                                    onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.JSON, value: ""}});
-                                } else if (e.target.value === DATA_SOURCE_TYPES.MARKDOWN) {
-                                    onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.MARKDOWN, value: {text: "", files: []}}});
-                                }
-                            }}
-                        >
-                            {
-                                Object.values(DATA_SOURCE_TYPES).map(type => (
-                                    <MenuItem key={type} value={type}>{type}</MenuItem>
-                                ))
+                <FieldsetGroup
+                    title="Expected Input Format"
+                    height="100%"
+                    collapsible
+                    defaultCollapsed
+                >
+                    <CodeEditor
+                        mode="json"
+                        value={DATASOURCE_INPUT_JSON_SCHEMA}
+                        readOnly={true}
+                        showLineNumbers={true}
+                    />
+                </FieldsetGroup>
+                <FormControl fullWidth size="small" sx={{mb: 2, mt: 1}}>
+                    <InputLabel id="data-source-type-label">{DATA_SOURCE_TYPE_LABEL}</InputLabel>
+                    <Select
+                        labelId="data-source-type-label"
+                        label={DATA_SOURCE_TYPE_LABEL}
+                        value={dataSource.type}
+                        onChange={e => {
+                            if(e.target.value === DATA_SOURCE_TYPES.JSON) {
+                                onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.JSON, value: ""}});
+                            } else if (e.target.value === DATA_SOURCE_TYPES.MARKDOWN_AND_FILES) {
+                                onConfigChange(id, {dataSource: {type: DATA_SOURCE_TYPES.MARKDOWN_AND_FILES, value: {text: "", files: []}}});
                             }
-                        </Select>
-                    </FormControl>
-                    {content}
-                </div>
+                        }}
+                    >
+                        {
+                            Object.values(DATA_SOURCE_TYPES).map(type => (
+                                <MenuItem key={type} value={type}>{DATA_SOURCE_TYPE_LABELS[type]}</MenuItem>
+                            ))
+                        }
+                    </Select>
+                </FormControl>
+                {content}
             </BaseDialog>
         </>
     );

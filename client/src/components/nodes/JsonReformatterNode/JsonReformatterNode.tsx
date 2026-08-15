@@ -20,6 +20,7 @@ import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {formatErrorMessage} from "../../../utils/utils";
 
 
 export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
@@ -45,7 +46,7 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
 
                             onResultUpdate(id, transformedData);
                         } catch (err) {
-                            setError(err instanceof Error ? err.message : `Unknown error:\n${JSON.stringify(err, null, 4)}`);
+                            setError(err instanceof Error ? err.message : formatErrorMessage("Unknown error", err));
 
                             onResultUpdate(id);
                         }

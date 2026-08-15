@@ -47,6 +47,15 @@ export const isValidJsonString = (input: any): boolean => {
     return false;
 }
 
+export const formatJsonCodeBlock = (data: unknown): string =>
+    `${TRIPLE_BACKTICK}json\n${JSON.stringify(data, null, 4)}\n${TRIPLE_BACKTICK}`;
+
+// For error/log text rendered through MarkdownRenderer — plain JSON.stringify output has real
+// newlines that Markdown treats as soft breaks (collapsed to spaces), so it must be fenced to
+// keep its formatting.
+export const formatErrorMessage = (prefix: string, errors: unknown): string =>
+    `${prefix}:\n\n${formatJsonCodeBlock(errors)}`;
+
 export const formatContentForDisplay = (input: any): string | undefined => {
     if (input === undefined || input === null) {
         return undefined;
@@ -56,13 +65,13 @@ export const formatContentForDisplay = (input: any): string | undefined => {
         try {
             const parsed = JSON.parse(input);
 
-            return `${TRIPLE_BACKTICK}json\n${JSON.stringify(parsed, null, 4)}\n${TRIPLE_BACKTICK}`;
+            return formatJsonCodeBlock(parsed);
         } catch {
             return input;
         }
     }
 
-    return `${TRIPLE_BACKTICK}json\n${JSON.stringify(input, null, 4)}\n${TRIPLE_BACKTICK}`;
+    return formatJsonCodeBlock(input);
 };
 
 export const parseUrl = (initialUrl: string): string => {

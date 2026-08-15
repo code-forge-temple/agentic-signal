@@ -9,20 +9,36 @@ import {NodeDescriptor} from "../types";
 import {DataSourceNode as component} from "./DataSourceNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsDataSourceNodeData, DATA_SOURCE_TYPES, DataSourceNode, DataSourceNodeDataSchema} from "./types/workflow";
+import {NodeInputWithToolsPayloadSchema} from "../LlmProcessNode/types/input.types";
+import {DataSourceInputSchema} from "./types/input.types";
 import {NODE_PORT_IDS} from '../../../constants';
 
 
 export const DataSourceNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataSourceNode> = {
     type: NODE_TYPE,
+    order: 3,
     component: component,
     icon: Icon,
     title: TITLE,
     assertion: assertIsDataSourceNodeData,
+    migrate: (data: any) => {
+        if (data?.dataSource?.type === 'markdown') {
+            return {...data, dataSource: {...data.dataSource, type: DATA_SOURCE_TYPES.MARKDOWN_AND_FILES}};
+        }
+
+        return data;
+    },
     metadata: {
-        description: "Provides static data to a workflow. Can supply raw JSON or markdown text with optional attached files.",
+        // eslint-disable-next-line max-len
+        description: "Provides static data to a workflow. Can supply raw JSON or markdown text with optional attached files. Can optionally receive another DataSourceNode's output on its flow input to chain multiple sources in series — the incoming data is prefixed onto this node's own data (shallow-merged for JSON, prepended as text for markdown, with file attachments combined).",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
-                outputSchema: z.any().describe("Provided static data or markdown output."),
+                inputSchema: DataSourceInputSchema,
+                outputSchema: z.union([
+                    z.any().describe("Raw JSON or plain markdown text output."),
+                    // eslint-disable-next-line max-len
+                    NodeInputWithToolsPayloadSchema.describe("Markdown output with binary file attachments — payload goes to the LLM, toolsPayload is forwarded directly to connected tools (e.g. file uploads)."),
+                ]).describe("Provided static data or markdown output."),
             },
             [NODE_PORT_IDS.TRIGGER]: true,
         },
@@ -35,7 +51,7 @@ export const DataSourceNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataSour
                 text: "",
                 files: []
             },
-            type: DATA_SOURCE_TYPES.MARKDOWN
+            type: DATA_SOURCE_TYPES.MARKDOWN_AND_FILES
         },
         toSanitize: ["input"],
     }

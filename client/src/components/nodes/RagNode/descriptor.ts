@@ -13,6 +13,7 @@ import {NODE_PORT_IDS} from '../../../constants';
 
 export const RagNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, RagNode> = {
     type: NODE_TYPE,
+    order: 10,
     component,
     icon: Icon,
     title: TITLE,

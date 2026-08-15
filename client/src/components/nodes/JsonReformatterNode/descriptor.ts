@@ -14,6 +14,7 @@ import {NODE_PORT_IDS} from '../../../constants';
 
 export const JsonReformatterNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, JsonReformatterNode> = {
     type: NODE_TYPE,
+    order: 7,
     component,
     icon: Icon,
     title: TITLE,

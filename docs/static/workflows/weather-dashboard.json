@@ -10,7 +10,7 @@
                         "text": "What is the weather like now in New York?",
                         "files": []
                     },
-                    "type": "markdown"
+                    "type": "markdown-and-files"
                 }
             },
             "position": {

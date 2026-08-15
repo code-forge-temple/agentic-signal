@@ -10,6 +10,7 @@ import {AgentTaskResult, OrchestrationParams, OrchestrationResult, OrchestratorP
 import {buildAggregationMessage, buildDependencyContext} from "./messageBuilders";
 import {runSingleCall} from "./runSingleCall";
 import {buildToolsDescription, resolveTaskTools} from "./toolResolution";
+import {formatErrorMessage} from "../../../../../utils/utils";
 
 /** Fixed JSON Schema used to constrain the orchestrator's planning response. */
 const ORCHESTRATOR_PLAN_SCHEMA = {
@@ -269,7 +270,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
             if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
                 return {
                     success: false,
-                    error: `Aggregation LLM returned an error response matching onError schema:\n${JSON.stringify(result, null, 4)}`
+                    error: formatErrorMessage("Aggregation LLM returned an error response matching onError schema", result)
                 };
             }
         }

@@ -31,6 +31,7 @@ import {CodeEditor} from "../../CodeEditor";
 import "ace-builds/src-noconflict/mode-json";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {formatFeedbackMessage} from "../StockAnalysisNode/utils";
+import {formatErrorMessage} from "../../../utils/utils";
 
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -67,7 +68,7 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
 
                     onResultUpdate(id, validationResult.data);
                 } else {
-                    setError(`Chart data validation failed: \n${JSON.stringify(validationResult.error, null, 4)}`);
+                    setError(formatErrorMessage("Chart data validation failed", validationResult.error));
 
                     setChartData(null);
 
@@ -184,7 +185,7 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>
-                <FieldsetGroup title="Expected Input Format *" height={"100%"}>
+                <FieldsetGroup title="Expected Input Format *" height={"100%"} collapsible defaultCollapsed>
                     <CodeEditor
                         mode="json"
                         value={CHART_INPUT_JSON_SCHEMA}

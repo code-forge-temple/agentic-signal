@@ -1,0 +1,63 @@
+---
+sidebar_position: 15
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import formFillingCvMultiPageJson from '@site/static/workflows/form-filling-cv-multi-page.json';
+import { WorkflowJsonTab } from '@site/src/components/WorkflowJsonTab';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# Form Filling (Multi-Page CV Application) Workflow
+
+This workflow fills out and submits a multi-step job application form — one page at a time — using the [Form Interaction Tool](/docs/nodes/ai/tools/form-interaction), which keeps the same browser session open across calls so progress persists between pages.
+
+> **Note:**  
+> Form filling requires reliable, sustained tool use across multiple pages — discovering each page's fields, filling them, clicking through, and submitting. Smaller local models (≤ 27B parameters) have been observed failing at this: some report success without ever actually completing the form, others never issue a real tool call at all.  
+> This workflow works reliably with larger LLMs (more than 27B parameters).
+
+<Tabs>
+    <TabItem value="preview" label="Preview" default>
+        ![Form Filling Multi-Page CV Workflow](/img/workflows/form-filling-cv-preview.webp)
+    </TabItem>
+
+    <TabItem value="json" label="JSON">
+        <WorkflowJsonTab downloadUrl={useBaseUrl("/workflows/form-filling-cv-multi-page.json")}>
+        {JSON.stringify(formFillingCvMultiPageJson, null, 4)}
+        </WorkflowJsonTab>
+    </TabItem>
+
+    <TabItem value="config" label="Node Configuration">
+        - [**Data Source**](/docs/nodes/input/data-source)  
+            - Type: Markdown & Files — the applicant's profile as markdown text, plus an attached CV PDF forwarded directly to the tool (bypasses the LLM)
+        - [**AI Data Processing**](/docs/nodes/ai/llm-process)  
+            - Prompt: Instructs the model to repeat a discover → fill current page → click the reported button cycle, page after page, until the tool reports `submitted: true` with no required fields left
+            - Tools:
+                - [Form Interaction Tool](/docs/nodes/ai/tools/form-interaction) — `Require Tool Use` enabled, typing delay: 1s
+            - Model: gemma4:31b-cloud
+            - Max Tool Retries: 8
+        - [**Data Flow Spy**](/docs/nodes/output/data-flow-spy)  
+            - Output: Displays the model's final summary of the submission outcome
+    </TabItem>
+
+    <TabItem value="test" label="Test Locally">
+        This workflow's Data Source node points at a form served on `localhost:3001` — a test form included with Agentic Signal. To try the workflow yourself:
+
+        1. Download <a href={useBaseUrl("/test-form/cv-application-multi-page.html")} download>cv-application-multi-page.html</a> into an empty folder.
+        2. From that folder, serve it on port 3001:
+            ```bash
+            bunx serve . -p 3001 --no-clipboard
+            ```
+        3. Download this workflow's JSON (see the **JSON** tab), load it into Agentic Signal, and run it.
+    </TabItem>
+</Tabs>
+
+---
+
+## Steps
+
+1. **Provide Input**: The Data Source node supplies the applicant's profile as markdown plus an attached CV PDF, including the multi-page form's URL.
+2. **Discover the Current Page**: The AI Data Processing node calls the Form Interaction Tool with the URL to read the fields and buttons visible on whichever page the session is currently on.
+3. **Fill and Advance**: The model fills every required field on that page, then calls the tool again with those actions and a `submitSelector` taken from the tool's `actionButtons` (e.g. "Next" or "Submit").
+4. **Repeat Per Page**: Because the tool reuses the same browser session for the same URL, the next call picks up on the newly revealed page instead of restarting — this repeats until the tool reports `submitted: true` with no required fields left.
+5. **Display Result**: The Data Flow Spy node shows the model's summary of whether the application was submitted successfully.

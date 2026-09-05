@@ -54,12 +54,14 @@ async function fetchDataFromUrl (url: string, dataType: FetchDataType) {
     }
 }
 
-function validateGetDataInput (url: string, dataType: FetchDataType) {
+function validateGetDataInput (url: string | undefined, dataType: FetchDataType | undefined) {
     const validation = GetDataNodeInputSchema.safeParse({url, dataType});
 
     if (!validation.success) {
         throw new Error(formatErrorMessage("Invalid input", validation.error.issues));
     }
+
+    return validation.data;
 }
 
 export function GetDataNode ({data, id}: NodeProps<AppNode>) {
@@ -75,22 +77,26 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
     const dataProvidedByUpstreamRef = useLatestValue(dataProvidedByUpstream);
     const openSettingsRef = useLatestValue(openSettings);
 
+    const forwardToolsPayload = useCallback(
+        () => (input?.toolsPayload !== undefined ? {toolsPayload: input.toolsPayload} : {}),
+        [input]
+    );
+
     useAutoRunOnInputChange({
         clearError: () => setError(null),
         clearOutput: () => onResultUpdate(id),
         runCallback: async () => {
-            console.log("Running GetDataNode due to input change...");
-
             if (dataProvidedByUpstreamRef.current && !openSettingsRef.current) {
                 runTask(async () => {
-                    console.log("Fetching data from URL:", input?.url, "with data type:", input?.dataType);
+                    const upstreamUrl = getField<string | undefined>(input?.payload, "url", undefined);
+                    const upstreamDataType = getField<FetchDataType | undefined>(input?.payload, "dataType", undefined);
 
                     try {
-                        validateGetDataInput(input?.url, input?.dataType);
+                        const validated = validateGetDataInput(upstreamUrl, upstreamDataType);
 
-                        const getData = await fetchDataFromUrl(input?.url, input?.dataType);
+                        const getData = await fetchDataFromUrl(validated.url, validated.dataType);
 
-                        onResultUpdate(id, getData);
+                        onResultUpdate(id, {payload: getData, ...forwardToolsPayload()});
                     } catch (error) {
                         setError(`Error fetching data: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
@@ -101,8 +107,8 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
         }
     }, [input]);
 
-    const mergedUrl: string = getField(dataProvidedByUpstream ? input : undefined, "url", url);
-    const mergedDataType: FetchDataType = getField(dataProvidedByUpstream ? input : undefined, "dataType", dataType);
+    const mergedUrl: string = getField(dataProvidedByUpstream ? input?.payload : undefined, "url", url);
+    const mergedDataType: FetchDataType = getField(dataProvidedByUpstream ? input?.payload : undefined, "dataType", dataType);
 
     const handleRun = useCallback(() => {
         setError(null);
@@ -114,14 +120,14 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
 
                 const getData = await fetchDataFromUrl(mergedUrl, mergedDataType);
 
-                onResultUpdate(id, getData);
+                onResultUpdate(id, {payload: getData, ...forwardToolsPayload()});
             } catch (error) {
                 setError(`Error fetching data: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
                 onResultUpdate(id);
             }
         }, setIsRunning);
-    }, [onResultUpdate, id, mergedUrl, mergedDataType]);
+    }, [onResultUpdate, id, mergedUrl, mergedDataType, forwardToolsPayload]);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 

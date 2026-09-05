@@ -5,4 +5,5 @@
  ************************************************************************/
 
 export {EXTRACTION_TYPE} from '@shared/utils';
+
 export type {EXTRACTION_TYPE as ExtractionType} from '@shared/utils';

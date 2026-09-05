@@ -25,7 +25,8 @@ This section contains ready-to-use workflow examples that you can download and i
 - [**AI Data Processing Overseer**](/docs/workflows/data/ai-data-processing-overseer) – Chain AI nodes with validation and feedback loops  
 - [**Form Filling (CV Application)**](/docs/workflows/data/form-filling-cv) – Fill out and submit a single-page job application form from an applicant profile and CV  
 - [**Form Filling (Multi-Page CV Application)**](/docs/workflows/data/form-filling-cv-multi-page) – Fill out and submit a multi-step job application form, one page at a time  
-- [**Form Filling (Multi-Form Orchestration)**](/docs/workflows/data/form-filling-orchestration) – Fill out and submit multiple job application forms in parallel tasks using AI Orchestration Mode
+- [**Form Filling (Multi-Form Orchestration)**](/docs/workflows/data/form-filling-orchestration) – Fill out and submit multiple job application forms in parallel tasks using AI Orchestration Mode  
+- [**Extract Web Page Data**](/docs/workflows/data/extract-web-page-data) – Read a URL with an AI node and summarize the page's main points
 
 ## How to Use
 

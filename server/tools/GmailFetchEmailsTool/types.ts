@@ -11,15 +11,15 @@ export const EmailResultFields = {
     date: 'String'
 } as const;
 
-export interface EmailResult {
+export type EmailResult = {
     id: string;
     subject?: string;
     from?: string;
     date?: string;
-}
+};
 
-export interface EmailSearchArgs {
+export type EmailSearchArgs = {
     query: string;
     maxResults: number;
     accessToken: string;
-}
+};

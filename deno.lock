@@ -6200,6 +6200,7 @@
     "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/ffi/types.ts": "e2c92463e482dfafe4abcda5593c6295966795339e64f6c0d8d5ab0a6e3978c7",
     "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/ffi/windows.ts": "59bb39a096f1862836389b923a2a623e5e2e12d5f2a853c5494222f76a2d53da",
     "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/SerialPortList.ts": "f6d52bf4a70e4f2a9843f96617d348bf2400f5f7e190b61fbe93ac7444708f22",
+    "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/common.ts": "b506bc54d493ee5d365694c97039c9976881d354231c11fd48cf46a025fff1b8",
     "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/posixList.ts": "d1f55c5e3248b1e813ad4f206039abb9b09a5717ae93866861c678f2b877d1f4",
     "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/list/windowsList.ts": "6c65ea96627bf2d8d151e65b62a7219417c1c9ee3f71b7f3bd3bd12e9d3757db",
     "https://raw.githubusercontent.com/code-forge-temple/serial-kit/main/src/serial/port/SerialPort.ts": "63ae56fd2d2a094c509c8f4825036740dccd4f2098876545607d59fc72bf4b29",

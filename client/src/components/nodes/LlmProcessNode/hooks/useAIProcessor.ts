@@ -5,8 +5,8 @@
  ************************************************************************/
 
 import {useState, useCallback} from 'react';
-import {GenericNodeData} from '../../../../types/workflow';
 import {Message, MessageRole, SystemUserConfigValues, ToolSchema} from '../../../../types/ollama.types';
+import {NodeEnvelope} from '../../../../types/workflow';
 import {LlmProcessNodeData} from '../types/workflow';
 import {useFetchModels} from '../../../../hooks/useFetchModels';
 import Ajv from 'ajv';
@@ -32,7 +32,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     const {models, isFetchingModels, fetchModels} = useFetchModels(handleFetchModelsError);
 
     const processAIRequest = useCallback(async ({
-        input,
+        payload,
         prompt,
         message,
         model,
@@ -45,7 +45,8 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         think,
         temperature,
         orchestrationMode
-    }: Pick<GenericNodeData & LlmProcessNodeData, 'input' | 'prompt' | 'message' | 'model' | 'format'> & {
+    }: Pick<LlmProcessNodeData, 'prompt' | 'message' | 'model' | 'format'> & {
+    payload?: NodeEnvelope['payload'];
     tools?: {
         schema: ToolSchema,
         systemUserConfigValues: SystemUserConfigValues,
@@ -71,11 +72,17 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             return null;
         }
 
-        if (orchestrationMode && (Array.isArray(input) || typeof input === "string")) {
+        // Any provided payload can be decomposed — array, string, plain object, even a bare
+        // number/boolean. The one case that must still fall through to the standard path
+        // below is "no payload at all" (message-only nodes rely on that; runOrchestration
+        // has no concept of `message`), so this deliberately excludes only null/undefined.
+        if (orchestrationMode && payload != undefined) {
             setError([]);
 
+            // runOrchestration's own parameter is still named `input` (its contract, defined
+            // in aiOrchestration/types.ts, is out of scope for this rename).
             const orchestrationResult = await runOrchestration({
-                input,
+                input: payload,
                 prompt,
                 model,
                 format,
@@ -97,7 +104,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             return orchestrationResult.result;
         }
 
-        if (!prompt && !message && !input) {
+        if (!prompt && !message && !payload) {
             const errorMsg = "Please provide a prompt, message, or input data.";
 
             setError(prev => [...prev, errorMsg]);
@@ -144,9 +151,9 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     });
                 }
 
-                // Always add user message if we have input or message config
-                if (input !== undefined || message) {
-                    const serializedInput = input ? serializeInput(input) : "";
+                // Always add user message if we have payload or message config
+                if (payload !== undefined || message) {
+                    const serializedInput = payload ? serializeInput(payload) : "";
 
                     assertIsSerializedInput(serializedInput);
 
@@ -190,14 +197,14 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                         content: `The previous response caused an error in downstream processing. Here's the feedback: ${feedback}\n\nPlease provide a corrected response that addresses this issue.`
                     });
                 } else {
-                    // New input - reset conversation but keep system message
+                    // New payload - reset conversation but keep system message
                     const systemMsg = messages.find(m => m.role === MessageRole.SYSTEM);
 
                     messages = systemMsg ? [systemMsg] : [];
 
                     // Add new user message
-                    if (input !== undefined || message) {
-                        const serializedInput = input ? serializeInput(input) : "";
+                    if (payload !== undefined || message) {
+                        const serializedInput = payload ? serializeInput(payload) : "";
 
                         assertIsSerializedInput(serializedInput);
 

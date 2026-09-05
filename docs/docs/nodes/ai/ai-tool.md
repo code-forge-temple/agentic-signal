@@ -16,19 +16,20 @@ It acts as a function-calling node that can be configured with different tool ty
 
 Each AI Tool node must specify a `toolSubtype`. Available subtypes include:
 
-- `fetch-weather-data` — Fetches weather data for a given city
-- `duckduckgo-search` — Performs a DuckDuckGo search and returns results
-- `brave-search` — Performs a Brave Search using the Brave Search API
-- `csv-to-array` — Converts CSV file content into an array of objects for downstream processing
-- `max` — Finds the row(s) with the maximum value for a specified key in an array of objects
-- `min` — Finds the row(s) with the minimum value for a specified key in an array of objects
-- `sort` — Sorts an array of objects by a specified key and order (ascending or descending)
-- `date-time-now` — Returns the current date and time in ISO 8601 format
-- `gmail-fetch-emails` — Fetches emails from Gmail using search queries
-- `gdrive-fetch-files` — Fetches files from Google Drive using search queries
-- `gcalendar-fetch-events` — Fetches events from Google Calendar within a specified date range
-- `stock-analysis` — Analyzes historical stock data and computes technical indicators (SMA, volatility, trend, etc.)
-- `form-interaction` — Navigates to a web form, discovers its fields and clickable buttons, and fills/submits it via browser automation
+- [`fetch-weather-data`](/docs/nodes/ai/tools/fetch-weather-data) — Fetches weather data for a given city
+- [`duckduckgo-search`](/docs/nodes/ai/tools/duckduckgo-search) — Performs a DuckDuckGo search and returns results
+- [`brave-search`](/docs/nodes/ai/tools/brave-search) — Performs a Brave Search using the Brave Search API
+- [`web-page-to-markdown`](/docs/nodes/ai/tools/web-page-to-markdown) — Fetches one or more web pages and returns their main content as clean Markdown
+- [`csv-to-array`](/docs/nodes/ai/tools/csv-to-array) — Converts CSV file content into an array of objects for downstream processing
+- [`max`](/docs/nodes/ai/tools/max) — Finds the row(s) with the maximum value for a specified key in an array of objects
+- [`min`](/docs/nodes/ai/tools/min) — Finds the row(s) with the minimum value for a specified key in an array of objects
+- [`sort`](/docs/nodes/ai/tools/sort) — Sorts an array of objects by a specified key and order (ascending or descending)
+- [`date-time-now`](/docs/nodes/ai/tools/date-time-now) — Returns the current date and time in ISO 8601 format
+- [`gmail-fetch-emails`](/docs/nodes/ai/tools/gmail-fetch-emails) — Fetches emails from Gmail using search queries
+- [`gdrive-fetch-files`](/docs/nodes/ai/tools/gdrive-fetch-files) — Fetches files from Google Drive using search queries
+- [`gcalendar-fetch-events`](/docs/nodes/ai/tools/gcalendar-fetch-events) — Fetches events from Google Calendar within a specified date range
+- [`stock-analysis`](/docs/nodes/ai/tools/stock-analysis) — Analyzes historical stock data and computes technical indicators (SMA, volatility, trend, etc.)
+- [`form-interaction`](/docs/nodes/ai/tools/form-interaction) — Navigates to a web form, discovers its fields and clickable buttons, and fills/submits it via browser automation
 
 ## Inputs
 

@@ -1,0 +1,130 @@
+---
+sidebar_position: 6
+---
+
+# Job Search Node
+
+The **Job Search Node** pulls job postings **straight from company ATS boards** —
+[Greenhouse](https://www.greenhouse.io/), [Lever](https://www.lever.co/),
+[Ashby](https://www.ashbyhq.com/) and [Workable](https://www.workable.com/) — for a
+list of companies you choose. No API key. Every returned job carries a direct
+`applyUrl` to the employer's own application form.
+
+:::info Not a market search
+These ATS APIs are **per-company**, not searchable. The node only sees the companies
+you list (plus an optional built-in starter set) — a great role at a company you
+didn't list is invisible. In exchange you get real, direct apply links and no rate
+caps.
+:::
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
+
+<Tabs>
+    <TabItem value="companies" label="Companies" default>
+        One company per line. Any of:
+
+        - `greenhouse:stripe` — explicit ATS + board token
+        - `lever:vercel`, `ashby:linear`, `workable:acme`
+        - the company's **ATS-hosted board URL** — `https://jobs.ashbyhq.com/ramp`,
+          `https://boards.greenhouse.io/stripe`, `https://jobs.lever.co/vercel`. This is
+          **not** the company's own careers page (`acme.com/careers`) — those are custom
+          pages the parser can't read; open a job listing from them and copy the ATS
+          domain it lands on instead.
+        - a bare name — `Some Company` — auto-located across the four ATSs (only works if
+          the slugified name matches the real board token)
+
+        **Built-in companies** is a searchable multiselect over a vendored ~138-company
+        starter set (Greenhouse / Lever / Ashby) — pick individual companies, or use
+        **Select all**, **Clear**, or **+ All greenhouse/lever/ashby/workable** to select
+        in bulk. Selected companies run alongside whatever you typed in the box above.
+
+        Workable's public endpoint is heavily rate-limited — a throttled company just
+        shows up in `errors[]` and the run continues.
+    </TabItem>
+    <TabItem value="search" label="Search">
+        - **Keywords**: a **comma-separated list of phrases**, matched
+          case-insensitively against the job **title and department only** (not the
+          description). A role matches a phrase when **every word** of that phrase
+          appears in the title (any order; substring, so `engineer` also hits
+          `engineering`; `-`/`/` are ignored). A role matches if **any** phrase
+          matches. **Shorter phrases match more broadly** — `full stack` catches every
+          full-stack role, `full stack engineer` only those with all three words,
+          `senior full stack engineer` fewer still. No synonym expansion: to span
+          engineer/developer, list both or use a shorter stem. Empty = every role at
+          the listed companies.
+        - **Remote only**: keep only roles the ATS flags as remote.
+    </TabItem>
+    <TabItem value="filters" label="Filters">
+        - **Employment type**: full-time / part-time / contract / internship (empty = any).
+        - **Posted**: only roles newer than the chosen window.
+        - **Seniority**: best-effort, inferred from the title.
+    </TabItem>
+    <TabItem value="eligibility" label="Work Eligibility">
+        - **Candidate region**: where you'd work from. Each job is tagged with
+          `eligibleFromTarget` (`true` / `false` / `null`) and `eligibilityConfidence`.
+          ATS location data is free text, so confidence is usually `low`.
+        - **Drop jobs that clearly exclude this region**: removes only high-confidence
+          mismatches. Weak signal here — most jobs pass.
+    </TabItem>
+    <TabItem value="limits" label="Limits">
+        - **Max companies per run**: fan-out safety cap (default 60). Company responses
+          are cached ~30 min, so re-runs while tuning filters are near-instant.
+        - **Max results**: cap on returned jobs after filtering.
+    </TabItem>
+    <TabItem value="upstream" label="Upstream Input">
+        Enable **Provided by Upstream** to take `companies` / `keywords` /
+        `candidateRegion` from an upstream node's payload — e.g. an LLM node that
+        expands "fintech companies hiring remotely" into a list of slugs.
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="job-search" />
+    </TabItem>
+</Tabs>
+
+## Output
+
+```jsonc
+{
+  "jobs": [
+    {
+      "source": "ashby", "ats": "ashby",
+      "title": "Senior Backend Engineer",
+      "company": "linear", "companyToken": "linear",
+      "department": "Engineering",
+      "url": "https://jobs.ashbyhq.com/linear/…",
+      "applyUrl": "https://jobs.ashbyhq.com/linear/…/application",   // direct employer form
+      "location": "North America", "isRemote": true,
+      "candidateLocations": ["North America"],
+      "eligibleFromTarget": null, "eligibilityConfidence": "low",
+      "employmentType": "Full-time",
+      "postedAt": "2026-08-14T20:34:59.324Z",
+      "descriptionText": "…plain text, for an LLM…"
+    }
+  ],
+  "counts": { "companies": 60, "reachable": 60, "jobsFetched": 5104, "afterFilter": 246, "afterDedupe": 237, "returned": 15 },
+  "errors": [ { "company": "acme", "ats": "workable", "message": "Workable (acme) returned 429 Too Many Requests" } ]
+}
+```
+
+## Common Use Cases
+
+1. **Targeted job hunt**: list your 30–80 dream companies, filter for remote senior roles, get direct apply links.
+2. **LLM screening**: feed `jobs` to an [AI Data Processing](/docs/nodes/ai/llm-process) node to rank fit or draft cover letters — `descriptionText` is included.
+3. **Daily digest**: pair with a [Timer Node](/docs/nodes/input/timer) and a [Slack Output](/docs/nodes/output/slack-output) node.
+
+## Best Practices
+
+- Curate the **Companies** list — that's the real lever. The built-in set is a starting point, not a market.
+- Keep **Max companies** modest; the cache makes iterative filtering cheap.
+- Use specific multi-word keywords; matching is title/department only.
+
+## Troubleshooting
+
+- **A company in `errors[]`**: wrong token, company not on that ATS, or (Workable) rate-limited. Check the careers-page URL for the real slug.
+- **`reachable` < `companies`**: some tokens didn't resolve — see `errors[]`.
+- **Few results**: broaden keywords, widen **Posted**, turn off **Remote only**, or raise **Max companies**.
+- **Missing Workday/Taleo companies**: not supported — their public APIs need per-tenant auth, and they gate applications behind mandatory accounts anyway.

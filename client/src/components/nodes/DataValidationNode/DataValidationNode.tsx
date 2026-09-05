@@ -18,9 +18,27 @@ import {runTask} from "../BaseNode/utils";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {BasicTabs} from "../../Tabs/Tabs";
+import {Box, Switch, Tooltip} from "@mui/material";
 
 
 const ajv = new Ajv();
+
+function validateAgainstSchema (schema: string | undefined, value: unknown): {valid: boolean; message?: string} {
+    if (!schema) {
+        return {valid: true};
+    }
+
+    try {
+        const parsedSchema = JSON.parse(schema);
+        const validateFn = ajv.compile(parsedSchema);
+        const valid = validateFn(value);
+
+        return valid ? {valid: true} : {valid: false, message: ajv.errorsText(validateFn.errors)};
+    } catch (e) {
+        return {valid: false, message: e instanceof Error ? e.message : String(e)};
+    }
+}
 
 export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -30,34 +48,48 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
     const [openSettings, setOpenSettings] = useState(false);
     const [openLogs, setOpenLogs] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
-    const {title, schema, input, onResultUpdate, onConfigChange, onFeedbackSend} = data;
+    const {
+        title, validatePayload, payloadSchema, validateToolsPayload, toolsPayloadSchema,
+        input, onResultUpdate, onConfigChange, onFeedbackSend
+    } = data;
+    const isPayloadValidationOn = validatePayload !== false;
 
     useAutoRunOnInputChange({
-        clearError: ()=> {setError(null)},
+        clearError: () => {setError(null)},
         clearOutput: () => {onResultUpdate(id)},
         runCallback: () => {
             runTask(async () => {
-                const validate = (input: any) => {
-                    try {
-                        const parsedSchema = JSON.parse(schema);
-                        const validateFn = ajv.compile(parsedSchema);
-                        const valid = validateFn(input);
+                if (isPayloadValidationOn) {
+                    const payloadResult = validateAgainstSchema(payloadSchema, input?.payload);
 
-                        if (!valid) {
-                            throw new Error("Validation failed: " + ajv.errorsText(validateFn.errors));
-                        }
-
-                        onResultUpdate(id, input);
-                    } catch (e) {
-                        const errorMessage = e instanceof Error ? e.message : String(e);
+                    if (!payloadResult.valid) {
+                        const errorMessage = "Payload: " + payloadResult.message;
 
                         setError(errorMessage);
-
                         onFeedbackSend(id, errorMessage);
-                    }
-                };
 
-                validate(input);
+                        return;
+                    }
+                }
+
+                if (validateToolsPayload) {
+                    const toolsPayloadResult = validateAgainstSchema(toolsPayloadSchema, input?.toolsPayload);
+
+                    if (!toolsPayloadResult.valid) {
+                        const errorMessage = "Tools Payload: " + toolsPayloadResult.message;
+
+                        setError(errorMessage);
+                        onFeedbackSend(id, errorMessage);
+
+                        return;
+                    }
+                }
+
+                setError(null);
+                onResultUpdate(id, {
+                    payload: input?.payload,
+                    ...(input?.toolsPayload !== undefined ? {toolsPayload: input.toolsPayload} : {}),
+                });
             }, setIsRunning);
         }
     }, [input]);
@@ -65,10 +97,18 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
 
     const [validationSchema, setValidationSchema] = useDebouncedState({
         callback: (value: string) => {
-            onConfigChange(id, {schema: value});
+            onConfigChange(id, {payloadSchema: value});
         },
         delay: 300,
-        initialValue: schema || ""
+        initialValue: payloadSchema || ""
+    });
+
+    const [toolsValidationSchema, setToolsValidationSchema] = useDebouncedState({
+        callback: (value: string) => {
+            onConfigChange(id, {toolsPayloadSchema: value});
+        },
+        delay: 300,
+        initialValue: toolsPayloadSchema || ""
     });
 
     return (
@@ -82,7 +122,7 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
                 }}
                 running={isRunning}
                 title={title}
-                settings={{callback: () => setOpenSettings(true), highlight: !schema}}
+                settings={{callback: () => setOpenSettings(true), highlight: isPayloadValidationOn && !payloadSchema?.trim()}}
                 logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
             />
 
@@ -94,11 +134,71 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title="Validation Schema">
-                <CodeEditor
-                    mode="json"
-                    value={validationSchema}
-                    onChange={setValidationSchema}
-                    placeholder="Enter JSON Schema for validation"
+                <BasicTabs
+                    tabs={[
+                        {
+                            title: "Payload Schema",
+                            label: (
+                                <Box sx={{display: "flex", alignItems: "center", gap: 0.5}}>
+                                    <Tooltip title={isPayloadValidationOn ? "Payload is validated — a failure blocks all output" : "Payload passes through unvalidated"}>
+                                        <span style={{display: "inline-flex"}}>
+                                            <Switch
+                                                size="small"
+                                                checked={isPayloadValidationOn}
+                                                onChange={e => onConfigChange(id, {validatePayload: e.target.checked})}
+                                                onClick={e => e.stopPropagation()}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                    <span>Payload Schema</span>
+                                </Box>
+                            ),
+                            content: (
+                                <CodeEditor
+                                    mode="json"
+                                    value={validationSchema}
+                                    onChange={setValidationSchema}
+                                    disabled={!isPayloadValidationOn}
+                                    placeholder={
+                                        isPayloadValidationOn
+                                            ? "Enter JSON Schema for validation (leave blank to skip)"
+                                            : "Enable the switch on this tab to configure payload validation"
+                                    }
+                                />
+                            )
+                        },
+                        {
+                            title: "Tools Payload Schema",
+                            label: (
+                                <Box sx={{display: "flex", alignItems: "center", gap: 0.5}}>
+                                    <Tooltip title={validateToolsPayload ? "Tools Payload is validated — a failure blocks all output" : "Tools Payload passes through unvalidated"}>
+                                        <span style={{display: "inline-flex"}}>
+                                            <Switch
+                                                size="small"
+                                                checked={validateToolsPayload || false}
+                                                onChange={e => onConfigChange(id, {validateToolsPayload: e.target.checked})}
+                                                onClick={e => e.stopPropagation()}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                    <span>Tools Payload Schema</span>
+                                </Box>
+                            ),
+                            content: (
+                                <CodeEditor
+                                    mode="json"
+                                    value={toolsValidationSchema}
+                                    onChange={setToolsValidationSchema}
+                                    disabled={!validateToolsPayload}
+                                    placeholder={
+                                        validateToolsPayload
+                                            ? "Enter JSON Schema for Tools Payload validation (leave blank to skip; a failure blocks all output)"
+                                            : "Enable the switch on this tab to configure Tools Payload validation"
+                                    }
+                                />
+                            )
+                        }
+                    ]}
                 />
             </BaseDialog>
         </>

@@ -42,7 +42,8 @@ export function GoogleToolOauthConfigFields ({
     const {globalData, setGlobalData} = useGlobalConfig();
     const googleClientId = globalData[GOOGLE_CLIENT_ID_KEY] || userConfig[GOOGLE_CLIENT_ID_KEY] || '';
     const GLOBAL_ACCESS_TOKEN_KEY = globalToolProp(toolSubtype, ACCESS_TOKEN_KEY);
-    const isConnected = !!(globalData[GLOBAL_ACCESS_TOKEN_KEY]?.length);
+    const accessToken = globalData[GLOBAL_ACCESS_TOKEN_KEY] || userConfig[ACCESS_TOKEN_KEY] || '';
+    const isConnected = !!accessToken.length;
 
     return (
         <Box>
@@ -96,7 +97,7 @@ export function GoogleToolOauthConfigFields ({
                     </Box>
                     <DebouncedTextField
                         label={`Access Token (Manual)${required ? ' *' : ''}`}
-                        value={globalData[GLOBAL_ACCESS_TOKEN_KEY] || ''}
+                        value={accessToken}
                         onChange={(value) => {
                             onConfigChange(ACCESS_TOKEN_KEY, value);
                             setGlobalData(GLOBAL_ACCESS_TOKEN_KEY, value);

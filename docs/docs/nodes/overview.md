@@ -31,10 +31,13 @@ Legend:
 - [AI Data Processing](/docs/nodes/ai/llm-process)
 - [AI Tool](/docs/nodes/ai/ai-tool)
 - [RAG](/docs/nodes/ai/rag)
+- [GET Data](/docs/nodes/input/get-data)
 - [HTTP Data](/docs/nodes/input/http-data)
+- [Job Search](/docs/nodes/input/job-search)
 - [JSON Reformatter](/docs/nodes/data/json-reformatter)
 - [Stock Analysis](/docs/nodes/data/stock-analysis)
 - [Async Data Aggregator](/docs/nodes/data/async-data-aggregator)
+- [Delayed Snapshot](/docs/nodes/data/delayed-snapshot)
 - [Data Validation](/docs/nodes/data/data-validation)
 - [Chart](/docs/nodes/output/chart)
 - [Data Flow Spy](/docs/nodes/output/data-flow-spy)
@@ -50,6 +53,8 @@ Legend:
 - **Google Services**: Gmail, Google Drive, Google Calendar.
 - **Weather APIs**: Real-time weather data.
 - **Search Engines**: DuckDuckGo, Brave Search.
+- **Form Filling**: Read, fill, and submit multi-step web forms (with file uploads) via browser automation.
+- **Web Page to Markdown**: Convert any web page into clean Markdown for LLM context.
 - **Financial Analysis**: Stock market data analysis with technical indicators.
 - **Date/Time Tools**: Get current date and time.
 - **Slack**: Send and receive messages via Slack slash commands using Socket Mode.

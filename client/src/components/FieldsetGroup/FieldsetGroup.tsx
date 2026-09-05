@@ -14,21 +14,12 @@ type FieldsetGroupProps = {
     title: string;
     height?: string;
     style?: React.CSSProperties;
-    /** When true, the title (and the arrow button next to it) toggle the group open/closed. */
     collapsible?: boolean;
-    /** Initial open/closed state when collapsible — only read once, on mount. */
     defaultCollapsed?: boolean;
-    /**
-     * When true and not collapsed, the group grows to fill any remaining vertical space in a
-     * flex-column parent (e.g. a code editor that should expand with a maximized dialog) instead
-     * of shrink-wrapping to its content. Has no effect while collapsed, so a collapsed group never
-     * stretches into an empty box.
-     */
     fillAvailableSpace?: boolean;
 };
 
 export const FieldsetGroup = ({children, title, height, style, collapsible = false, defaultCollapsed = false, fillAvailableSpace = false}: FieldsetGroupProps) => {
-    // Uncontrolled: the group owns its own open/closed state — callers only seed the initial value.
     const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
     const isCollapsed = collapsible && collapsed;
 
@@ -70,10 +61,6 @@ export const FieldsetGroup = ({children, title, height, style, collapsible = fal
                 {title}
             </FormLabel>
             {collapsible && (
-                // Positioned independently of the legend (rather than inside it) so the legend
-                // keeps shrink-wrapping to the title — its native border-cutout only interrupts
-                // the border under the title, not the full width. This straddles the border the
-                // same way the legend does, mirroring the title's position on the opposite side.
                 <IconButton
                     size="small"
                     onClick={e => { e.stopPropagation(); toggle(); }}

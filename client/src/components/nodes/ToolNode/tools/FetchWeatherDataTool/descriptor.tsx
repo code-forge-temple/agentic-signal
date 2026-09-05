@@ -9,6 +9,9 @@ import {ToolDefinition} from "../types";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
 import {FetchWeatherDataToolConfigFields} from "./components/FetchWeatherDataToolConfigFields";
+import {UserConfigFields} from "../../UserConfigFields";
+import {excludeKeysFromObject} from "../../../../../utils";
+import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse} from "./mappers";
 
 
 export const FetchWeatherDataToolDescriptor:ToolDefinition = {
@@ -40,10 +43,17 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
     toSanitize: ["userConfig.apiKey"],
     renderConfig: function ({userConfig, onConfigChange}) {
         return (
-            <FetchWeatherDataToolConfigFields
-                userConfig={userConfig}
-                onConfigChange={onConfigChange}
-            />
+            <>
+                <FetchWeatherDataToolConfigFields
+                    userConfig={userConfig}
+                    onConfigChange={onConfigChange}
+                />
+                <UserConfigFields
+                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, ["apiKey"])}
+                    userConfig={userConfig}
+                    onConfigChange={onConfigChange}
+                />
+            </>
         );
     },
     handlerFactory: (userConfig: { apiKey?: string }) => async ({city, date}: { city: string, date?: string }) => {
@@ -104,66 +114,11 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
 
             // Return appropriate data structure based on endpoint
             if (endpoint === "current.json") {
-                return {
-                    location: {
-                        name: data.location?.name,
-                        region: data.location?.region,
-                        country: data.location?.country,
-                        localtime: data.location?.localtime
-                    },
-                    current: {
-                        temp_c: data.current?.temp_c,
-                        temp_f: data.current?.temp_f,
-                        condition: data.current?.condition?.text,
-                        wind_kph: data.current?.wind_kph,
-                        wind_mph: data.current?.wind_mph,
-                        wind_dir: data.current?.wind_dir,
-                        humidity: data.current?.humidity,
-                        feelslike_c: data.current?.feelslike_c,
-                        feelslike_f: data.current?.feelslike_f,
-                        uv: data.current?.uv
-                    }
-                };
+                return mapCurrentWeatherResponse(data);
             } else if (endpoint === "forecast.json") {
-                return {
-                    location: {
-                        name: data.location?.name,
-                        region: data.location?.region,
-                        country: data.location?.country,
-                        localtime: data.location?.localtime
-                    },
-                    forecast: data.forecast?.forecastday?.[0] ? {
-                        date: data.forecast.forecastday[0].date,
-                        maxtemp_c: data.forecast.forecastday[0].day?.maxtemp_c,
-                        maxtemp_f: data.forecast.forecastday[0].day?.maxtemp_f,
-                        mintemp_c: data.forecast.forecastday[0].day?.mintemp_c,
-                        mintemp_f: data.forecast.forecastday[0].day?.mintemp_f,
-                        condition: data.forecast.forecastday[0].day?.condition?.text,
-                        avghumidity: data.forecast.forecastday[0].day?.avghumidity,
-                        maxwind_kph: data.forecast.forecastday[0].day?.maxwind_kph,
-                        maxwind_mph: data.forecast.forecastday[0].day?.maxwind_mph,
-                        uv: data.forecast.forecastday[0].day?.uv
-                    } : null
-                };
+                return mapForecastWeatherResponse(data);
             } else if (endpoint === "history.json") {
-                return {
-                    location: {
-                        name: data.location?.name,
-                        region: data.location?.region,
-                        country: data.location?.country
-                    },
-                    history: data.forecast?.forecastday?.[0] ? {
-                        date: data.forecast.forecastday[0].date,
-                        maxtemp_c: data.forecast.forecastday[0].day?.maxtemp_c,
-                        maxtemp_f: data.forecast.forecastday[0].day?.maxtemp_f,
-                        mintemp_c: data.forecast.forecastday[0].day?.mintemp_c,
-                        mintemp_f: data.forecast.forecastday[0].day?.mintemp_f,
-                        condition: data.forecast.forecastday[0].day?.condition?.text,
-                        avghumidity: data.forecast.forecastday[0].day?.avghumidity,
-                        maxwind_kph: data.forecast.forecastday[0].day?.maxwind_kph,
-                        maxwind_mph: data.forecast.forecastday[0].day?.maxwind_mph
-                    } : null
-                };
+                return mapHistoryWeatherResponse(data);
             }
 
             return data;

@@ -54,19 +54,17 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
     const [openLogs, setOpenLogs] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
-    const {input, title, onResultUpdate, onFeedbackSend} = data;
+    const {input, title, onFeedbackSend} = data;
 
     useAutoRunOnInputChange({
         clearError: () => { setError(null) },
-        clearOutput: () => { onResultUpdate(id) },
+        clearOutput: () => {},
         runCallback: async () => {
             await runTask(async () => {
-                const validationResult = ChartDataSchema.safeParse(input);
+                const validationResult = ChartDataSchema.safeParse(input?.payload);
 
                 if (validationResult.success) {
                     setChartData(validationResult.data);
-
-                    onResultUpdate(id, validationResult.data);
                 } else {
                     setError(formatErrorMessage("Chart data validation failed", validationResult.error));
 
@@ -77,7 +75,7 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
                         formatFeedbackMessage(
                             "Chart",
                             CHART_INPUT_JSON_SCHEMA,
-                            JSON.stringify(input, null, 4),
+                            JSON.stringify(input?.payload, null, 4),
                             JSON.stringify(validationResult.error.errors, null, 4)
                         )
                     )

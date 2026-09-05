@@ -51,14 +51,17 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
                 const parsedUrl = parseUrl(url);
                 const html = await GraphQLService.renderHtml(parsedUrl, settings.browserPath);
 
-                onResultUpdate(id, beautifyHtml(html));
+                onResultUpdate(id, {
+                    payload: beautifyHtml(html),
+                    ...(input?.toolsPayload !== undefined ? {toolsPayload: input.toolsPayload} : {}),
+                });
             } catch (error) {
                 setError(`Error fetching rendered page: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
                 onResultUpdate(id);
             }
         }, setIsRunning);
-    }, [id, onResultUpdate, settings.browserPath, url]);
+    }, [id, onResultUpdate, settings.browserPath, url, input]);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 

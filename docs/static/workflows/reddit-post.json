@@ -92,7 +92,7 @@
             "type": "data-validation",
             "data": {
                 "title": "Data Validation",
-                "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subreddit\": {\n      \"type\": \"string\",\n      \"const\": \"r/test\"\n    },\n    \"postType\": {\n      \"type\": \"string\",\n      \"const\": \"self\"\n    },\n    \"postTitle\": {\n      \"type\": \"string\"\n    },\n    \"postBody\": {\n      \"type\": \"string\"\n    },\n    \"postFlair\": {\n      \"type\": \"string\",\n      \"const\": \"\"\n    },\n    \"nsfw\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    },\n    \"spoiler\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    }\n  },\n  \"required\": [\"subreddit\", \"postType\", \"postTitle\", \"postBody\", \"postFlair\", \"nsfw\", \"spoiler\"],\n  \"additionalProperties\": false\n}"
+                "payloadSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subreddit\": {\n      \"type\": \"string\",\n      \"const\": \"r/test\"\n    },\n    \"postType\": {\n      \"type\": \"string\",\n      \"const\": \"self\"\n    },\n    \"postTitle\": {\n      \"type\": \"string\"\n    },\n    \"postBody\": {\n      \"type\": \"string\"\n    },\n    \"postFlair\": {\n      \"type\": \"string\",\n      \"const\": \"\"\n    },\n    \"nsfw\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    },\n    \"spoiler\": {\n      \"type\": \"boolean\",\n      \"const\": false\n    }\n  },\n  \"required\": [\"subreddit\", \"postType\", \"postTitle\", \"postBody\", \"postFlair\", \"nsfw\", \"spoiler\"],\n  \"additionalProperties\": false\n}"
             },
             "position": {
                 "x": 1062,

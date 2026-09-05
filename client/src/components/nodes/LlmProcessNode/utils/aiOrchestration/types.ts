@@ -45,9 +45,8 @@ export type RunSingleCallParams = {
 };
 
 export type OrchestrationParams = {
-    /** Accepts any value; orchestration mode is only entered when the caller
-     *  confirms it is an array. Typed as `any` so future string-planning support
-     *  requires no signature changes. */
+    /** Accepts any value; orchestration mode is only entered when the caller (see the
+     *  `orchestrationMode` guard in useAIProcessor.ts) confirms it isn't null/undefined. */
     input: any;
     prompt?: string;
     model: string;

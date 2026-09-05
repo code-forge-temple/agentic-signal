@@ -9,6 +9,7 @@ import {NodeDescriptor} from "../types";
 import {HttpNode as component} from "./HttpNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsHttpNodeData, HttpNode, HttpNodeDataSchema} from "./types/workflow";
+import {NodeEnvelopeSchema} from "../../../types/workflow";
 import {NODE_PORT_IDS} from '../../../constants';
 
 
@@ -23,7 +24,7 @@ export const HttpNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, HttpNode> = {
         description: "Fetches a fully rendered HTML page from a URL using a headless browser. Outputs the page HTML.",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
-                outputSchema: z.string().describe("Rendered HTML page content."),
+                outputSchema: NodeEnvelopeSchema.extend({payload: z.string().describe("Rendered HTML page content.")}),
             },
             [NODE_PORT_IDS.TRIGGER]: true,
         },

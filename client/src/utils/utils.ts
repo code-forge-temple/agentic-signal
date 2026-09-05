@@ -62,13 +62,11 @@ export const formatContentForDisplay = (input: any): string | undefined => {
     }
 
     if (typeof input === 'string') {
-        try {
-            const parsed = JSON.parse(input);
-
-            return formatJsonCodeBlock(parsed);
-        } catch {
-            return input;
+        if (isValidJsonString(input)) {
+            return `${TRIPLE_BACKTICK}json\n${input}\n${TRIPLE_BACKTICK}`;
         }
+
+        return input;
     }
 
     return formatJsonCodeBlock(input);

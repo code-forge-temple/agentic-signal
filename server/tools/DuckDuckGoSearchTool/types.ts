@@ -11,13 +11,13 @@ export const DuckDuckGoResultFields = {
     url: 'String'
 } as const;
 
-export interface DuckDuckGoResult {
+export type DuckDuckGoResult = {
   sourceAndUrl: string;
   title: string;
   description: string;
   url: string;
-}
+};
 
-export interface DuckDuckGoSearchArgs {
+export type DuckDuckGoSearchArgs = {
   query: string;
-}
+};

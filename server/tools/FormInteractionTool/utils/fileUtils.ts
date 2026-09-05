@@ -37,6 +37,7 @@ export async function writeTempFiles (attachedFiles: AttachedFile[]): Promise<{
 
             // Avoid clobbering another file when two attachments sanitize to the same name.
             if (usedDestNames.has(destName)) destName = `${idx}-${destName}`;
+
             usedDestNames.add(destName);
 
             const dest = `${tempDir}/${destName}`;

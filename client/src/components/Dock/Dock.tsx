@@ -4,6 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {forwardRef} from 'react';
 import {ActionsDock} from "./components/ActionsDock";
 import {NodesDock} from "./components/NodesDock";
 import {AIAssistantDock} from "./components/AIAssistantDock";
@@ -17,14 +18,16 @@ type DockProps = {
     getWorkflowJson: () => string;
 };
 
-export const Dock = ({onSave, onLoad, onClear, onLoadWorkflow, getWorkflowJson}: DockProps) => {
+export const Dock = forwardRef<HTMLDivElement, DockProps>(({onSave, onLoad, onClear, onLoadWorkflow, getWorkflowJson}, ref) => {
     return (
         <>
-            <div className="dock">
+            <div className="dock" ref={ref}>
                 <AIAssistantDock onLoadWorkflow={onLoadWorkflow} getWorkflowJson={getWorkflowJson} />
                 <ActionsDock onSave={onSave} onLoad={onLoad} onClear={onClear} />
                 <NodesDock />
             </div>
         </>
     );
-};
+});
+
+Dock.displayName = 'Dock';

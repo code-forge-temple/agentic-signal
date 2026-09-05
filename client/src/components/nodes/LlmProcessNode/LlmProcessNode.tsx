@@ -29,9 +29,9 @@ import {AppNode} from "../workflow.gen";
 import {NODE_TYPE as TOOL_NODE_TYPE} from "../ToolNode/constants";
 import {NODE_TYPE as RAG_NODE_TYPE} from "../RagNode/constants";
 import {assertIsRagNodeData, RagNode} from "../RagNode/types/workflow";
-import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {assertIsEnhancedNodeData, NodeEnvelope} from "../../../types/workflow";
 import {v4 as uuidv4} from "uuid";
-import {isNodeInputWithToolsPayload} from "./types/input.types";
+import {SessionId} from "../ToolNode/tools/types";
 
 
 const LLM_MODEL_LABEL = "LLM Model";
@@ -75,11 +75,11 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
             return node;
         });
 
-    const toolsPayload: unknown = isNodeInputWithToolsPayload(input) ? input.toolsPayload : undefined;
+    const toolsPayload: NodeEnvelope['toolsPayload'] = input?.toolsPayload;
 
-    const inputContent: typeof input = isNodeInputWithToolsPayload(input) ? input.payload : input;
+    const payload: NodeEnvelope['payload'] = input?.payload;
 
-    const buildTools = useCallback((sessionId: string) => connectedToolNodes
+    const buildTools = useCallback((sessionId: SessionId) => connectedToolNodes
         .filter(node => typeof node.data.handler === "function")
         .map(node => ({
             schema: node.data.toolSchema as ToolSchema,
@@ -95,10 +95,10 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
     // Runs once per run-trigger, after processAIRequest has resolved (output already
     // updated) — lets a tool release resources it opened for this sessionId (e.g. a
     // browser session) without this node knowing anything tool-specific.
-    const cleanupTools = useCallback((sessionId: string) => Promise.all(
+    const cleanupTools = useCallback((sessionId: SessionId) => Promise.all(
         connectedToolNodes
             .filter(node => typeof node.data.cleanup === "function")
-            .map(node => (node.data.cleanup as (sessionId: string) => Promise<void>)(sessionId))
+            .map(node => (node.data.cleanup as (sessionId: SessionId) => Promise<void>)(sessionId))
     ), [connectedToolNodes]);
 
     const connectedRagNode = getEdges()
@@ -129,7 +129,10 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         clearError,
     } = useAIProcessor({
         onSuccess: (result) => {
-            onResultUpdate(id, result);
+            // toolsPayload is deliberately never forwarded — it dies here. A workflow that wants
+            // an attachment to reach a node downstream of the LLM should fan the source edge out
+            // before this node instead of relying on it to relay the attachment through itself.
+            onResultUpdate(id, {payload: result});
         },
         onError: (errorMessage) => {
             onResultUpdate(id);
@@ -154,12 +157,12 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         clearOutput: () => { if(currentRetryRef.current < maxFeedbackLoops) onResultUpdate(id); },
         runCallback: async () => {
             if (currentRetryRef.current++ < maxFeedbackLoops) {
-                const sessionId = uuidv4();
+                const sessionId: SessionId = uuidv4();
 
                 await runTask(async () => {
                     try {
                         await processAIRequest({
-                            input: inputContent,
+                            payload,
                             prompt: prompt,
                             message: message,
                             model: model,
@@ -195,12 +198,12 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         runCallback: async () => {
             currentRetryRef.current = 0;
 
-            const sessionId = uuidv4();
+            const sessionId: SessionId = uuidv4();
 
             await runTask(async () => {
                 try {
                     await processAIRequest({
-                        input: inputContent,
+                        payload,
                         prompt: prompt,
                         message: message,
                         model: model,
@@ -231,12 +234,16 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
 
         currentRetryRef.current = 0;
 
-        const sessionId = uuidv4();
+        /*
+         * unique per run-trigger, so two concurrent runs (e.g. the same workflow launched from two tabs)
+         * get isolated browser sessions on the server instead of colliding on the same form URL.
+         */
+        const sessionId: SessionId = uuidv4();
 
         await runTask(async () => {
             try {
                 await processAIRequest({
-                    input: inputContent,
+                    payload,
                     prompt: prompt,
                     message: message,
                     model: model,
@@ -260,7 +267,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
             }
         }, setIsRunning);
     // eslint-disable-next-line max-len
-    }, [buildTools, cleanupTools, clearError, feedback, format, id, inputContent, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, orchestrationMode]);
+    }, [buildTools, cleanupTools, clearError, feedback, format, id, payload, maxToolRetries, message, model, onConfigChange, onResultUpdate, processAIRequest, prompt, ragHandler, temperature, temperatureEnabled, think, orchestrationMode]);
 
     const [systemPrompt, setSystemPrompt] = useDebouncedState({
         callback: (value: string) => {

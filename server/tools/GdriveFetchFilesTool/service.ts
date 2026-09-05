@@ -6,7 +6,7 @@
 
 import {CloudStorageFileResult, CloudStorageFileSearchArgs} from "./types.ts";
 
-interface DriveFileResponse {
+type DriveFileResponse = {
     id: string;
     name?: string;
     mimeType?: string;
@@ -14,11 +14,11 @@ interface DriveFileResponse {
     modifiedTime?: string;
     size?: string;
     owners?: { displayName: string }[];
-}
+};
 
-interface DriveApiResponse {
+type DriveApiResponse = {
     files: DriveFileResponse[];
-}
+};
 
 async function readFileContent (fileId: string, mimeType: string, accessToken: string): Promise<string> {
     try {

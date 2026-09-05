@@ -19,7 +19,7 @@ import {
 import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {BaseDialog} from "../../BaseDialog";
 import {FormControlLabel, Switch, FormControl, InputLabel, Select, MenuItem, TextField, Stack} from "@mui/material";
-import {DebouncedTextField} from "../../DebouncedTextField";
+import {CalculatorTextField} from "../../CalculatorTextField/CalculatorTextField";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
@@ -197,11 +197,11 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
 
                 {data.mode === TIMER_NODE_MODES.INTERVAL ? (
                     <>
-                        <DebouncedTextField
+                        <CalculatorTextField
                             label="Interval (s)"
-                            type="number"
+                            integer
                             value={data.interval}
-                            onChange={value => onConfigChange(id, {...data, interval: Number(value)})}
+                            onChange={value => onConfigChange(id, {...data, interval: value})}
                             fullWidth
                             sx={{mb: 2}}
                         />

@@ -33,7 +33,7 @@ export const LlmProcessNodeDataSchema = z.object({
     think: z.boolean().optional().describe("Enable thinking mode for supported models (e.g. deepseek-r1)"),
     temperatureEnabled: z.boolean().optional().describe("Whether to override the default model temperature"),
     temperature: z.number().min(0).max(2).optional().default(0.8).describe("Sampling temperature (0 = deterministic, 2 = very random)"),
-    orchestrationMode: z.boolean().optional().describe("When enabled, an AI orchestrator decomposes the input (string or array) into individual agent tasks, runs them sequentially, then synthesizes a final aggregated response"),
+    orchestrationMode: z.boolean().optional().describe("When enabled, an AI orchestrator decomposes the input into individual agent tasks, runs them sequentially, then synthesizes a final aggregated response"),
 });
 
 export type LlmProcessNodeData = z.infer<typeof LlmProcessNodeDataSchema>;

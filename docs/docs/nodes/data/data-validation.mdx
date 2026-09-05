@@ -11,13 +11,15 @@ The **Data Validation Node** checks incoming data against a [JSON Schema](https:
 
 ## Configuration
 
+The settings dialog has two tabs, one per validated channel:
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
-    <TabItem value="schema" label="Schema" default>
-        Enter a [JSON Schema](https://json-schema.org/) to validate incoming data.  
+    <TabItem value="payload-schema" label="Payload Schema" default>
+        Enter a [JSON Schema](https://json-schema.org/) to validate the incoming `payload`. This tab is required — an empty schema here blocks all output (highlighted on the node until set).
 
         <details>
             <summary>Example</summary>
@@ -44,7 +46,16 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
             ```
         </details>
 
-        ![Data Validation Node Params](/img/nodes/data-validation-params.jpg)
+        ![Data Validation Node Params](/img/nodes/data-validation-params-schema.webp)
+    </TabItem>
+    <TabItem value="tools-payload-schema" label="Tools Payload Schema">
+        Optionally enter a second JSON Schema to validate the incoming `toolsPayload`. Leave it empty to skip toolsPayload validation entirely.
+
+        A **"Block output if Tools Payload is invalid"** switch controls what happens on failure:
+        - **Off (default)**: `payload` still forwards downstream; the (invalid) `toolsPayload` is simply dropped. The failure is still visible in the Logs panel.
+        - **On**: a toolsPayload failure blocks the node's entire output, exactly like a payload failure.
+
+        ![Data Validation Node Tools Payload Params](/img/nodes/data-validation-params-tools-payload.webp)
     </TabItem>
     <TabItem value="config-schema" label="Configuration Schema">
         <NodeSchemaTab nodeType="data-validation" />
@@ -88,8 +99,11 @@ For example usage, see the [Product Data Validation and Visualization workflow](
 
 ## Supported Data Formats
 
-- **Input**: Any JSON object or array.
-- **Output**: The original data if validation passes; an error message if validation fails.
+- **Input**: Any JSON object or array, for both `payload` and `toolsPayload`.
+- **Output**:
+    - Payload invalid → no output; an error is sent as feedback and shown in the Logs panel.
+    - Payload valid, toolsPayload invalid → `payload` forwards, `toolsPayload` is dropped, unless "Block output if Tools Payload is invalid" is on, in which case it blocks like a payload failure.
+    - Both valid (or toolsPayload schema unset) → `payload` and `toolsPayload` forward unchanged.
 
 ## Why Use Data Validation?
 

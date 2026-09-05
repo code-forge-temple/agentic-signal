@@ -1,12 +1,21 @@
 # Data Flow Spy Node
 
-The **Data Flow Spy Node** lets you inspect, debug, and visualize the data flowing through your workflow at any point. It displays the incoming data in a readable Markdown format, making it easy to understand and troubleshoot your workflow.
+The **Data Flow Spy Node** lets you inspect, debug, and visualize the data flowing through your workflow at any point. It's a pure display node — no Run button, no output port — that reacts to its input in real time.
 
 ![Display Data Flow Spy Node](/img/nodes/data-flow-spy-preview.jpg)
 
+## Output Dialog
+
+Opening the node's output shows two tabs:
+
+- **Payload**: the incoming `payload`.
+- **Tools Payload**: the incoming `toolsPayload`.
+
+Each tab renders independently, in a readable Markdown/JSON format.
+
 ## Supported Data Formats
 
-The Data Flow Spy Node accepts any data type:
+Each tab accepts any data type:
 
 - **Strings**: Displayed as plain text or Markdown.
 - **Numbers**: Displayed as-is.
@@ -36,9 +45,9 @@ For example usage, see the [Current Time workflow](/docs/workflows/data/current-
 
 ### Common Issues
 
-- **Large data freezes UI**: Very large JSON or text may take time to render. The node shows a loading spinner for large content.
 - **Unreadable output**: Non-JSON objects are rendered as best-effort Markdown or code blocks.
 - **Markdown not rendered**: Ensure your data is a valid Markdown string or JSON.
+- **Nothing in the Tools Payload tab**: Not every upstream node sends a `toolsPayload` — an empty tab usually just means none was provided.
 
 ### Supported Data Types
 

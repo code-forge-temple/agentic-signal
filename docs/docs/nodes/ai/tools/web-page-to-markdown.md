@@ -51,3 +51,4 @@ import TabItem from '@theme/TabItem';
 - **Consent wall handling** — common cookie/consent dialogs (including Google's consent screen) are automatically dismissed before the page content is read.
 - **Bot-detection mitigation** — the browser launches with `--disable-blink-features=AutomationControlled` and masks `navigator.webdriver`, making it appear as a regular browser to most bot-detection systems.
 - **Browser path** — in the Windows desktop (Tauri) app, a browser executable path must be set in the application **Settings** before this tool can be used.
+- **Concurrency** — URLs are fetched in batches of 3 at a time rather than all at once, to avoid opening too many browser windows simultaneously. If you pass many URLs in a single call, expect results to come back in batches rather than instantly.

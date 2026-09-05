@@ -5,16 +5,22 @@
  ************************************************************************/
 
 import {Browser, chromium, LaunchOptions, Page} from "npm:playwright";
+import {withTimeout} from "./withTimeout.ts";
 
 // How long an idle form session is kept alive before its browser is closed.
 // Generous because a human may be watching/solving a captcha between LLM calls.
 const SESSION_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 
-interface FormSession {
+// Playwright's close() calls normally settle in well under a second — bounding them
+// guards against a wedged browser process hanging the caller (e.g. interactWithForm's
+// error-path cleanup, which isn't itself wrapped in any timeout) forever.
+const CLOSE_TIMEOUT_MS = 5_000;
+
+type FormSession = {
     browser: Browser;
     page: Page;
     idleTimer: ReturnType<typeof setTimeout>;
-}
+};
 
 // Keyed by form URL — the LLM is instructed to pass the same `url` on every
 // call for a given form, so this lets multi-page (client-side-routed) forms
@@ -37,8 +43,10 @@ export async function closeSession (key: string): Promise<void> {
     sessions.delete(key);
     clearTimeout(session.idleTimer);
 
-    await session.page.close().catch(() => {});
-    await session.browser.close().catch(() => {});
+    await withTimeout(session.page.close(), CLOSE_TIMEOUT_MS, "page.close timed out")
+        .catch((err) => console.warn(`[FormInteraction] session close: ${err instanceof Error ? err.message : String(err)}`));
+    await withTimeout(session.browser.close(), CLOSE_TIMEOUT_MS, "browser.close timed out")
+        .catch((err) => console.warn(`[FormInteraction] session close: ${err instanceof Error ? err.message : String(err)}`));
 }
 
 /**

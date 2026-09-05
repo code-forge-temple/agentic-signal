@@ -1,0 +1,82 @@
+---
+sidebar_position: 5
+title: Delayed Snapshot Node
+---
+
+# Delayed Snapshot Node
+
+The **Delayed Snapshot Node** captures whatever it receives on input and persists it (`payload` and `toolsPayload`) into its own saved node data — unlike a node's live `input`, this snapshot is retained when you save the workflow and load it back in later.  
+It forwards downstream immediately by default, or after a configured delay using reliable server-side scheduling.
+
+![Delayed Snapshot Node](/img/nodes/delayed-snapshot-preview.webp)
+
+## How It Works
+
+1. **Capture**: On new input, the node persists the received `payload`/`toolsPayload` into its own config, replacing any previous snapshot.
+2. **Forward**: If no delay is set (or it's `0`), the snapshot forwards immediately.
+3. **Delay** (optional): If a delay is set, forwarding is scheduled server-side instead of firing right away.
+4. **Retained across save/load**: The snapshot and delay state live in the node's own saved config, not in its live `input` — save the workflow to a file and load that same file back in later, and the node picks up exactly where it left off, including a still-pending delay (as long as the server process wasn't restarted). A plain browser refresh does **not** do this on its own — reloading the page clears the whole open canvas; you need to explicitly load the saved workflow file back in.
+5. **Manual trigger**: The **Run** button re-runs the same forward-or-delay logic using the last persisted snapshot — forwarding immediately if no delay is set, or starting the same countdown otherwise. It mirrors the [Timer Node](/docs/nodes/input/timer)'s own Run button, which starts its schedule rather than skipping it.
+
+## Configuration
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
+
+<Tabs>
+    <TabItem value="delay" label="Delay" default>
+        - `Delay (s)` (number): how long to wait before forwarding new input downstream. `0` or unset forwards immediately. Accepts typed math expressions (e.g. `60*60*12` for 12 hours) — press Enter or click away to evaluate; the result is rounded to the nearest whole second.
+
+        ![Delayed Snapshot Node Params](/img/nodes/delayed-snapshot-params.webp)
+    </TabItem>
+    <TabItem value="config-schema" label="Configuration Schema">
+        <NodeSchemaTab nodeType="delayed-snapshot" />
+    </TabItem>
+</Tabs>
+
+## Run Button Behavior
+
+The Run button doubles as a cancel button, the same way the [Timer Node](/docs/nodes/input/timer)'s does:
+
+- **While idle**: clicking Run re-triggers the last persisted snapshot through the same delay logic as new input — forwarding immediately if no delay is set, or starting the countdown otherwise. It does **not** bypass a configured delay.
+- **While a delay is pending**: clicking Run cancels the pending forward — it does **not** also force an emit. The node returns to idle without sending anything.
+
+## Output Dialog
+
+Opening the node's output shows two tabs, **Payload** and **Tools Payload** — sourced from the *persisted* snapshot, not the live input. This means you can inspect what the node will forward even between runs, including after saving and reloading the workflow.
+
+## Example Usage
+
+There isn't a dedicated example workflow for this node yet. Its main intended use is pacing a **circular workflow** — one where a downstream node's output is wired back into an earlier node's input, forming a loop. Without pacing, such a loop would re-trigger itself as fast as each node can process. Insert a Delayed Snapshot Node into the loop to turn it into a controlled periodic cycle instead: each time the loop completes, the node captures the result and waits before forwarding it back to close the loop and start the next iteration — with delays ranging from seconds up to hours or days.
+
+This differs from a [Timer Node](/docs/nodes/input/timer): a Timer Node fires on a fixed wall-clock schedule regardless of whether prior work has finished, while a Delayed Snapshot Node in a loop paces itself off its own cycle completing — the next iteration only starts once the current one has actually finished *and* the delay has elapsed.
+
+## Common Use Cases
+
+1. **Pace a circular/self-looping workflow**: wire a downstream node's output back into an earlier node's input to form a repeating cycle, and insert this node in the loop to control how long each cycle waits before the next one starts — from seconds up to hours or days.
+2. **Debounce/throttle a noisy upstream source**: buffer rapid updates and only forward the latest one after a quiet period.
+3. **Stage data for a scheduled step**: capture data as soon as it's available, but delay acting on it until a later point in a longer-running workflow.
+4. **Retain data across a save/load cycle**: unlike a node's live `input`, a captured snapshot (and any pending delay) is saved as part of the workflow file — load that file back in later and the node picks up right where it left off, without needing the upstream chain to run again.
+
+## Best Practices
+
+- **Leave the delay at `0` for pure persistence**: if you only need the save/reload snapshot behavior without throttling, don't set a delay — it forwards immediately either way.
+- **Use Run to resend without re-triggering upstream**: because Run re-forwards the last persisted snapshot (through the same delay logic) instead of the live input, it's a way to resend the last known data without re-running whatever produced it.
+- **Don't use a delay if every update matters**: a delayed forward only ever carries the *latest* snapshot at the moment it fires — updates superseded during the countdown are not queued or forwarded individually.
+
+## Troubleshooting
+
+### Common Issues
+
+- **Output never highlights**: no payload has been captured yet — check that an upstream node is connected and has actually produced output.
+- **Run doesn't forward right away**: if a delay is configured, Run starts that same countdown instead of skipping it — this is intentional. Set the delay to `0` if you want Run to always forward immediately.
+- **The delayed forward keeps getting pushed back**: each new input received while a delay is already pending restarts the countdown from the newest snapshot (debounce-like behavior, by design). If you need every update forwarded individually, remove the delay.
+
+### Performance Tips
+
+- Prefer `0`/no delay when you only need the persistence behavior — an active delay holds a server-side timer subscription open for that node until it fires.
+
+## Node Type
+
+- **type**: `delayed-snapshot`

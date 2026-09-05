@@ -4,13 +4,14 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, ReactFlowProvider} from '@xyflow/react';
+import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, useNodesInitialized, ReactFlowProvider, FitViewOptions} from '@xyflow/react';
 import {flushSync} from 'react-dom';
 import '@xyflow/react/dist/style.css';
 import './App.scss';
 import {useWorkflow} from '../../hooks/useWorkflow';
 import {nodeFactory, nodeTypes} from '../nodes';
-import {useCallback, useState} from 'react';
+import {DEFAULT_EDGE_TYPE, edgeTypes} from '../edges';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Dock} from '../Dock';
 import {v4 as uuidv4} from 'uuid';
 import {useSnackbar} from 'notistack'
@@ -27,8 +28,9 @@ import {ConfirmDialog} from '../ConfirmDialog';
 import {ErrorBoundary} from '../ErrorBoundary/ErrorBoundary';
 
 
-// Separator for error paths in Zod validation messages
 const ZOD_PATH_SEPARATOR = '→';
+
+const FIT_VIEW_TOP_BUFFER_PX = 16;
 
 const getId = () => uuidv4();
 
@@ -115,8 +117,30 @@ function AppFlow () {
     const {enqueueSnackbar} = useSnackbar();
     const [pendingWorkflow, setPendingWorkflow] = useState<{nodes: any[], edges: any[]} | null>(null);
     const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+    const reactFlowInstance = useReactFlow();
+    const nodesInitialized = useNodesInitialized();
+    const fitViewOnLoadRef = useRef(false);
+    const dockRef = useRef<HTMLDivElement>(null);
 
     useFullscreen();
+
+    // Measured rather than hardcoded: the dock's height isn't fixed (it can wrap/resize with its
+    // content), so a constant would drift out of sync and let nodes end up hidden behind it again.
+    const getFitViewPadding = useCallback((): FitViewOptions['padding'] => {
+        const dockHeight = dockRef.current?.getBoundingClientRect().height ?? 0;
+
+        return {top: `${dockHeight + FIT_VIEW_TOP_BUFFER_PX}px`, x: '20%', bottom: '20%'};
+    }, []);
+
+    useEffect(() => {
+        if (nodesInitialized && fitViewOnLoadRef.current) {
+            fitViewOnLoadRef.current = false;
+            reactFlowInstance.fitView({padding: getFitViewPadding(), duration: 400});
+        }
+        // `nodes` is intentionally included: replacing an existing workflow keeps
+        // nodesInitialized `true` throughout (no false->true edge to react to), so
+        // this effect must also re-run whenever the node set itself changes.
+    }, [nodesInitialized, nodes, reactFlowInstance, getFitViewPadding]);
 
     const handleGetWorkflowJson = useCallback((): string => {
         const sanitizedNodes = nodes.map(node => {
@@ -181,7 +205,9 @@ function AppFlow () {
                     });
                 }
 
-                const {nodes: parsedNodes, edges: parsedEdges} = WorkflowSchema.parse(raw);
+                const {nodes: parsedNodes, edges: parsedEdgesRaw} = WorkflowSchema.parse(raw);
+
+                const parsedEdges = parsedEdgesRaw.map((edge: any) => ({...edge, type: DEFAULT_EDGE_TYPE}));
 
                 assertValidWorkflowEdges(parsedNodes, parsedEdges);
 
@@ -269,6 +295,8 @@ function AppFlow () {
                 if (nodes.length > 0) {
                     setPendingWorkflow({nodes: remappedNodes, edges: remappedEdges});
                 } else {
+                    fitViewOnLoadRef.current = true;
+
                     setNodes(remappedNodes);
                     setEdges(remappedEdges);
                 }
@@ -326,16 +354,28 @@ function AppFlow () {
                 const yOffset = maxY + 100;
                 const pendingMinY = Math.min(...pending.nodes.map((n: any) => n.position.y));
                 const pendingMinX = Math.min(...pending.nodes.map((n: any) => n.position.x));
+                const dx = minX - pendingMinX;
+                const dy = yOffset - pendingMinY;
+
                 const shiftedNodes = pending.nodes.map((node: any) => ({
                     ...node,
                     position: {
-                        x: node.position.x - pendingMinX + minX,
-                        y: node.position.y + yOffset - pendingMinY
+                        x: node.position.x + dx,
+                        y: node.position.y + dy
                     }
                 }));
 
+                const shiftedEdges = pending.edges.map((edge: any) => {
+                    if (!edge.data?.bend) return edge;
+
+                    return {
+                        ...edge,
+                        data: {...edge.data, bend: {x: edge.data.bend.x + dx, y: edge.data.bend.y + dy}}
+                    };
+                });
+
                 setNodes([...nodes, ...shiftedNodes]);
-                setEdges([...edges, ...pending.edges]);
+                setEdges([...edges, ...shiftedEdges]);
             } finally {
                 setIsLoadingWorkflow(false);
             }
@@ -352,6 +392,8 @@ function AppFlow () {
 
         setTimeout(() => {
             try {
+                fitViewOnLoadRef.current = true;
+
                 setNodes(pendingWorkflow.nodes);
                 setEdges(pendingWorkflow.edges);
             } finally {
@@ -364,8 +406,6 @@ function AppFlow () {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
     }, []);
-
-    const reactFlowInstance = useReactFlow();
 
     const onDrop = useCallback(
         (event: React.DragEvent) => {
@@ -391,7 +431,7 @@ function AppFlow () {
             <Backdrop open={isLoadingWorkflow} sx={{zIndex: 9999, color: '#fff'}}>
                 <CircularProgress color="inherit" />
             </Backdrop>
-            <Dock onSave={handleSave} onLoad={handleLoad} onClear={handleClear} onLoadWorkflow={handleLoadWorkflowFromJson} getWorkflowJson={handleGetWorkflowJson} />
+            <Dock ref={dockRef} onSave={handleSave} onLoad={handleLoad} onClear={handleClear} onLoadWorkflow={handleLoadWorkflowFromJson} getWorkflowJson={handleGetWorkflowJson} />
             <ConfirmDialog
                 open={pendingWorkflow !== null}
                 onClose={() => setPendingWorkflow(null)}
@@ -413,8 +453,9 @@ function AppFlow () {
                 onDragOver={onDragOver}
                 onConnect={onConnect}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 defaultEdgeOptions={{
-                    type: 'smoothstep',
+                    type: DEFAULT_EDGE_TYPE,
                     animated: false
                 }}
                 colorMode={'dark'}
@@ -428,7 +469,7 @@ function AppFlow () {
                     color="#333"
                 />
                 <MiniMap />
-                <Controls />
+                <Controls fitViewOptions={{padding: getFitViewPadding()}} />
             </ReactFlow>
         </>
     );

@@ -61,7 +61,7 @@ The **AI Data Processing Node** is the main AI component in your workflow. It us
         - **Message Suffix**: Text added after the input.
 
         :::info Note
-        If the node receives an input array or object, it is serialized as pretty-printed JSON before being sent to the model. In orchestration mode, the array is also embedded into the orchestrator planning prompt as JSON.
+        If the node receives an input array or object, it is serialized as pretty-printed JSON before being sent to the model. In orchestration mode, this applies to any input the node receives (array, object, string, or any other value) — it is embedded into the orchestrator planning prompt as pretty-printed JSON, except a string input, which is embedded as-is rather than re-quoted.
         :::
 
         ![AI Data Processing Node User Message](/img/nodes/llm-process-node-user-message.webp)
@@ -106,6 +106,7 @@ For an example usage, see the [Weather Dashboard workflow](/docs/workflows/data/
 - **Model not found**: Make sure the model is installed in Ollama.
 - **Slow responses**: Try a smaller model or check your system resources.
 - **Inconsistent output**: Use structured output schemas for consistency.
+- **AI Orchestration Mode errors**: This mode internally uses structured output for the orchestrator's planning step. If the selected model can't reliably produce that, you'll see an error such as `Failed to parse orchestrator plan: Unexpected token ... is not valid JSON`. Try a different/larger model, or disable AI Orchestration Mode.
 - **Date/time understanding issues**: Some LLMs, especially smaller models, may have difficulty interpreting or reasoning about dates and times provided in the input. If you notice problems with date handling, try rephrasing your prompt, providing more context, or using a larger/more capable model.
 
 ### Performance Tips

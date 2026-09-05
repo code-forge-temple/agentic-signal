@@ -15,8 +15,8 @@ The node operates with a simple but powerful synchronization mechanism:
 
 1. **Collect**: Receives data from multiple connected source nodes
 2. **Wait**: Holds data until all connected sources have provided input
-3. **Aggregate**: Combines all inputs into a single array
-4. **Output**: Emits the aggregated array to downstream nodes
+3. **Aggregate**: Combines all inputs into two parallel arrays — `payload` and `toolsPayload`
+4. **Output**: Emits both arrays to downstream nodes
 5. **Reset**: Clears internal state, ready for the next cycle
 
 ### Synchronization Behavior
@@ -43,14 +43,17 @@ The node accepts any data type from connected sources. Each source's output is c
 
 ## Output Format
 
-The node outputs an **array** containing data from all connected sources, in the order they were connected:
+The node outputs two parallel arrays — `payload` and `toolsPayload` — one entry per connected source, in the order they were connected. **The two arrays are always the same length**, so a downstream node can zip them together by index; a source that never provided a `toolsPayload` simply leaves its slot empty rather than shortening the array.
 
-```json
-[
-  {"temperature": 72, "location": "Office"},
-  {"humidity": 45, "location": "Warehouse"},
-  {"temperature": 68, "humidity": 50, "location": "Lab"}
-]
+```js
+{
+  payload: [
+    {temperature: 72, location: "Office"},
+    {humidity: 45, location: "Warehouse"},
+    {temperature: 68, humidity: 50, location: "Lab"}
+  ],
+  toolsPayload: [undefined, undefined, undefined]
+}
 ```
 
 ## Best Practices

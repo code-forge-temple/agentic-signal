@@ -10,6 +10,12 @@ import {fetchWebPageAsMarkdown} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
 
 
+// Each URL opens its own real (non-headless) browser window — see service.ts.
+// Callers (an LLM interpreting a prompt) can't be relied on to self-limit how
+// many URLs they pass in one call, so the cap lives here instead, where it's
+// guaranteed regardless of prompt wording or model behavior.
+const MAX_CONCURRENT_PAGES = 3;
+
 export const resolver = {
     Query: {
         [graphqlMethodName]: async (
@@ -21,9 +27,15 @@ export const resolver = {
                 throw new Error("Missing urls parameter");
             }
 
-            return await Promise.all(
-                urls.map(url => fetchWebPageAsMarkdown(url, browserPath))
-            );
+            const results: WebPageToMarkdownResult[] = [];
+
+            for (let i = 0; i < urls.length; i += MAX_CONCURRENT_PAGES) {
+                const batch = urls.slice(i, i + MAX_CONCURRENT_PAGES);
+
+                results.push(...await Promise.all(batch.map(url => fetchWebPageAsMarkdown(url, browserPath))));
+            }
+
+            return results;
         }
     }
 };

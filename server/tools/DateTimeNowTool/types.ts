@@ -14,7 +14,7 @@ export const TimezoneResultFields = {
     error: "String"
 };
 
-export interface TimezoneResult {
+export type TimezoneResult = {
     iso: string;
     locale: string;
     unix: number;
@@ -22,4 +22,4 @@ export interface TimezoneResult {
     city: string;
     utc_offset?: string;
     error?: string;
-}
+};

@@ -4,9 +4,18 @@ sidebar_position: 2
 
 # Data Source Node
 
-The **Data Source Node** provides static input for your workflow. You can supply text, Markdown, JSON data, or attach local files (including images and code) directly as input for downstream nodes.
+The **Data Source Node** provides input for your workflow. You can supply text, Markdown, JSON data, or attach local files (including images and code). Unlike most input nodes, it also has a FLOW **input** port — it can receive another node's output and merge it with its own configured data, so it can be chained after an upstream node rather than only used as a starting point.
 
-![Data Source Node](/img/nodes/data-source-preview.jpg)
+![Data Source Node](/img/nodes/data-source-preview.webp)
+
+## How It Works
+
+- **No upstream connection**: the node just outputs its own configured value.
+- **Upstream connected**: the node re-runs automatically whenever new input arrives (`payload`/`toolsPayload`), merges it with its own value, and forwards the combined result. The merge rule depends on the mode:
+    - **JSON mode**: if the upstream `payload` is a string, the own JSON value is placed *first* in the resulting array, upstream second; otherwise upstream is spread first and the own value appended last. Either way, both are kept as separate array elements rather than object-merged, so upstream keys are never silently overwritten by a collision.
+    - **Markdown & Files mode**: if the upstream `payload` is a string, it's concatenated directly with the node's own Markdown text into one document; otherwise upstream is kept as a distinct array element with the own text appended last.
+    - `toolsPayload` from upstream is always forwarded alongside the node's own new attachments (see below), regardless of mode.
+- A [Timer Node](/docs/nodes/input/timer) can also be connected to the node's **trigger** port to re-run it on a schedule instead of (or alongside) reacting to input changes.
 
 ## Configuration
 
@@ -19,8 +28,8 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
         For **Markdown**: Enter text and optionally attach files.  
 
         > **Note:** Currently supported file extensions are .txt, .md, .html, .css, .scss, .js, .ts, .tsx, .json, .xml, .csv, .yaml, .yml, .ini, .log, .sh, .sql, .py, .java, .c, .cpp, .h, .bat, .env, .png, .jpg, .jpeg, .gif, .bmp, .webp, .svg).  
-        
-        Attached files are available to downstream nodes as Markdown code blocks or embedded images.  
+
+        Most attached files are embedded directly into the Markdown text as code blocks or images. Files marked as a **tools payload** (binary types like PDF/DOCX by default, or any file explicitly flagged as one) are instead forwarded as `toolsPayload` attachments for tools to consume — e.g. a form-filling tool uploading a file — and a short note is added to the text so the AI knows the attachment exists.  
 
         ![Data Source Node Attachments](/img/nodes/data-source-params-markdown.webp)
     </TabItem>
@@ -33,6 +42,8 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
         <NodeSchemaTab nodeType="data-source" />
     </TabItem>
 </Tabs>
+
+The settings dialog also has a collapsible **Expected Input Format** panel showing the JSON Schema of what this node accepts on its input port, for reference when chaining it after another node.
 
 ---
 
@@ -47,14 +58,16 @@ See the [Weather Dashboard workflow](/docs/workflows/data/weather-dashboard), [G
 3. **Configuration**: Pass configuration objects to downstream nodes.
 4. **Markdown Content & Files**: Input Markdown-formatted text and attach images or code files for rendering or processing.
 5. **JSON Input**: Provide structured data for validation, transformation, or visualization.
+6. **Chaining static context onto an upstream result**: connect an upstream node into this node's input to prepend/append fixed instructions, a template, or reference data around whatever that upstream node produced.
 
 ## Best Practices
 
 - **Choose the correct type**: Use `json` for structured data, `markdown` for text, rich formatting, or file attachments.
 - **Validate JSON**: Ensure your JSON is valid to avoid downstream errors.
 - **Use Markdown**: For rich text and file attachments, use Markdown mode.
-- **Keep it simple**: Use Data Source nodes for static or rarely-changing inputs.
+- **Keep it simple**: Use Data Source nodes for static or rarely-changing inputs, unless deliberately chaining one after an upstream node.
 - **Attach files as needed**: Images and code files can be previewed and used by downstream nodes.
+- **Mark file attachments intended for tools**: if a file should be uploaded by a downstream tool rather than embedded as text, flag it as a tools payload attachment instead of relying on the extension-based default.
 
 ## Troubleshooting
 
@@ -63,6 +76,7 @@ See the [Weather Dashboard workflow](/docs/workflows/data/weather-dashboard), [G
 - **Invalid JSON**: If using `json` type, ensure the value is valid JSON.
 - **Unexpected output**: Double-check the data type, value, and attached files.
 - **Downstream errors**: Errors in downstream nodes may be caused by incorrect or missing input.
+- **Own JSON value shows up in an unexpected array position**: when chained after an upstream node, whether the own value lands first or last in the output array depends on whether the upstream payload is a plain string — see [How It Works](#how-it-works) above.
 
 ### Performance Tips
 

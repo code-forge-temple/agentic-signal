@@ -29,7 +29,7 @@
             },
             "data": {
                 "title": "Data Validation",
-                "schema": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"products\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"required\": [\"id\", \"title\", \"price\"],\r\n        \"properties\": {\r\n          \"id\": { \"type\": \"integer\" },\r\n          \"title\": { \"type\": \"string\" },\r\n          \"price\": { \"type\": \"number\" }\r\n        }\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"products\"]\r\n}"
+                "payloadSchema": "{\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"products\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"required\": [\"id\", \"title\", \"price\"],\r\n        \"properties\": {\r\n          \"id\": { \"type\": \"integer\" },\r\n          \"title\": { \"type\": \"string\" },\r\n          \"price\": { \"type\": \"number\" }\r\n        }\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"products\"]\r\n}"
             },
             "measured": {
                 "width": 120,

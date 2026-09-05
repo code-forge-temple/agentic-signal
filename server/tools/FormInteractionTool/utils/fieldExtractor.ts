@@ -6,18 +6,6 @@
 
 import {FormInteractionButton, FormInteractionField} from "../types.ts";
 
-// Shape returned by page.evaluate — must stay serialisable (no DOM references).
-interface ExtractedField {
-    label: string;
-    name: string;
-    type: string;
-    selector: string;
-    required: boolean;
-    options?: string[];
-    currentValue?: string;
-    placeholder?: string;
-}
-
 /**
  * Returns the names/labels of required fields that are still empty.
  * An empty array means the form is ready to submit.
@@ -83,7 +71,7 @@ export async function checkEmptyRequiredFields (page: any): Promise<string[]> {
 
 /** Extracts all visible, interactive form fields from the current page. */
 export async function extractFormFields (page: any): Promise<FormInteractionField[]> {
-    const fields: ExtractedField[] = await page.evaluate((): ExtractedField[] => {
+    const fields: FormInteractionField[] = await page.evaluate((): FormInteractionField[] => {
         // getComputedStyle(el) only reflects the element's OWN display/visibility —
         // it does not account for an ancestor having display:none (e.g. a hidden page
         // of a multi-step form), so a field inside a hidden step still reads as visible.
@@ -94,7 +82,7 @@ export async function extractFormFields (page: any): Promise<FormInteractionFiel
                 : (el as HTMLElement).offsetParent !== null && window.getComputedStyle(el).visibility !== "hidden";
 
         const SKIP_TYPES = new Set(["hidden", "submit", "button", "reset", "image"]);
-        const results: ExtractedField[] = [];
+        const results: FormInteractionField[] = [];
 
         const inputs = Array.from(
             document.querySelectorAll('input, select, textarea, [contenteditable="true"]')

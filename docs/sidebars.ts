@@ -84,6 +84,7 @@ const sidebars: SidebarsConfig = {
                         'nodes/data/data-validation',
                         'nodes/data/stock-analysis',
                         'nodes/data/async-data-aggregator',
+                        'nodes/data/delayed-snapshot',
                     ],
                 },
                 {

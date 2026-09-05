@@ -9,7 +9,7 @@ import {NodeDescriptor} from "../types";
 import {LlmProcessNode as component} from "./LlmProcessNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsLlmProcessNodeData, defaultLlmProcessNodeData, LlmProcessNode, LlmProcessNodeDataSchema} from "./types/workflow";
-import {NodeInputWithToolsPayloadSchema} from "./types/input.types";
+import {NodeEnvelopeSchema} from "../../../types/workflow";
 import {NODE_PORT_IDS} from '../../../constants';
 
 
@@ -22,15 +22,12 @@ export const LlmProcessNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, LlmProce
     assertion: assertIsLlmProcessNodeData,
     metadata: {
         // eslint-disable-next-line max-len
-        description: "Sends data to an Ollama LLM with a configurable prompt. Supports tool calling, feedback loops, and conversation history. When 'AI Orchestration Mode' is enabled, an AI orchestrator decomposes the input (string or array) into individual sequential agent tasks and synthesizes a final aggregated response.",
+        description: "Sends data to an Ollama LLM with a configurable prompt. Supports tool calling, feedback loops, and conversation history. When 'AI Orchestration Mode' is enabled, an AI orchestrator decomposes the input into individual sequential agent tasks and synthesizes a final aggregated response.",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
-                inputSchema: z.union([
-                    // eslint-disable-next-line max-len
-                    NodeInputWithToolsPayloadSchema.describe("Wrapper routing `payload` to the LLM context while `toolsPayload` bypasses the LLM and is forwarded directly to connected tools."),
-                    z.any().describe("Any other data passed directly as LLM input."),
-                ]).describe("Incoming data, tools, and context for prompt execution."),
-                outputSchema: z.any().describe("LLM response and generated output data."),
+                inputSchema: NodeEnvelopeSchema.describe("payload routed to the LLM's context; toolsPayload bypasses the LLM, forwarded directly to connected tools."),
+                // eslint-disable-next-line max-len
+                outputSchema: z.object({payload: z.any().describe("LLM response and generated output data.")}).describe("toolsPayload is never included — it dies at this node by design."),
             },
             [NODE_PORT_IDS.TRIGGER]: true,
             [NODE_PORT_IDS.CONTEXT]: true,

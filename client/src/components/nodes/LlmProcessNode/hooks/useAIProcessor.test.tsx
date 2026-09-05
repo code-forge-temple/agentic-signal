@@ -60,7 +60,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi', prompt: undefined, message: undefined, model: '', format: undefined,
+                    payload: 'hi', prompt: undefined, message: undefined, model: '', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -80,7 +80,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: undefined, prompt: undefined, message: undefined, model: 'm', format: undefined,
+                    payload: undefined, prompt: undefined, message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -118,7 +118,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: undefined, prompt: undefined, message: undefined, model: '', format: undefined,
+                    payload: undefined, prompt: undefined, message: undefined, model: '', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -145,7 +145,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi', prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: 'hi', prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: history,
                 });
             });
@@ -166,7 +166,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi there', prompt: 'You are helpful.', message: undefined, model: 'm', format: undefined,
+                    payload: 'hi there', prompt: 'You are helpful.', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: history,
                 });
             });
@@ -188,7 +188,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'go', prompt: 'p', message: undefined, model: 'm', format: undefined, tools,
+                    payload: 'go', prompt: 'p', message: undefined, model: 'm', format: undefined, tools,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -202,7 +202,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'core', prompt: undefined, message: {prefix: '>>', suffix: '<<'}, model: 'm', format: undefined,
+                    payload: 'core', prompt: undefined, message: {prefix: '>>', suffix: '<<'}, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -220,7 +220,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi', prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: 'hi', prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -237,7 +237,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi', prompt: 'p', message: undefined, model: 'm',
+                    payload: 'hi', prompt: 'p', message: undefined, model: 'm',
                     format: {onSuccess: JSON.stringify({type: 'object', properties: {greeting: {type: 'string'}}})},
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
@@ -255,7 +255,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi', prompt: 'p', message: undefined, model: 'm',
+                    payload: 'hi', prompt: 'p', message: undefined, model: 'm',
                     format: {
                         onSuccess: JSON.stringify({type: 'object', properties: {greeting: {type: 'string'}}}),
                         onError: JSON.stringify({type: 'object', required: ['error'], properties: {error: {type: 'string'}}}),
@@ -275,7 +275,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'hi', prompt: 'p', message: undefined, model: 'm', format: {onSuccess: 'not json {{'},
+                    payload: 'hi', prompt: 'p', message: undefined, model: 'm', format: {onSuccess: 'not json {{'},
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -293,7 +293,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'hi', prompt: 'p', message: undefined, model: 'm',
+                    payload: 'hi', prompt: 'p', message: undefined, model: 'm',
                     format: {onSuccess: JSON.stringify({type: 'object'})},
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
@@ -310,7 +310,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'question', prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: 'question', prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), ragHandler,
                 });
             });
@@ -326,7 +326,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'question', prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: 'question', prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), ragHandler,
                 });
             });
@@ -340,7 +340,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'hi', prompt: undefined, message: undefined, model: 'm',
+                    payload: 'hi', prompt: undefined, message: undefined, model: 'm',
                     format: {onSuccess: JSON.stringify({type: 'object', properties: {greeting: {type: 'string'}}})},
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
@@ -357,7 +357,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: undefined, prompt: 'You are a helpful assistant.', message: undefined, model: 'm',
+                    payload: undefined, prompt: 'You are a helpful assistant.', message: undefined, model: 'm',
                     format: undefined, maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -371,7 +371,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'core', prompt: undefined, message: {}, model: 'm', format: undefined,
+                    payload: 'core', prompt: undefined, message: {}, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -387,7 +387,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'question', prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: 'question', prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), ragHandler,
                 });
             });
@@ -407,7 +407,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'new question', prompt: 'sys', message: undefined, model: 'm', format: undefined,
+                    payload: 'new question', prompt: 'sys', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: history,
                 });
             });
@@ -429,7 +429,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: undefined, prompt: 'sys', message: undefined, model: 'm', format: undefined,
+                    payload: undefined, prompt: 'sys', message: undefined, model: 'm', format: undefined,
                     feedback: 'that was wrong', maxToolRetries: 3, conversationHistory: history,
                 });
             });
@@ -449,7 +449,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: undefined, prompt: 'sys', message: undefined, model: 'm', format: undefined,
+                    payload: undefined, prompt: 'sys', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: history,
                 });
             });
@@ -469,7 +469,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
+                    payload: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -488,7 +488,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
+                    payload: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -509,7 +509,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
+                    payload: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -526,7 +526,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
+                    payload: 'go', prompt: 'p', message: undefined, model: 'm', format, tools,
                     maxToolRetries: 3, conversationHistory: makeHistory(),
                 });
             });
@@ -548,7 +548,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
                 });
             });
@@ -570,7 +570,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: 'a long string describing multiple jobs to do', prompt: 'p', message: undefined, model: 'm',
+                    payload: 'a long string describing multiple jobs to do', prompt: 'p', message: undefined, model: 'm',
                     format: undefined, maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
                 });
             });
@@ -578,21 +578,62 @@ describe('useAIProcessor.processAIRequest', () => {
             expect(getCallCount()).toBe(3);
         });
 
-        it('falls back to the normal path when orchestrationMode is on but input is neither an array nor a string', async () => {
+        it('falls back to the normal path when orchestrationMode is on but input is undefined', async () => {
             const {getCallCount} = mockFetchAIResponse([success('normal reply')]);
             const {result} = renderHook(() => useAIProcessor());
             let returned: any;
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: {not: 'an array or string'}, prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: undefined, prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
                 });
             });
 
             // Only 1 call — the normal single-call path, not orchestration's 3-call shape.
+            // A message-only node (no input at all) relies on this fallback.
             expect(getCallCount()).toBe(1);
             expect(returned).toBe('normal reply');
+        });
+
+        it('routes a plain object input through orchestration too, not just arrays/strings', async () => {
+            const {getCallCount} = mockFetchAIResponse([
+                success(JSON.stringify({tasks: [{content: 'task 1'}]})),
+                success('task 1 done'),
+                success('Aggregated summary.'),
+            ]);
+            const {result} = renderHook(() => useAIProcessor());
+            let returned: any;
+
+            await act(async () => {
+                returned = await result.current.processAIRequest({
+                    payload: {topic: 'multiple jobs'}, prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
+                });
+            });
+
+            expect(getCallCount()).toBe(3);
+            expect(returned).toBe('Aggregated summary.');
+        });
+
+        it('routes a bare primitive input (number/boolean) through orchestration too', async () => {
+            const {getCallCount} = mockFetchAIResponse([
+                success(JSON.stringify({tasks: [{content: 'task 1'}]})),
+                success('task 1 done'),
+                success('Aggregated summary.'),
+            ]);
+            const {result} = renderHook(() => useAIProcessor());
+            let returned: any;
+
+            await act(async () => {
+                returned = await result.current.processAIRequest({
+                    payload: 42, prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
+                });
+            });
+
+            expect(getCallCount()).toBe(3);
+            expect(returned).toBe('Aggregated summary.');
         });
 
         it('does not enter orchestration when orchestrationMode is off, even for array input', async () => {
@@ -601,7 +642,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: ['url-1', 'url-2'], prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: ['url-1', 'url-2'], prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: false,
                 });
             });
@@ -620,7 +661,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 returned = await result.current.processAIRequest({
-                    input: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    payload: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: undefined,
                     maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
                 });
             });
@@ -640,7 +681,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             await act(async () => {
                 await result.current.processAIRequest({
-                    input: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: undefined, tools,
+                    payload: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: undefined, tools,
                     maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
                 });
             });

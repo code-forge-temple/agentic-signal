@@ -33,7 +33,7 @@ export const CalendarPersonFields = {
     displayName: 'String'
 } as const;
 
-export interface CalendarEventResult {
+export type CalendarEventResult = {
     id: string;
     summary?: string;
     description?: string;
@@ -52,12 +52,12 @@ export interface CalendarEventResult {
     creator?: { email: string; displayName?: string };
     htmlLink?: string;
     status?: string;
-}
+};
 
-export interface CalendarEventSearchArgs {
+export type CalendarEventSearchArgs = {
     query: string;
     timeMin: string;
     timeMax: string;
     maxResults: number;
     accessToken: string;
-}
+};

@@ -5,39 +5,19 @@
  ************************************************************************/
 
 import {graphqlBaseUrl} from "../../../../../../utils";
+import {AttachedFile, FillAction} from "@shared/types.gen";
+import {SessionId} from "../../types";
 
-
-export interface FillActionInput {
-    selector: string;
-    /** Renamed from 'type' — avoids the GraphQL reserved-keyword collision. */
-    actionType: string;
-    value?: string;
-    fileKey?: string;
-}
-
-export interface AttachedFileInput {
-    name: string;
-    base64: string;
-    mimeType: string;
-}
 
 export interface FormInteractionParams {
     url: string;
-    actions?: FillActionInput[];
+    actions?: FillAction[];
     submitSelector?: string;
-    /** Binary files forwarded from DataSourceNode — written to a temp dir on the server per run. */
-    attachedFiles?: AttachedFileInput[];
-    /** Seconds between each field action; 0 = instant fill with no pauses. */
+    attachedFiles?: AttachedFile[];
     typingDelay: number;
     browserPath?: string;
-    /** Maximum seconds for one formInteraction call. */
     interactionTimeoutSeconds: number;
-    /**
-     * Scopes the server-side browser session to a single run so concurrent runs (e.g. the
-     * same workflow launched from two tabs) don't collide on the same form URL.
-     */
-    sessionId: string;
-    /** Tool subtype identifier forwarded so server error messages reference the correct tool name. */
+    sessionId: SessionId;
     toolName: string;
 }
 
@@ -66,7 +46,6 @@ export interface FormInteractionQueryResult {
     actionButtons: FormInteractionButtonResult[];
     error?: string;
 }
-
 
 export class GraphQLService {
     static async formInteraction (params: FormInteractionParams): Promise<FormInteractionQueryResult> {
@@ -133,7 +112,7 @@ export class GraphQLService {
     }
 
     /** Closes every browser session this run opened (across all form URLs it visited). */
-    static async closeFormSessions (sessionId: string): Promise<void> {
+    static async closeFormSessions (sessionId: SessionId): Promise<void> {
         const response = await fetch(graphqlBaseUrl, {
             method: "POST",
             headers: {"Content-Type": "application/json"},

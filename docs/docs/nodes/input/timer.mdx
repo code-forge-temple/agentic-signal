@@ -19,7 +19,7 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 <Tabs>
     <TabItem value="interval" label="Interval Mode" default>
         **Interval Mode** triggers the node at a fixed interval (in seconds).  
-        - `Interval(s)` (number): field to specify how often the node should trigger.
+        - `Interval(s)` (number): field to specify how often the node should trigger. Accepts typed math expressions (e.g. `60*60*12` for 12 hours) — press Enter or click away to evaluate; the result is rounded to the nearest whole second.
         - `Run once` (boolean): option to trigger only a single time.
         - `Trigger immediately, then repeat` (boolean): option to run once as soon as the timer starts.
 

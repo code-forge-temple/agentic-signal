@@ -10,14 +10,14 @@ export const BraveResultFields = {
     description: 'String'
 } as const;
 
-export interface BraveResult {
+export type BraveResult = {
   title: string;
   url: string;
   description: string;
-}
+};
 
-export interface BraveSearchArgs {
+export type BraveSearchArgs = {
   query: string;
   apiKey: string;
   maxResults: number;
-}
+};

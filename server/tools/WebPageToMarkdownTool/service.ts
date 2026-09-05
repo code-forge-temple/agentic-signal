@@ -11,11 +11,11 @@ import TurndownService from "npm:turndown";
 
 const PAGE_TIMEOUT_MS = 30_000;
 
-interface BrowserExtractedContent {
+type BrowserExtractedContent = {
     title: string;
     content: string;
     excerpt: string;
-}
+};
 
 export async function fetchWebPageAsMarkdown (url: string, browserPath?: string): Promise<WebPageToMarkdownResult> {
     let extracted: BrowserExtractedContent = {title: "", content: "", excerpt: ""};

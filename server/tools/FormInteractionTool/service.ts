@@ -9,25 +9,16 @@ import {ACTION_TIMEOUT_MS, executeAction} from "./utils/actionExecutor.ts";
 import {checkEmptyRequiredFields, extractActionButtons, extractFormFields} from "./utils/fieldExtractor.ts";
 import {cleanupTempDir, writeTempFiles} from "./utils/fileUtils.ts";
 import {closeSession, getOrCreateSession} from "./utils/sessionManager.ts";
+import {devLog} from "../../utils/logger.ts";
+import {withTimeout} from "./utils/withTimeout.ts";
 
 const NAV_TIMEOUT_MS = 20_000;
-
-/** Rejects after `ms` if `promise` hasn't settled — guards against a hung page/action. */
-function withTimeout<T> (promise: Promise<T>, ms: number, message: string): Promise<T> {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error(message)), ms);
-    });
-
-    return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
-}
 
 export async function interactWithForm (args: FormInteractionArgs): Promise<FormInteractionResult> {
     const {url, actions = [], submitSelector, attachedFiles = [], typingDelay, browserPath, interactionTimeoutSeconds, sessionId, toolName} = args;
     const interactionTimeoutMs = interactionTimeoutSeconds * 1_000;
 
-    console.log(`[FormInteraction] ▶ start  url="${url}"  actions=${actions.length}  attachedFiles=${attachedFiles.length}`);
+    devLog(`[FormInteraction] ▶ start  url="${url}"  actions=${actions.length}  attachedFiles=${attachedFiles.length}`);
 
     const result: FormInteractionResult = {
         success: false,
@@ -67,7 +58,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 ],
             });
 
-            console.log(`[FormInteraction] ${isNew ? "browser launched" : "reusing existing session"}`);
+            devLog(`[FormInteraction] ${isNew ? "browser launched" : "reusing existing session"}`);
 
             if (isNew) {
                 await page.addInitScript(() => {
@@ -90,7 +81,8 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
 
             result.currentUrl = page.url();
             result.pageTitle = await page.title();
-            console.log(`[FormInteraction] on → "${result.currentUrl}" ("${result.pageTitle}")`);
+
+            devLog(`[FormInteraction] on → "${result.currentUrl}" ("${result.pageTitle}")`);
 
             // --- Execute fill actions ---
             const failedActions: string[] = [];
@@ -99,7 +91,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 const action = actions[i];
                 const valuePreview = action.value !== undefined ? ` = "${String(action.value).substring(0, 40)}"` : "";
 
-                console.log(`[FormInteraction] [${i + 1}/${actions.length}] ${action.actionType} → ${action.selector}${valuePreview}`);
+                devLog(`[FormInteraction] [${i + 1}/${actions.length}] ${action.actionType} → ${action.selector}${valuePreview}`);
 
                 await executeAction(page, action, attachedFilePathMap, typingDelay).catch((err) => {
                     const msg = err instanceof Error ? err.message : String(err);
@@ -155,7 +147,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 const submitLocator = page.locator(submitSelector);
                 const matchCount = await submitLocator.count();
 
-                console.log(`[FormInteraction] submitSelector "${submitSelector}" matched ${matchCount} element(s)`);
+                devLog(`[FormInteraction] submitSelector "${submitSelector}" matched ${matchCount} element(s)`);
 
                 if (matchCount === 0) {
                     result.formFields = await extractFormFields(page);
@@ -171,7 +163,8 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 const selectorsBeforeClick = (await extractFormFields(page)).map((f) => f.selector).join(",");
 
                 await submitLocator.first().click({timeout: ACTION_TIMEOUT_MS});
-                console.log(`[FormInteraction] clicked "${submitSelector}"`);
+
+                devLog(`[FormInteraction] clicked "${submitSelector}"`);
 
                 // Wait for the resulting page to settle.
                 await page
@@ -186,7 +179,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 // set is the only reliable signal that the click actually did anything.
                 const selectorsAfterClick = (await extractFormFields(page)).map((f) => f.selector).join(",");
 
-                console.log(
+                devLog(
                     `[FormInteraction] after click — url ${urlBeforeClick === result.currentUrl ? "unchanged" : "changed"}, ` +
                     `visible fields ${selectorsBeforeClick === selectorsAfterClick ? "UNCHANGED (click likely had no effect)" : "changed"}`
                 );
@@ -201,7 +194,8 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
             result.formFields = await extractFormFields(page);
             result.actionButtons = await extractActionButtons(page);
             result.success = true;
-            console.log(
+
+            devLog(
                 `[FormInteraction] ✓ done — extracted ${result.formFields.length} field(s), ` +
                 `${result.actionButtons.length} button(s)`
             );
@@ -210,7 +204,8 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
             // strongly suggest a final confirmation/"thank you" state, so free the browser
             // instead of waiting out the idle timeout.
             if (result.submitted && (result.formFields.length === 0 || submitDisabledAfterClick)) {
-                console.log("[FormInteraction] form appears complete — closing session");
+                devLog("[FormInteraction] form appears complete — closing session");
+
                 await closeSession(sessionKey);
             }
         })(), interactionTimeoutMs, `Form interaction timed out after ${interactionTimeoutMs / 1000}s`);

@@ -65,7 +65,7 @@ export function useWorkflow () {
                         if (node.id === edge.target) {
                             if (node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
                                 const rest = Object.fromEntries(
-                                    Object.entries((node.data as any).input ?? {}).filter(([k]) => k !== edge.source)
+                                    Object.entries(node.data.input ?? {}).filter(([k]) => k !== edge.source)
                                 );
 
                                 return updateNodeData(node, {input: rest}, nodeAssertions);
@@ -114,7 +114,7 @@ export function useWorkflow () {
                         if (wasReceivingFromDeleted) {
                             if (node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
                                 const rest = Object.fromEntries(
-                                    Object.entries((node.data as any).input ?? {}).filter(([k]) => k !== deletedNode.id)
+                                    Object.entries(node.data.input ?? {}).filter(([k]) => k !== deletedNode.id)
                                 );
 
                                 return updateNodeData(node, {input: rest}, nodeAssertions);

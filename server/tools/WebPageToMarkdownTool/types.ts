@@ -11,14 +11,14 @@ export const WebPageToMarkdownResultFields = {
     excerpt: 'String',
 } as const;
 
-export interface WebPageToMarkdownResult {
+export type WebPageToMarkdownResult = {
     title: string;
     url: string;
     content: string;
     excerpt: string;
-}
+};
 
-export interface WebPageToMarkdownArgs {
+export type WebPageToMarkdownArgs = {
     urls: string[];
     browserPath?: string;
-}
+};

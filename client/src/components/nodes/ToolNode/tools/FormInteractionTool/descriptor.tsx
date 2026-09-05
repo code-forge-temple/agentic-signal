@@ -4,14 +4,21 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+/* eslint-disable max-len */
+
 import FormIcon from "./assets/form.svg";
 import {Box, Slider, Typography} from "@mui/material";
-import {ToolDefinition} from "../types";
+import {SessionId, ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {isTauri} from "../../../../../utils";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
+import {FillAction, isAttachedFile} from "@shared/types.gen";
+import {NodeEnvelope} from "../../../../../types/workflow";
+import {z} from "zod";
+import {zodToJsonSchema} from "zod-to-json-schema";
+import {RawLlmFillActionSchema, RawLlmFillAction} from "./types/params";
 
 
 export const FormInteractionToolDescriptor: ToolDefinition = {
@@ -20,7 +27,6 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
     icon: <FormIcon />,
     toolSchema: {
         name: "formInteraction",
-        // eslint-disable-next-line max-len
         description: "Navigates to a web form, reads its fields (labels, types, selectors, options) and its clickable buttons (actionButtons: label + selector, e.g. 'Next' or 'Submit'). Call without actions first to discover both. Then call again with fill actions and submitSelector set to the selector of the matching button from actionButtons — never guess a selector such as '#submitBtn' or 'button[type=submit]'. For multi-page/multi-step forms only the current page's fields and buttons are returned; after each click the tool returns the resulting page's fields and actionButtons, so repeat discover-or-fill, then click, using the newly returned selectors, until submitted is true or there are no more required fields. A single discovery call does not fill or submit anything — keep calling this tool with real actions until it returns submitted: true. Never write out field values, actions, or a submission result as plain text/markdown instead of calling the tool.",
         parameters: {
             type: "object",
@@ -31,43 +37,12 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
                 },
                 actions: {
                     type: "array",
-                    description:
-                        "List of fill actions to perform. Omit or pass an empty array to only read the form. " +
-                        "Each action targets a field by its CSS selector.",
-                    items: {
-                        type: "object",
-                        properties: {
-                            selector: {type: "string", description: "CSS selector of the target element."},
-                            type: {
-                                type: "string",
-                                enum: ["fill", "select", "check", "uncheck", "click", "upload"],
-                                description:
-                                    "fill=type text, select=choose dropdown option by label or value, " +
-                                    "check/uncheck=toggle checkbox, click=click any element, " +
-                                    "upload=attach a pre-configured file (requires fileKey).",
-                            },
-                            value: {
-                                type: "string",
-                                description: "Text to type (fill), option label/value to choose (select), or ignored for check/uncheck/click.",
-                            },
-                            fileKey: {
-                                type: "string",
-                                description:
-                                    "Name of the file to upload. Use the original filename of a binary file " +
-                                    "attached in DataSourceNode (e.g. 'my-cv.pdf'), or a key from the tool's " +
-                                    "Configured Files setting for pre-existing server-side files. " +
-                                    "Required when type is 'upload'.",
-                            },
-                        },
-                        required: ["selector", "type"],
-                    },
+                    description: "List of fill actions to perform. Omit or pass an empty array to only read the form. Each action targets a field by its CSS selector.",
+                    items: zodToJsonSchema(RawLlmFillActionSchema),
                 },
                 submitSelector: {
                     type: "string",
-                    description:
-                        "CSS selector of the submit or 'Next' button to click after filling — use the " +
-                        "selector of the matching entry from actionButtons (returned by a prior call), " +
-                        "never a guessed selector. Omit if you only want to fill without advancing.",
+                    description: "CSS selector of the submit or 'Next' button to click after filling — use the selector of the matching entry from actionButtons (returned by a prior call), never a guessed selector. Omit if you only want to fill without advancing.",
                 },
             },
             required: ["url"],
@@ -124,16 +99,10 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
     handlerFactory: (userConfig: {typingDelay?: number; browserPath?: string; interactionTimeoutSeconds?: number}) =>
         async (params: {
             url: string;
-            actions?: any[];
+            actions?: RawLlmFillAction[];
             submitSelector?: string;
-            /** Injected by LlmProcessNode from structured DataSourceNode output. */
-            toolsPayload?: Array<{name: string; base64: string; mimeType: string}>;
-            /**
-             * Injected by LlmProcessNode — unique per run-trigger, so two concurrent runs
-             * (e.g. the same workflow launched from two tabs) get isolated browser sessions
-             * on the server instead of colliding on the same form URL.
-             */
-            sessionId: string;
+            toolsPayload?: NodeEnvelope['toolsPayload'];
+            sessionId: SessionId;
         }) => {
             if(!userConfig.browserPath && isTauri()){
                 return {error: "Browser executable path must be specified. Please set Browser Executable Path in the app Settings."};
@@ -143,36 +112,46 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
                 return {error: "`url` parameter is required."};
             }
 
+            const actionsResult = z.array(RawLlmFillActionSchema).safeParse(params.actions ?? []);
+
+            if (!actionsResult.success) {
+                return {error: `Invalid \`actions\`: ${actionsResult.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`};
+            }
+
             try {
-                // LLMs generate { type, selector, value } but the GraphQL field is 'actionType'
-                // (renamed to avoid the GraphQL SDL reserved-keyword collision).
-                const normalizedActions = params.actions?.map((a: any) => {
-                    const isUpload = (a.actionType ?? a.type) === "upload";
+                const normalizedActions: FillAction[] = actionsResult.data.map((rawAction): FillAction => {
+                    const isUpload = rawAction.actionType === "upload";
 
                     return {
-                        selector: a.selector,
-                        actionType: a.actionType ?? a.type,
-                        value: a.value,
+                        selector: rawAction.selector,
+                        actionType: rawAction.actionType,
+                        value: rawAction.value,
                         // For upload actions: fall back to value if fileKey is absent (LLMs sometimes
                         // use value for the filename). For other actions: only include fileKey if
                         // explicitly provided (prevents "Jane" etc. leaking into fileKey).
                         ...(isUpload
-                            ? {fileKey: a.fileKey ?? a.value}
-                            : a.fileKey !== undefined ? {fileKey: a.fileKey} : {}),
+                            ? {fileKey: rawAction.fileKey ?? rawAction.value}
+                            : rawAction.fileKey !== undefined ? {fileKey: rawAction.fileKey} : {}),
                     };
                 });
 
+                /* #if LOGS */
                 console.log(
                     "[FormInteraction] handler — raw actions[0]:", JSON.stringify(params.actions?.[0]),
-                    "| normalized actions[0]:", JSON.stringify(normalizedActions?.[0]),
-                    "| total:", normalizedActions?.length ?? 0
+                    "| normalized actions[0]:", JSON.stringify(normalizedActions[0]),
+                    "| total:", normalizedActions.length
                 );
+                /* #endif */
+
+                const attachedFiles = Array.isArray(params.toolsPayload)
+                    ? params.toolsPayload.filter(isAttachedFile)
+                    : [];
 
                 return await GraphQLService.formInteraction({
                     url: params.url,
                     actions: normalizedActions,
                     submitSelector: params.submitSelector,
-                    attachedFiles: params.toolsPayload,
+                    attachedFiles,
                     typingDelay: userConfig.typingDelay ?? 1,
                     browserPath: userConfig.browserPath,
                     interactionTimeoutSeconds: userConfig.interactionTimeoutSeconds ?? 300,
@@ -189,7 +168,7 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
     // orchestrated agent task); this sweeps all of them once the run ends, instead of
     // leaving any that didn't hit the tool's own auto-close heuristic open until the
     // server's idle timeout.
-    runtimeCleanup: () => async (sessionId: string) => {
+    runtimeCleanup: () => async (sessionId: SessionId) => {
         await GraphQLService.closeFormSessions(sessionId).catch((error) => {
             console.error("FormInteraction cleanup error:", error);
         });

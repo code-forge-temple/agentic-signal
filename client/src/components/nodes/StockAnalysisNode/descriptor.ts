@@ -4,11 +4,13 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from 'zod';
 import {NodeDescriptor} from "../types";
 import {StockAnalysisNode as component} from "./StockAnalysisNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsStockAnalysisNodeData, StockAnalysisNode, StockAnalysisNodeDataSchema} from "./types/workflow";
 import {StockAnalysisInputSchema} from "./types/input.types";
+import {NodeEnvelopeSchema} from "../../../types/workflow";
 import {NODE_PORT_IDS} from "../../../constants";
 
 export const StockAnalysisNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, StockAnalysisNode> = {
@@ -22,7 +24,8 @@ export const StockAnalysisNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Stock
         description: "Receives stock price data and renders a financial analysis chart with candlestick or line visualisation.",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
-                inputSchema: StockAnalysisInputSchema.describe("Stock symbol and time-series price data input."),
+                inputSchema: NodeEnvelopeSchema.extend({payload: StockAnalysisInputSchema.describe("Stock symbol and time-series price data input.")}),
+                outputSchema: NodeEnvelopeSchema.extend({payload: z.object({symbol: z.string()}).passthrough().describe("Symbol plus computed indicators.")}),
             },
         },
         configSchema: StockAnalysisNodeDataSchema,

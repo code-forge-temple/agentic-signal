@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-    { ignores: ['dist', 'src-tauri'] },
+    { ignores: ['dist', 'src-tauri', '**/*.gen.ts'] },
     {
         extends: [js.configs.recommended, ...tseslint.configs.recommended],
         files: ['**/*.{ts,tsx}'],
@@ -75,6 +75,14 @@ export default tseslint.config(
                 // Blank line after blocks
                 { blankLine: 'always', prev: 'block', next: '*' }
             ],
+        },
+    },
+    {
+        // Deno server resolvers keep underscore-prefixed GraphQL args (_parent, _args, _context)
+        // for signature clarity even when unused; base no-unused-vars is off via tseslint recommended.
+        files: ['server/**/*.{ts,tsx}'],
+        rules: {
+            '@typescript-eslint/no-unused-vars': 'off',
         },
     },
 )

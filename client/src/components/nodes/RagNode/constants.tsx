@@ -4,7 +4,6 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-/* eslint-disable react-refresh/only-export-components */
 
 import {Brain} from "iconoir-react";
 

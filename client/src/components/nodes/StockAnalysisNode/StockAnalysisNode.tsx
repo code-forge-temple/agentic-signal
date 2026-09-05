@@ -39,7 +39,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
         runCallback: () => {
             runTask(async () => {
                 try {
-                    const validation = StockAnalysisInputSchema.safeParse(input);
+                    const validation = StockAnalysisInputSchema.safeParse(input?.payload);
 
                     if (!validation.success) {
                         setError(prev => {
@@ -54,7 +54,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
                             formatFeedbackMessage(
                                 "Stock analysis",
                                 STOCK_ANALYSIS_INPUT_JSON_SCHEMA,
-                                JSON.stringify(input, null, 4),
+                                JSON.stringify(input?.payload, null, 4),
                                 JSON.stringify(validation.error.errors, null, 4)
                             )
                         );
@@ -80,7 +80,10 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
 
                     const analysis = computeIndicators(data as StockDataPoint[]);
 
-                    onResultUpdate(id, {symbol, ...analysis});
+                    onResultUpdate(id, {
+                        payload: {symbol, ...analysis},
+                        ...(input?.toolsPayload !== undefined ? {toolsPayload: input.toolsPayload} : {}),
+                    });
                 } catch (err) {
                     setError(prev => {
                         const newError = err instanceof Error ? err.message : formatErrorMessage("Unknown error", err);

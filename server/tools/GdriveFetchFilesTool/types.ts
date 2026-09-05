@@ -15,7 +15,7 @@ export const CloudStorageFileResultFields = {
     content: 'String'
 } as const;
 
-export interface CloudStorageFileResult {
+export type CloudStorageFileResult = {
     id: string;
     name?: string;
     mimeType?: string;
@@ -24,10 +24,10 @@ export interface CloudStorageFileResult {
     size?: string;
     owners?: string[];
     content?: string;
-}
+};
 
-export interface CloudStorageFileSearchArgs {
+export type CloudStorageFileSearchArgs = {
     query: string;
     maxResults: number;
     accessToken: string;
-}
+};

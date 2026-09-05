@@ -6,6 +6,7 @@
 
 import {type NodeProps} from "@xyflow/react";
 import {assertIsDataSourceNodeData, DATA_SOURCE_TYPE_LABELS, DATA_SOURCE_TYPES} from "./types/workflow";
+import {AttachedFile} from "@shared/types.gen";
 import {useCallback, useState} from "react";
 import {BaseNode} from "../BaseNode";
 import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
@@ -22,14 +23,13 @@ import {JsonInput} from "./components/JsonInput";
 import {FilesInput} from "./components/FilesInput";
 import {IMAGE_FILE_EXTENSIONS, BINARY_FILE_EXTENSIONS} from "@shared/constants";
 import {markdownFilePrefix, markdownImageFilePrefix} from "@shared/utils";
-import {isNodeInputWithToolsPayload, NodeInputWithToolsPayload} from "../LlmProcessNode/types/input.types";
-import {DataSourceToolsPayloadSchema, DATASOURCE_INPUT_JSON_SCHEMA} from "./types/input.types";
-import {formatContentForDisplay, formatErrorMessage} from "../../../utils/utils";
 import {CodeEditor} from "../../CodeEditor";
 import {FieldsetGroup} from "../../FieldsetGroup";
+import {DATASOURCE_INPUT_JSON_SCHEMA} from "./types/input.types";
 
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
+const toArray = (x: unknown): unknown[] => x === undefined ? [] : (Array.isArray(x) ? x : [x]);
 
 export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -46,47 +46,24 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
         onResultUpdate(id);
 
         runTask(async () => {
-            // An upstream DataSourceNode's output is prefixed onto this node's own data — it
-            // may arrive as a plain value (string/JSON) or the { payload, toolsPayload }
-            // wrapper when an earlier node in the chain carries binary file attachments.
-            let upstreamPayload: unknown = input;
-            let upstreamToolsPayload: Array<{name: string; base64: string; mimeType: string}> = [];
-
-            if (isNodeInputWithToolsPayload(input)) {
-                // Unlike payload (intentionally open-ended), toolsPayload has a concrete shape here —
-                // validate it strictly so a malformed upstream attachment fails loudly now instead of
-                // silently corrupting whatever tool consumes it later in the workflow.
-                const validation = DataSourceToolsPayloadSchema.safeParse(input);
-
-                if (!validation.success) {
-                    setError(formatErrorMessage("Invalid upstream file attachments", validation.error.errors));
-
-                    onResultUpdate(id);
-
-                    return;
-                }
-
-                upstreamPayload = validation.data.payload;
-                upstreamToolsPayload = validation.data.toolsPayload;
-            }
+            const up = input?.payload;
+            const upTools = input?.toolsPayload;
+            const upIsString = typeof up === 'string';
 
             if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
                 try {
-                    const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-                        typeof v === 'object' && v !== null && !Array.isArray(v);
+                    const own = JSON.parse(dataSource.value || "{}");
+                    // Upstream and own are kept as distinct array elements rather than merged —
+                    // an object-spread merge would silently drop upstream keys on collision.
+                    // JSON mode never contributes its own new tools attachments.
+                    const payload = up === undefined
+                        ? own
+                        : upIsString
+                            ? [own, ...toArray(up)]
+                            : [...toArray(up), own];
+                    const toolsPayload = toArray(upTools);
 
-                    const current = JSON.parse(dataSource.value || "{}");
-                    const merged = isPlainObject(upstreamPayload) && isPlainObject(current)
-                        ? {...upstreamPayload, ...current}
-                        : current;
-
-                    if (upstreamToolsPayload.length > 0) {
-                        const output: NodeInputWithToolsPayload = {payload: merged, toolsPayload: upstreamToolsPayload};
-
-                        onResultUpdate(id, output);
-                    } else {
-                        onResultUpdate(id, merged);
-                    }
+                    onResultUpdate(id, {payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})});
                 } catch (e) {
                     setError("Invalid JSON data: " + (e instanceof Error ? e.message : String(e)));
 
@@ -95,10 +72,9 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
 
                 return;
             } else if(dataSource.type === DATA_SOURCE_TYPES.MARKDOWN_AND_FILES) {
-                let mergedOutput = dataSource.value?.text || "";
+                let own = dataSource.value?.text || "";
                 let imageCounter = 1;
-                // Upstream file attachments come first — this node's own attachments (below) are appended.
-                const binaryAttachments: Array<{name: string; base64: string; mimeType: string}> = [...upstreamToolsPayload];
+                const ownTools: AttachedFile[] = [];
 
                 for (const file of dataSource.value?.files || []) {
                     const ext = file.name.split('.').pop()?.toLowerCase() || "";
@@ -107,29 +83,29 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
 
                     if (isToolsPayload && file.base64) {
                         // Binary attachment: add a note the LLM can read, collect for tool use.
-                        mergedOutput += `\n\n[Binary attachment: ${file.name} — available for form file-upload fields]\n\n`;
-                        binaryAttachments.push({name: file.name, base64: file.base64, mimeType: file.mimeType || "application/octet-stream"});
+                        own += `\n\n[Binary attachment: ${file.name} — available for form file-upload fields]\n\n`;
+
+                        ownTools.push({name: file.name, base64: file.base64, mimeType: file.mimeType || "application/octet-stream"});
                     } else if (isToolsPayload) {
                         // isToolsPayload=true but no base64 — skip silently (shouldn't happen with new files)
                     } else if (IMAGE_FILE_EXTENSIONS.has(ext)) {
-                        mergedOutput += `\n\n${markdownImageFilePrefix(imageCounter++, file.name)}${file.content}\n\n`;
+                        own += `\n\n${markdownImageFilePrefix(imageCounter++, file.name)}${file.content}\n\n`;
                     } else {
-                        mergedOutput += `\n\n${markdownFilePrefix(file.name)}${file.content}\n\n`;
+                        own += `\n\n${markdownFilePrefix(file.name)}${file.content}\n\n`;
                     }
                 }
 
-                // Prefix upstream content before this node's own — chaining multiple DataSourceNodes
-                // accumulates each one's text in order.
-                const upstreamText = formatContentForDisplay(upstreamPayload);
-                const combinedOutput = upstreamText ? `${upstreamText}\n\n${mergedOutput}` : mergedOutput;
+                // Both naturally textual — join into one document rather than keeping separate
+                // array elements. Otherwise, upstream is kept distinct (spread if already an
+                // array, wrapped as one element otherwise) with own appended last.
+                const payload = up === undefined
+                    ? own
+                    : upIsString
+                        ? up + own
+                        : [...toArray(up), own];
+                const toolsPayload = [...toArray(upTools), ...ownTools];
 
-                if (binaryAttachments.length > 0) {
-                    const output: NodeInputWithToolsPayload = {payload: combinedOutput, toolsPayload: binaryAttachments};
-
-                    onResultUpdate(id, output);
-                } else {
-                    onResultUpdate(id, combinedOutput);
-                }
+                onResultUpdate(id, {payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})});
             }
         }, setIsRunning);
     }, [dataSource.type, dataSource.value, id, onResultUpdate, input]);

@@ -3,7 +3,8 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "target": "ES2020",
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "noEmit": true
     },
     "exclude": [
         "client",

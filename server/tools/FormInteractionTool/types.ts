@@ -30,7 +30,7 @@ export const FormInteractionResultFields = {
     error: 'String',
 } as const;
 
-export interface FormInteractionField {
+export type FormInteractionField = {
     label: string;
     name: string;
     type: string;
@@ -39,45 +39,55 @@ export interface FormInteractionField {
     options?: string[];
     currentValue?: string;
     placeholder?: string;
-}
+};
 
 /** A clickable control on the page (e.g. "Next" / "Submit") the LLM can target with submitSelector. */
-export interface FormInteractionButton {
+export type FormInteractionButton = {
     label: string;
     selector: string;
-}
+};
 
 /** A single interaction action the LLM instructs the tool to perform on a form field. */
 /** A binary file forwarded from the client (base64-encoded) to be written to a temp dir. */
-export interface AttachedFile {
+export type AttachedFile = {
     name: string;
     base64: string;
     mimeType: string;
-}
+};
 
-export interface FillAction {
+export const isAttachedFile = (x: unknown): x is AttachedFile =>
+    typeof x === 'object' && x !== null &&
+    'name' in x && typeof x.name === 'string' &&
+    'base64' in x && typeof x.base64 === 'string' &&
+    'mimeType' in x && typeof x.mimeType === 'string';
+
+/**
+ * - fill: type text into an input or textarea
+ * - select: choose an option in a <select> (by visible label or value)
+ * - check: check a checkbox or radio button
+ * - uncheck: uncheck a checkbox
+ * - click: click any element (e.g. a custom dropdown trigger or CTA button)
+ * - upload: set files on a <input type="file"> using a pre-configured fileKey
+ */
+export const FILL_ACTION_TYPES = ['fill', 'select', 'check', 'uncheck', 'click', 'upload'] as const;
+
+export type FillActionType = typeof FILL_ACTION_TYPES[number];
+
+export type FillAction = {
     /** CSS selector for the target element. */
     selector: string;
-    /**
-     * - fill: type text into an input or textarea
-     * - select: choose an option in a <select> (by visible label or value)
-     * - check: check a checkbox or radio button
-     * - uncheck: uncheck a checkbox
-     * - click: click any element (e.g. a custom dropdown trigger or CTA button)
-     * - upload: set files on a <input type="file"> using a pre-configured fileKey
-     */
     /** Interaction to perform on the element. */
-    actionType: 'fill' | 'select' | 'check' | 'uncheck' | 'click' | 'upload';
+    actionType: FillActionType;
     /** Value for fill / select / radio actions. */
     value?: string;
     /**
      * Key referencing a file path in the tool's configuredFiles map.
-     * Required when type is 'upload'.
+     * Required when actionType is 'upload'.
      */
     fileKey?: string;
-}
+};
 
-export interface FormInteractionArgs {
+export type FormInteractionArgs = {
     url: string;
     /** If empty or omitted, the tool only reads the form fields (no filling). */
     actions?: FillAction[];
@@ -108,9 +118,9 @@ export interface FormInteractionArgs {
     sessionId: string;
     /** The tool's subtype identifier forwarded from the frontend so server error messages stay in sync. */
     toolName: string;
-}
+};
 
-export interface FormInteractionResult {
+export type FormInteractionResult = {
     success: boolean;
     currentUrl: string;
     pageTitle: string;
@@ -118,4 +128,4 @@ export interface FormInteractionResult {
     formFields: FormInteractionField[];
     actionButtons: FormInteractionButton[];
     error?: string;
-}
+};

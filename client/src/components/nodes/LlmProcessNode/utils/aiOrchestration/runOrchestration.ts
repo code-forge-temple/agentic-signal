@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {Message, MessageRole} from "../../../../../types/ollama.types";
-import {getExpectedOutputType, llmResponseJsonParse, parseFormat} from "../formatUtils";
+import {getExpectedOutputType, llmResponseJsonParse, parseFormat, serializeInput} from "../formatUtils";
 import {AgentTaskResult, OrchestrationParams, OrchestrationResult, OrchestratorPlan} from "./types";
 import {buildAggregationMessage, buildDependencyContext} from "./messageBuilders";
 import {runSingleCall} from "./runSingleCall";
@@ -44,18 +44,25 @@ const ORCHESTRATOR_PLAN_SCHEMA = {
 export const JSON_SCHEMA_PROMPT_PREFIX = 'Your response must be valid JSON matching the following schema exactly:';
 
 /**
- * When the input is an array:
+ * Runs the orchestration pipeline against any input (array, string, object, or a bare
+ * primitive) the caller has confirmed is present — see the `orchestrationMode` guard in
+ * useAIProcessor.ts, the only place that decides whether this function gets called:
  *  1. Planning call  — orchestrator (using the node's system prompt) decomposes
- *                      the array into a structured list of agent tasks.
+ *                      the input into a structured list of agent tasks.
  *  2. Sequential agent calls — one per task, independent, raw text output.
  *  3. Aggregation call — synthesises all task results into the final output,
  *                        applying the node's `format` schema if provided.
  *
- * Designed so that future string-based self-planning support can be added
- * inside this function without changing its public signature.
+ * The task count is entirely planner-decided — an array's length is not a guarantee
+ * of the number of tasks produced.
  */
 export async function runOrchestration (params: OrchestrationParams): Promise<OrchestrationResult> {
     const {input, prompt, model, format, tools, maxToolRetries, think, temperature} = params;
+
+    // A string input is used as-is; anything else (object, array, number, boolean) is
+    // JSON-stringified. Prevents an already-string input from being re-wrapped in quotes
+    // when embedded into the planning prompt below.
+    const serializedInput = serializeInput(input) ?? String(input);
 
     // ------------------------------------------------------------------
     // 1. Planning call
@@ -69,7 +76,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
         {
             role: MessageRole.USER,
             // eslint-disable-next-line max-len
-            content: `Analyze the following input and decompose it into a list of individual tasks to be processed by separate agents. For each task provide: the content to process, an optional custom systemPrompt if the task requires specialized instructions, a tools array with the exact names of any tools that task needs (leave empty if none), and a dependsOn array with the zero-based indices of any earlier tasks whose output this task requires as input (only backward references allowed — a task can only reference tasks that appear before it in the list; omit if independent).${buildToolsDescription(tools)}\n\nInput:\n${JSON.stringify(input, null, 4)}`
+            content: `Analyze the following input and decompose it into a list of individual tasks to be processed by separate agents. For each task provide: the content to process, an optional custom systemPrompt if the task requires specialized instructions, a tools array with the exact names of any tools that task needs (leave empty if none), and a dependsOn array with the zero-based indices of any earlier tasks whose output this task requires as input (only backward references allowed — a task can only reference tasks that appear before it in the list; omit if independent).${buildToolsDescription(tools)}\n\nInput:\n${serializedInput}`
         }
     ];
 

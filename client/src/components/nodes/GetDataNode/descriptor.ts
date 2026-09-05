@@ -10,6 +10,7 @@ import {GetDataNode as component} from "./GetDataNode";
 import {Icon, NODE_TYPE, TITLE} from "./constants";
 import {assertIsGetDataNodeData, GetDataNode, GetDataNodeDataSchema} from "./types/workflow";
 import {GetDataNodeInputSchema} from "./types/input.types";
+import {NodeEnvelopeSchema} from "../../../types/workflow";
 import {NODE_PORT_IDS} from '../../../constants';
 
 
@@ -25,8 +26,8 @@ export const GetDataNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, GetDataNode
         description: "Fetches data from a URL via HTTP GET. Supports JSON, text, CSV, XML, blob, and arrayBuffer response formats.",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
-                inputSchema: GetDataNodeInputSchema.describe("Input provided by upstream."),
-                outputSchema: z.any().describe("Fetched response data from the configured endpoint."),
+                inputSchema: NodeEnvelopeSchema.extend({payload: GetDataNodeInputSchema.optional().describe("Input provided by upstream.")}),
+                outputSchema: NodeEnvelopeSchema.extend({payload: z.any().describe("Fetched response data from the configured endpoint.")}),
             },
             [NODE_PORT_IDS.TRIGGER]: true,
         },

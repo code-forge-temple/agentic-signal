@@ -11,7 +11,10 @@ import './Tabs.scss';
 
 
 type BasicTabsProps = {
-    tabs: { title: string; content: React.ReactNode }[];
+    // `title` stays the stable key driving tab selection; `label` is what's actually
+    // rendered in the tab pill (e.g. a title plus an inline Switch) and falls back to
+    // `title` when omitted, so existing string-only callers are unaffected.
+    tabs: { title: string; label?: React.ReactNode; content: React.ReactNode }[];
 }
 
 export function BasicTabs ({tabs}: BasicTabsProps) {
@@ -29,7 +32,7 @@ export function BasicTabs ({tabs}: BasicTabsProps) {
                 <Box className="tabs-titles">
                     <TabList onChange={(_e, newValue) => setValue(newValue)}>
                         {tabs.map(tab => (
-                            <Tab key={tab.title} label={tab.title} value={tab.title} />
+                            <Tab key={tab.title} label={tab.label ?? tab.title} value={tab.title} />
                         ))}
                     </TabList>
                 </Box>

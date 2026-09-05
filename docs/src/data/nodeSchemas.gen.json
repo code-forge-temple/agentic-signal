@@ -106,14 +106,47 @@
   "data-validation": {
     "type": "object",
     "properties": {
-      "schema": {
+      "validatePayload": {
+        "type": "boolean",
+        "description": "When on (default) or unset, payload is validated against payloadSchema. When off, payload passes through unvalidated."
+      },
+      "payloadSchema": {
         "type": "string",
-        "description": "JSON Schema string used to validate the incoming data"
+        "description": "JSON Schema string used to validate the incoming payload. Left empty, payload validation is skipped (permissive)."
+      },
+      "validateToolsPayload": {
+        "type": "boolean",
+        "description": "When on, toolsPayload is validated against toolsPayloadSchema. When off/unset, toolsPayload passes through unvalidated."
+      },
+      "toolsPayloadSchema": {
+        "type": "string",
+        "description": "JSON Schema for toolsPayload, used when validateToolsPayload is on. Left empty, toolsPayload validation is skipped."
       }
     },
     "required": [
-      "schema"
+      "payloadSchema"
     ],
+    "additionalProperties": false
+  },
+  "delayed-snapshot": {
+    "type": "object",
+    "properties": {
+      "persistedPayload": {
+        "description": "Persisted copy of the last received payload — survives workflow save/reload, replayed on Run."
+      },
+      "persistedToolsPayload": {
+        "description": "Persisted copy of the last received toolsPayload — survives workflow save/reload, replayed on Run."
+      },
+      "delaySeconds": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Seconds to wait before forwarding new input downstream. 0 or unset forwards immediately."
+      },
+      "isDelayPending": {
+        "type": "boolean",
+        "description": "Internal: true while a delayed forward is scheduled server-side, so a page reload can resume tracking it instead of losing it."
+      }
+    },
     "additionalProperties": false
   },
   "get-data": {
@@ -157,6 +190,104 @@
     },
     "required": [
       "url"
+    ],
+    "additionalProperties": false
+  },
+  "job-search": {
+    "type": "object",
+    "properties": {
+      "companies": {
+        "type": "string",
+        "description": "Companies to pull, one per line: `greenhouse:stripe`, `lever:vercel`, `ashby:linear`, `workable:acme`, the company's ATS-hosted board URL (jobs.ashbyhq.com/…, boards.greenhouse.io/…, jobs.lever.co/…, apply.workable.com/… — NOT the company's own careers page, which can't be parsed), or a bare name (auto-located across the four ATSs)."
+      },
+      "seedCompanies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "`ats:token` keys selected from the built-in starter company list (Greenhouse/Lever/Ashby)."
+      },
+      "keywords": {
+        "type": "string",
+        "description": "Comma-separated phrases matched against the job title/department (case-insensitive). A role matches a phrase when EVERY word of the phrase appears in the title (any order, substring, so 'engineer' also hits 'engineering'). A role matches if ANY phrase matches. Shorter phrases match more broadly. Empty = every role at the listed companies."
+      },
+      "remoteOnly": {
+        "type": "boolean",
+        "description": "Keep only roles the ATS flags as remote."
+      },
+      "employmentTypes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "full_time",
+            "part_time",
+            "contract",
+            "internship"
+          ]
+        },
+        "description": "Employment types to include. Empty = any."
+      },
+      "datePosted": {
+        "type": "string",
+        "enum": [
+          "any",
+          "today",
+          "3days",
+          "week",
+          "month"
+        ],
+        "description": "Only return roles posted within this window."
+      },
+      "seniority": {
+        "type": "string",
+        "enum": [
+          "any",
+          "junior",
+          "mid",
+          "senior",
+          "lead"
+        ],
+        "description": "Seniority filter (best-effort, from title)."
+      },
+      "candidateRegion": {
+        "type": "string",
+        "description": "Where you would work from, e.g. 'Cyprus', 'Europe'. Tags each job's eligibility from its location text (best-effort — ATS location data is free text)."
+      },
+      "filterByEligibility": {
+        "type": "boolean",
+        "description": "Drop roles whose location is a concrete place that doesn't match candidateRegion (e.g. 'Engineer - Germany' when you set 'Cyprus'). Roles with vague/unspecified locations are kept."
+      },
+      "maxCompanies": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 400,
+        "description": "Cap on how many companies to query in one run (fan-out safety)."
+      },
+      "resultsLimit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "Cap on returned jobs after filtering."
+      },
+      "dataProvidedByUpstream": {
+        "type": "boolean",
+        "description": "Take `companies` / `keywords` / `candidateRegion` from the upstream node's payload instead of the fields above."
+      }
+    },
+    "required": [
+      "companies",
+      "seedCompanies",
+      "keywords",
+      "remoteOnly",
+      "employmentTypes",
+      "datePosted",
+      "seniority",
+      "candidateRegion",
+      "filterByEligibility",
+      "maxCompanies",
+      "resultsLimit",
+      "dataProvidedByUpstream"
     ],
     "additionalProperties": false
   },
@@ -266,7 +397,7 @@
       },
       "orchestrationMode": {
         "type": "boolean",
-        "description": "When enabled, an AI orchestrator decomposes the input (string or array) into individual agent tasks, runs them sequentially, then synthesizes a final aggregated response"
+        "description": "When enabled, an AI orchestrator decomposes the input into individual agent tasks, runs them sequentially, then synthesizes a final aggregated response"
       }
     },
     "required": [
@@ -432,7 +563,12 @@
   },
   "slack-output": {
     "type": "object",
-    "properties": {},
+    "properties": {
+      "botToken": {
+        "type": "string",
+        "description": "Slack bot token (xoxb-...)"
+      }
+    },
     "additionalProperties": false
   },
   "sms": {

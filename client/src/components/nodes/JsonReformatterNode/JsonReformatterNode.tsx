@@ -42,9 +42,12 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
                     if (jsonataExpression.trim()) {
                         try {
                             const expression = jsonata(jsonataExpression);
-                            const transformedData = await expression.evaluate(input);
+                            const transformedData = await expression.evaluate(input?.payload);
 
-                            onResultUpdate(id, transformedData);
+                            onResultUpdate(id, {
+                                payload: transformedData,
+                                ...(input?.toolsPayload !== undefined ? {toolsPayload: input.toolsPayload} : {}),
+                            });
                         } catch (err) {
                             setError(err instanceof Error ? err.message : formatErrorMessage("Unknown error", err));
 

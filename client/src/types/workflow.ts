@@ -4,14 +4,26 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from 'zod';
 import type {Edge as ReactFlowEdge} from '@xyflow/react';
 
 
+export const NodeEnvelopeSchema = z.object({
+    payload: z.unknown().describe("Node-determined content, opaque to the framework — not enforced to be an array."),
+    toolsPayload: z.unknown().optional().describe("Opaque payload forwarded to connected tools; each node/tool reshapes or drops it independently."),
+    timerTrigger: z.number().optional().describe("Set only by TimerNode. Never forwarded/stacked by any other node."),
+});
+
+export type NodeEnvelope = {
+    payload: unknown;
+    toolsPayload?: unknown;
+    timerTrigger?: number;
+};
+
 export type GenericNodeData = {
     title: string;
-    input?: any;
+    input?: NodeEnvelope;
     feedback?: string;
-    timerTrigger?: number;
     toSanitize: string[];
 };
 

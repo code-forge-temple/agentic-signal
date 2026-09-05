@@ -25,7 +25,7 @@ export function AsyncDataAggregatorNode ({data, id}: NodeProps<AppNode>) {
     const {title, input, onConfigChange, onResultUpdate} = data;
     const [isRunning, setIsRunning] = useState(false);
     const {getEdges} = useReactFlow();
-    const collectedInputs: Record<string, any> = useMemo(() => input ?? {}, [input]);
+    const collectedInputs = useMemo(() => input ?? {}, [input]);
 
     const allArrived = useCallback(() => {
         const connectedSourceIds = getEdges()
@@ -49,7 +49,13 @@ export function AsyncDataAggregatorNode ({data, id}: NodeProps<AppNode>) {
 
             if (allArrived()) {
                 runTask(async () => {
-                    onResultUpdate(id, connectedSourceIds.map(srcId => collectedInputs[srcId]));
+                    const payloadArray = connectedSourceIds.map(srcId => collectedInputs[srcId]?.payload);
+                    const toolsPayloadArray = connectedSourceIds.map(srcId => collectedInputs[srcId]?.toolsPayload);
+
+                    onResultUpdate(id, {
+                        payload: payloadArray,
+                        toolsPayload: toolsPayloadArray,
+                    });
                     onConfigChange(id, {input: {}});
                 }, setIsRunning);
             }

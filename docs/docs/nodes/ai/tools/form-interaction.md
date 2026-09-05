@@ -8,6 +8,10 @@ The **Form Interaction Tool** navigates to a web page containing a form, discove
 It's built for agentic form-filling workflows — job applications, sign-ups, contact forms — where the LLM first calls the tool to *discover* what's on the page, then calls it again with the actions to fill and submit.  
 The tool keeps the same browser session open across calls for the same `url`, so multi-page/multi-step forms can be filled one page at a time without losing progress between calls.
 
+:::warning Use responsibly
+This tool drives a real browser and submits real forms on real sites. You are responsible for how you use it: respect each site's Terms of Service and rate limits, don't use it to spam applications or form submissions, and don't automate around CAPTCHAs or other anti-bot measures. For job applications, apply where you're a genuine fit — mass auto-submitting wastes everyone's time, including yours.
+:::
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 

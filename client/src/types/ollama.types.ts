@@ -38,6 +38,53 @@ export type FetchAiResponse =
     | FetchAiResponseSuccess
     | ErrorResponse;
 
+/**
+ * Deliberately a separate type from `FetchAiResponseSuccess`, which is shared with
+ * `fetchAIResponse` and the whole orchestration path: only the streaming chat reports
+ * token counts, so only it should carry them.
+ */
+export type StreamAiResponseSuccess = FetchAiResponseSuccess & {
+    promptEvalCount?: number;
+    evalCount?: number;
+}
+
+export type StreamAiResponse =
+    | StreamAiResponseSuccess
+    | ErrorResponse;
+
+/**
+ * Ollama's docs also document a "max" level, but the pinned ollama client (0.5.18) types
+ * `think` as boolean | "high" | "medium" | "low" and doesn't know about it. Bump that
+ * dependency before adding it here rather than casting past its types.
+ */
+export const THINK_LEVELS = ["low", "medium", "high"] as const;
+
+export type ThinkLevel = typeof THINK_LEVELS[number];
+
+/**
+ * Ollama accepts either a boolean or a reasoning level. Most models take both; gpt-oss takes
+ * ONLY a level and silently ignores true/false — its trace can be shortened but never disabled.
+ */
+export type ThinkOption = boolean | ThinkLevel;
+
+export function isThinkLevel (value: unknown): value is ThinkLevel {
+    return typeof value === "string" && (THINK_LEVELS as readonly string[]).includes(value);
+}
+
+/**
+ * Per-request overrides for the streaming chat. Every field is optional and absent means
+ * "don't override" — `contextWindow` becomes Ollama's `num_ctx` at the request boundary.
+ */
+export type StreamChatOptions = {
+    think?: ThinkOption;
+    temperature?: number;
+    contextWindow?: number;
+}
+
+export type FetchModelContextLengthResponse =
+    | {success: true; contextLength: number | null}
+    | ErrorResponse;
+
 export type ToolSchema = {
     name: string;
     description?: string;

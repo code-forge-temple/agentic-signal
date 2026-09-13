@@ -8,9 +8,12 @@ import {Ollama} from "ollama/browser";
 import {
     ErrorResponse,
     FetchAiResponse,
+    FetchModelContextLengthResponse,
     FetchModelResponse,
     Message,
     MessageRole,
+    StreamAiResponse,
+    StreamChatOptions,
     SystemUserConfigValues,
     ToolSchema,
     isToolError,
@@ -578,8 +581,9 @@ export class OllamaService {
 
     async *streamAIResponse (
         messages: Message[],
-        model: string
-    ): AsyncGenerator<FetchAiResponse, void, unknown> {
+        model: string,
+        settings?: StreamChatOptions
+    ): AsyncGenerator<StreamAiResponse, void, unknown> {
         try {
             const ollama = await this.getOllama();
             const updatedMessages = messages.map((message) => {
@@ -587,9 +591,34 @@ export class OllamaService {
 
                 return {...message, content, images};
             });
-            const stream = await ollama.chat({model, messages: updatedMessages, stream: true, keep_alive: "60m"});
+            // Built as one object rather than two conditional `{options: ...}` spreads,
+            // which would overwrite each other key-for-key. This is also the only place
+            // our `contextWindow` becomes Ollama's `num_ctx`.
+            const options: Record<string, number> = {};
+
+            if (settings?.temperature !== undefined) {
+                options.temperature = settings.temperature;
+            }
+
+            if (settings?.contextWindow !== undefined) {
+                options.num_ctx = settings.contextWindow;
+            }
+
+            const stream = await ollama.chat({
+                model,
+                messages: updatedMessages,
+                stream: true,
+                keep_alive: "60m",
+                // Always explicit: models that think by default (qwen3, deepseek-r1) ignore the
+                // setting if `think` is omitted. A level string passes straight through — gpt-oss
+                // accepts only levels and discards true/false entirely.
+                think: settings?.think ?? false,
+                ...(Object.keys(options).length > 0 ? {options} : {})
+            });
             let fullReply = "";
             let fullThinking = "";
+            let promptEvalCount: number | undefined;
+            let evalCount: number | undefined;
 
             for await (const part of stream) {
                 if ((part.message as any).thinking) {
@@ -597,6 +626,16 @@ export class OllamaService {
                 }
 
                 fullReply += part.message.content;
+
+                // Only the terminating `done: true` part carries the token counts, and this
+                // loop consumes it — so latch them here for the final yield below.
+                if (typeof part.prompt_eval_count === "number") {
+                    promptEvalCount = part.prompt_eval_count;
+                }
+
+                if (typeof part.eval_count === "number") {
+                    evalCount = part.eval_count;
+                }
 
                 yield {
                     success: true,
@@ -610,10 +649,46 @@ export class OllamaService {
                 success: true,
                 final: true,
                 reply: fullReply,
-                thinking: fullThinking || undefined
+                thinking: fullThinking || undefined,
+                ...(promptEvalCount !== undefined ? {promptEvalCount} : {}),
+                ...(evalCount !== undefined ? {evalCount} : {})
             };
         } catch (error) {
             yield {
+                success: false,
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+
+    /**
+     * The model's trained context length, from `ollama.show()`. Only ever used as the upper
+     * bound of the context-window slider — it is NOT the window Ollama actually allocates for
+     * a request, which Ollama never reports.
+     */
+    fetchModelContextLength = async (model: string): Promise<FetchModelContextLengthResponse> => {
+        try {
+            const ollama = await this.getOllama();
+            const {model_info: modelInfo} = await ollama.show({model});
+            // `model_info` is typed as a Map but arrives as a plain object (it comes straight
+            // from `response.json()`), so it has to be indexed rather than `.get()`.
+            const info = (modelInfo ?? {}) as unknown as Record<string, unknown>;
+            const architecture = info["general.architecture"];
+            // The key is namespaced by architecture, e.g. "llama.context_length". Fall back to
+            // scanning for the suffix when the model doesn't declare its architecture.
+            const key = typeof architecture === "string" && `${architecture}.context_length` in info
+                ? `${architecture}.context_length`
+                : Object.keys(info).find((infoKey) => infoKey.endsWith(".context_length"));
+            const contextLength = key ? info[key] : undefined;
+
+            return {
+                success: true,
+                contextLength: typeof contextLength === "number" && contextLength > 0 ? contextLength : null
+            };
+        } catch (error) {
+            // Deliberately NOT `{success: true, contextLength: null}`: callers cache null
+            // permanently, so a transient outage must not poison that cache.
+            return {
                 success: false,
                 error: error instanceof Error ? error.message : String(error)
             };

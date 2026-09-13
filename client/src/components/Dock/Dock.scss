@@ -1,3 +1,11 @@
+/* Clearance kept on each side of the centred dock for the version chip pinned top-right
+ * (see .version-tag in App.scss), so the dock never slides underneath it. */
+$version-tag-clearance: 72px;
+
+/* Below this the cap leaves .nodes-dock too thin a strip beside the fixed-width sections
+ * to show more than a node or two, so the dock stacks instead. */
+$dock-stack-breakpoint: 768px;
+
 @mixin dock-wrapper {
     z-index: 20;
     background: #0e2f4a;
@@ -5,6 +13,9 @@
     box-shadow: 6px 6px 4px #000000;
     padding: 12px;
     margin-top: 10px;
+
+    /* Sections keep their natural width; only .nodes-dock opts into shrinking. */
+    flex: 0 0 auto;
 }
 
 .dock {
@@ -16,6 +27,18 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+
+    /* Never wider than the viewport: 90% of it, and never into the version chip's corner.
+     * The overflow is absorbed by .nodes-dock, which pages its items instead. */
+    max-width: min(90vw, calc(100vw - #{$version-tag-clearance * 2}));
+
+    /* Last resort: the fixed-width sections stack rather than spill out of the cap. Kept
+     * behind the breakpoint because a zero flex basis stops the shrink-to-fit width from
+     * following the nodes' natural width, which would page them on roomy screens too. */
+    @media (max-width: $dock-stack-breakpoint) {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
     .dock-title {
         font-size: 14px;

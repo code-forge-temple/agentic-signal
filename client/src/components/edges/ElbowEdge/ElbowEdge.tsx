@@ -11,8 +11,11 @@ import './ElbowEdge.scss';
 
 type Point = {x: number; y: number};
 type ElbowEdgeData = {bend?: Point};
+type DragState = {startX: number; startY: number; active: boolean};
 
 const CORNER_RADIUS = 8;
+// Pointer travel, in screen pixels, before a press on the edge counts as a bend drag.
+const DRAG_THRESHOLD = 5;
 
 function axisPosition (dx: number, dy: number, forExit: boolean, useXAxis = Math.abs(dx) >= Math.abs(dy)): Position {
     if (useXAxis) {
@@ -95,7 +98,7 @@ function roundedPolylinePath (vertices: Point[], radius: number): string {
  */
 export function ElbowEdge ({id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, markerEnd, markerStart, data}: EdgeProps<Edge<ElbowEdgeData>>) {
     const {setEdges, screenToFlowPosition} = useReactFlow();
-    const draggingRef = useRef(false);
+    const dragRef = useRef<DragState | null>(null);
     const bend = data?.bend;
     // Mirrors the same flag react-flow's own <Controls /> lock button toggles — this custom
     // bend-drag is raw pointer-event handling, not react-flow's built-in edge reconnection, so
@@ -154,19 +157,31 @@ export function ElbowEdge ({id, sourceX, sourceY, targetX, targetY, sourcePositi
     }, [id, setEdges]);
 
     const handlePointerMove = useCallback((event: PointerEvent) => {
-        if (!draggingRef.current) return;
+        const drag = dragRef.current;
+
+        if (!drag) return;
+
+        // The grab stroke is deliberately far thicker than the visible line, so a press lands
+        // anywhere within that band. Moving the bend straight to it would yank the edge sideways
+        // on what was meant as a plain click - hold off until the pointer has actually travelled,
+        // then let the bend follow it.
+        if (!drag.active) {
+            if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < DRAG_THRESHOLD) return;
+
+            drag.active = true;
+        }
 
         setBend(screenToFlowPosition({x: event.clientX, y: event.clientY}));
     }, [screenToFlowPosition, setBend]);
 
     const handlePointerUp = useCallback(() => {
-        draggingRef.current = false;
+        dragRef.current = null;
         document.removeEventListener('pointermove', handlePointerMove);
         document.removeEventListener('pointerup', handlePointerUp);
     }, [handlePointerMove]);
 
-    const startDrag = useCallback(() => {
-        draggingRef.current = true;
+    const startDrag = useCallback((event: React.PointerEvent<SVGPathElement>) => {
+        dragRef.current = {startX: event.clientX, startY: event.clientY, active: false};
         document.addEventListener('pointermove', handlePointerMove);
         document.addEventListener('pointerup', handlePointerUp);
     }, [handlePointerMove, handlePointerUp]);
@@ -180,9 +195,8 @@ export function ElbowEdge ({id, sourceX, sourceY, targetX, targetY, sourcePositi
         if (!nodesDraggable) return;
 
         event.stopPropagation();
-        setBend(screenToFlowPosition({x: event.clientX, y: event.clientY}));
-        startDrag();
-    }, [nodesDraggable, screenToFlowPosition, setBend, startDrag]);
+        startDrag(event);
+    }, [nodesDraggable, startDrag]);
 
     const handleStrokeDoubleClick = useCallback((event: React.MouseEvent<SVGPathElement>) => {
         if (!nodesDraggable) return;

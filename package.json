@@ -1,6 +1,6 @@
 {
     "name": "agentic-signal",
-    "version": "3.4.0",
+    "version": "3.5.0",
     "description": "Visual AI Workflow Automation Platform with Local Agent Intelligence",
     "author": "Code Forge Temple",
     "type": "module",
@@ -10,11 +10,26 @@
     ],
     "keywords": [
         "ai",
-        "workflow",
-        "automation",
+        "ai-agents",
+        "ai-automation",
         "agents",
+        "automation",
+        "workflow",
+        "workflow-automation",
+        "workflow-builder",
         "visual",
-        "low-code"
+        "visual-ai",
+        "visual-programming",
+        "low-code",
+        "no-code",
+        "local-ai",
+        "local-llm",
+        "privacy-first",
+        "ollama",
+        "llama",
+        "gemma",
+        "react-flow",
+        "typescript"
     ],
     "license": "AGPL-3.0-with-Commercial-Exception",
     "scripts": {
@@ -37,6 +52,7 @@
         "build:windows": "bun run sync:tauri-version && bun run client:build && deno task compile:windows && bun run copy:backend:windows && bunx tauri build",
         "build:linux": "bun run sync:tauri-version && bun run client:build && deno task compile:linux && bun run copy:backend:linux && bunx tauri build --bundles deb,appimage",
         "build:macos": "bun run sync:tauri-version && bun run client:build && deno task compile:macos && bun run copy:backend:macos && bunx tauri build",
+        "test": "deno task test && cd client && bun run test",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "circular": "bunx madge --circular --extensions ts,tsx ./client/src"

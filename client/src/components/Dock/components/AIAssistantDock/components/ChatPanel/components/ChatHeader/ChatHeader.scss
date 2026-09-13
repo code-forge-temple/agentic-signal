@@ -7,20 +7,45 @@
     border-radius: 8px 8px 0 0;
     flex-shrink: 0;
 
+    /* The title and the window buttons each take an equal share of whatever the centre cluster
+       leaves over, so that cluster sits on the header's true midpoint rather than on the midpoint
+       of the space left after the title. */
     .chat-header-title {
         font-size: 15px;
         font-weight: 700;
         color: #E91E63;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         cursor: move;
         user-select: none;
-        flex: 1;
+        flex: 1 1 0;
+        min-width: 0;
     }
 
+    .chat-header-center {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .chat-header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    /* Capped so a long model name ellipsizes (MUI already truncates the selected value)
+       instead of stretching the select and pushing the rest of the header out of line. */
     .model-select-wrapper {
         display: flex;
         align-items: center;
-        min-width: 150px;
+        min-width: 200px;
+        max-width: 300px;
     }
 
     .chat-header-loading {
@@ -55,6 +80,20 @@
             .MuiSelect-icon {
                 color: rgba(255, 255, 255, 0.5);
             }
+        }
+    }
+
+    .llm-settings-btn {
+        color: rgba(255, 255, 255, 0.6) !important;
+        flex-shrink: 0;
+
+        &:hover {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        &.Mui-disabled {
+            color: rgba(255, 255, 255, 0.25) !important;
         }
     }
 

@@ -1,0 +1,8 @@
+.context-gauge {
+    display: block;
+    height: 21px;
+    width: 21px;
+    flex-shrink: 0;
+    /* The ring is inert; the tooltip is the whole point of hovering it. */
+    cursor: help;
+}

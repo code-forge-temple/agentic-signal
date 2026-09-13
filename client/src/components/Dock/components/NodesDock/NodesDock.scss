@@ -3,4 +3,79 @@
 
 .nodes-dock {
     @include mixins.dock-wrapper;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    /* The nodes are the one dock section allowed to give up space when .dock hits its cap. */
+    flex: 0 1 auto;
+    min-width: 0;
+
+    /* Once the dock stacks, claim a row of its own: the sliver left over beside the fixed
+     * sections at these widths would show barely one node. */
+    @media (max-width: mixins.$dock-stack-breakpoint) {
+        flex: 1 1 100%;
+    }
+
+    .dock-items-viewport {
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        /* The pagers replace the scrollbar; wheel/touch panning still works. */
+        scrollbar-width: none;
+
+        /* Keeps a free-hand wheel or touch pan on the item grid the paging sticks to. */
+        scroll-snap-type: x mandatory;
+
+        /* Breathing room for the items' hover lift and shadow, which overflow-x would otherwise clip. */
+        padding: 4px 0;
+        margin: -4px 0;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        .dock-items {
+            /* Sized to the items rather than to the viewport: it is what the scroller
+             * measures, and what keeps its observer deaf to the width it sets itself. */
+            width: max-content;
+        }
+
+        .dock-item {
+            scroll-snap-align: start;
+        }
+    }
+
+    .nodes-dock-pager {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 40px;
+        padding: 0;
+        border: none;
+        border-radius: 4px;
+        background: #1a3d56;
+        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+            background: #E91E63;
+        }
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
 }

@@ -14,10 +14,14 @@ import {buildSystemPrompt} from '../../../../../../services/buildSystemPrompt';
 import {FetchAiResponseSuccess, Message, MessageRole} from '../../../../../../types/ollama.types';
 import {TRIPLE_BACKTICK} from '@shared/constants';
 import {DRAG_CANCEL_SELECTOR, AI_ASSISTANT_KEYWORDS, ROLE} from '../../../../../../constants';
-import {ChatMessage} from '../../constants';
+import {ChatMessage, ContextUsage, EMPTY_CONTEXT_USAGE} from '../../constants';
 import {useGlobalConfig} from '../../../../../../stores/globalConfig';
 import {useDraggable} from '../../../../../../hooks/useDraggable';
 import {useStreamThrottle} from '../../../../../../hooks/useStreamThrottle';
+import {LlmSettingsDialog} from './components/ChatHeader/components/LlmSettingsDialog';
+import {useLlmSettings} from '../../hooks/useLlmSettings';
+import {getModelSettings} from '../../utils/llmSettings';
+import {isCloudModel, resolveContextLimit} from '../../utils/modelContext';
 
 
 const NO_MODEL = '';
@@ -38,6 +42,10 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
     const [isFetchingModels, setIsFetchingModels] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [contextUsage, setContextUsage] = useState<ContextUsage>(EMPTY_CONTEXT_USAGE);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+
+    const {settingsMap, contextMap} = useLlmSettings();
 
     const currentStreamRequestId = useRef<symbol | null>(null);
 
@@ -50,7 +58,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         cancelSelector: DRAG_CANCEL_SELECTOR,
     });
 
-    const {push, flush} = useStreamThrottle<Pick<FetchAiResponseSuccess, 'reply' | 'thinking'>>({
+    const {push, flush, cancel} = useStreamThrottle<Pick<FetchAiResponseSuccess, 'reply' | 'thinking'>>({
         delay: 500,
         onFlush: ({reply, thinking}) => {
             setMessages(prev => {
@@ -107,6 +115,9 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
 
         currentStreamRequestId.current = requestId;
 
+        // Nothing buffered from a previous stream may survive into this one.
+        cancel();
+
         const processedText = text.replace(
             new RegExp(AI_ASSISTANT_KEYWORDS.CURRENT_WORKFLOW, 'g'),
             () => {
@@ -145,18 +156,50 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         ]);
 
         try {
+            const modelSettings = getModelSettings(settingsMap, selectedModel);
+            // LlmSettings and StreamChatOptions are structurally identical — absent means
+            // "don't override" on both sides — so this is otherwise a straight pass-through.
+            // contextWindow is dropped for cloud models: Ollama Cloud ignores num_ctx anyway
+            // (ollama/ollama#16598), and sending it would suggest it had taken effect.
+            const streamOptions = isCloudModel(selectedModel)
+                ? {...modelSettings, contextWindow: undefined}
+                : modelSettings;
+
             for await (const chunk of OllamaService
                 .getInstance()
-                .streamAIResponse(ollamaMessages, selectedModel)
+                .streamAIResponse(ollamaMessages, selectedModel, streamOptions)
             ) {
-                if (currentStreamRequestId.current !== requestId) break;
+                if (currentStreamRequestId.current !== requestId) {
+                    cancel();
+
+                    break;
+                }
 
                 if (chunk.success) {
                     push({
                         reply: chunk.reply,
                         thinking: chunk.thinking,
                     });
+
+                    if (chunk.final) {
+                        // Falling back to empty when NEITHER count arrived: an Ollama build that
+                        // doesn't report them would otherwise leave the previous reading in place,
+                        // looking like a freshly measured one.
+                        setContextUsage(
+                            chunk.promptEvalCount === undefined && chunk.evalCount === undefined
+                                ? EMPTY_CONTEXT_USAGE
+                                : {
+                                    model: selectedModel,
+                                    promptTokens: chunk.promptEvalCount ?? 0,
+                                    replyTokens: chunk.evalCount ?? 0,
+                                }
+                        );
+                    }
                 } else {
+                    // Drop the buffered partial first: otherwise the flush() below repaints it
+                    // over the error message written here.
+                    cancel();
+
                     if (!chunk.error?.toLowerCase().includes('aborted')) {
                         setMessages(prev => {
                             const updated = [...prev];
@@ -187,7 +230,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
 
             setIsLoading(false);
         }
-    }, [messages, selectedModel, isLoading, getWorkflowJson, push, flush]);
+    }, [messages, selectedModel, isLoading, getWorkflowJson, push, flush, cancel, settingsMap]);
 
     const handleDeleteMessage = useCallback(async (index: number) => {
         const isLastMsg = index === messages.length - 1;
@@ -200,8 +243,15 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
             setIsLoading(false);
         }
 
+        // Before the state update, so a buffered chunk can't land in the gap and repaint
+        // the message that is being removed.
+        cancel();
+
         setMessages(prev => prev.filter((_, i) => i !== index));
-    }, [messages, isLoading]);
+
+        // The old count would now read high, and nothing re-measures until the next send.
+        setContextUsage(EMPTY_CONTEXT_USAGE);
+    }, [messages, isLoading, cancel]);
 
     const handleModelChange = useCallback((model: string) => {
         setSelectedModel(model);
@@ -227,39 +277,71 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         });
     }, [onLoadWorkflow, handleSend]);
 
+    const {limit, source} = resolveContextLimit(
+        selectedModel,
+        getModelSettings(settingsMap, selectedModel),
+        contextMap[selectedModel]
+    );
+    // Token counts aren't comparable across tokenizers, so a reading only counts while the
+    // model that produced it is still selected.
+    const usedTokens = contextUsage.model === selectedModel
+        ? contextUsage.promptTokens + contextUsage.replyTokens
+        : 0;
+
     return (
-        <div
-            ref={panelRef}
-            className={`chat-panel${isMinimized ? ' minimized' : ''}`}
-            onMouseDown={handleDragHandleMouseDown}
-        >
-            <ChatHeader
-                selectedModel={selectedModel}
-                onModelChange={handleModelChange}
-                models={models}
-                isFetchingModels={isFetchingModels}
-                onClose={handleClose}
-                onMinimize={() => setIsMinimized(prev => !prev)}
-                isMinimized={isMinimized}
-                onDragHandleMouseDown={handleDragHandleMouseDown}
+        <>
+            <div
+                ref={panelRef}
+                className={`chat-panel${isMinimized ? ' minimized' : ''}`}
+                onMouseDown={handleDragHandleMouseDown}
+            >
+                <ChatHeader
+                    selectedModel={selectedModel}
+                    onModelChange={handleModelChange}
+                    models={models}
+                    isFetchingModels={isFetchingModels}
+                    onClose={handleClose}
+                    onMinimize={() => setIsMinimized(prev => !prev)}
+                    isMinimized={isMinimized}
+                    onDragHandleMouseDown={handleDragHandleMouseDown}
+                    onOpenSettings={() => setSettingsOpen(true)}
+                />
+
+                {!isMinimized && (
+                    <ChatLog
+                        messages={messages}
+                        isLoading={isLoading}
+                        onLoadWorkflow={handleImportWorkflow}
+                        onDeleteMessage={handleDeleteMessage}
+                    />
+                )}
+
+                {!isMinimized && (
+                    <ChatInput
+                        onSend={handleSend}
+                        disabled={!selectedModel || isLoading}
+                        panelPosition={position}
+                        contextGauge={{
+                            usedTokens,
+                            contextLimit: limit,
+                            limitSource: source,
+                            hasModel: !!selectedModel,
+                        }}
+                    />
+                )}
+            </div>
+
+            {/*
+              * Sibling of the panel, not a child: React events bubble through the React tree
+              * even though the dialog is portaled out of the panel in the DOM, so nesting it
+              * would feed its mousedowns to the panel's drag handler and drag the chat box
+              * around whenever the dialog is dragged.
+              */}
+            <LlmSettingsDialog
+                open={settingsOpen}
+                model={selectedModel}
+                onClose={() => setSettingsOpen(false)}
             />
-
-            {!isMinimized && (
-                <ChatLog
-                    messages={messages}
-                    isLoading={isLoading}
-                    onLoadWorkflow={handleImportWorkflow}
-                    onDeleteMessage={handleDeleteMessage}
-                />
-            )}
-
-            {!isMinimized && (
-                <ChatInput
-                    onSend={handleSend}
-                    disabled={!selectedModel || isLoading}
-                    panelPosition={position}
-                />
-            )}
-        </div>
+        </>
     );
 };

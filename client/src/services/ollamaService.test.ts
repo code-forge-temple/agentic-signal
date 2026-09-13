@@ -34,11 +34,11 @@ function mockService (mockResponses: CannedResponse[]) {
 
 /** Mocks `getOllama` to return a fake client — for the methods that talk to Ollama
  * directly (list/pull/delete/abort/streaming chat) rather than through `callOllamaChat`. */
-function mockOllamaClient (overrides: Partial<Record<'list' | 'chat' | 'pull' | 'delete' | 'abort', any>>) {
+function mockOllamaClient (overrides: Partial<Record<'list' | 'chat' | 'pull' | 'delete' | 'abort' | 'show', any>>) {
     OllamaService.reloadInstance();
 
     const service = OllamaService.getInstance();
-    const client = {list: undefined, chat: undefined, pull: undefined, delete: undefined, abort: undefined, ...overrides};
+    const client = {list: undefined, chat: undefined, pull: undefined, delete: undefined, abort: undefined, show: undefined, ...overrides};
 
     (service as any).getOllama = async () => client;
 
@@ -856,6 +856,174 @@ describe('OllamaService.streamAIResponse', () => {
         }
 
         expect(chunks).toEqual([{success: false, error: 'stream failed'}]);
+    });
+
+    it('sends think:false and no options key at all when given no settings', async () => {
+        let received: any;
+        const {service} = mockOllamaClient({
+            chat: async (request: any) => {
+                received = request;
+
+                return fakeAsyncStream([{message: {content: 'ok'}}]);
+            },
+        });
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm')) {
+            expect(chunk.success).toBe(true);
+        }
+
+        expect(received.think).toBe(false);
+        expect('options' in received).toBe(false);
+    });
+
+    it('merges temperature and contextWindow into ONE options object', async () => {
+        let received: any;
+        const {service} = mockOllamaClient({
+            chat: async (request: any) => {
+                received = request;
+
+                return fakeAsyncStream([{message: {content: 'ok'}}]);
+            },
+        });
+
+        const settings = {think: true, temperature: 1.5, contextWindow: 8192};
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm', settings)) {
+            expect(chunk.success).toBe(true);
+        }
+
+        expect(received.think).toBe(true);
+        expect(received.options).toEqual({temperature: 1.5, num_ctx: 8192});
+    });
+
+    it('maps contextWindow onto num_ctx and omits temperature when only the window is set', async () => {
+        let received: any;
+        const {service} = mockOllamaClient({
+            chat: async (request: any) => {
+                received = request;
+
+                return fakeAsyncStream([{message: {content: 'ok'}}]);
+            },
+        });
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm', {contextWindow: 2048})) {
+            expect(chunk.success).toBe(true);
+        }
+
+        expect(received.options).toEqual({num_ctx: 2048});
+        expect(received.options.contextWindow).toBeUndefined();
+    });
+
+    it('passes a reasoning level straight through instead of coercing it to a boolean', async () => {
+        let received: any;
+        const {service} = mockOllamaClient({
+            chat: async (request: any) => {
+                received = request;
+
+                return fakeAsyncStream([{message: {content: 'ok'}}]);
+            },
+        });
+
+        // gpt-oss ignores true/false outright and accepts only a level, so a string must survive
+        // the trip rather than being flattened by a `=== true` check.
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm', {think: 'high'})) {
+            expect(chunk.success).toBe(true);
+        }
+
+        expect(received.think).toBe('high');
+    });
+
+    it('sends an explicit true when thinking is on without a level', async () => {
+        let received: any;
+        const {service} = mockOllamaClient({
+            chat: async (request: any) => {
+                received = request;
+
+                return fakeAsyncStream([{message: {content: 'ok'}}]);
+            },
+        });
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm', {think: true})) {
+            expect(chunk.success).toBe(true);
+        }
+
+        expect(received.think).toBe(true);
+    });
+
+    it('latches the token counts off the done part and reports them only on the final chunk', async () => {
+        const {service} = mockOllamaClient({
+            chat: async () => fakeAsyncStream([
+                {message: {content: 'Hel'}},
+                {message: {content: 'lo!'}, done: true, prompt_eval_count: 120, eval_count: 34},
+            ]),
+        });
+
+        const chunks: any[] = [];
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm')) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks[0].promptEvalCount).toBeUndefined();
+        expect(chunks[1].promptEvalCount).toBeUndefined();
+        expect(chunks[2]).toEqual({
+            success: true, final: true, reply: 'Hello!', thinking: undefined, promptEvalCount: 120, evalCount: 34
+        });
+    });
+
+    it('leaves the counts absent — not zero — when Ollama never reports them', async () => {
+        const {service} = mockOllamaClient({
+            chat: async () => fakeAsyncStream([{message: {content: 'ok'}}]),
+        });
+
+        const chunks: any[] = [];
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm')) {
+            chunks.push(chunk);
+        }
+
+        const final = chunks[chunks.length - 1];
+
+        expect('promptEvalCount' in final).toBe(false);
+        expect('evalCount' in final).toBe(false);
+    });
+});
+
+describe('OllamaService.fetchModelContextLength', () => {
+    // A plain object, not a Map — which is what the real client produces, since show() is
+    // just `response.json()`.
+    const showing = (modelInfo: Record<string, unknown>) => ({
+        show: async () => ({model_info: modelInfo}),
+    });
+
+    it('resolves the length via the declared architecture', async () => {
+        const {service} = mockOllamaClient(showing({'general.architecture': 'llama', 'llama.context_length': 40960}));
+
+        expect(await service.fetchModelContextLength('m')).toEqual({success: true, contextLength: 40960});
+    });
+
+    it('falls back to any *.context_length key when the architecture is missing', async () => {
+        const {service} = mockOllamaClient(showing({'qwen3.context_length': 32768}));
+
+        expect(await service.fetchModelContextLength('m')).toEqual({success: true, contextLength: 32768});
+    });
+
+    it('falls back when the declared architecture does not match the key that exists', async () => {
+        const {service} = mockOllamaClient(showing({'general.architecture': 'bogus', 'qwen3.context_length': 8192}));
+
+        expect(await service.fetchModelContextLength('m')).toEqual({success: true, contextLength: 8192});
+    });
+
+    it('returns a null length when the model reports none', async () => {
+        const {service} = mockOllamaClient(showing({'general.architecture': 'llama'}));
+
+        expect(await service.fetchModelContextLength('m')).toEqual({success: true, contextLength: null});
+    });
+
+    it('fails rather than caching a null when show() throws', async () => {
+        const {service} = mockOllamaClient({show: async () => { throw new Error('host unreachable'); }});
+
+        expect(await service.fetchModelContextLength('m')).toEqual({success: false, error: 'host unreachable'});
     });
 });
 

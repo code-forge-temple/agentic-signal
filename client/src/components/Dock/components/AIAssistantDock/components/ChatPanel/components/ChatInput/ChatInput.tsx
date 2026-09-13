@@ -9,17 +9,22 @@ import {IconButton} from '@mui/material';
 import {SendDiagonal} from 'iconoir-react';
 import './ChatInput.scss';
 import {ChatInputSuggestions} from './components/ChatInputSuggestions';
+import {ContextGauge} from './components/ContextGauge';
+import {ContextGaugeProps} from './components/contextTooltip';
 
 
 type ChatInputProps = {
     onSend: (text: string) => void;
     disabled: boolean;
     panelPosition?: { x: number; y: number };
+    /* Sits with the field rather than up in the header: what it answers - is there room for
+     * this message? - is only ever asked while composing one. */
+    contextGauge: ContextGaugeProps;
 };
 
 const SUGGESTIONS = ['@prepare-workflow', '@current-workflow'];
 
-export const ChatInput = ({onSend, disabled, panelPosition}: ChatInputProps) => {
+export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatInputProps) => {
     const [value, setValue] = useState('');
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const prevDisabled = useRef(disabled);
@@ -145,6 +150,7 @@ export const ChatInput = ({onSend, disabled, panelPosition}: ChatInputProps) => 
 
     return (
         <div className="chat-input" style={{position: 'relative'}}>
+            <ContextGauge {...contextGauge} />
             <textarea
                 ref={inputRef}
                 className="chat-input-field"

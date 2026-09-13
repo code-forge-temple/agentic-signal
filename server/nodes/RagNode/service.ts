@@ -21,6 +21,7 @@ import {
     upsertMeta,
     weaviateHeaders,
 } from "./utils/weaviateClient.ts";
+import {withKeyedLock} from "../../utils/keyedLock.ts";
 
 
 export async function ragIngestAndRetrieve (args: RagIngestAndRetrieveArgs): Promise<RagRetrieveResult> {
@@ -51,82 +52,94 @@ export async function ragIngestAndRetrieve (args: RagIngestAndRetrieveArgs): Pro
         const className = toWeaviateClassName(collectionName || "ragDefault");
         const metaClassName = `${className}Meta`;
 
-        // Ensure meta class exists
-        if (!(await classExists(base, h, metaClassName))) {
-            await createMetaClass(base, h, metaClassName);
-        }
+        /*
+         * Everything from here to upsertMeta is one read-modify-write over the meta object,
+         * whose documentHash property is a JSON map of every file in the collection. The read
+         * must be inside the lock: two runs that both read before either writes would each
+         * PATCH back a map missing the other's files, and on a fresh collection would both POST
+         * a meta object instead of one PATCHing the other's. The embed in the middle makes that
+         * window minutes wide.
+         *
+         * Keyed on className so only same-collection ingests wait; the query phase below stays
+         * outside, since it only reads.
+         */
+        const hasQueryableClass = await withKeyedLock(className, async () => {
+            if (!(await classExists(base, h, metaClassName))) {
+                await createMetaClass(base, h, metaClassName);
+            }
 
-        // Compute per-file hashes and determine what needs re-ingestion
-        const currentFileHashes: Record<string, string> = {};
+            const currentFileHashes: Record<string, string> = {};
 
-        for (const file of files) {
-            currentFileHashes[file.name] = await hashString(file.content);
-        }
+            for (const file of files) {
+                currentFileHashes[file.name] = await hashString(file.content);
+            }
 
-        const storedMeta = await getStoredMeta(base, h, metaClassName);
+            const storedMeta = await getStoredMeta(base, h, metaClassName);
 
-        // Model change invalidates all stored vectors (dimension mismatch) - must full re-ingest
-        const modelChanged = files.length > 0 && storedMeta !== undefined && storedMeta.embeddingModel !== embeddingModel;
+            // Model change invalidates all stored vectors (dimension mismatch) - must full re-ingest
+            const modelChanged = files.length > 0 && storedMeta !== undefined && storedMeta.embeddingModel !== embeddingModel;
 
-        // Only ingest files whose content has changed or are new to this collection
-        const filesToIngest = modelChanged
-            ? files
-            : files.filter(f => currentFileHashes[f.name] !== storedMeta?.fileHashes[f.name]);
+            const filesToIngest = modelChanged
+                ? files
+                : files.filter(f => currentFileHashes[f.name] !== storedMeta?.fileHashes[f.name]);
 
-        if (filesToIngest.length > 0) {
-            if (modelChanged) {
-                // Drop entire chunks class - existing vectors have wrong dimensions
-                if (await classExists(base, h, className)) {
-                    await deleteClass(base, h, className);
-                }
+            if (filesToIngest.length > 0) {
+                if (modelChanged) {
+                    if (await classExists(base, h, className)) {
+                        await deleteClass(base, h, className);
+                    }
 
-                await createChunksClass(base, h, className);
-            } else {
-                // Ensure class exists, then surgically delete only stale chunks for files being re-ingested
-                if (!(await classExists(base, h, className))) {
                     await createChunksClass(base, h, className);
                 } else {
-                    for (const file of filesToIngest) {
-                        await deleteChunksBySourceFile(base, h, className, file.name);
+                    if (!(await classExists(base, h, className))) {
+                        await createChunksClass(base, h, className);
+                    } else {
+                        for (const file of filesToIngest) {
+                            await deleteChunksBySourceFile(base, h, className, file.name);
+                        }
                     }
                 }
-            }
 
-            const allChunks: {content: string; sourceFile: string; chunkIndex: number}[] = [];
+                const allChunks: {content: string; sourceFile: string; chunkIndex: number}[] = [];
 
-            for (const file of filesToIngest) {
-                const chunks = chunkText(file.content, chunkSize, chunkOverlap);
+                for (const file of filesToIngest) {
+                    const chunks = chunkText(file.content, chunkSize, chunkOverlap);
 
-                for (let i = 0; i < chunks.length; i++) {
-                    allChunks.push({content: chunks[i], sourceFile: file.name, chunkIndex: i});
+                    for (let i = 0; i < chunks.length; i++) {
+                        allChunks.push({content: chunks[i], sourceFile: file.name, chunkIndex: i});
+                    }
                 }
+
+                if (allChunks.length > 0) {
+                    const embedResponse = await ollama.embed({
+                        model: embeddingModel,
+                        input: allChunks.map(c => c.content),
+                    });
+
+                    const documents = allChunks.map((chunk, i) => ({
+                        ...chunk,
+                        embedding: embedResponse.embeddings[i],
+                    }));
+
+                    await batchInsert(base, h, className, documents);
+                }
+
+                // On model change: only current files are in DB (others were dropped with the class)
+                // Otherwise: merge with existing hashes to preserve files ingested by other workflows
+                const newFileHashes = modelChanged
+                    ? currentFileHashes
+                    : {...(storedMeta?.fileHashes ?? {}), ...currentFileHashes};
+
+                await upsertMeta(base, h, metaClassName, newFileHashes, embeddingModel, collectionName || "ragDefault", storedMeta?.id);
+            } else if (!(await classExists(base, h, className))) {
+                // Nothing to ingest and no existing class — nothing to query.
+                return false;
             }
 
-            if (allChunks.length > 0) {
-                const embedResponse = await ollama.embed({
-                    model: embeddingModel,
-                    input: allChunks.map(c => c.content),
-                });
+            return true;
+        });
 
-                const documents = allChunks.map((chunk, i) => ({
-                    ...chunk,
-                    embedding: embedResponse.embeddings[i],
-                }));
-
-                await batchInsert(base, h, className, documents);
-            }
-
-            // On model change: only current files are in DB (others were dropped with the class)
-            // Otherwise: merge with existing hashes to preserve files ingested by other workflows
-            const newFileHashes = modelChanged
-                ? currentFileHashes
-                : {...(storedMeta?.fileHashes ?? {}), ...currentFileHashes};
-
-            await upsertMeta(base, h, metaClassName, newFileHashes, embeddingModel, collectionName || "ragDefault", storedMeta?.id);
-        } else if (!(await classExists(base, h, className))) {
-            // Nothing to ingest and no existing class - nothing to query
-            return {success: true, context: null, error: null};
-        }
+        if (!hasQueryableClass) return {success: true, context: null, error: null};
 
         if (!query) {
             return {success: true, context: null, error: null};

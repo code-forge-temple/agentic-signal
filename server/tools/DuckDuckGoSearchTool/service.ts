@@ -32,7 +32,9 @@ export async function fetchDuckDuckGoResults (query: string, browserPath?: strin
                         const sourceAndUrl = (divs[1] as HTMLElement)?.innerText || "";
                         const title = (divs[2] as HTMLElement)?.innerText || "";
                         const description = (divs[3] as HTMLElement)?.innerText || "";
-                        const url = divs[1]?.querySelector("a")?.href || "";
+                        // Taken from the title link, not the source row: that row now opens with a
+                        // "search this domain" link, so its first <a> is a DuckDuckGo URL, not the result's.
+                        const url = article.querySelector<HTMLAnchorElement>('a[data-testid="result-title-a"]')?.href || "";
 
                         return {sourceAndUrl, title, description, url};
                     });

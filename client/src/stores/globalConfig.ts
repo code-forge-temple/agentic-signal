@@ -69,6 +69,22 @@ export const getPersistedValue = (key: string): string | undefined => {
     return localStorage.getItem(`${GLOBAL_CONFIG_STORAGE_PREFIX}${key}`) ?? undefined;
 };
 
+/**
+ * Removes every persisted global value from localStorage, leaving other keys on the origin alone.
+ * The in-memory mirror is not touched — callers are expected to reload the app afterwards.
+ */
+export const clearPersistedGlobalData = (): void => {
+    if (!hasLocalStorage()) return;
+
+    // Collected first: removing while indexing by position would skip the key that shifts into place.
+    const storageKeys = Array.from({length: localStorage.length}, (_, i) => localStorage.key(i))
+        .filter((storageKey): storageKey is string => !!storageKey?.startsWith(GLOBAL_CONFIG_STORAGE_PREFIX));
+
+    for (const storageKey of storageKeys) {
+        localStorage.removeItem(storageKey);
+    }
+};
+
 /*
  * Keeps the mirror live when another tab writes. The `storage` event fires only in OTHER tabs,
  * never the one that made the change, so this can't double-apply locally. Without it the app

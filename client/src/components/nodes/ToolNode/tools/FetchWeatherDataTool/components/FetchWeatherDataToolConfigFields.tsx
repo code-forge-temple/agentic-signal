@@ -24,7 +24,7 @@ export function FetchWeatherDataToolConfigFields ({userConfig, onConfigChange}: 
             value={apiKeyValue}
             onChange={(value) => {
                 onConfigChange("apiKey", value);
-                setGlobalData(globalApiKeyKey, value, true);
+                setGlobalData(globalApiKeyKey, value);
             }}
             fullWidth
             sx={{mb: 1}}

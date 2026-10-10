@@ -33,7 +33,7 @@ export function withKeyedLock<T> (key: string, task: () => Promise<T>): Promise<
 
     // Drop the entry once this is the last waiter, so the map doesn't retain a chain per key
     // for the life of the process.
-    tail.then(() => {
+    void tail.then(() => {
         if (queues.get(key) === tail) {
             queues.delete(key);
         }

@@ -48,7 +48,7 @@ export function AsyncDataAggregatorNode ({data, id}: NodeProps<AppNode>) {
             if (connectedSourceIds.length === 0) return;
 
             if (allArrived()) {
-                runTask(async () => {
+                void runTask(async () => {
                     const payloadArray = connectedSourceIds.map(srcId => collectedInputs[srcId]?.payload);
                     const toolsPayloadArray = connectedSourceIds.map(srcId => collectedInputs[srcId]?.toolsPayload);
 

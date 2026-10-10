@@ -21,38 +21,32 @@ export const Settings = () => {
     const [models, setModels] = useState<string[]>([]);
     const [isOllamaHostValid, setIsOllamaHostValid] = useState(false);
 
-    const fetchModels = async () => {
+    const fetchModels = async (): Promise<string[]> => {
         const res = await OllamaService.getInstance().fetchModels();
+        const names = res.success ? res.models.map(m => m.name) : [];
 
-        if (res.success) {
-            setModels(res.models.map(m => m.name));
-            setIsOllamaHostValid(true);
-        } else {
-            setModels([]);
-            setIsOllamaHostValid(false);
-        }
+        setModels(names);
+        setIsOllamaHostValid(res.success);
+
+        return names;
     };
 
     useEffect(() => {
         setModels([]);
-        fetchModels();
+        void fetchModels();
     }, [settings.ollamaHost]);
 
+    // Checks the freshly fetched names, not `models` state (a closure would only ever see the old list).
+    // Sequential, so a slow fetch can't overlap the next attempt.
     const pollForModel = async (modelName: string, maxAttempts = 15, interval = 1000) => {
-        let attempts = 0;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const names = await fetchModels();
 
-        return new Promise<void>((resolve) => {
-            const poll = setInterval(async () => {
-                await fetchModels();
+            // an untagged pull ("llama3") is listed under Ollama's default tag ("llama3:latest")
+            if (names.includes(modelName) || names.includes(`${modelName}:latest`)) return;
 
-                if (models.includes(modelName) || attempts >= maxAttempts) {
-                    clearInterval(poll);
-                    resolve();
-                }
-
-                attempts++;
-            }, interval);
-        });
+            await new Promise(resolve => setTimeout(resolve, interval));
+        }
     };
 
     const handlePullModel = async () => {
@@ -123,7 +117,7 @@ export const Settings = () => {
                             endAdornment: (
                                 <InputAdornment position="end">
                                     <IconButton
-                                        onClick={handlePullModel}
+                                        onClick={() => void handlePullModel()}
                                         disabled={isPulling || !modelInput.trim() || !isOllamaHostValid}
                                         aria-label="Add model"
                                     >
@@ -156,7 +150,7 @@ export const Settings = () => {
                                     <IconButton
                                         edge="end"
                                         aria-label="delete"
-                                        onClick={() => handleDeleteModel(model)}
+                                        onClick={() => void handleDeleteModel(model)}
                                         size="small"
                                     >
                                         <Trash style={{fontSize: 16}} />

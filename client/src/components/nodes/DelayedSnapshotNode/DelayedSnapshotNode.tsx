@@ -93,7 +93,7 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
         clearError: () => setError(null),
         clearOutput: () => { onResultUpdate(id); },
         runCallback: () => {
-            runTask(async () => {
+            void runTask(async () => {
                 const newPayload = input?.payload;
                 const newToolsPayload = input?.toolsPayload;
 
@@ -111,7 +111,7 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
         setError(null);
 
         if (isDelayPending) {
-            runTask(async () => {
+            void runTask(async () => {
                 onConfigChange(id, {isDelayPending: false});
                 await graphQLService.stopTimer(id);
             }, setIsRunning);
@@ -119,7 +119,7 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
             return;
         }
 
-        runTask(async () => {
+        void runTask(async () => {
             await scheduleForward(persistedPayload, persistedToolsPayload);
         }, setIsRunning);
     }, [id, isDelayPending, onConfigChange, scheduleForward, persistedPayload, persistedToolsPayload]);

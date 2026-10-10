@@ -148,7 +148,7 @@ export function JobSearchNode ({data, id}: NodeProps<AppNode>) {
             return;
         }
 
-        runTask(async () => {
+        await runTask(async () => {
             try {
                 const result = await JobSearchService.search({
                     companies: cos,
@@ -181,7 +181,7 @@ export function JobSearchNode ({data, id}: NodeProps<AppNode>) {
         clearOutput: () => onResultUpdate(id),
         runCallback: () => {
             if (dataProvidedByUpstreamRef.current && !openSettingsRef.current) {
-                runSearch();
+                void runSearch();
             }
         },
     }, [input]);

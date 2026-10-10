@@ -9,7 +9,7 @@ import {useEffect} from "react";
 type UseRunOnTriggerChangeProps = {
     clearError: () => void;
     clearOutput: () => void;
-    runCallback: () => void;
+    runCallback: () => void | Promise<void>;
 }
 
 export function useRunOnTriggerChange ({clearError, clearOutput, runCallback}: UseRunOnTriggerChangeProps, changeTriggers: any[] = []) {
@@ -18,7 +18,7 @@ export function useRunOnTriggerChange ({clearError, clearOutput, runCallback}: U
             clearError();
             clearOutput();
 
-            runCallback();
+            void runCallback();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, changeTriggers);

@@ -108,7 +108,7 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
 
     useEffect(() => {
         if (openSettings) {
-            fetchModels().then(fetchedModels => {
+            void fetchModels().then(fetchedModels => {
                 if (embeddingModel && !fetchedModels.includes(embeddingModel) && !isEmbeddingModelLockedRef.current) {
                     onConfigChange(id, {embeddingModel: ""});
                 }
@@ -224,13 +224,13 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                             loading={loadingCollections}
                             disabled={!weaviateUrl}
                             noItemsAvailable="No collections found"
-                            onButtonClick={fetchCollections}
+                            onButtonClick={() => void fetchCollections()}
                             onMenuItemClick={item => {
                                 setError(prev =>
                                     prev.filter(err => !err.includes(FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX))
                                 );
 
-                                selectCollection(item);
+                                void selectCollection(item);
                             }}
                             sx={{height: 40, minWidth: 40, p: 0, flexShrink: 0}}
                         />

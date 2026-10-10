@@ -61,7 +61,8 @@ export class GraphQLSocketManager {
 
     dispose () {
         if (this.client) {
-            try { this.client.dispose(); } catch { /* Ignore */ }
+            // dispose() may throw or return a promise that rejects; ignore both
+            try { Promise.resolve(this.client.dispose()).catch(() => { /* Ignore */ }); } catch { /* Ignore */ }
 
             this.client = null;
         }

@@ -22,11 +22,11 @@ export function useFullscreen () {
     useEffect(() => {
         if (!isTauri()) return;
 
-        const handleKeyPress = async (e: KeyboardEvent) => {
+        const handleKeyPress = (e: KeyboardEvent) => {
             if (e.key === 'F11') {
                 e.preventDefault();
 
-                await toggleFullscreen();
+                void toggleFullscreen();
             }
         };
 

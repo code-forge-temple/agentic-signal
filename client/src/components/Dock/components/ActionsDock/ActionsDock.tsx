@@ -110,8 +110,8 @@ export function ActionsDock ({onSave, onLoad, onClear}: WorkflowActionsProps) {
                         confirmLabel="Clear and Reload"
                         onConfirm={handleClearAppData}
                     />
-                    {isTauri() && <DockItem title="Close App" icon={<OffTag />} onClick={handleCloseApp} />}
-                    <DockItem title="Open Documentation" icon={<Docs />} onClick={handleOpenDocs} />
+                    {isTauri() && <DockItem title="Close App" icon={<OffTag />} onClick={() => void handleCloseApp()} />}
+                    <DockItem title="Open Documentation" icon={<Docs />} onClick={() => void handleOpenDocs()} />
                     <DockItem title="Save workflow" icon={<FloppyDiskArrowIn />} onClick={onSave} />
                     <DockItem title="Clear workflow" icon={<BinFull />} onClick={onClear} />
                     <DockItem title="Load workflow" icon={<FloppyDiskArrowOut />} onClick={() => fileInputRef.current?.click()} />

@@ -105,7 +105,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
             setIsFetchingModels(false);
         };
 
-        fetchModels();
+        void fetchModels();
     }, [storedModel, setGlobalData]);
 
     const handleSend = useCallback(async (text: string) => {
@@ -269,7 +269,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
 
     const handleImportWorkflow = useCallback((json: string) => {
         onLoadWorkflow(json, (error: string) => {
-            handleSend(
+            void handleSend(
                 `The workflow JSON you generated failed to import with this error: ` +
                 `${TRIPLE_BACKTICK}${error}${TRIPLE_BACKTICK}\n` +
                 `Please fix the JSON and try again.`
@@ -300,7 +300,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                     onModelChange={handleModelChange}
                     models={models}
                     isFetchingModels={isFetchingModels}
-                    onClose={handleClose}
+                    onClose={() => void handleClose()}
                     onMinimize={() => setIsMinimized(prev => !prev)}
                     isMinimized={isMinimized}
                     onDragHandleMouseDown={handleDragHandleMouseDown}
@@ -312,13 +312,13 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                         messages={messages}
                         isLoading={isLoading}
                         onLoadWorkflow={handleImportWorkflow}
-                        onDeleteMessage={handleDeleteMessage}
+                        onDeleteMessage={(index) => void handleDeleteMessage(index)}
                     />
                 )}
 
                 {!isMinimized && (
                     <ChatInput
-                        onSend={handleSend}
+                        onSend={(text) => void handleSend(text)}
                         disabled={!selectedModel || isLoading}
                         panelPosition={position}
                         contextGauge={{

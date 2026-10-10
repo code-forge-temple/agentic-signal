@@ -59,11 +59,11 @@ export function CalculatorTextField ({
             error={!!error}
             helperText={error || helperText}
             onChange={(e) => setText(e.target.value)}
-            onBlur={evaluate}
+            onBlur={() => void evaluate()}
             onKeyDown={(e) => {
                 if (e.key === "Enter") {
                     e.preventDefault();
-                    evaluate();
+                    void evaluate();
                 }
             }}
         />

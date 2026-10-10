@@ -1,17 +1,26 @@
 import js from '@eslint/js'
+import {defineConfig, globalIgnores} from 'eslint/config'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
-export default tseslint.config(
-    { ignores: ['dist', 'src-tauri', '**/*.gen.ts'] },
+export default defineConfig(
+    globalIgnores(['dist', 'src-tauri', '**/*.gen.ts']),
     {
-        extends: [js.configs.recommended, ...tseslint.configs.recommended],
+        extends: [js.configs.recommended, tseslint.configs.recommended],
         files: ['**/*.{ts,tsx}'],
         languageOptions: {
             ecmaVersion: 2020,
             globals: globals.browser,
+            parserOptions: {
+                // type-aware rules below (no-floating-promises etc.) need the TS program for each file
+                projectService: {
+                    // not in any tsconfig (adding them would pull them into `tsc -b`)
+                    allowDefaultProject: ['client/vitest.config.ts', 'client/vitest.setup.ts'],
+                },
+                tsconfigRootDir: import.meta.dirname,
+            },
         },
         plugins: {
             'react-hooks': reactHooks,
@@ -32,6 +41,10 @@ export default tseslint.config(
                 'warn',
                 { allowConstantExport: true },
             ],
+            "@typescript-eslint/no-floating-promises": "error", // a promise is awaited, caught, or marked `void`
+            "@typescript-eslint/no-misused-promises": "error", // no async function where a void callback is expected
+            "@typescript-eslint/unbound-method": "error", // methods handed around keep their `this`
+            "@typescript-eslint/no-unsafe-assignment": "warn", // `any` values don't spread silently (warn while the backlog is cleared)
             'max-len': ['error', { code: 180 }],
             'indent': ['error', 4, { "SwitchCase": 1 }],
             '@typescript-eslint/no-explicit-any': 'off',
@@ -81,8 +94,11 @@ export default tseslint.config(
         // Deno server resolvers keep underscore-prefixed GraphQL args (_parent, _args, _context)
         // for signature clarity even when unused; base no-unused-vars is off via tseslint recommended.
         files: ['server/**/*.{ts,tsx}'],
+        // Plain TypeScript can't resolve Deno's `npm:`/`jsr:` specifiers or the `Deno` global, so values
+        // from them come through as error types and no-unsafe-assignment flags them falsely.
         rules: {
             '@typescript-eslint/no-unused-vars': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
         },
     },
 )

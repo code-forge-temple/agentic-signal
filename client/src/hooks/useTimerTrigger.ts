@@ -6,14 +6,14 @@
 
 import {useEffect, useRef} from "react";
 
-export function useTimerTrigger (inputTimerTrigger: number | undefined, callback: () => void) {
+export function useTimerTrigger (inputTimerTrigger: number | undefined, callback: () => void | Promise<void>) {
     const lastTriggerRef = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         if (inputTimerTrigger && inputTimerTrigger !== lastTriggerRef.current) {
             lastTriggerRef.current = inputTimerTrigger;
 
-            callback();
+            void callback();
         }
     }, [inputTimerTrigger, callback]);
 }

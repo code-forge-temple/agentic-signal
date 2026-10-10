@@ -42,11 +42,12 @@ export function PayloadView (
                     onClick={() => {
                         const textToCopy = typeof value === 'string' ? value : JSON.stringify(value, null, 4);
 
-                        navigator.clipboard.writeText(textToCopy);
+                        // only claim "Copied!" once the write succeeds (it can be denied by the browser)
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            setCopied(true);
 
-                        setCopied(true);
-
-                        setTimeout(() => setCopied(false), 2000);
+                            setTimeout(() => setCopied(false), 2000);
+                        }).catch(() => { /* Ignore */ });
                     }}
                     sx={{position: "absolute", top: 4, right: 4, zIndex: 1}}
                 >

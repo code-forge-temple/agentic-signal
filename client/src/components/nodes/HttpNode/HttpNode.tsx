@@ -38,7 +38,7 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
         setError(null);
         onResultUpdate(id);
 
-        runTask(async () => {
+        void runTask(async () => {
             try {
                 if (!url) {
                     throw new Error("URL is required");

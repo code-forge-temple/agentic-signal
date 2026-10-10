@@ -58,7 +58,7 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
         clearError: () => {setError(null)},
         clearOutput: () => {onResultUpdate(id)},
         runCallback: () => {
-            runTask(async () => {
+            void runTask(async () => {
                 if (isPayloadValidationOn) {
                     const payloadResult = validateAgainstSchema(payloadSchema, input?.payload);
 

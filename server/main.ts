@@ -57,7 +57,7 @@ webSocketManager.setYogaHandler(async (request) => await yoga.fetch(request));
 Deno.serve({
     hostname,
     port,
-    handler: webSocketManager.handleRequest,
+    handler: (request) => webSocketManager.handleRequest(request),
     onListen: ({hostname, port}) => {
         console.log(`Deno server running on http://${hostname}:${port}`);
         console.log(`GraphQL HTTP: http://${hostname}:${port}/graphql`);

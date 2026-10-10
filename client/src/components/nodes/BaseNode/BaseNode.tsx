@@ -16,7 +16,9 @@ import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 
 const ISVALID_CONNECTION_FUNCTION_NAME = "isValidConnection";
 
-type OnClick = (() => void) | {callback: () => void; highlight: boolean};
+type ClickCallback = () => void | Promise<void>;
+
+type OnClick = ClickCallback | {callback: ClickCallback; highlight: boolean};
 
 type BaseNodeProps = {
     id: string;
@@ -36,10 +38,12 @@ type BaseNodeProps = {
 };
 
 function buttonsPropsFactory (buttonProp: OnClick): React.SVGProps<SVGSVGElement>{
+    const callback = "callback" in buttonProp ? buttonProp.callback : buttonProp;
+
     return {
         width: 20,
         height: 20,
-        onClick: "callback" in buttonProp ? buttonProp.callback : buttonProp,
+        onClick: () => { void callback(); },
         className: "highlight" in buttonProp && buttonProp.highlight ? "highlight" : "",
         pointerEvents: "all",
     }

@@ -22,7 +22,7 @@ type GoogleToolConfigFieldsProps = {
         clientId: string;
         scope: string;
         onConfigChange: (key: string, value: string) => void;
-    }) => void;
+    }) => void | Promise<void>;
     description?: string;
     required?: boolean;
     userConfig: Record<string, any>;
@@ -67,7 +67,7 @@ export function GoogleToolOauthConfigFields ({
                             variant={isConnected ? "outlined" : "contained"}
                             color={isConnected ? "success" : "primary"}
                             onClick={() => {
-                                oauthHandler({
+                                void oauthHandler({
                                     clientId: googleClientId,
                                     scope,
                                     onConfigChange: (key, value) => {

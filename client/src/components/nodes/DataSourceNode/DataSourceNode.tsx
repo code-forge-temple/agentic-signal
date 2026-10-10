@@ -45,7 +45,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
         setError(null);
         onResultUpdate(id);
 
-        runTask(async () => {
+        void runTask(async () => {
             const up = input?.payload;
             const upTools = input?.toolsPayload;
             const upIsString = typeof up === 'string';

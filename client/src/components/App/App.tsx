@@ -135,7 +135,7 @@ function AppFlow () {
     useEffect(() => {
         if (nodesInitialized && fitViewOnLoadRef.current) {
             fitViewOnLoadRef.current = false;
-            reactFlowInstance.fitView({padding: getFitViewPadding(), duration: 400});
+            void reactFlowInstance.fitView({padding: getFitViewPadding(), duration: 400});
         }
         // `nodes` is intentionally included: replacing an existing workflow keeps
         // nodesInitialized `true` throughout (no false->true edge to react to), so

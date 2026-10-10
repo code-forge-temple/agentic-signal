@@ -13,12 +13,15 @@ export const runTask = async (task: () => Promise<void>, setIsRunning: (isRunnin
 
     const startTime = performance.now();
 
-    await sleep(DEFAULT_EDGE_ANIMATION_DURATION);
-    await task();
+    // finally: a task that throws must not leave the node stuck in the running state
+    try {
+        await sleep(DEFAULT_EDGE_ANIMATION_DURATION);
+        await task();
+    } finally {
+        const endTime = performance.now();
 
-    const endTime = performance.now();
-
-    setTimeout(() => {
-        setIsRunning(false);
-    }, Math.max(0, DEFAULT_EDGE_ANIMATION_DURATION - (endTime - startTime)));
+        setTimeout(() => {
+            setIsRunning(false);
+        }, Math.max(0, DEFAULT_EDGE_ANIMATION_DURATION - (endTime - startTime)));
+    }
 };

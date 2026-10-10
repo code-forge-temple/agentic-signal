@@ -37,7 +37,7 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
         clearError: ()=> {setError(null)},
         clearOutput: () => {onResultUpdate(id)},
         runCallback: () => {
-            runTask(async () => {
+            void runTask(async () => {
                 const evaluateExpression = async () => {
                     if (jsonataExpression.trim()) {
                         try {

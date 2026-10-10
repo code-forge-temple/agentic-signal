@@ -37,7 +37,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
         clearError: ()=> {setError(null)},
         clearOutput: () => {onResultUpdate(id)},
         runCallback: () => {
-            runTask(async () => {
+            void runTask(async () => {
                 try {
                     const validation = StockAnalysisInputSchema.safeParse(input?.payload);
 

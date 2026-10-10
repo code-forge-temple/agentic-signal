@@ -87,7 +87,7 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
         clearOutput: () => onResultUpdate(id),
         runCallback: async () => {
             if (dataProvidedByUpstreamRef.current && !openSettingsRef.current) {
-                runTask(async () => {
+                await runTask(async () => {
                     const upstreamUrl = getField<string | undefined>(input?.payload, "url", undefined);
                     const upstreamDataType = getField<FetchDataType | undefined>(input?.payload, "dataType", undefined);
 
@@ -114,7 +114,7 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
         setError(null);
         onResultUpdate(id);
 
-        runTask(async () => {
+        void runTask(async () => {
             try {
                 validateGetDataInput(mergedUrl, mergedDataType);
 

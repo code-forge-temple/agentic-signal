@@ -77,7 +77,7 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
         }
 
         if (mode === TIMER_NODE_MODES.INTERVAL && runOnce && interval === 0) {
-            runTask(async () => {
+            void runTask(async () => {
                 onResultUpdate(id, {timerTrigger: Date.now()});
             }, setIsRunning);
 

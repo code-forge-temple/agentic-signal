@@ -30,7 +30,7 @@ const sessions = new Map<string, FormSession>();
 
 function scheduleExpiry (key: string): ReturnType<typeof setTimeout> {
     return setTimeout(() => {
-        closeSession(key);
+        void closeSession(key);
     }, SESSION_IDLE_TIMEOUT_MS);
 }
 

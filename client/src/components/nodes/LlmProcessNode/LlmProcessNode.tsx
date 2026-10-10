@@ -143,7 +143,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
 
     useEffect(() => {
         if (openSettings) {
-            fetchModels().then(fetchedModels => {
+            void fetchModels().then(fetchedModels => {
                 if (model && !fetchedModels.includes(model)) {
                     onConfigChange(id, {model: ""});
                 }

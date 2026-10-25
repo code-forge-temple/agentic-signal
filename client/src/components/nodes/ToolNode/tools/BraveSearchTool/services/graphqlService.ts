@@ -6,20 +6,14 @@
 
 
 import {BraveResult} from "@shared/types.gen";
-import {graphqlBaseUrl} from "../../../../../../utils";
+import {graphqlRequest} from "../../../../../../utils";
 
 
 export class GraphQLService {
     static async braveSearch (query: string, userConfig: { apiKey: string, maxResults: number }): Promise<BraveResult[]> {
         try {
-            const response = await fetch(graphqlBaseUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userConfig.apiKey}`
-                },
-                body: JSON.stringify({
-                    query: /* GraphQL */ `
+            const data = await graphqlRequest<{ braveSearch: BraveResult[] }>(
+                /* GraphQL */ `
                     query($query: String!, $maxResults: Int) {
                         braveSearch(query: $query, maxResults: $maxResults) {
                             title
@@ -28,15 +22,9 @@ export class GraphQLService {
                         }
                     }
                 `,
-                    variables: {query, maxResults: userConfig.maxResults}
-                })
-            });
-
-            const {data, errors} = await response.json();
-
-            if (errors) {
-                throw new Error(errors.map((e: any) => e.message).join('\n'));
-            }
+                {query, maxResults: userConfig.maxResults},
+                {Authorization: `Bearer ${userConfig.apiKey}`}
+            );
 
             return data.braveSearch;
         } catch (error) {

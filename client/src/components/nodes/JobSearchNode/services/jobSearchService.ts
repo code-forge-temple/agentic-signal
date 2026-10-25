@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {graphqlBaseUrl} from "../../../../utils";
+import {graphqlRequest} from "../../../../utils";
 import {JobSearchOutput} from "../types/output.types";
 
 
@@ -24,30 +24,16 @@ export type JobSearchConfig = {
 
 export class JobSearchService {
     static async search (config: JobSearchConfig): Promise<JobSearchOutput> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                    query SearchJobs($config: String!) {
-                        searchJobs(config: $config)
-                    }
-                `,
-                variables: {config: JSON.stringify(config)},
-            }),
-        });
+        const data = await graphqlRequest<{ searchJobs: string | null }>(
+            /* GraphQL */ `
+                query SearchJobs($config: String!) {
+                    searchJobs(config: $config)
+                }
+            `,
+            {config: JSON.stringify(config)}
+        );
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const {data, errors} = await response.json();
-
-        if (errors?.length) {
-            throw new Error(errors.map((e: {message: string}) => e.message).join("\n"));
-        }
-
-        if (!data?.searchJobs) {
+        if (!data.searchJobs) {
             throw new Error("No response from job search backend");
         }
 

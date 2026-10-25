@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {graphqlBaseUrl} from "../../../../utils";
+import {graphqlRequest} from "../../../../utils";
 
 
 type RagIngestAndRetrieveParams = {
@@ -21,48 +21,38 @@ type RagIngestAndRetrieveParams = {
 
 class RagService {
     async ingestAndRetrieve (params: RagIngestAndRetrieveParams): Promise<string> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                    mutation RagIngestAndRetrieve(
-                        $input: String!
-                        $collectionName: String!
-                        $embeddingModel: String!
-                        $chunkSize: Int!
-                        $chunkOverlap: Int!
-                        $topK: Int!
-                        $ollamaHost: String
-                        $weaviateUrl: String!
-                        $weaviateApiKey: String
+        const data = await graphqlRequest<{ ragIngestAndRetrieve: { success: boolean; context: string | null; error: string | null } }>(
+            /* GraphQL */ `
+                mutation RagIngestAndRetrieve(
+                    $input: String!
+                    $collectionName: String!
+                    $embeddingModel: String!
+                    $chunkSize: Int!
+                    $chunkOverlap: Int!
+                    $topK: Int!
+                    $ollamaHost: String
+                    $weaviateUrl: String!
+                    $weaviateApiKey: String
+                ) {
+                    ragIngestAndRetrieve(
+                        input: $input
+                        collectionName: $collectionName
+                        embeddingModel: $embeddingModel
+                        chunkSize: $chunkSize
+                        chunkOverlap: $chunkOverlap
+                        topK: $topK
+                        ollamaHost: $ollamaHost
+                        weaviateUrl: $weaviateUrl
+                        weaviateApiKey: $weaviateApiKey
                     ) {
-                        ragIngestAndRetrieve(
-                            input: $input
-                            collectionName: $collectionName
-                            embeddingModel: $embeddingModel
-                            chunkSize: $chunkSize
-                            chunkOverlap: $chunkOverlap
-                            topK: $topK
-                            ollamaHost: $ollamaHost
-                            weaviateUrl: $weaviateUrl
-                            weaviateApiKey: $weaviateApiKey
-                        ) {
-                            success
-                            context
-                            error
-                        }
+                        success
+                        context
+                        error
                     }
-                `,
-                variables: params,
-            }),
-        });
-
-        const {data, errors} = await response.json();
-
-        if (errors?.length) {
-            throw new Error(errors.map((e: any) => e.message).join("\n"));
-        }
+                }
+            `,
+            params
+        );
 
         const result = data.ragIngestAndRetrieve;
 

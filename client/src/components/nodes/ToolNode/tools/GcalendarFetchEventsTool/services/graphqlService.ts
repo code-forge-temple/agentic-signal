@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {CalendarEventResult} from "@shared/types.gen";
-import {graphqlBaseUrl} from "../../../../../../utils";
+import {graphqlRequest} from "../../../../../../utils";
 
 
 export class GraphQLService {
@@ -17,14 +17,8 @@ export class GraphQLService {
             timeMin: string,
             timeMax: string,
         }): Promise<CalendarEventResult[]> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userConfig.accessToken}`
-            },
-            body: JSON.stringify({
-                query: /* GraphQL */ `
+        const data = await graphqlRequest<{ gcalendarFetchEvents: CalendarEventResult[] }>(
+            /* GraphQL */ `
                 query($query: String!, $maxResults: Int!, $timeMin: String!, $timeMax: String!) {
                     gcalendarFetchEvents(query: $query, maxResults: $maxResults, timeMin: $timeMin, timeMax: $timeMax) {
                         id
@@ -54,20 +48,14 @@ export class GraphQLService {
                     }
                 }
             `,
-                variables: {
-                    query,
-                    maxResults: userConfig.maxResults,
-                    timeMin: userConfig.timeMin,
-                    timeMax: userConfig.timeMax
-                }
-            })
-        });
-
-        const {data, errors} = await response.json();
-
-        if (errors) {
-            throw new Error(errors.map((e: any) => e.message).join('\n'));
-        }
+            {
+                query,
+                maxResults: userConfig.maxResults,
+                timeMin: userConfig.timeMin,
+                timeMax: userConfig.timeMax
+            },
+            {Authorization: `Bearer ${userConfig.accessToken}`}
+        );
 
         return data.gcalendarFetchEvents;
     }

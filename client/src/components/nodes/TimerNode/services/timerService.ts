@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {graphqlBaseUrl} from "../../../../utils";
+import {graphqlRequest} from "../../../../utils";
 import {GraphQLSocketManager} from "../../../../services/graphQLSocketManager";
 import {isTimerTriggerEvent, TimerNodeData, TimerTriggerEvent} from "../types/workflow";
 
@@ -14,43 +14,25 @@ class GraphQLService {
         nodeId: string,
         config: TimerNodeData
     ): Promise<void> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                        mutation($nodeId: String!, $config: TimerConfigInput!) {
-                            startTimer(nodeId: $nodeId, config: $config)
-                        }
-                    `,
-                variables: {nodeId, config}
-            })
-        });
-        const {errors} = await response.json();
-
-        if (errors) {
-            throw new Error(errors.map((e: any) => e.message).join('\n'));
-        }
+        await graphqlRequest(
+            /* GraphQL */ `
+                mutation($nodeId: String!, $config: TimerConfigInput!) {
+                    startTimer(nodeId: $nodeId, config: $config)
+                }
+            `,
+            {nodeId, config}
+        );
     }
 
     async stopTimer (nodeId: string): Promise<void> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                        mutation($nodeId: String!) {
-                            stopTimer(nodeId: $nodeId)
-                        }
-                    `,
-                variables: {nodeId}
-            })
-        });
-        const {errors} = await response.json();
-
-        if (errors) {
-            throw new Error(errors.map((e: any) => e.message).join('\n'));
-        }
+        await graphqlRequest(
+            /* GraphQL */ `
+                mutation($nodeId: String!) {
+                    stopTimer(nodeId: $nodeId)
+                }
+            `,
+            {nodeId}
+        );
     }
 
     subscribeToTimer (

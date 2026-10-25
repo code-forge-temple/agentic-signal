@@ -5,40 +5,25 @@
  ************************************************************************/
 
 import {EmailResult} from "@shared/types.gen";
-import {graphqlBaseUrl} from "../../../../../../utils";
+import {graphqlRequest} from "../../../../../../utils";
 
 
 export class GraphQLService {
     static async gmailFetchEmails (query: string, userConfig: { accessToken: string, maxResults: number }): Promise<EmailResult[]> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userConfig.accessToken}`
-            },
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                    query($query: String!, $maxResults: Int!) {
-                        gmailFetchEmails(query: $query, maxResults: $maxResults) {
-                            id
-                            subject
-                            from
-                            date
-                        }
+        const data = await graphqlRequest<{ gmailFetchEmails: EmailResult[] }>(
+            /* GraphQL */ `
+                query($query: String!, $maxResults: Int!) {
+                    gmailFetchEmails(query: $query, maxResults: $maxResults) {
+                        id
+                        subject
+                        from
+                        date
                     }
-                `,
-                variables: {
-                    query,
-                    maxResults: userConfig.maxResults
                 }
-            })
-        });
-
-        const {data, errors} = await response.json();
-
-        if (errors) {
-            throw new Error(errors.map((e: any) => e.message).join('\n'));
-        }
+            `,
+            {query, maxResults: userConfig.maxResults},
+            {Authorization: `Bearer ${userConfig.accessToken}`}
+        );
 
         return data.gmailFetchEmails;
     }

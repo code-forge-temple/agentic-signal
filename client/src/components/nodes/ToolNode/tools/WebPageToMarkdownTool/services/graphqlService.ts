@@ -5,35 +5,25 @@
  ************************************************************************/
 
 import {WebPageToMarkdownResult} from "@shared/types.gen";
-import {graphqlBaseUrl} from "../../../../../../utils";
+import {graphqlRequest} from "../../../../../../utils";
 
 
 export class GraphQLService {
     static async webPageToMarkdown (urls: string[], userConfig: { browserPath?: string }): Promise<WebPageToMarkdownResult[]> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                    query($urls: [String!]!, $browserPath: String) {
-                        webPageToMarkdown(urls: $urls, browserPath: $browserPath) {
-                            title
-                            url
-                            content
-                            excerpt
-                            error
-                        }
+        const data = await graphqlRequest<{ webPageToMarkdown: WebPageToMarkdownResult[] }>(
+            /* GraphQL */ `
+                query($urls: [String!]!, $browserPath: String) {
+                    webPageToMarkdown(urls: $urls, browserPath: $browserPath) {
+                        title
+                        url
+                        content
+                        excerpt
+                        error
                     }
-                `,
-                variables: {urls, browserPath: userConfig.browserPath}
-            })
-        });
-
-        const {data, errors} = await response.json();
-
-        if (errors) {
-            throw new Error(errors.map((e: any) => e.message).join('\n'));
-        }
+                }
+            `,
+            {urls, browserPath: userConfig.browserPath}
+        );
 
         return data.webPageToMarkdown;
     }

@@ -5,33 +5,19 @@
  ************************************************************************/
 
 
-import {graphqlBaseUrl} from "../../../../utils";
+import {graphqlRequest} from "../../../../utils";
 
 
 export class GraphQLService {
     static async renderHtml (url: string, browserPath?: string): Promise<string> {
-        const response = await fetch(graphqlBaseUrl, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                query: /* GraphQL */ `
-                    query($url: String!, $browserPath: String) {
-                        renderHtml(url: $url, browserPath: $browserPath)
-                    }
-                `,
-                variables: {url, browserPath}
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const {data, errors} = await response.json();
-
-        if (errors) {
-            throw new Error(errors.map((e: any) => e.message).join('\n'));
-        }
+        const data = await graphqlRequest<{ renderHtml: string | null }>(
+            /* GraphQL */ `
+                query($url: String!, $browserPath: String) {
+                    renderHtml(url: $url, browserPath: $browserPath)
+                }
+            `,
+            {url, browserPath}
+        );
 
         if (!data.renderHtml) {
             throw new Error("No HTML returned from backend");

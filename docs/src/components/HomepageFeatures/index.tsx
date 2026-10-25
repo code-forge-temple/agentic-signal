@@ -19,7 +19,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
     {
         title: 'Visual Workflow Automation',
-        Img: require('@site/static/img/visual_workflow_automation.png').default,
+        Img: (require('@site/static/img/visual_workflow_automation.png') as { default: string }).default,
         description: (
             <>
         Design, connect, and automate AI-powered workflows visually—no coding required. Drag, drop, and orchestrate your data and AI agents with ease.
@@ -28,7 +28,7 @@ const FeatureList: FeatureItem[] = [
     },
     {
         title: 'Local Agent Intelligence',
-        Img: require('@site/static/img/local-agent-intelligence.png').default,
+        Img: (require('@site/static/img/local-agent-intelligence.png') as { default: string }).default,
         description: (
             <>
         Run advanced AI agents locally for privacy and speed. Integrate with your own models and tools, keeping your data secure and under your control.
@@ -37,7 +37,7 @@ const FeatureList: FeatureItem[] = [
     },
     {
         title: 'Extensible Node Ecosystem',
-        Img: require('@site/static/img/extensible-node-ecosystem.png').default,
+        Img: (require('@site/static/img/extensible-node-ecosystem.png') as { default: string }).default,
         description: (
             <>
         Expand your workflows with a growing library of nodes for data, APIs, and AI. Build custom nodes to fit your unique automation needs.

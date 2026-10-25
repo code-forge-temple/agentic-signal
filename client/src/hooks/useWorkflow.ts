@@ -20,6 +20,7 @@ import {nodeRegistry} from '../components/nodes/nodeRegistry.gen';
 import {AppNode, AppNodeType} from '../components/nodes/workflow.gen';
 import {NODE_TYPE as LLM_NODE_TYPE} from '../components/nodes/LlmProcessNode/constants';
 import {NODE_TYPE as ASYNC_DATA_AGGREGATOR_NODE_TYPE} from '../components/nodes/AsyncDataAggregatorNode/constants';
+import {NodeEnvelope} from '../types/workflow';
 
 
 const nodeAssertions = Object.fromEntries(
@@ -143,7 +144,7 @@ export function useWorkflow () {
     }, [setNodes]);
 
     // Store node execution results
-    const handleNodeResultUpdate = useCallback((nodeId: string, input: any) => {
+    const handleNodeResultUpdate = useCallback((nodeId: string, input?: NodeEnvelope) => {
         setResults((prev) => new Map(prev.set(nodeId, input)));
 
         setNodes((existingNodes) =>

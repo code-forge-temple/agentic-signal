@@ -35,7 +35,8 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
             {Object.entries(userConfigSchema).map(([key, schema]) => {
                 if (!schema) return null;
 
-                const value = userConfig?.[key] ?? schema.default ?? "";
+                const value: unknown = userConfig?.[key] ?? schema.default ?? "";
+                const textValue = typeof value === "number" ? value : String(value);
                 const type = schema.type || "string";
                 const isRequired = schema.required || false;
                 const fieldLabel = `${schema.description || key}${isRequired ? ' *' : ''}`;
@@ -67,7 +68,7 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
                             key={key}
                             label={fieldLabel}
                             type="number"
-                            value={value}
+                            value={textValue}
                             onChange={value => {
                                 let newValue = Number(value || 0);
 
@@ -98,7 +99,7 @@ export function UserConfigFields ({userConfigSchema, userConfig, onConfigChange}
                     <DebouncedTextField
                         key={key}
                         label={fieldLabel}
-                        value={value}
+                        value={textValue}
                         onChange={value => onConfigChange(key, value)}
                         fullWidth
                         sx={{mb: 1}}

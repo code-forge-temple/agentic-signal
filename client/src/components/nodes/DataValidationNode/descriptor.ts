@@ -19,10 +19,10 @@ export const DataValidationNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Data
     icon: Icon,
     title: TITLE,
     assertion: assertIsDataValidationNodeData,
-    migrate: (data: any) => {
+    migrate: (data) => {
         let next = data;
 
-        if (next?.schema !== undefined && next?.payloadSchema === undefined) {
+        if (next.schema !== undefined && next.payloadSchema === undefined) {
             const {schema, ...rest} = next;
 
             next = {...rest, payloadSchema: schema};
@@ -31,7 +31,9 @@ export const DataValidationNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Data
         // Pre-existing workflows already relied on a non-empty toolsPayloadSchema to opt into
         // validation (there was no explicit toggle) — preserve that behavior for them instead
         // of silently switching their toolsPayload validation off.
-        if (next?.toolsPayloadSchema?.trim() && next?.validateToolsPayload === undefined) {
+        const {toolsPayloadSchema} = next;
+
+        if (typeof toolsPayloadSchema === "string" && toolsPayloadSchema.trim() && next.validateToolsPayload === undefined) {
             next = {...next, validateToolsPayload: true};
         }
 

@@ -52,7 +52,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
 
             if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
                 try {
-                    const own = JSON.parse(dataSource.value || "{}");
+                    const own: unknown = JSON.parse(dataSource.value || "{}");
                     // Upstream and own are kept as distinct array elements rather than merged —
                     // an object-spread merge would silently drop upstream keys on collision.
                     // JSON mode never contributes its own new tools attachments.

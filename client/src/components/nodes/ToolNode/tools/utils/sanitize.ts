@@ -6,11 +6,11 @@
 
 import dirtyJSON from "dirty-json";
 
-function convertStringBooleans (obj: any): any {
+function convertStringBooleans (obj: unknown): unknown {
     if (Array.isArray(obj)) {
         return obj.map(convertStringBooleans);
     } else if (obj && typeof obj === "object") {
-        const result: any = {};
+        const result: Record<string, unknown> = {};
 
         for (const [key, value] of Object.entries(obj)) {
             result[key] = convertStringBooleans(value);
@@ -28,12 +28,12 @@ function convertStringBooleans (obj: any): any {
     return obj;
 }
 
-export const sanitizeJsonInput = (input: any): any => {
-    let parsed: any;
+export const sanitizeJsonInput = (input: unknown): unknown => {
+    let parsed: unknown;
 
     if (typeof input === "string") {
         try {
-            const sanitized = (input as string)
+            const sanitized = input
                 .replace(/["“”]/g, '"')
                 .replace(/['‘’]/g, "'")
                 .replace(/\bTrue\b/g, 'true')
@@ -52,7 +52,7 @@ export const sanitizeJsonInput = (input: any): any => {
     return convertStringBooleans(parsed);
 }
 
-export const sanitizeStringInput = (input: any): string => {
+export const sanitizeStringInput = (input: unknown): string => {
     let str = String(input).trim();
 
     str = str.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => {

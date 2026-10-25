@@ -17,9 +17,9 @@ function mockFetchAIResponse (responses: FetchAiResponse[]) {
 
     const service = OllamaService.getInstance();
     let callIndex = 0;
-    const receivedCalls: any[] = [];
+    const receivedCalls: Parameters<OllamaService['fetchAIResponse']>[0][] = [];
 
-    service.fetchAIResponse = (async (params: any) => {
+    service.fetchAIResponse = async (params) => {
         receivedCalls.push(params);
 
         const next = responses[callIndex++];
@@ -27,7 +27,7 @@ function mockFetchAIResponse (responses: FetchAiResponse[]) {
         if (!next) throw new Error(`Mock ran out of responses at call #${callIndex}`);
 
         return next;
-    }) as any;
+    };
 
     return {receivedCalls, getCallCount: () => callIndex};
 }
@@ -70,9 +70,9 @@ describe('runOrchestration', () => {
 
         await runOrchestration(baseParams({prompt: undefined}));
 
-        const planningSystemMessage = receivedCalls[0].messages.find((m: any) => m.role === 'system');
+        const planningSystemMessage = receivedCalls[0].messages.find(m => m.role === 'system');
 
-        expect(planningSystemMessage.content.startsWith('Your response must be valid JSON')).toBe(true);
+        expect(planningSystemMessage?.content.startsWith('Your response must be valid JSON')).toBe(true);
     });
 
     it('builds an aggregation system prompt from just the format schema when no node-level prompt is configured', async () => {
@@ -87,9 +87,9 @@ describe('runOrchestration', () => {
             format: {onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}})},
         }));
 
-        const aggregationSystemMessage = receivedCalls[2].messages.find((m: any) => m.role === 'system');
+        const aggregationSystemMessage = receivedCalls[2].messages.find(m => m.role === 'system');
 
-        expect(aggregationSystemMessage.content.startsWith('Your response must be valid JSON')).toBe(true);
+        expect(aggregationSystemMessage?.content.startsWith('Your response must be valid JSON')).toBe(true);
     });
 
     it('runs one agent call per planned task, in order', async () => {
@@ -104,8 +104,8 @@ describe('runOrchestration', () => {
 
         expect(result).toEqual({success: true, result: 'Both done.'});
         // call 0 = planning, call 1 = agent for task A, call 2 = agent for task B, call 3 = aggregation
-        expect(receivedCalls[1].messages.at(-1).content).toContain('task A');
-        expect(receivedCalls[2].messages.at(-1).content).toContain('task B');
+        expect(receivedCalls[1].messages.slice(-1)[0].content).toContain('task A');
+        expect(receivedCalls[2].messages.slice(-1)[0].content).toContain('task B');
     });
 
     it('injects a prior task\'s output as context for a task that depends on it', async () => {
@@ -121,7 +121,7 @@ describe('runOrchestration', () => {
 
         await runOrchestration(baseParams());
 
-        const secondAgentMessage = receivedCalls[2].messages.at(-1).content;
+        const secondAgentMessage = receivedCalls[2].messages.slice(-1)[0].content;
 
         expect(secondAgentMessage).toContain('the produced value is 42');
         expect(secondAgentMessage).toContain('use the prior value');
@@ -136,9 +136,9 @@ describe('runOrchestration', () => {
 
         await runOrchestration(baseParams({prompt: 'Generic node prompt'}));
 
-        const agentSystemMessage = receivedCalls[1].messages.find((m: any) => m.role === 'system');
+        const agentSystemMessage = receivedCalls[1].messages.find(m => m.role === 'system');
 
-        expect(agentSystemMessage.content).toBe('You are a specialist.');
+        expect(agentSystemMessage?.content).toBe('You are a specialist.');
     });
 
     it('falls back to the node-level prompt for a task with no systemPrompt override', async () => {
@@ -150,16 +150,16 @@ describe('runOrchestration', () => {
 
         await runOrchestration(baseParams({prompt: 'Generic node prompt'}));
 
-        const agentSystemMessage = receivedCalls[1].messages.find((m: any) => m.role === 'system');
+        const agentSystemMessage = receivedCalls[1].messages.find(m => m.role === 'system');
 
-        expect(agentSystemMessage.content).toBe('Generic node prompt');
+        expect(agentSystemMessage?.content).toBe('Generic node prompt');
     });
 
     it('resolves and passes only the tools a task was assigned', async () => {
         const handlerLog: string[] = [];
         const tools = [
             {
-                schema: {name: 'toolA', description: '', parameters: {} as any},
+                schema: {name: 'toolA', description: '', parameters: {}},
                 systemUserConfigValues: {requireToolUse: false},
                 handler: async () => {
                     handlerLog.push('toolA');
@@ -168,7 +168,7 @@ describe('runOrchestration', () => {
                 },
             },
             {
-                schema: {name: 'toolB', description: '', parameters: {} as any},
+                schema: {name: 'toolB', description: '', parameters: {}},
                 systemUserConfigValues: {requireToolUse: false},
                 handler: async () => {
                     handlerLog.push('toolB');
@@ -185,14 +185,14 @@ describe('runOrchestration', () => {
 
         await runOrchestration(baseParams({tools}));
 
-        const agentToolNames = receivedCalls[1].tools.map((t: any) => t.schema.name);
+        const agentToolNames = receivedCalls[1].tools?.map(t => t.schema.name);
 
         expect(agentToolNames).toEqual(['toolA']);
     });
 
     it('passes no tools to the planning call (format-constrained output and tool_calls are mutually exclusive)', async () => {
         const tools = [{
-            schema: {name: 'toolA', description: '', parameters: {} as any},
+            schema: {name: 'toolA', description: '', parameters: {}},
             systemUserConfigValues: {requireToolUse: false},
             handler: async () => ({success: true}),
         }];

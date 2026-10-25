@@ -433,7 +433,7 @@ export class OllamaService {
         }
 
         const toolNames = new Set(tools.map(t => t.schema.name));
-        const candidates = Array.isArray(parsed) ? parsed : [parsed];
+        const candidates: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
 
         // Models leak tool calls in different shapes: Ollama's own native shape nests
         // { function: { name, arguments } }, but some models (observed with an 8B local
@@ -443,9 +443,8 @@ export class OllamaService {
             .map((c): {function: {name: string; arguments: unknown}} | null => {
                 if (!c || typeof c !== "object") return null;
 
-                const fnSource = "function" in c && (c as any).function && typeof (c as any).function === "object"
-                    ? (c as any).function
-                    : c;
+                const nested = (c as { function?: unknown }).function;
+                const fnSource = (nested && typeof nested === "object" ? nested : c) as { name?: unknown; arguments?: unknown };
 
                 if (typeof fnSource.name === "string" && fnSource.arguments !== undefined && toolNames.has(fnSource.name)) {
                     return {function: {name: fnSource.name, arguments: fnSource.arguments}};
@@ -533,7 +532,7 @@ export class OllamaService {
     }
 
     private async executeToolCallWithTracking (
-        toolCall: any,
+        toolCall: { function: { name: string; arguments: unknown } },
         tools: { schema: ToolSchema, handler: (params: any) => Promise<any> }[],
         currentRetry: number,
         maxRetries: number
@@ -551,7 +550,7 @@ export class OllamaService {
             throw new Error(`Tool not found: ${toolName}`);
         }
 
-        const toolResult = await tool.handler(toolArgs);
+        const toolResult: unknown = await tool.handler(toolArgs);
         const resultIsToolError = isToolError(toolResult);
         const errorSuffix = resultIsToolError
             ? `\n\nPlease correct the parameters and try again. (Attempt ${currentRetry + 1}/${maxRetries})`

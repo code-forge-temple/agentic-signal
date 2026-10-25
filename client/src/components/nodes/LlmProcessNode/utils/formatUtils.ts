@@ -14,34 +14,40 @@ import {sanitizeJsonInput} from "../../ToolNode/tools/utils/sanitize";
 
 /**
  * Recursively resolves the expected JSON type from a parsed (or stringified)
- * JSON Schema. Returns "unknown" if the type cannot be determined — this is
+ * JSON Schema. Returns undefined if the type cannot be determined — this is
  * the safe default; callers should skip JSON.parse on the LLM reply when the
  * type is unknown.
  *
- * Never throws — an unrecognised schema is treated as "unknown".
+ * Never throws — an unrecognised schema gives undefined.
  */
-export function getExpectedOutputType (format: any): string {
+export function getExpectedOutputType (format: unknown): string | undefined {
     try {
-        const schema = typeof format === "string" ? JSON.parse(format) : format;
+        const schema: unknown = typeof format === "string" ? JSON.parse(format) : format;
 
-        if (!schema || typeof schema !== "object") return "unknown";
+        if (!schema || typeof schema !== "object") return undefined;
 
-        if (schema.type) return schema.type;
+        const {type} = schema as { type?: unknown };
+
+        // A `type` list (e.g. ["object", "null"]) is no single output type, but it must still
+        // end the oneOf/anyOf/allOf search below, so it comes back as text rather than undefined.
+        if (type) return typeof type === "string" ? type : String(type);
 
         for (const key of ["oneOf", "anyOf", "allOf"]) {
-            if (Array.isArray(schema[key])) {
-                for (const subschema of schema[key]) {
+            const subschemas = (schema as Record<string, unknown>)[key];
+
+            if (Array.isArray(subschemas)) {
+                for (const subschema of subschemas as unknown[]) {
                     const type = getExpectedOutputType(subschema);
 
-                    if (type !== "unknown") return type;
+                    if (type !== undefined) return type;
                 }
             }
         }
     } catch {
-        return "unknown";
+        return undefined;
     }
 
-    return "unknown";
+    return undefined;
 }
 
 /**
@@ -107,7 +113,7 @@ export function parseFormat (
         unifiedFormat = format;
     }
 
-    const parsedFormat = unifiedFormat ? JSON.parse(unifiedFormat) : undefined;
+    const parsedFormat = unifiedFormat ? JSON.parse(unifiedFormat) as object : undefined;
 
     return {parsedFormat, onErrorValidator};
 }
@@ -122,7 +128,7 @@ export function parseFormat (
  * - fenced arrays
  * - leading/trailing whitespace
  */
-export function llmResponseJsonParse<T = any> (reply: string): T {
+export function llmResponseJsonParse<T = unknown> (reply: string): T {
     if (typeof reply !== "string") {
         throw new TypeError(
             `Expected string response, received ${typeof reply}`

@@ -44,7 +44,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
         if (selectedTool) {
             const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
             const missingKeys = requiredKeys.filter(key => {
-                const schema = (selectedTool.userConfigSchema as any)?.[key];
+                const schema = selectedTool.userConfigSchema?.[key];
 
                 return schema?.required && !(
                     userConfig?.[key] ||
@@ -55,7 +55,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             if (missingKeys.length > 0) {
                 const missingLabels = missingKeys.map(key => {
                     const configSchema = selectedTool.userConfigSchema || {};
-                    const schema = (configSchema as any)[key];
+                    const schema = configSchema[key];
 
                     return schema?.description || key;
                 });
@@ -69,7 +69,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             } else {
                 if (selectedTool.handlerFactory && (!handler || missingKeys.length === 0)) {
                     const effectiveUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                        const localConfig = userConfig?.[configKey];
+                        const localConfig: unknown = userConfig?.[configKey];
 
                         configWithFallbacks[configKey] = (localConfig != null && localConfig !== "") ? localConfig : globalData[globalToolProp(toolSubtype, configKey)];
 
@@ -114,7 +114,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
         if (selectedTool?.handlerFactory) {
             const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
             const missingKeys = requiredKeys.filter(key => {
-                const schema = (selectedTool.userConfigSchema as any)?.[key];
+                const schema = selectedTool.userConfigSchema?.[key];
 
                 return schema?.required && !(
                     userConfig?.[key] ||
@@ -125,7 +125,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             if (missingKeys.length > 0) {
                 const missingLabels = missingKeys.map(key => {
                     const configSchema = selectedTool.userConfigSchema || {};
-                    const schema = (configSchema as any)[key];
+                    const schema = configSchema[key];
 
                     return schema?.description || key;
                 });
@@ -134,7 +134,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                 setError(errorMessage);
             } else {
                 const effectiveNewUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                    const localConfig = newUserConfig[configKey];
+                    const localConfig: unknown = newUserConfig[configKey];
 
                     configWithFallbacks[configKey] = (localConfig != null && localConfig !== "") ? localConfig : globalData[globalToolProp(toolSubtype, configKey)];
 

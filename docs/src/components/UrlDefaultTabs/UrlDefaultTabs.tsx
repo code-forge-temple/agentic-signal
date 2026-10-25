@@ -5,9 +5,10 @@
  ************************************************************************/
 
 import React from 'react';
+import type {ComponentProps} from 'react';
 import Tabs from '@theme/Tabs';
 
-export function UrlDefaultTabs ({children, defaultTab}) {
+export function UrlDefaultTabs ({children, defaultTab}: { children: ComponentProps<typeof Tabs>['children']; defaultTab: string }) {
     let tabFromUrl = defaultTab;
 
     if (typeof window !== 'undefined') {

@@ -26,11 +26,11 @@ type ChatLogProps = {
 
 function extractWorkflowJson (codeString: string): string | null {
     try {
-        const parsed = sanitizeJsonInput(codeString);
+        const parsed = sanitizeJsonInput(codeString) as { nodes?: unknown; workflow?: { nodes?: unknown } } | null;
 
-        if (Array.isArray(parsed.nodes)) return JSON.stringify(parsed, null, 4);
+        if (Array.isArray(parsed?.nodes)) return JSON.stringify(parsed, null, 4);
 
-        if (parsed.workflow && Array.isArray(parsed.workflow.nodes)) return JSON.stringify(parsed.workflow, null, 4);
+        if (parsed?.workflow && Array.isArray(parsed.workflow.nodes)) return JSON.stringify(parsed.workflow, null, 4);
     } catch {
         // ignore parse failures for incomplete or malformed assistant output
     }
@@ -69,7 +69,7 @@ export const ChatLog = ({messages, isLoading, onLoadWorkflow, onDeleteMessage}: 
                     disabled={isStreaming}
                     onClick={() => {
                         try {
-                            const sanitized = sanitizeJsonInput(codeBlock);
+                            const sanitized: unknown = sanitizeJsonInput(codeBlock);
 
                             onLoadWorkflow(JSON.stringify(sanitized, null, 4));
                         } catch {

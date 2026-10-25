@@ -44,7 +44,7 @@ export default defineConfig(
             "@typescript-eslint/no-floating-promises": "error", // a promise is awaited, caught, or marked `void`
             "@typescript-eslint/no-misused-promises": "error", // no async function where a void callback is expected
             "@typescript-eslint/unbound-method": "error", // methods handed around keep their `this`
-            "@typescript-eslint/no-unsafe-assignment": "warn", // `any` values don't spread silently (warn while the backlog is cleared)
+            "@typescript-eslint/no-unsafe-assignment": "error", // `any` values don't spread silently
             'max-len': ['error', { code: 180 }],
             'indent': ['error', 4, { "SwitchCase": 1 }],
             '@typescript-eslint/no-explicit-any': 'off',

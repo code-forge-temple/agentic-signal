@@ -132,15 +132,17 @@ type GenericSchema = {
         type: string;
         description?: string;
         required?: boolean;
-        default?: any;
+        default?: unknown;
+        minimum?: number;
+        maximum?: number;
         [key: string]: any;
     }
 }
 
 export type UserConfigSchema = SystemUserConfigSchema & GenericSchema;
 
-export const getDefaultUserConfigValues = (schema: UserConfigSchema): Record<string, any> => {
-    const defaults: Record<string, any> = {};
+export const getDefaultUserConfigValues = (schema: UserConfigSchema): Record<string, unknown> => {
+    const defaults: Record<string, unknown> = {};
 
     for (const [key, fieldSchema] of Object.entries(schema)) {
         if (fieldSchema && typeof fieldSchema === 'object' && 'default' in fieldSchema) {

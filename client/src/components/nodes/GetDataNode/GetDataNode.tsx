@@ -28,7 +28,7 @@ import {assertIsEnhancedNodeData} from "../../../types/workflow";
 
 const DATA_TYPE_LABEL = "Data Type *";
 
-async function fetchDataFromUrl (url: string, dataType: FetchDataType) {
+async function fetchDataFromUrl (url: string, dataType: FetchDataType): Promise<unknown> {
     const parsedUrl = parseUrl(url);
     const response = await fetch(parsedUrl);
 

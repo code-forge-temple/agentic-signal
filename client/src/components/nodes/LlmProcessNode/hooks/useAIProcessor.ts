@@ -16,7 +16,7 @@ import {formatErrorMessage} from '../../../../utils/utils';
 
 
 export interface UseAIProcessorOptions {
-    onSuccess?: (result: any) => void;
+    onSuccess?: (result: unknown) => void;
     onError?: (error: string) => void;
 }
 
@@ -220,7 +220,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 }
             }
 
-            let result: any;
+            let reply: string;
 
             if (needsTwoPhase) {
                 // Phase 1: tool-calling pass — no structured output format so tools fire correctly
@@ -293,12 +293,12 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     phase2Reply = phase2Response.reply;
                 }
 
-                result = phase2Reply;
+                reply = phase2Reply;
 
                 // Store Phase 1 messages + final structured reply in history
                 conversationHistory.onChange([...messages, {
                     role: MessageRole.ASSISTANT,
-                    content: result
+                    content: reply
                 }]);
             } else {
                 // Single-call path: no tools, or no structured output — no conflict
@@ -321,19 +321,21 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     return null;
                 }
 
-                result = response.reply;
+                reply = response.reply;
 
                 conversationHistory.onChange([...messages, {
                     role: MessageRole.ASSISTANT,
-                    content: result
+                    content: reply
                 }]);
             }
+
+            let result: unknown = reply;
 
             try {
                 const expectedOutputType = getExpectedOutputType(parsedFormat);
 
                 if (expectedOutputType === "object" || expectedOutputType === "array") {
-                    result = llmResponseJsonParse(result);
+                    result = llmResponseJsonParse(reply);
 
                     if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
                         const errorMsg = formatErrorMessage("LLM returned an error response matching onError schema", result);

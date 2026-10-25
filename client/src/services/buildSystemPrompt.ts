@@ -7,6 +7,7 @@
 /* eslint-disable max-len */
 
 import {zodToJsonSchema} from 'zod-to-json-schema';
+import type {ZodTypeAny} from 'zod';
 import {nodeRegistry} from '../components/nodes/nodeRegistry.gen';
 import {toolRegistry} from '../components/nodes/ToolNode/tools/toolRegistry.gen';
 import {TRIPLE_BACKTICK} from '@shared/constants';
@@ -71,12 +72,12 @@ function buildNodeTypeList (): string {
     return nodeRegistry.map(d => `- \`"${d.type}"\``).join('\n');
 }
 
-function renderPortSchema (title: string, schema: any, name: string): string[] {
+function renderPortSchema (title: string, schema: ZodTypeAny, name: string): string[] {
     const jsonSchema = zodToJsonSchema(schema, {
         name,
         errorMessages: false,
         $refStrategy: 'none',
-    }) as any;
+    });
 
     const resolved = jsonSchema.definitions?.[name] ?? jsonSchema;
 
@@ -128,9 +129,12 @@ function buildNodeDocs (): string {
                 name: descriptor.type,
                 errorMessages: false,
                 $refStrategy: 'none',
-            }) as any;
+            });
 
-            const configSchema = jsonSchema.definitions?.[descriptor.type] ?? jsonSchema;
+            // Just the keys read below; JsonSchema7Type is a union that doesn't expose them all.
+            const configSchema = (jsonSchema.definitions?.[descriptor.type] ?? jsonSchema) as {
+                properties?: object; anyOf?: unknown[]; oneOf?: unknown[]; allOf?: unknown[];
+            };
 
             const hasConfigSchemaFields =
                 (configSchema.properties && Object.keys(configSchema.properties).length > 0) ||

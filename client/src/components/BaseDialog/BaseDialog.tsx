@@ -7,7 +7,7 @@
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ThemeProvider, Tooltip} from "@mui/material";
 import {Xmark, Expand, Collapse} from "iconoir-react";
 import {darkTheme} from "../../utils";
-import {PaperComponent} from "../PaperComponent";
+import {PaperComponent, PaperComponentProps} from "../PaperComponent";
 import {ReactNode, useEffect, useState} from "react";
 import {DRAG_CANCEL_SELECTOR} from "../../constants";
 
@@ -58,6 +58,11 @@ export function BaseDialog ({
         setZIndex(FOCUSED_Z);
     };
 
+    const paperProps: PaperComponentProps = {
+        enableDragging: !maximized,
+        cancel: DRAG_CANCEL_SELECTOR,
+    };
+
     return (
         <ThemeProvider theme={darkTheme}>
             <Dialog
@@ -70,10 +75,7 @@ export function BaseDialog ({
                 PaperComponent={PaperComponent}
                 slotProps={{
                     root: {style: {zIndex, pointerEvents: "none"}},
-                    paper: {
-                        enableDragging: !maximized,
-                        cancel: DRAG_CANCEL_SELECTOR,
-                    } as any
+                    paper: paperProps
                 }}
                 aria-labelledby="draggable-dialog-title"
                 maxWidth={maximized ? false : maxWidth}

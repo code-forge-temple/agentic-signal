@@ -47,7 +47,7 @@ export type RunSingleCallParams = {
 export type OrchestrationParams = {
     /** Accepts any value; orchestration mode is only entered when the caller (see the
      *  `orchestrationMode` guard in useAIProcessor.ts) confirms it isn't null/undefined. */
-    input: any;
+    input: unknown;
     prompt?: string;
     model: string;
     format?: { onSuccess?: string; onError?: string; };
@@ -62,5 +62,5 @@ export type OrchestrationParams = {
 };
 
 export type OrchestrationResult =
-    | { success: true; result: any }
+    | { success: true; result: unknown }
     | { success: false; error: string };

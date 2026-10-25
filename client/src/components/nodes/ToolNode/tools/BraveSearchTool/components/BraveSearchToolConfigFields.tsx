@@ -9,7 +9,7 @@ import {globalToolProp} from "../../utils/utils";
 import {DebouncedTextField} from "../../../../../DebouncedTextField";
 
 type BraveSearchToolConfigFieldsProps = {
-    userConfig: Record<string, any>;
+    userConfig: { apiKey?: string };
     onConfigChange: (key: string, value: string | number | boolean) => void;
 };
 

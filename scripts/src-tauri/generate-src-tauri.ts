@@ -30,7 +30,7 @@ function findCommandsRecursive (dir: string, cratePrefix: string, relSegments: s
         } else if (name.endsWith(".rs")) {
             const content = fs.readFileSync(entryPath, "utf8");
             const regex = /#\[tauri::command\][\s\S]*?pub (async )?fn (\w+)/g;
-            let match;
+            let match: RegExpExecArray | null;
 
             while ((match = regex.exec(content))) {
                 const fnName = match[2];

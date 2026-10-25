@@ -7,7 +7,7 @@ import {readFileSync} from 'fs';
 import {preprocessor} from "../plugins/preprocessor";
 
 
-const pkg = JSON.parse(readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8'));
+const pkg = JSON.parse(readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
 function getBuildFlag (name: string): boolean {
     const envValue = process.env[name];

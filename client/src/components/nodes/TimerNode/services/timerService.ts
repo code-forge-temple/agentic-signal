@@ -40,7 +40,7 @@ class GraphQLService {
         onTrigger: (event: TimerTriggerEvent) => void,
         onError?: (error: any) => void
     ): () => void {
-        const unsubscribe = GraphQLSocketManager.getInstance().subscribe(
+        const unsubscribe = GraphQLSocketManager.getInstance().subscribe<{ timerTrigger?: unknown }>(
             {
                 query: /* GraphQL */ `
                     subscription($nodeId: String!) {

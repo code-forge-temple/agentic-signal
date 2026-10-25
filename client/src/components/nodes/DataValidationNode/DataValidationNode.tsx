@@ -13,7 +13,7 @@ import {BaseDialog} from "../../BaseDialog";
 import {BaseNode} from "../BaseNode";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {LogsDialog} from "../../LogsDialog";
-import Ajv from "ajv";
+import Ajv, {AnySchema} from "ajv";
 import {runTask} from "../BaseNode/utils";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -30,7 +30,7 @@ function validateAgainstSchema (schema: string | undefined, value: unknown): {va
     }
 
     try {
-        const parsedSchema = JSON.parse(schema);
+        const parsedSchema = JSON.parse(schema) as AnySchema;
         const validateFn = ajv.compile(parsedSchema);
         const valid = validateFn(value);
 

@@ -19,9 +19,11 @@ export const DataSourceNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, DataSour
     icon: Icon,
     title: TITLE,
     assertion: assertIsDataSourceNodeData,
-    migrate: (data: any) => {
-        if (data?.dataSource?.type === 'markdown') {
-            return {...data, dataSource: {...data.dataSource, type: DATA_SOURCE_TYPES.MARKDOWN_AND_FILES}};
+    migrate: (data) => {
+        const dataSource = data.dataSource as { type?: unknown } | undefined;
+
+        if (dataSource?.type === 'markdown') {
+            return {...data, dataSource: {...dataSource, type: DATA_SOURCE_TYPES.MARKDOWN_AND_FILES}};
         }
 
         return data;

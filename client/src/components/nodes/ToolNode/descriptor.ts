@@ -8,6 +8,7 @@ import {NodeDescriptor} from "../types";
 import {ToolNode as component} from "./ToolNode";
 import {Icon, NODE_TYPE} from "./constants";
 import {assertIsToolNodeData, ToolNode, ToolNodeDataSchema} from "./types/workflow";
+import {ToolSchema} from "../../../types/ollama.types";
 
 
 export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {
@@ -27,7 +28,7 @@ export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {
     defaultData: {
         title: "AI Tool",
         toolSubtype: "",
-        toolSchema: {} as any,
+        toolSchema: {} as ToolSchema,
         userConfig: {},
         handler: undefined,
         cleanup: undefined,

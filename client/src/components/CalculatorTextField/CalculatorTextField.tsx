@@ -35,7 +35,7 @@ export function CalculatorTextField ({
         if (text.trim() === String(value)) return;
 
         try {
-            const rawResult = await jsonata(text).evaluate({});
+            const rawResult: unknown = await jsonata(text).evaluate({});
 
             if (typeof rawResult !== 'number' || !isFinite(rawResult)) {
                 throw new Error("Expression did not evaluate to a number");

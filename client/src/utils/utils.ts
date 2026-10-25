@@ -50,9 +50,12 @@ export const isValidJsonString = (input: any): boolean => {
 export const formatJsonCodeBlock = (data: unknown): string =>
     `${TRIPLE_BACKTICK}json\n${JSON.stringify(data, null, 4)}\n${TRIPLE_BACKTICK}`;
 
-// For error/log text rendered through MarkdownRenderer — plain JSON.stringify output has real
-// newlines that Markdown treats as soft breaks (collapsed to spaces), so it must be fenced to
-// keep its formatting.
+/**
+ * Builds an error message: `prefix`, then `errors` as pretty-printed JSON in a json code fence.
+ * Nodes show it in their Logs dialog through MarkdownRenderer, where unfenced JSON.stringify output
+ * would lose its line breaks (Markdown treats a single newline as a space); the LLM node also sends
+ * it upstream as feedback, and the fence keeps the JSON readable there too.
+ */
 export const formatErrorMessage = (prefix: string, errors: unknown): string =>
     `${prefix}:\n\n${formatJsonCodeBlock(errors)}`;
 
@@ -101,6 +104,10 @@ export const isTauri = (): boolean => {
         window.location.hostname === 'tauri.localhost'
     );
 };
+
+/** Narrows an unknown value to an object whose properties can be read by key (arrays included). */
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null;
 
 export const getField = <T, >(source: any, key: string, fallback: T): T => {
     if (source && typeof source === "object" && key in source && source[key] !== undefined && source[key] !== null && source[key] !== "") {

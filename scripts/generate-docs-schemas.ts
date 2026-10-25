@@ -79,6 +79,7 @@ export function generateDocsSchemas () {
         // imports don't pollute this process. NODE_PATH points to docs/node_modules
         // so symlinked pro-project nodes (which have no local node_modules) resolve
         // `zod` to the same instance as zodToJsonSchema, avoiding empty schemas.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Bun's types aren't installed, so ESLint sees an error type here
         const proc = Bun.spawnSync(
             ["bun", EXTRACT_SCRIPT, workflowPath, nodeType],
             {env: {...process.env, NODE_PATH: DOCS_NODE_MODULES}},
@@ -93,7 +94,7 @@ export function generateDocsSchemas () {
 
         try {
             const stdout = proc.stdout ? new TextDecoder().decode(proc.stdout) : "";
-            const {schema} = JSON.parse(stdout);
+            const {schema} = JSON.parse(stdout) as { schema: unknown };
 
             result[nodeType] = schema;
         } catch {

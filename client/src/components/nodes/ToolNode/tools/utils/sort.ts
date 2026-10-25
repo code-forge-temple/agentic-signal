@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {isRecord} from "../../../../../utils";
+
 
 export const SORT_ORDER = {
     ASC: 'asc',
@@ -21,7 +23,7 @@ export const ARRAY_ITEM_TYPES = {
 
 export type ARRAY_ITEM_TYPES = typeof ARRAY_ITEM_TYPES[keyof typeof ARRAY_ITEM_TYPES];
 
-type AnyObject = Record<string, any>;
+type AnyObject = Record<string, unknown>;
 
 export const sortPrimitives = <T>(
     array: T[],
@@ -143,12 +145,12 @@ export const sortObjects = <T extends AnyObject>(
     return sorted;
 }
 
-const isBooleanValue = (val: any): boolean => {
+const isBooleanValue = (val: unknown): boolean => {
     return typeof val === "boolean" ||
            (typeof val === "string" && (val.toLowerCase() === "true" || val.toLowerCase() === "false"));
 };
 
-const toBooleanNumber = (val: any): number => {
+const toBooleanNumber = (val: unknown): number => {
     if (typeof val === "boolean") return val ? 1 : 0;
 
     if (typeof val === "string" && val.toLowerCase() === "true") return 1;
@@ -160,8 +162,8 @@ export const allDates = <T>(array: T[], key?: string): boolean => {
     if (!Array.isArray(array) || array.length === 0) return false;
 
     return array.every(item => {
-        if (key && typeof item === "object" && item !== null) {
-            const value = (item as any)[key];
+        if (key && isRecord(item)) {
+            const value = item[key];
 
             return typeof value === "string" && !isNaN(Date.parse(String(value)));
         } else if (!key || typeof item !== "object" || item === null) {
@@ -176,8 +178,8 @@ export const allNumbers = <T>(array: T[], key?: string): boolean => {
     if (!Array.isArray(array) || array.length === 0) return false;
 
     return array.every(item => {
-        if (key && typeof item === "object" && item !== null) {
-            const value = (item as any)[key];
+        if (key && isRecord(item)) {
+            const value = item[key];
 
             return typeof value === "number" || (value !== "" && !isNaN(Number(value)));
         } else if (!key || typeof item !== "object" || item === null) {
@@ -192,8 +194,8 @@ export const allBooleans = <T>(array: T[], key?: string): boolean => {
     if (!Array.isArray(array) || array.length === 0) return false;
 
     return array.every(item => {
-        if (key && typeof item === "object" && item !== null) {
-            const value = (item as any)[key];
+        if (key && isRecord(item)) {
+            const value = item[key];
 
             return isBooleanValue(value);
         } else if (!key || typeof item !== "object" || item === null) {

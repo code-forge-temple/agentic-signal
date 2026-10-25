@@ -6,6 +6,7 @@
 
 import {plugin} from "bun";
 import {zodToJsonSchema} from "zod-to-json-schema";
+import type {ZodTypeAny} from "zod";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -63,7 +64,7 @@ fs.writeFileSync(tmpStub, buildSharedStubContent(workflowPath));
 plugin({
     name: "stub-shared-imports",
     setup (build) {
-        build.onResolve({filter: /^@shared\//}, (args) => {
+        build.onResolve({filter: /^@shared\//}, (args: { path: string }) => {
             const relativePath = args.path.slice("@shared/".length);
             const actualPath = path.resolve(ROOT_DIR, "shared", `${relativePath}.ts`);
 
@@ -79,7 +80,7 @@ plugin({
 let mod: Record<string, unknown>;
 
 try {
-    mod = await import(workflowPath);
+    mod = await import(workflowPath) as Record<string, unknown>;
 } catch (err) {
     console.error(`[extract-node-schema] import failed for ${workflowPath}: ${err}`);
     process.exit(2);
@@ -95,11 +96,11 @@ if (!schemaExport) {
 }
 
 const [, schema] = schemaExport;
-const jsonSchema = zodToJsonSchema(schema as any, {
+const jsonSchema = zodToJsonSchema(schema as ZodTypeAny, {
     name: nodeType,
     errorMessages: false,
     $refStrategy: "none",
-}) as any;
+});
 
 const resolved = jsonSchema.definitions?.[nodeType] ?? jsonSchema;
 

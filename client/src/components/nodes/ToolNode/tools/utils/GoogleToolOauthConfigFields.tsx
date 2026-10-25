@@ -25,7 +25,7 @@ type GoogleToolConfigFieldsProps = {
     }) => void | Promise<void>;
     description?: string;
     required?: boolean;
-    userConfig: Record<string, any>;
+    userConfig: Record<string, string | undefined>;
     onConfigChange: (key: string, value: string | number | boolean) => void;
 };
 

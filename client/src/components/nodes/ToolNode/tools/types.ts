@@ -1,4 +1,4 @@
-import {ReactNode} from "react";
+import {ReactElement, ReactNode} from "react";
 import {ToolSchema, UserConfigSchema} from "../../../../types/ollama.types";
 
 export type RenderConfigProps = {
@@ -17,7 +17,7 @@ export type SessionId = string;
 export type ToolDefinition = {
     toolSubtype: string;
     title: string;
-    icon: any;
+    icon: ReactElement<{className?: string; color?: string}>;
     toolSchema: ToolSchema;
     userConfigSchema: UserConfigSchema;
     handlerFactory: (userConfig: any) => (params: any) => Promise<any>;

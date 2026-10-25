@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, useNodesInitialized, ReactFlowProvider, FitViewOptions} from '@xyflow/react';
+import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, useNodesInitialized, ReactFlowProvider, FitViewOptions, Edge} from '@xyflow/react';
 import {flushSync} from 'react-dom';
 import '@xyflow/react/dist/style.css';
 import './App.scss';
@@ -15,7 +15,9 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {Dock} from '../Dock';
 import {v4 as uuidv4} from 'uuid';
 import {useSnackbar} from 'notistack'
-import {AppNodeType} from '../nodes/workflow.gen';
+import {AppNode, AppNodeType} from '../nodes/workflow.gen';
+import {NodeDescriptor} from '../nodes/types';
+import {ElbowEdgeData} from '../edges/ElbowEdge/ElbowEdge';
 import {toolRegistry} from '../nodes/ToolNode/tools/toolRegistry.gen';
 import {nodeRegistry} from '../nodes/nodeRegistry.gen';
 import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
@@ -26,6 +28,7 @@ import {z} from 'zod';
 import {Chip, Backdrop, CircularProgress} from '@mui/material';
 import {ConfirmDialog} from '../ConfirmDialog';
 import {ErrorBoundary} from '../ErrorBoundary/ErrorBoundary';
+import {isRecord} from '../../utils';
 
 
 const ZOD_PATH_SEPARATOR = '→';
@@ -34,37 +37,40 @@ const FIT_VIEW_TOP_BUFFER_PX = 16;
 
 const getId = () => uuidv4();
 
-function deleteByPath (obj: Record<string, any>, path: string): void {
+function deleteByPath (obj: Record<string, unknown>, path: string): void {
     const parts = path.split(".");
 
     if (parts.length === 1) {
         delete obj[parts[0]];
     } else {
-        let current: any = obj;
+        let current: unknown = obj;
 
         for (let i = 0; i < parts.length - 1; i++) {
-            if (!current || typeof current !== "object") return;
+            if (!isRecord(current)) return;
 
             current = current[parts[i]];
         }
 
-        if (current && typeof current === "object") {
+        if (isRecord(current)) {
             delete current[parts[parts.length - 1]];
         }
     }
 }
 
-function remapNodeAndEdgeIds (nodes: any[], edges: any[]) {
+function remapNodeAndEdgeIds<
+    N extends { id: string },
+    E extends { source: string; target: string; sourceHandle?: string | null; targetHandle?: string | null }
+> (nodes: N[], edges: E[]) {
     const idMap = new Map<string, string>(
-        nodes.map((node: any) => [node.id, getId()])
+        nodes.map(node => [node.id, getId()])
     );
 
-    const remappedNodes = nodes.map((node: any) => ({
+    const remappedNodes = nodes.map(node => ({
         ...node,
         id: idMap.get(node.id)!
     }));
 
-    const remappedEdges = edges.map((edge: any) => {
+    const remappedEdges = edges.map(edge => {
         const newSource = idMap.get(edge.source) ?? edge.source;
         const newTarget = idMap.get(edge.target) ?? edge.target;
         const newId = `xy-edge__${newSource}${edge.sourceHandle ?? ''}-${newTarget}${edge.targetHandle ?? ''}`;
@@ -80,7 +86,9 @@ function remapNodeAndEdgeIds (nodes: any[], edges: any[]) {
     return {remappedNodes, remappedEdges};
 }
 
-const descriptorMap = Object.fromEntries(
+type LoadableNodeDescriptor = NodeDescriptor<string, { data: { title?: string; toSanitize?: string[] } }>;
+
+const descriptorMap: Record<string, LoadableNodeDescriptor | undefined> = Object.fromEntries(
     nodeRegistry.map(desc => [desc.type, desc])
 );
 
@@ -115,7 +123,7 @@ function AppFlow () {
         setEdges,
     } = useWorkflow();
     const {enqueueSnackbar} = useSnackbar();
-    const [pendingWorkflow, setPendingWorkflow] = useState<{nodes: any[], edges: any[]} | null>(null);
+    const [pendingWorkflow, setPendingWorkflow] = useState<{nodes: AppNode[], edges: Edge[]} | null>(null);
     const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
     const reactFlowInstance = useReactFlow();
     const nodesInitialized = useNodesInitialized();
@@ -144,8 +152,8 @@ function AppFlow () {
 
     const handleGetWorkflowJson = useCallback((): string => {
         const sanitizedNodes = nodes.map(node => {
-            const nodeData = JSON.parse(JSON.stringify(node.data));
-            const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize : [];
+            const nodeData = JSON.parse(JSON.stringify(node.data)) as Record<string, unknown>;
+            const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize as string[] : [];
 
             for (const path of toSanitize) {
                 deleteByPath(nodeData, path);
@@ -193,11 +201,11 @@ function AppFlow () {
 
         setTimeout(() => {
             try {
-                const raw = JSON.parse(jsonString);
+                const raw = JSON.parse(jsonString) as { nodes?: unknown };
 
                 // Auto-assign positions for nodes missing them (models often omit position)
                 if (Array.isArray(raw.nodes)) {
-                    raw.nodes = raw.nodes.map((node: any, idx: number) => {
+                    raw.nodes = (raw.nodes as { position?: { x?: unknown; y?: unknown } }[]).map((node, idx) => {
                         const x = typeof node.position?.x === 'number' ? node.position.x : idx * 300;
                         const y = typeof node.position?.y === 'number' ? node.position.y : 0;
 
@@ -207,11 +215,11 @@ function AppFlow () {
 
                 const {nodes: parsedNodes, edges: parsedEdgesRaw} = WorkflowSchema.parse(raw);
 
-                const parsedEdges = parsedEdgesRaw.map((edge: any) => ({...edge, type: DEFAULT_EDGE_TYPE}));
+                const parsedEdges = parsedEdgesRaw.map(edge => ({...edge, type: DEFAULT_EDGE_TYPE}));
 
                 assertValidWorkflowEdges(parsedNodes, parsedEdges);
 
-                const hydratedNodes = parsedNodes.map((node: any, idx: number) => {
+                const hydratedNodes = parsedNodes.map((node, idx) => {
                     if (!descriptorMap[node.type]) {
                         const valid = Object.keys(descriptorMap).join(', ');
 
@@ -240,7 +248,7 @@ function AppFlow () {
                                     userConfigSchema: tool.userConfigSchema,
                                     userConfig: {
                                         ...defaultUserConfig,
-                                        ...node.data.userConfig
+                                        ...(node.data.userConfig as Record<string, unknown> | undefined)
                                     },
                                     title: tool.title,
                                     handler: undefined,
@@ -287,7 +295,8 @@ function AppFlow () {
                         throw assertionError;
                     }
 
-                    return updatedNode;
+                    // The descriptor's assertion has just validated this node's data.
+                    return updatedNode as AppNode;
                 });
 
                 const {remappedNodes, remappedEdges} = remapNodeAndEdgeIds(hydratedNodes, parsedEdges);
@@ -352,12 +361,12 @@ function AppFlow () {
                 const maxY = Math.max(...nodes.map(n => n.position.y + (n.measured?.height ?? 40)));
                 const minX = Math.min(...nodes.map(n => n.position.x));
                 const yOffset = maxY + 100;
-                const pendingMinY = Math.min(...pending.nodes.map((n: any) => n.position.y));
-                const pendingMinX = Math.min(...pending.nodes.map((n: any) => n.position.x));
+                const pendingMinY = Math.min(...pending.nodes.map(n => n.position.y));
+                const pendingMinX = Math.min(...pending.nodes.map(n => n.position.x));
                 const dx = minX - pendingMinX;
                 const dy = yOffset - pendingMinY;
 
-                const shiftedNodes = pending.nodes.map((node: any) => ({
+                const shiftedNodes = pending.nodes.map(node => ({
                     ...node,
                     position: {
                         x: node.position.x + dx,
@@ -365,12 +374,14 @@ function AppFlow () {
                     }
                 }));
 
-                const shiftedEdges = pending.edges.map((edge: any) => {
-                    if (!edge.data?.bend) return edge;
+                const shiftedEdges = pending.edges.map(edge => {
+                    const bend = (edge.data as ElbowEdgeData | undefined)?.bend;
+
+                    if (!bend) return edge;
 
                     return {
                         ...edge,
-                        data: {...edge.data, bend: {x: edge.data.bend.x + dx, y: edge.data.bend.y + dy}}
+                        data: {...edge.data, bend: {x: bend.x + dx, y: bend.y + dy}}
                     };
                 });
 

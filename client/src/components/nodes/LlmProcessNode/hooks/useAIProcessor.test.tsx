@@ -17,9 +17,9 @@ function mockFetchAIResponse (responses: FetchAiResponse[]) {
 
     const service = OllamaService.getInstance();
     let callIndex = 0;
-    const receivedCalls: any[] = [];
+    const receivedCalls: Parameters<OllamaService['fetchAIResponse']>[0][] = [];
 
-    service.fetchAIResponse = (async (params: any) => {
+    service.fetchAIResponse = async (params) => {
         receivedCalls.push(params);
 
         const next = responses[callIndex++];
@@ -27,7 +27,7 @@ function mockFetchAIResponse (responses: FetchAiResponse[]) {
         if (!next) throw new Error(`Mock ran out of responses at call #${callIndex}`);
 
         return next;
-    }) as any;
+    };
 
     return {receivedCalls, getCallCount: () => callIndex};
 }
@@ -96,7 +96,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
             const service = OllamaService.getInstance();
 
-            service.fetchModels = (async () => ({success: false, error: 'daemon not running'})) as any;
+            service.fetchModels = async () => ({success: false, error: 'daemon not running'});
 
             const onError = vi.fn();
             const {result} = renderHook(() => useAIProcessor({onError}));
@@ -183,7 +183,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
         it('passes tools straight through to the single call', async () => {
             const {receivedCalls} = mockFetchAIResponse([success('done')]);
-            const tools = [{schema: {name: 't1', parameters: {} as any}, systemUserConfigValues: {}, handler: async () => ({success: true})}];
+            const tools = [{schema: {name: 't1', parameters: {}}, systemUserConfigValues: {}, handler: async () => ({success: true})}];
             const {result} = renderHook(() => useAIProcessor());
 
             await act(async () => {
@@ -459,7 +459,7 @@ describe('useAIProcessor.processAIRequest', () => {
     });
 
     describe('two-phase mode (format + tools together)', () => {
-        const tools = [{schema: {name: 't1', parameters: {} as any}, systemUserConfigValues: {}, handler: async () => ({success: true})}];
+        const tools = [{schema: {name: 't1', parameters: {}}, systemUserConfigValues: {}, handler: async () => ({success: true})}];
         const format = {onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}})};
 
         it('short-circuits to phase 1 when it already satisfies the format schema (only one call made)', async () => {
@@ -671,7 +671,7 @@ describe('useAIProcessor.processAIRequest', () => {
         });
 
         it('passes tools through to orchestration for per-task assignment', async () => {
-            const tools = [{schema: {name: 'formInteraction', parameters: {} as any}, systemUserConfigValues: {requireToolUse: false}, handler: async () => ({success: true})}];
+            const tools = [{schema: {name: 'formInteraction', parameters: {}}, systemUserConfigValues: {requireToolUse: false}, handler: async () => ({success: true})}];
             const {receivedCalls} = mockFetchAIResponse([
                 success(JSON.stringify({tasks: [{content: 'task 1', tools: ['formInteraction']}]})),
                 success('task 1 done'),

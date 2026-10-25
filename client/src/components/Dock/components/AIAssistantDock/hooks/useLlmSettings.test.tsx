@@ -112,7 +112,7 @@ describe('useLlmSettings across two tabs', () => {
 
         act(() => { result.current.saveModelSettings('a:1', {think: true}); });
 
-        const persisted = JSON.parse(localStorage.getItem(`${PREFIX}${LLM_SETTINGS_STORAGE_KEY}`)!);
+        const persisted: unknown = JSON.parse(localStorage.getItem(`${PREFIX}${LLM_SETTINGS_STORAGE_KEY}`)!);
 
         expect(persisted).toEqual({'b:2': {temperature: 1.5}, 'a:1': {think: true}});
     });
@@ -126,7 +126,7 @@ describe('useLlmSettings across two tabs', () => {
         // The stale mirror still lists a:1, but storage does not — so this must write, not skip.
         act(() => { result.current.rememberModelContextLength('a:1', 8192); });
 
-        const persisted = JSON.parse(localStorage.getItem(`${PREFIX}${MODEL_CONTEXT_STORAGE_KEY}`)!);
+        const persisted: unknown = JSON.parse(localStorage.getItem(`${PREFIX}${MODEL_CONTEXT_STORAGE_KEY}`)!);
 
         expect(persisted).toEqual({'a:1': 8192});
     });

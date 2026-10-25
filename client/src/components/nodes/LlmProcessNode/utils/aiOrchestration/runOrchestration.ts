@@ -266,13 +266,13 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
         return {success: false, error: `Aggregation call failed: ${aggregationResponse.error}`};
     }
 
-    let result: any = aggregationResponse.reply;
+    let result: unknown = aggregationResponse.reply;
 
     try {
         const expectedOutputType = getExpectedOutputType(parsedFormat);
 
         if (expectedOutputType === "object" || expectedOutputType === "array") {
-            result = llmResponseJsonParse(result);
+            result = llmResponseJsonParse(aggregationResponse.reply);
 
             if (expectedOutputType === "object" && onErrorValidator && onErrorValidator(result)) {
                 return {

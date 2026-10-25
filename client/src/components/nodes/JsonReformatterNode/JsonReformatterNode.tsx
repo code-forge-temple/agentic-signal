@@ -42,7 +42,7 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
                     if (jsonataExpression.trim()) {
                         try {
                             const expression = jsonata(jsonataExpression);
-                            const transformedData = await expression.evaluate(input?.payload);
+                            const transformedData: unknown = await expression.evaluate(input?.payload);
 
                             onResultUpdate(id, {
                                 payload: transformedData,

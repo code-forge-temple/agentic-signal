@@ -15,7 +15,7 @@ export const NodeEnvelopeSchema = z.object({
 });
 
 export type NodeEnvelope = {
-    payload: unknown;
+    payload?: unknown;
     toolsPayload?: unknown;
     timerTrigger?: number;
 };
@@ -29,7 +29,7 @@ export type GenericNodeData = {
 
 export type EnhancedNodeData = {
     onConfigChange: (id: string, config: Record<string, any>) => void;
-    onResultUpdate: (id: string, result?: any) => void;
+    onResultUpdate: (id: string, result?: NodeEnvelope) => void;
     onFeedbackSend: (id: string, feedback: string) => void;
 };
 

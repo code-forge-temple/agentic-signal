@@ -38,7 +38,7 @@ export type NodeDescriptor<T extends string, N extends DataNode> = {
      * the input, and it should be a no-op (return unchanged) when data is already current
      * so it's safe to run unconditionally on every load.
      */
-    migrate?: (data: any) => any;
+    migrate?: (data: Record<string, unknown>) => Record<string, unknown>;
     defaultData: N["data"];
     metadata: {
         description: string;

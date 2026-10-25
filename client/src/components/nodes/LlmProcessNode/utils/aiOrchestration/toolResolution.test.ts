@@ -9,7 +9,7 @@ import {AgentTask, OrchestrationParams} from './types';
 
 function makeTool (name: string, description?: string, requireToolUse = true): NonNullable<OrchestrationParams['tools']>[number] {
     return {
-        schema: {name, description, parameters: {} as any},
+        schema: {name, description, parameters: {}},
         systemUserConfigValues: {requireToolUse},
         handler: async () => ({success: true}),
     };

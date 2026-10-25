@@ -6,9 +6,22 @@
 
 import {beforeEach, describe, expect, it} from 'vitest';
 import {OllamaService} from './ollamaService';
-import {MessageRole} from '../types/ollama.types';
+import {MessageRole, StreamAiResponse} from '../types/ollama.types';
 
 type CannedResponse = {message: {role: string; content?: string; tool_calls?: any[]}};
+
+type CallOllamaChatArgs = Parameters<OllamaService['callOllamaChat']>;
+
+/** The private members some tests call directly. Loosely typed on purpose: those tests
+ * pass hand-rolled fakes, e.g. a bare `{chat}` object instead of an Ollama client. */
+type OllamaServiceInternals = {
+    callOllamaChat: (...args: unknown[]) => Promise<unknown>;
+    recoverToolCallFromContent: (response: unknown, tools: unknown) => void;
+    getOllama: () => Promise<unknown>;
+    ollama: unknown;
+};
+
+const getInternals = () => OllamaService.getInstance() as unknown as OllamaServiceInternals;
 
 /** Mocks only `callOllamaChat` — everything else (the loop, recovery, retries, tool
  * execution) runs for real, against the actual implementation. */
@@ -17,9 +30,9 @@ function mockService (mockResponses: CannedResponse[]) {
 
     const service = OllamaService.getInstance();
     let callIndex = 0;
-    const receivedArgs: any[][] = [];
+    const receivedArgs: CallOllamaChatArgs[] = [];
 
-    (service as any).callOllamaChat = async (...args: any[]) => {
+    (service as any).callOllamaChat = async (...args: CallOllamaChatArgs) => {
         receivedArgs.push(args);
 
         const next = mockResponses[callIndex++];
@@ -51,7 +64,7 @@ async function* fakeAsyncStream<T> (chunks: T[]): AsyncGenerator<T> {
 
 function makeTools (handlerLog: any[], requireToolUse = true, handlerResult: any = {success: true}) {
     return [{
-        schema: {name: 'formInteraction', description: '', parameters: {} as any},
+        schema: {name: 'formInteraction', description: '', parameters: {}},
         systemUserConfigValues: {requireToolUse},
         handler: async (params: any) => {
             handlerLog.push(params);
@@ -211,7 +224,7 @@ describe('OllamaService.fetchAIResponse', () => {
         ]);
 
         const tools = [{
-            schema: {name: 'formInteraction', description: '', parameters: {} as any},
+            schema: {name: 'formInteraction', description: '', parameters: {}},
             systemUserConfigValues: {requireToolUse: true},
             handler: async () => 'a plain string result',
         }];
@@ -226,7 +239,7 @@ describe('OllamaService.fetchAIResponse', () => {
         // The 2nd callOllamaChat invocation's `messages` arg should carry the raw string,
         // not a JSON-stringified version of it.
         const secondCallMessages = receivedArgs[1][1];
-        const toolResultMessage = secondCallMessages.find((m: any) => m.content === 'a plain string result');
+        const toolResultMessage = secondCallMessages.find(m => m.content === 'a plain string result');
 
         expect(toolResultMessage).toBeDefined();
     });
@@ -238,7 +251,7 @@ describe('OllamaService.fetchAIResponse', () => {
         ]);
 
         const tools = [{
-            schema: {name: 'formInteraction', description: '', parameters: {} as any},
+            schema: {name: 'formInteraction', description: '', parameters: {}},
             systemUserConfigValues: {requireToolUse: true},
             handler: async () => ({error: 'Submit blocked', formFields: [{name: 'email', required: true}]}),
         }];
@@ -251,10 +264,10 @@ describe('OllamaService.fetchAIResponse', () => {
         });
 
         const secondCallMessages = receivedArgs[1][1]; // (ollama, messages, ...) — messages is arg index 1
-        const toolResultMessage = secondCallMessages.find((m: any) => m.content?.includes('Submit blocked'));
+        const toolResultMessage = secondCallMessages.find(m => m.content?.includes('Submit blocked'));
 
-        expect(toolResultMessage.content).toContain('formFields');
-        expect(toolResultMessage.content).toContain('email');
+        expect(toolResultMessage?.content).toContain('formFields');
+        expect(toolResultMessage?.content).toContain('email');
     });
 
     it('nudges only for required tools not yet called when there are several', async () => {
@@ -269,7 +282,7 @@ describe('OllamaService.fetchAIResponse', () => {
 
         const tools = [
             {
-                schema: {name: 'toolA', description: '', parameters: {} as any},
+                schema: {name: 'toolA', description: '', parameters: {}},
                 systemUserConfigValues: {requireToolUse: true},
                 handler: async () => {
                     handlerLog.push({tool: 'toolA'});
@@ -278,7 +291,7 @@ describe('OllamaService.fetchAIResponse', () => {
                 },
             },
             {
-                schema: {name: 'toolB', description: '', parameters: {} as any},
+                schema: {name: 'toolB', description: '', parameters: {}},
                 systemUserConfigValues: {requireToolUse: true},
                 handler: async () => {
                     handlerLog.push({tool: 'toolB'});
@@ -300,10 +313,10 @@ describe('OllamaService.fetchAIResponse', () => {
 
         // The nudge pushed before the 2nd callOllamaChat call should mention both tool names.
         const secondCallMessages = receivedArgs[1][1];
-        const nudge = secondCallMessages.find((m: any) => m.content?.includes('must call'));
+        const nudge = secondCallMessages.find(m => m.content?.includes('must call'));
 
-        expect(nudge.content).toContain('toolA');
-        expect(nudge.content).toContain('toolB');
+        expect(nudge?.content).toContain('toolA');
+        expect(nudge?.content).toContain('toolB');
     });
 
     it('JSON-stringifies non-string message content before sending it to Ollama', async () => {
@@ -312,7 +325,7 @@ describe('OllamaService.fetchAIResponse', () => {
         ]);
 
         await service.fetchAIResponse({
-            messages: [{role: MessageRole.USER, content: {nested: 'object'} as any, images: []}],
+            messages: [{role: MessageRole.USER, content: {nested: 'object'} as unknown as string, images: []}],
             model: 'm',
             maxToolRetries: 3,
         });
@@ -406,7 +419,7 @@ describe('OllamaService.fetchAIResponse', () => {
             const handlerResults = [{success: true}, {error: 'transient'}];
             const handlerLog: any[] = [];
             const tools = [{
-                schema: {name: 'formInteraction', description: '', parameters: {} as any},
+                schema: {name: 'formInteraction', description: '', parameters: {}},
                 systemUserConfigValues: {requireToolUse: true},
                 handler: async (params: any) => {
                     handlerLog.push(params);
@@ -490,7 +503,7 @@ describe('OllamaService.fetchAIResponse', () => {
 
             const tools = [
                 {
-                    schema: {name: 'toolA', description: '', parameters: {} as any},
+                    schema: {name: 'toolA', description: '', parameters: {}},
                     systemUserConfigValues: {requireToolUse: true},
                     handler: async () => {
                         handlerLog.push({tool: 'toolA'});
@@ -499,7 +512,7 @@ describe('OllamaService.fetchAIResponse', () => {
                     },
                 },
                 {
-                    schema: {name: 'toolB', description: '', parameters: {} as any},
+                    schema: {name: 'toolB', description: '', parameters: {}},
                     systemUserConfigValues: {requireToolUse: true},
                     handler: async () => {
                         handlerLog.push({tool: 'toolB'});
@@ -549,10 +562,10 @@ describe('OllamaService (private) callOllamaChat', () => {
     it('builds the request with stream:false and a 60m keep_alive, and returns the client response as-is', async () => {
         OllamaService.reloadInstance();
 
-        const service = OllamaService.getInstance() as any;
-        let receivedArgs: any;
+        const service = getInternals();
+        let receivedArgs: Record<string, unknown> = {};
         const client = {
-            chat: async (args: any) => {
+            chat: async (args: Record<string, unknown>) => {
                 receivedArgs = args;
 
                 return {message: {role: 'assistant', content: 'hi'}};
@@ -574,10 +587,10 @@ describe('OllamaService (private) callOllamaChat', () => {
     it('includes think and options.temperature only when explicitly provided', async () => {
         OllamaService.reloadInstance();
 
-        const service = OllamaService.getInstance() as any;
-        let receivedArgs: any;
+        const service = getInternals();
+        let receivedArgs: Record<string, unknown> = {};
         const client = {
-            chat: async (args: any) => {
+            chat: async (args: Record<string, unknown>) => {
                 receivedArgs = args;
 
                 return {message: {role: 'assistant', content: 'hi'}};
@@ -598,7 +611,7 @@ describe('OllamaService (private) recoverToolCallFromContent', () => {
     function recover (content: string | undefined, toolNames: string[] = ['formInteraction']) {
         OllamaService.reloadInstance();
 
-        const service = OllamaService.getInstance() as any;
+        const service = getInternals();
         const response: {message: {role: string; content?: string; tool_calls?: any[]}} = {message: {role: 'assistant', content}};
 
         service.recoverToolCallFromContent(response, toolNames.map(name => ({schema: {name}})));
@@ -692,7 +705,7 @@ describe('OllamaService (private) recoverToolCallFromContent', () => {
     it('is a no-op when tool_calls are already populated', () => {
         OllamaService.reloadInstance();
 
-        const service = OllamaService.getInstance() as any;
+        const service = getInternals();
         const existingCalls = [{function: {name: 'formInteraction', arguments: {}}}];
         const response = {message: {role: 'assistant', content: 'ignored', tool_calls: existingCalls}};
 
@@ -705,7 +718,7 @@ describe('OllamaService (private) recoverToolCallFromContent', () => {
     it('is a no-op when no tools are available at all (undefined)', () => {
         OllamaService.reloadInstance();
 
-        const service = OllamaService.getInstance() as any;
+        const service = getInternals();
         const response: {message: {role: string; content?: string; tool_calls?: any[]}} =
             {message: {role: 'assistant', content: JSON.stringify({name: 'formInteraction', arguments: {}})}};
 
@@ -717,7 +730,7 @@ describe('OllamaService (private) recoverToolCallFromContent', () => {
     it('is a no-op when the tools array is empty', () => {
         OllamaService.reloadInstance();
 
-        const service = OllamaService.getInstance() as any;
+        const service = getInternals();
         const response: {message: {role: string; content?: string; tool_calls?: any[]}} =
             {message: {role: 'assistant', content: JSON.stringify({name: 'formInteraction', arguments: {}})}};
 
@@ -759,9 +772,9 @@ describe('OllamaService.fetchModels', () => {
 
 describe('OllamaService.deleteModel', () => {
     it('reports success after deleting', async () => {
-        let receivedArgs: any;
+        let receivedArgs: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
-            delete: async (args: any) => { receivedArgs = args; },
+            delete: async (args: Record<string, unknown>) => { receivedArgs = args; },
         });
 
         const result = await service.deleteModel('llama3');
@@ -859,9 +872,9 @@ describe('OllamaService.streamAIResponse', () => {
     });
 
     it('sends think:false and no options key at all when given no settings', async () => {
-        let received: any;
+        let received: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
-            chat: async (request: any) => {
+            chat: async (request: Record<string, unknown>) => {
                 received = request;
 
                 return fakeAsyncStream([{message: {content: 'ok'}}]);
@@ -877,9 +890,9 @@ describe('OllamaService.streamAIResponse', () => {
     });
 
     it('merges temperature and contextWindow into ONE options object', async () => {
-        let received: any;
+        let received: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
-            chat: async (request: any) => {
+            chat: async (request: Record<string, unknown>) => {
                 received = request;
 
                 return fakeAsyncStream([{message: {content: 'ok'}}]);
@@ -897,9 +910,9 @@ describe('OllamaService.streamAIResponse', () => {
     });
 
     it('maps contextWindow onto num_ctx and omits temperature when only the window is set', async () => {
-        let received: any;
+        let received: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
-            chat: async (request: any) => {
+            chat: async (request: Record<string, unknown>) => {
                 received = request;
 
                 return fakeAsyncStream([{message: {content: 'ok'}}]);
@@ -911,13 +924,13 @@ describe('OllamaService.streamAIResponse', () => {
         }
 
         expect(received.options).toEqual({num_ctx: 2048});
-        expect(received.options.contextWindow).toBeUndefined();
+        expect((received.options as Record<string, unknown>).contextWindow).toBeUndefined();
     });
 
     it('passes a reasoning level straight through instead of coercing it to a boolean', async () => {
-        let received: any;
+        let received: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
-            chat: async (request: any) => {
+            chat: async (request: Record<string, unknown>) => {
                 received = request;
 
                 return fakeAsyncStream([{message: {content: 'ok'}}]);
@@ -934,9 +947,9 @@ describe('OllamaService.streamAIResponse', () => {
     });
 
     it('sends an explicit true when thinking is on without a level', async () => {
-        let received: any;
+        let received: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
-            chat: async (request: any) => {
+            chat: async (request: Record<string, unknown>) => {
                 received = request;
 
                 return fakeAsyncStream([{message: {content: 'ok'}}]);
@@ -976,7 +989,7 @@ describe('OllamaService.streamAIResponse', () => {
             chat: async () => fakeAsyncStream([{message: {content: 'ok'}}]),
         });
 
-        const chunks: any[] = [];
+        const chunks: StreamAiResponse[] = [];
 
         for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm')) {
             chunks.push(chunk);
@@ -1075,7 +1088,7 @@ describe('OllamaService host handling (getOllama)', () => {
     it('reuses the same client across calls when the configured host has not changed', async () => {
         localStorage.setItem('ollamaHost', 'http://host-a');
 
-        const service = OllamaService.getInstance() as any;
+        const service = getInternals();
 
         await service.getOllama();
         const firstClient = service.ollama;
@@ -1089,7 +1102,7 @@ describe('OllamaService host handling (getOllama)', () => {
     it('constructs a new client when the configured host changes', async () => {
         localStorage.setItem('ollamaHost', 'http://host-a');
 
-        const service = OllamaService.getInstance() as any;
+        const service = getInternals();
 
         await service.getOllama();
         const firstClient = service.ollama;

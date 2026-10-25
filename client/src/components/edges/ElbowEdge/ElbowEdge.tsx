@@ -10,7 +10,9 @@ import './ElbowEdge.scss';
 
 
 type Point = {x: number; y: number};
-type ElbowEdgeData = {bend?: Point};
+
+export type ElbowEdgeData = {bend?: Point};
+
 type DragState = {startX: number; startY: number; active: boolean};
 
 const CORNER_RADIUS = 8;

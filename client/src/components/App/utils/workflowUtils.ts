@@ -27,8 +27,10 @@ export function getExpectedEdgeHandle (sourceType: string, targetType: string) {
     return NODE_PORT_IDS.FLOW;
 }
 
-export function assertValidWorkflowEdges (nodes: any[], edges: any[]) {
-    const nodeById = new Map(nodes.map((node: any) => [node.id, node]));
+type ImportedEdge = { id?: unknown; source: string; target: string; sourceHandle?: unknown; targetHandle?: unknown };
+
+export function assertValidWorkflowEdges (nodes: { id: string; type: string }[], edges: ImportedEdge[]) {
+    const nodeById = new Map(nodes.map(node => [node.id, node]));
     const flowTargetCounts = new Map<string, number>();
 
     for (const edge of edges) {

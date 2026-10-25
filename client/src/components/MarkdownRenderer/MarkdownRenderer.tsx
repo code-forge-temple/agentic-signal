@@ -4,8 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import React, {useMemo, FC, useState, useEffect, Suspense, ReactNode, lazy} from "react";
-import ReactMarkdown from "react-markdown";
+import React, {useMemo, useState, useEffect, Suspense, ReactNode, lazy, ComponentProps, ComponentPropsWithoutRef, createContext, useContext} from "react";
+import ReactMarkdown, {ExtraProps} from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {CircularProgress, Box} from "@mui/material";
 import "./MarkdownRenderer.scss";
@@ -16,7 +16,7 @@ const LazySyntaxHighlighter = lazy(() =>
         import("react-syntax-highlighter"),
         import("react-syntax-highlighter/dist/esm/styles/prism")
     ]).then(([syntaxModule, styleModule]) => ({
-        default: ({language, children, ...props}: any) => {
+        default: ({language, children, ...props}: { language?: string; children: string } & Record<string, unknown>) => {
             const SyntaxHighlighter = syntaxModule.Prism;
             const oneDark = styleModule.oneDark;
 
@@ -65,7 +65,7 @@ const LazyMarkdownContent = React.memo(({content, disableLoadingDelay, codeBlock
 
     const components = useMemo(() => ({
         pre: PreBlock,
-        code: (props: any) => <CodeBlock {...props} codeBlockSuffix={codeBlockSuffix} />,
+        code: (props: ComponentProps<"code"> & ExtraProps) => <CodeBlock {...props} codeBlockSuffix={codeBlockSuffix} />,
         a: LinkRenderer
     }), [codeBlockSuffix]);
 
@@ -86,11 +86,23 @@ const LazyMarkdownContent = React.memo(({content, disableLoadingDelay, codeBlock
     );
 }, (prev, next) => prev.content === next.content && prev.disableLoadingDelay === next.disableLoadingDelay && prev.codeBlockSuffix === next.codeBlockSuffix);
 
-const CodeBlock: FC<any> = React.memo(({inline, className, children, codeBlockSuffix, ...props}) => {
+// react-markdown 9 no longer tells `code` whether it's inline. A fenced block's <code> is the one
+// inside a <pre>, so PreBlock marks its contents as block code through this context.
+const InCodeBlockContext = createContext(false);
+
+type CodeBlockProps = ComponentProps<"code"> & ExtraProps & {
+    codeBlockSuffix?: (codeBlock: string) => ReactNode;
+};
+
+const CodeBlock = React.memo(({className, children, codeBlockSuffix, ...props}: CodeBlockProps) => {
+    const isBlock = useContext(InCodeBlockContext);
     const codeString = useMemo(() => String(children).replace(/\n$/, ""), [children]);
     const match = /language-(\w+)/.exec(className || "");
 
-    if (!inline) {
+    // react-markdown's syntax-tree node, not a DOM attribute.
+    delete props.node;
+
+    if (isBlock) {
         const suffix = codeBlockSuffix ? codeBlockSuffix(codeString) : null;
 
         if (match) {
@@ -119,7 +131,10 @@ const CodeBlock: FC<any> = React.memo(({inline, className, children, codeBlockSu
     return <code className={className} {...props}>{children}</code>;
 });
 
-const LinkRenderer: FC<any> = React.memo(({href, children, ...props}) => {
+const LinkRenderer = React.memo(({href, children, ...props}: ComponentProps<"a"> & ExtraProps) => {
+    // react-markdown's syntax-tree node, not a DOM attribute.
+    delete props.node;
+
     return (
         <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
             {children}
@@ -127,7 +142,11 @@ const LinkRenderer: FC<any> = React.memo(({href, children, ...props}) => {
     );
 });
 
-const PreBlock: FC<any> = React.memo(({children, ...props}) => <div {...props}>{children}</div>);
+// react-markdown hands this a <pre>'s props but it renders a <div>, so only the children carry over:
+// with remark-gfm alone and no raw HTML, the rest is just react-markdown's `node`, which isn't a DOM attribute.
+const PreBlock = React.memo(({children}: ComponentPropsWithoutRef<"pre"> & ExtraProps) => (
+    <div><InCodeBlockContext.Provider value={true}>{children}</InCodeBlockContext.Provider></div>
+));
 
 export const MarkdownRenderer = React.memo(({content, style, disableLoadingDelay, codeBlockSuffix}: MarkdownRendererProps) => {
     return (

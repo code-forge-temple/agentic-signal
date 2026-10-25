@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import React, {useEffect, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import './ChatInputSuggestions.scss';
 
 
@@ -22,14 +22,14 @@ type ChatInputSuggestionsProps = {
     getMenuSize?: (size: Size | ((prev: Size) => Size)) => void;
 };
 
-export const ChatInputSuggestions: React.FC<ChatInputSuggestionsProps> = ({
+export const ChatInputSuggestions = ({
     suggestions,
     position,
     selectedIndex,
     onSuggestionClick,
     onSuggestionHover,
     getMenuSize,
-}) => {
+}: ChatInputSuggestionsProps) => {
     const listRef = useRef<HTMLUListElement>(null);
 
     useEffect(() => {

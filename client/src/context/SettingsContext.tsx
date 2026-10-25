@@ -12,7 +12,7 @@ const defaultSettings: Settings = {
     browserPath: localStorage.getItem("browserPath") || "",
 };
 
-export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
+export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
     const [settings, setSettings] = useState<Settings>(defaultSettings);
 
     const setSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {

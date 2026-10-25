@@ -9,7 +9,8 @@ export default defineConfig({
     resolve: {
         alias: {
             '@shared': path.resolve(__dirname, '../shared'),
-        }
+        },
+        preserveSymlinks: true,
     },
     test: {
         // jsdom globally (not per-file) — this is a React project, and jsdom also gives

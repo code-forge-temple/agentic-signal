@@ -31,8 +31,19 @@ export const resolver = {
 
             for (let i = 0; i < urls.length; i += MAX_CONCURRENT_PAGES) {
                 const batch = urls.slice(i, i + MAX_CONCURRENT_PAGES);
+                // allSettled, not all: one site that blocks automated browsers or times out
+                // must not discard the pages that did load in the same call.
+                const outcomes = await Promise.allSettled(batch.map(url => fetchWebPageAsMarkdown(url, browserPath)));
 
-                results.push(...await Promise.all(batch.map(url => fetchWebPageAsMarkdown(url, browserPath))));
+                results.push(...outcomes.map((outcome, j) => outcome.status === "fulfilled"
+                    ? outcome.value
+                    : {
+                        title: "",
+                        url: batch[j],
+                        content: "",
+                        excerpt: "",
+                        error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)
+                    }));
             }
 
             return results;

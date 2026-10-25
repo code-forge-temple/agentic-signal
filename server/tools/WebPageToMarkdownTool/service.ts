@@ -10,6 +10,10 @@ import {launchBrowser} from "../../utils/browserUtils.ts";
 import TurndownService from "npm:turndown";
 
 const PAGE_TIMEOUT_MS = 30_000;
+// Budget for the whole operation (browser launch, navigation, consent and redirect
+// handling). Kept well above PAGE_TIMEOUT_MS so a slow navigation doesn't leave
+// the remaining steps with no time at all.
+const TOTAL_TIMEOUT_MS = 60_000;
 
 type BrowserExtractedContent = {
     title: string;
@@ -47,7 +51,10 @@ export async function fetchWebPageAsMarkdown (url: string, browserPath?: string)
 
                 await page.setViewportSize({width: 1280, height: 800});
 
-                await page.goto(url, {waitUntil: "load", timeout: PAGE_TIMEOUT_MS});
+                // "domcontentloaded" rather than "load": shop pages full of trackers and ads can
+                // miss the "load" event entirely even though their content is already there.
+                await page.goto(url, {waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS});
+                await page.waitForLoadState("load", {timeout: 10_000}).catch(() => {});
 
                 // ------------------------------------------------------------------
                 // Consent wall dismissal + generic redirect-chain following
@@ -173,16 +180,21 @@ export async function fetchWebPageAsMarkdown (url: string, browserPath?: string)
                     };
                 });
             },
-            PAGE_TIMEOUT_MS
+            TOTAL_TIMEOUT_MS
         );
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
 
-        throw new Error(`Failed to fetch web page at ${url}: ${message}`);
+        // Playwright appends a multi-line call log to its messages. The full text stays in
+        // the server log; the caller (and so the LLM) gets only the first line. No URL in
+        // the thrown message: the resolver pairs every error with its URL.
+        console.error(`[WebPageToMarkdown] ✗ ${url}: ${message}`);
+
+        throw new Error(`Failed to fetch web page: ${message.split("\n")[0]}`);
     }
 
     if (!extracted.content) {
-        throw new Error(`Could not extract content from ${url}`);
+        throw new Error("Could not extract content from the page");
     }
 
     const TurndownClass = (TurndownService as any).default ?? TurndownService;

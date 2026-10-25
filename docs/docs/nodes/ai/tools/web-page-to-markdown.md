@@ -22,9 +22,10 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     <TabItem value="outputs" label="Outputs">
         - `title`: The page title
-        - `url`: The final URL after any redirects
+        - `url`: The URL as requested
         - `content`: The main article body converted to Markdown
         - `excerpt`: A short description extracted from the page's `og:description` or `meta[name="description"]` tag
+        - `error`: Present only for a URL that could not be fetched, giving the reason; that entry then has only `url` and `error`
 
         **Example Output:**
 
@@ -35,6 +36,10 @@ import TabItem from '@theme/TabItem';
                 "url": "https://theconversation.com/aliens-might-exist-but-there-are-three-reasons-why-theyre-not-visiting-us-283984",
                 "content": "## Aliens might exist, but there are three reasons why they're not visiting us\n\nThe universe is vast, and the possibility of life elsewhere remains open...",
                 "excerpt": "If extraterrestrial life exists, there are strong scientific reasons to think it may never reach Earth."
+            },
+            {
+                "url": "https://www.example-shop.com/product/123",
+                "error": "Failed to fetch web page: page.goto: Timeout 30000ms exceeded."
             }
         ]
         ```
@@ -51,4 +56,5 @@ import TabItem from '@theme/TabItem';
 - **Consent wall handling** — common cookie/consent dialogs (including Google's consent screen) are automatically dismissed before the page content is read.
 - **Bot-detection mitigation** — the browser launches with `--disable-blink-features=AutomationControlled` and masks `navigator.webdriver`, making it appear as a regular browser to most bot-detection systems.
 - **Browser path** — in the Windows desktop (Tauri) app, a browser executable path must be set in the application **Settings** before this tool can be used.
-- **Concurrency** — URLs are fetched in batches of 3 at a time rather than all at once, to avoid opening too many browser windows simultaneously. If you pass many URLs in a single call, expect results to come back in batches rather than instantly.
+- **Concurrency** — URLs are fetched in batches of 3 at a time rather than all at once, to avoid opening too many browser windows simultaneously. If you pass many URLs in a single call, expect results to come back in batches rather than instantly. Each page gets up to 60 seconds, so a call with many slow or blocking sites can take a few minutes.
+- **Partial failures** — a URL that can't be fetched (a site that blocks automated browsers, a timeout) comes back as an entry with `url` and `error`, and the pages that did load are still returned. Only a call where every URL fails counts as a failed attempt toward [Max Tool Retries](/docs/nodes/ai/llm-process?activeTab=max-tool-retries#configuration).

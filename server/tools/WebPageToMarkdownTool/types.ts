@@ -9,6 +9,7 @@ export const WebPageToMarkdownResultFields = {
     url: 'String',
     content: 'String',
     excerpt: 'String',
+    error: 'String',
 } as const;
 
 export type WebPageToMarkdownResult = {
@@ -16,6 +17,7 @@ export type WebPageToMarkdownResult = {
     url: string;
     content: string;
     excerpt: string;
+    error?: string;
 };
 
 export type WebPageToMarkdownArgs = {

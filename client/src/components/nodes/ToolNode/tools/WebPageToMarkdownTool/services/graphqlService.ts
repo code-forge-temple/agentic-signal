@@ -21,6 +21,7 @@ export class GraphQLService {
                             url
                             content
                             excerpt
+                            error
                         }
                     }
                 `,

@@ -42,9 +42,19 @@ export const WebPageToMarkdownToolDescriptor: ToolDefinition = {
         const sanitizedUrls = urls.map(u => String(u).replace(/["""]/g, '"').replace(/[''']/g, "'").trim());
 
         try {
-            return await GraphQLService.webPageToMarkdown(sanitizedUrls, {
+            const results = await GraphQLService.webPageToMarkdown(sanitizedUrls, {
                 browserPath: userConfig.browserPath
             });
+            const failed = results.filter(r => r.error);
+
+            // Only a call where every URL failed is a tool error (and so counts toward the
+            // retry limit). A partial success returns the pages that loaded alongside the
+            // per-URL errors, so the LLM knows which URLs to skip.
+            if (failed.length === results.length) {
+                return {error: `None of the pages could be fetched. Try different URLs.\n${failed.map(r => `${r.url}: ${r.error}`).join("\n")}`};
+            }
+
+            return results.map(({error, ...page}) => error ? {url: page.url, error} : page);
         } catch (error) {
             console.error("WebPageToMarkdown error:", error);
 

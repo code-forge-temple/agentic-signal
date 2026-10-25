@@ -4,6 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {NormalizedJob} from "../types.ts";
 import {fetchJson, parseRegionList, stripHtml} from "../utils.ts";
 
@@ -12,33 +13,36 @@ import {fetchJson, parseRegionList, stripHtml} from "../utils.ts";
  * (429s under any fan-out). Best-effort: a throttled company just surfaces in
  * `errors[]` and the run continues. `application_url` is the real apply form.
  * The list response has no description, so keyword matching is title-only here.
+ * Optional fields are nullish (job boards send null for empty values) and every object
+ * is passthrough, so `raw` keeps the whole posting.
  */
-type WkJob = {
-    id?: number | string;
-    shortcode?: string;
-    title: string;
-    employment_type?: string;
-    department?: string;
-    function?: string;
-    industry?: string;
-    telecommuting?: boolean;
-    city?: string;
-    region?: string;
-    country?: string;
-    url?: string;
-    shortlink?: string;
-    application_url?: string;
-    published_on?: string;
-    created_at?: string;
-    description?: string;
-};
+const WkJobSchema = z.object({
+    id: z.union([z.number(), z.string()]).nullish(),
+    shortcode: z.string().nullish(),
+    title: z.string(),
+    employment_type: z.string().nullish(),
+    department: z.string().nullish(),
+    function: z.string().nullish(),
+    industry: z.string().nullish(),
+    telecommuting: z.boolean().nullish(),
+    city: z.string().nullish(),
+    region: z.string().nullish(),
+    country: z.string().nullish(),
+    url: z.string().nullish(),
+    shortlink: z.string().nullish(),
+    application_url: z.string().nullish(),
+    published_on: z.string().nullish(),
+    created_at: z.string().nullish(),
+    description: z.string().nullish(),
+}).passthrough();
 
-type WkResponse = { name?: string; jobs?: WkJob[] };
+const WkResponseSchema = z.object({name: z.string().nullish(), jobs: z.array(WkJobSchema).nullish()});
 
 export async function fetchWorkable (token: string): Promise<NormalizedJob[]> {
-    const data = await fetchJson<WkResponse>(
+    const data = await fetchJson(
         `https://apply.workable.com/api/v1/widget/accounts/${encodeURIComponent(token)}?details=true`,
-        `Workable (${token})`
+        `Workable (${token})`,
+        WkResponseSchema
     );
 
     const company = data.name || token;
@@ -55,7 +59,7 @@ export async function fetchWorkable (token: string): Promise<NormalizedJob[]> {
             title: job.title,
             company,
             companyToken: token,
-            department: job.department,
+            department: job.department ?? undefined,
             url: job.url || job.shortlink || apply,
             applyUrl: apply,
             location: location || (job.telecommuting ? "Remote" : "Not specified"),

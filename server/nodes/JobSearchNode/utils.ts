@@ -4,15 +4,17 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {DatePosted, Seniority} from "./types.ts";
+import {parseApiResponse} from "../../utils/apiResponse.ts";
 
 const FETCH_TIMEOUT_MS = 15_000;
 
 const BROWSER_UA =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
 
-/** GET a URL and parse JSON, with a timeout, a browser UA, and readable errors. */
-export async function fetchJson<T = unknown> (url: string, label: string): Promise<T> {
+/** GET a URL and parse JSON, with a timeout, a browser UA, and readable errors; the JSON must match `schema`. */
+export async function fetchJson<T> (url: string, label: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<T> {
     let response: Response;
 
     try {
@@ -31,12 +33,15 @@ export async function fetchJson<T = unknown> (url: string, label: string): Promi
     }
 
     const text = await response.text();
+    let data: unknown;
 
     try {
-        return JSON.parse(text) as T;
+        data = JSON.parse(text);
     } catch {
         throw new Error(`${label} did not return JSON (got ${text.slice(0, 60).replace(/\s+/g, " ")}…)`);
     }
+
+    return parseApiResponse(data, schema, label);
 }
 
 /** Run `fn` over `items` with at most `concurrency` in flight. */

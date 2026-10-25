@@ -4,21 +4,26 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {CloudStorageFileResult, CloudStorageFileSearchArgs} from "./types.ts";
+import {parseApiResponse} from "../../utils/apiResponse.ts";
 
-type DriveFileResponse = {
-    id: string;
-    name?: string;
-    mimeType?: string;
-    webViewLink?: string;
-    modifiedTime?: string;
-    size?: string;
-    owners?: { displayName: string }[];
-};
+// The fields requested via `fields=files(...)` in the files.list call below.
+const DriveFileSchema = z.object({
+    id: z.string(),
+    name: z.string().optional(),
+    mimeType: z.string().optional(),
+    webViewLink: z.string().optional(),
+    modifiedTime: z.string().optional(),
+    size: z.string().optional(),
+    owners: z.array(z.object({displayName: z.string()})).optional(),
+});
 
-type DriveApiResponse = {
-    files: DriveFileResponse[];
-};
+const DriveFileListSchema = z.object({
+    files: z.array(DriveFileSchema).optional(),
+});
+
+type DriveFileResponse = z.infer<typeof DriveFileSchema>;
 
 async function readFileContent (fileId: string, mimeType: string, accessToken: string): Promise<string> {
     try {
@@ -92,7 +97,7 @@ export async function fetchGdriveFiles (args: CloudStorageFileSearchArgs): Promi
             throw new Error(`Google Drive API search failed: ${searchResponse.status} ${searchResponse.statusText} - Response: ${errorBody}`);
         }
 
-        const searchData: DriveApiResponse = await searchResponse.json();
+        const searchData = parseApiResponse(await searchResponse.json(), DriveFileListSchema, "Google Drive (files.list)");
 
         if (!searchData.files || searchData.files.length === 0) {
             return [];

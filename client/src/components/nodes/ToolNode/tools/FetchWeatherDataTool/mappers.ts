@@ -4,12 +4,60 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from 'zod';
+
+
 // WeatherAPI.com's raw responses carry a lot more than this tool needs (astro data, air
 // quality, alerts, multi-day arrays, etc.) — these mappers trim each endpoint's response
 // down to just the fields relevant to the LLM, using optional chaining since none of it
 // is guaranteed present.
 
-export function mapCurrentWeatherResponse (data: any) {
+// Every field is optional and nullable, so the schema checks the types of what the mappers
+// read without rejecting a response that merely leaves something out.
+const optionalNumber = z.number().nullish();
+const optionalString = z.string().nullish();
+const WeatherConditionSchema = z.object({text: optionalString}).nullish();
+
+export const WeatherApiResponseSchema = z.object({
+    location: z.object({
+        name: optionalString,
+        region: optionalString,
+        country: optionalString,
+        localtime: optionalString
+    }).nullish(),
+    current: z.object({
+        temp_c: optionalNumber,
+        temp_f: optionalNumber,
+        condition: WeatherConditionSchema,
+        wind_kph: optionalNumber,
+        wind_mph: optionalNumber,
+        wind_dir: optionalString,
+        humidity: optionalNumber,
+        feelslike_c: optionalNumber,
+        feelslike_f: optionalNumber,
+        uv: optionalNumber
+    }).nullish(),
+    forecast: z.object({
+        forecastday: z.array(z.object({
+            date: optionalString,
+            day: z.object({
+                maxtemp_c: optionalNumber,
+                maxtemp_f: optionalNumber,
+                mintemp_c: optionalNumber,
+                mintemp_f: optionalNumber,
+                condition: WeatherConditionSchema,
+                avghumidity: optionalNumber,
+                maxwind_kph: optionalNumber,
+                maxwind_mph: optionalNumber,
+                uv: optionalNumber
+            }).nullish()
+        })).nullish()
+    }).nullish()
+});
+
+export type WeatherApiResponse = z.infer<typeof WeatherApiResponseSchema>;
+
+export function mapCurrentWeatherResponse (data: WeatherApiResponse) {
     return {
         location: {
             name: data.location?.name,
@@ -32,7 +80,7 @@ export function mapCurrentWeatherResponse (data: any) {
     };
 }
 
-export function mapForecastWeatherResponse (data: any) {
+export function mapForecastWeatherResponse (data: WeatherApiResponse) {
     return {
         location: {
             name: data.location?.name,
@@ -55,7 +103,7 @@ export function mapForecastWeatherResponse (data: any) {
     };
 }
 
-export function mapHistoryWeatherResponse (data: any) {
+export function mapHistoryWeatherResponse (data: WeatherApiResponse) {
     return {
         location: {
             name: data.location?.name,

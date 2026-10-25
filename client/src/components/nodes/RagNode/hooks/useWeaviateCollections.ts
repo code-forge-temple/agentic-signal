@@ -5,11 +5,25 @@
  ************************************************************************/
 
 import {useCallback, useMemo, useRef, useState} from "react";
+import {z} from "zod";
+import {WeaviateMetaObjectsResponseSchema} from "@shared/types.gen";
 import {DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {defaultRagNodeData} from "../types/workflow";
 
 
 export const FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX = "Failed to fetch collections";
+
+const WeaviateSchemaResponseSchema = z.object({
+    classes: z.array(z.object({class: z.string()})).nullish(),
+});
+
+async function readWeaviateJson<T> (res: Response, schema: z.ZodType<T>, endpoint: string): Promise<T> {
+    const parsed = schema.safeParse(await res.json());
+
+    if (!parsed.success) throw new Error(`Unexpected response from Weaviate's ${endpoint}`);
+
+    return parsed.data;
+}
 
 interface UseWeaviateCollectionsOptions {
     id: string;
@@ -39,8 +53,8 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
             const res = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
             if (res.ok) {
-                const result = await res.json();
-                const storedModel = result.objects?.[0]?.properties?.embeddingModel as string | undefined;
+                const result = await readWeaviateJson(res, WeaviateMetaObjectsResponseSchema, "/v1/objects");
+                const storedModel = result.objects?.[0]?.properties?.embeddingModel;
 
                 if (storedModel) {
                     onConfigChange(id, {embeddingModel: storedModel});
@@ -68,18 +82,18 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
 
             if (!res.ok) return;
 
-            const schema = await res.json();
-            const weaviateClasses: string[] = (schema.classes ?? [])
-                .map((c: {class: string}) => c.class)
-                .filter((cls: string) => !cls.endsWith("Meta"));
+            const schema = await readWeaviateJson(res, WeaviateSchemaResponseSchema, "/v1/schema");
+            const weaviateClasses = (schema.classes ?? [])
+                .map(c => c.class)
+                .filter(cls => !cls.endsWith("Meta"));
 
             for (const weaviateClass of weaviateClasses) {
                 try {
                     const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
                     if (metaRes.ok) {
-                        const meta = await metaRes.json();
-                        const originalName = meta.objects?.[0]?.properties?.originalName as string | undefined;
+                        const meta = await readWeaviateJson(metaRes, WeaviateMetaObjectsResponseSchema, "/v1/objects");
+                        const originalName = meta.objects?.[0]?.properties?.originalName;
 
                         if (originalName === name) {
                             await checkAndApplyCollectionLock(weaviateClass);
@@ -111,10 +125,10 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
 
             if (!res.ok) throw new Error(`Weaviate returned ${res.status}`);
 
-            const schema = await res.json();
-            const weaviateClasses: string[] = (schema.classes ?? [])
-                .map((c: {class: string}) => c.class)
-                .filter((name: string) => !name.endsWith("Meta"));
+            const schema = await readWeaviateJson(res, WeaviateSchemaResponseSchema, "/v1/schema");
+            const weaviateClasses = (schema.classes ?? [])
+                .map(c => c.class)
+                .filter(name => !name.endsWith("Meta"));
 
             // Fetch original names from each meta class in parallel
             const items = await Promise.all(weaviateClasses.map(async (weaviateClass) => {
@@ -122,8 +136,8 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
                     const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
                     if (metaRes.ok) {
-                        const meta = await metaRes.json();
-                        const originalName = meta.objects?.[0]?.properties?.originalName as string | undefined;
+                        const meta = await readWeaviateJson(metaRes, WeaviateMetaObjectsResponseSchema, "/v1/objects");
+                        const originalName = meta.objects?.[0]?.properties?.originalName;
 
                         if (originalName) return {id: weaviateClass, value: originalName};
                     }

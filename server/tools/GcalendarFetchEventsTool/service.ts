@@ -4,20 +4,37 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {CalendarEventResult, CalendarEventSearchArgs} from "./types.ts";
+import {parseApiResponse} from "../../utils/apiResponse.ts";
 
-type GoogleCalendarEvent = {
-    id: string;
-    summary?: string;
-    description?: string;
-    start?: { dateTime?: string; date?: string; timeZone?: string };
-    end?: { dateTime?: string; date?: string; timeZone?: string };
-    location?: string;
-    attendees?: Array<{ email: string; displayName?: string }>;
-    creator?: { email: string; displayName?: string };
-    htmlLink?: string;
-    status?: string;
-};
+const CalendarDateTimeSchema = z.object({
+    dateTime: z.string().optional(),
+    date: z.string().optional(),
+    timeZone: z.string().optional(),
+});
+
+const CalendarPersonSchema = z.object({
+    email: z.string(),
+    displayName: z.string().optional(),
+});
+
+const GoogleCalendarEventSchema = z.object({
+    id: z.string(),
+    summary: z.string().optional(),
+    description: z.string().optional(),
+    start: CalendarDateTimeSchema.optional(),
+    end: CalendarDateTimeSchema.optional(),
+    location: z.string().optional(),
+    attendees: z.array(CalendarPersonSchema).optional(),
+    creator: CalendarPersonSchema.optional(),
+    htmlLink: z.string().optional(),
+    status: z.string().optional(),
+});
+
+const CalendarEventListSchema = z.object({
+    items: z.array(GoogleCalendarEventSchema).optional(),
+});
 
 export async function fetchGcalendarEvents (args: CalendarEventSearchArgs): Promise<CalendarEventResult[]> {
     const {query, timeMin, timeMax, maxResults, accessToken} = args;
@@ -46,13 +63,13 @@ export async function fetchGcalendarEvents (args: CalendarEventSearchArgs): Prom
             throw new Error(`Google Calendar API failed: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const data = parseApiResponse(await response.json(), CalendarEventListSchema, "Google Calendar (events.list)");
 
         if (!data.items || data.items.length === 0) {
             return [];
         }
 
-        const events: CalendarEventResult[] = data.items.map((event: GoogleCalendarEvent) => ({
+        const events: CalendarEventResult[] = data.items.map(event => ({
             id: event.id,
             summary: event.summary,
             description: event.description,

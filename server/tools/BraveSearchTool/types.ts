@@ -13,7 +13,7 @@ export const BraveResultFields = {
 export type BraveResult = {
   title: string;
   url: string;
-  description: string;
+  description?: string;
 };
 
 export type BraveSearchArgs = {

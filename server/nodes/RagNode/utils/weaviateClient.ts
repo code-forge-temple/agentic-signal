@@ -4,7 +4,31 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
+import {parseApiResponse} from "../../../utils/apiResponse.ts";
+import {WeaviateMetaObjectsResponseSchema} from "../types.ts";
+
 export type WHeaders = Record<string, string>;
+
+const BatchInsertResultSchema = z.array(z.object({
+    result: z.object({
+        status: z.string().nullish(),
+        errors: z.object({
+            error: z.array(z.object({message: z.string()})).nullish(),
+        }).nullish(),
+    }).nullish(),
+}));
+
+// GraphQL `Get` returns null for a property an object doesn't have, so both are nullable.
+const NearVectorResponseSchema = z.object({
+    errors: z.array(z.object({message: z.string()})).nullish(),
+    data: z.object({
+        Get: z.record(z.string(), z.array(z.object({
+            content: z.string().nullable(),
+            sourceFile: z.string().nullable(),
+        })).nullable()).nullish(),
+    }).nullish(),
+});
 
 /** Weaviate class names must start with uppercase and contain only [a-zA-Z0-9]. */
 export function toWeaviateClassName (name: string): string {
@@ -104,7 +128,7 @@ export async function batchInsert (
 
     if (!res.ok) throw new Error(`Weaviate batch insert failed: ${await res.text()}`);
 
-    const result: Array<{result?: {status?: string; errors?: {error?: Array<{message: string}>}}}> = await res.json();
+    const result = parseApiResponse(await res.json(), BatchInsertResultSchema, "Weaviate (batch insert)");
     const failed = result.filter(r => r.result?.status === "FAILED");
 
     if (failed.length > 0) {
@@ -125,12 +149,12 @@ export async function getStoredMeta (
 
     if (!res.ok) return undefined;
 
-    const result = await res.json();
+    const result = parseApiResponse(await res.json(), WeaviateMetaObjectsResponseSchema, "Weaviate (meta object)");
     const obj = result.objects?.[0];
 
     if (!obj) return undefined;
 
-    const raw = obj.properties.documentHash as string | undefined;
+    const raw = obj.properties.documentHash;
     let fileHashes: Record<string, string> = {};
 
     try {
@@ -141,7 +165,7 @@ export async function getStoredMeta (
     return {
         id: obj.id,
         fileHashes,
-        embeddingModel: obj.properties.embeddingModel as string | undefined,
+        embeddingModel: obj.properties.embeddingModel ?? undefined,
     };
 }
 
@@ -181,7 +205,7 @@ export async function nearVectorSearch (
     className: string,
     vector: number[],
     limit: number,
-): Promise<Array<{content: string; sourceFile: string}>> {
+): Promise<Array<{content: string | null; sourceFile: string | null}>> {
     const res = await fetch(`${base}/v1/graphql`, {
         method: "POST",
         headers: h,
@@ -202,11 +226,11 @@ export async function nearVectorSearch (
 
     if (!res.ok) throw new Error(`Weaviate GraphQL query failed: ${await res.text()}`);
 
-    const result = await res.json();
+    const result = parseApiResponse(await res.json(), NearVectorResponseSchema, "Weaviate (nearVector search)");
 
     if (result.errors?.length) {
-        throw new Error(result.errors.map((e: {message: string}) => e.message).join("; "));
+        throw new Error(result.errors.map(e => e.message).join("; "));
     }
 
-    return (result.data?.Get?.[className] ?? []) as Array<{content: string; sourceFile: string}>;
+    return result.data?.Get?.[className] ?? [];
 }

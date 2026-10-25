@@ -11,7 +11,7 @@ import {sanitizeStringInput} from "../utils/sanitize";
 import {FetchWeatherDataToolConfigFields} from "./components/FetchWeatherDataToolConfigFields";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
-import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse} from "./mappers";
+import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse, WeatherApiResponseSchema} from "./mappers";
 
 
 export const FetchWeatherDataToolDescriptor:ToolDefinition = {
@@ -110,7 +110,15 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
                 return {error: `Weather API error: ${response.status} ${response.statusText}`};
             }
 
-            const data = await response.json();
+            const parsed = WeatherApiResponseSchema.safeParse(await response.json());
+
+            if (!parsed.success) {
+                const issues = parsed.error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; ");
+
+                return {error: `Unexpected response from WeatherAPI.com (${issues})`};
+            }
+
+            const data = parsed.data;
 
             // Return appropriate data structure based on endpoint
             if (endpoint === "current.json") {

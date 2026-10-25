@@ -4,10 +4,20 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {EmailResult, EmailSearchArgs} from "./types.ts";
+import {parseApiResponse} from "../../utils/apiResponse.ts";
 
 
-type GmailHeader = { name: string; value: string };
+const GmailMessageListSchema = z.object({
+    messages: z.array(z.object({id: z.string()})).optional(),
+});
+
+const GmailMessageMetadataSchema = z.object({
+    payload: z.object({
+        headers: z.array(z.object({name: z.string(), value: z.string()})).optional(),
+    }).optional(),
+});
 
 export async function fetchGmailEmails (args: EmailSearchArgs): Promise<EmailResult[]> {
     const {query, maxResults, accessToken} = args;
@@ -26,14 +36,14 @@ export async function fetchGmailEmails (args: EmailSearchArgs): Promise<EmailRes
         throw new Error(`Gmail API search failed: ${searchResponse.status} ${searchResponse.statusText}`);
     }
 
-    const searchData = await searchResponse.json();
+    const searchData = parseApiResponse(await searchResponse.json(), GmailMessageListSchema, "Gmail (messages.list)");
 
     if (!searchData.messages || searchData.messages.length === 0) {
         return [];
     }
 
     // Fetch details for each message
-    const emailPromises = searchData.messages.map(async (message: { id: string }) => {
+    const emailPromises = searchData.messages.map(async (message): Promise<EmailResult | null> => {
         const detailResponse = await fetch(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
             {
@@ -48,10 +58,10 @@ export async function fetchGmailEmails (args: EmailSearchArgs): Promise<EmailRes
             return null;
         }
 
-        const emailData = await detailResponse.json();
+        const emailData = parseApiResponse(await detailResponse.json(), GmailMessageMetadataSchema, "Gmail (messages.get)");
         const headers = emailData.payload?.headers || [];
         const getHeader = (name: string) => {
-            const header = (headers as GmailHeader[]).find((h) => h.name.toLowerCase() === name.toLowerCase());
+            const header = headers.find((h) => h.name.toLowerCase() === name.toLowerCase());
 
             return header?.value || '';
         };

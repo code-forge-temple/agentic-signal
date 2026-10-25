@@ -4,10 +4,22 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {BraveResult} from "./types.ts";
+import {parseApiResponse} from "../../utils/apiResponse.ts";
 
 
 const MAX_RATE_LIMIT_RETRIES = 3;
+
+const BraveSearchResponseSchema = z.object({
+    web: z.object({
+        results: z.array(z.object({
+            title: z.string(),
+            url: z.string(),
+            description: z.string().optional(),
+        })).optional(),
+    }).optional(),
+});
 const DEFAULT_RETRY_DELAY_MS = 1_000;
 
 function sleep (ms: number): Promise<void> {
@@ -52,13 +64,13 @@ export async function fetchBraveSearchResults (query: string, apiKey: string, ma
         throw new Error(`Brave Search API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = parseApiResponse(await response.json(), BraveSearchResponseSchema, "Brave Search");
 
-    if (!data.web || !Array.isArray(data.web.results)) {
+    if (!data.web?.results) {
         return [];
     }
 
-    return data.web.results.map((item: any) => ({
+    return data.web.results.map(item => ({
         title: item.title,
         url: item.url,
         description: item.description,

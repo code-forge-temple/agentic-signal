@@ -4,6 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {z} from "zod";
 import {NormalizedJob, NormalizedSalary} from "../types.ts";
 import {fetchJson, parseRegionList, stripHtml} from "../utils.ts";
 
@@ -11,27 +12,36 @@ import {fetchJson, parseRegionList, stripHtml} from "../utils.ts";
  * Lever postings API — `?mode=json`, free, no key.
  * `applyUrl` / `hostedUrl` are the real application links; `workplaceType` and
  * `categories.commitment` give remote + employment type directly.
+ * Optional fields are nullish (job boards send null for empty values) and every object
+ * is passthrough, so `raw` keeps the whole posting.
  */
-type LeverJob = {
-    id: string;
-    text: string;
-    hostedUrl: string;
-    applyUrl?: string;
-    createdAt?: number;
-    workplaceType?: string;
-    country?: string;
-    categories?: {
-        commitment?: string;
-        department?: string;
-        location?: string;
-        team?: string;
-        allLocations?: string[];
-    };
-    salaryRange?: { min?: number; max?: number; currency?: string; interval?: string };
-    description?: string;
-    descriptionPlain?: string;
-    lists?: { text?: string; content?: string }[];
-};
+const LeverJobSchema = z.object({
+    id: z.string(),
+    text: z.string(),
+    hostedUrl: z.string(),
+    applyUrl: z.string().nullish(),
+    createdAt: z.number().nullish(),
+    workplaceType: z.string().nullish(),
+    country: z.string().nullish(),
+    categories: z.object({
+        commitment: z.string().nullish(),
+        department: z.string().nullish(),
+        location: z.string().nullish(),
+        team: z.string().nullish(),
+        allLocations: z.array(z.string()).nullish(),
+    }).passthrough().nullish(),
+    salaryRange: z.object({
+        min: z.number().nullish(),
+        max: z.number().nullish(),
+        currency: z.string().nullish(),
+        interval: z.string().nullish(),
+    }).passthrough().nullish(),
+    description: z.string().nullish(),
+    descriptionPlain: z.string().nullish(),
+    lists: z.array(z.object({text: z.string().nullish(), content: z.string().nullish()}).passthrough()).nullish(),
+}).passthrough();
+
+type LeverJob = z.infer<typeof LeverJobSchema>;
 
 function salaryOf (job: LeverJob): NormalizedSalary | undefined {
     const s = job.salaryRange;
@@ -42,12 +52,13 @@ function salaryOf (job: LeverJob): NormalizedSalary | undefined {
 }
 
 export async function fetchLever (token: string): Promise<NormalizedJob[]> {
-    const data = await fetchJson<LeverJob[]>(
+    const data = await fetchJson(
         `https://api.lever.co/v0/postings/${encodeURIComponent(token)}?mode=json`,
-        `Lever (${token})`
+        `Lever (${token})`,
+        z.array(LeverJobSchema)
     );
 
-    return (Array.isArray(data) ? data : []).map((job): NormalizedJob => {
+    return data.map((job): NormalizedJob => {
         const cat = job.categories ?? {};
         const allLocations = cat.allLocations?.length ? cat.allLocations : [cat.location ?? ""].filter(Boolean);
         const location = allLocations.join(", ");
@@ -60,7 +71,7 @@ export async function fetchLever (token: string): Promise<NormalizedJob[]> {
             title: job.text,
             company: token,
             companyToken: token,
-            department: cat.department,
+            department: cat.department ?? undefined,
             url: job.hostedUrl,
             applyUrl: job.applyUrl || `${job.hostedUrl.replace(/\/$/, "")}/apply`,
             location: location || "Not specified",

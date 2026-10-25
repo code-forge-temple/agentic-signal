@@ -5,6 +5,8 @@
  ************************************************************************/
 
 import {CodeEditor, getEditorMode} from '../../../../CodeEditor';
+import {MarkdownRenderer} from '../../../../MarkdownRenderer';
+import {csvToMarkdownTable} from '../../../../../utils';
 import {Box, IconButton, Switch, Tabs, Tab, Tooltip} from '@mui/material';
 import {Attachment, Lock, Xmark} from 'iconoir-react';
 import './FilesInput.scss';
@@ -242,15 +244,11 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                 attachedFiles[tab - 1] && (() => {
                     const file = attachedFiles[tab - 1];
                     const ext = file.name.split('.').pop()?.toLowerCase() || "";
-                    const isBinaryExt = BINARY_FILE_EXTENSIONS.has(ext);
-                    const isToolsPayload = file.isToolsPayload ?? isBinaryExt;
 
-                    if (isToolsPayload) {
+                    if (BINARY_FILE_EXTENSIONS.has(ext)) {
                         return (
-                            <Box sx={{p: 2, color: 'text.secondary', fontStyle: 'italic'}}>
-                                {isBinaryExt
-                                    ? "Binary file — passed to tools only (bypasses LLM context)."
-                                    : "Bypass mode — passed to tools only (bypasses LLM context)."}
+                            <Box sx={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, color: 'text.secondary', fontStyle: 'italic'}}>
+                                No preview available
                             </Box>
                         );
                     }
@@ -264,10 +262,15 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                         );
                     }
 
+                    const fileText = extractFromMarkdown(file.content, EXTRACTION_TYPE.CODE_BLOCK)[0];
+                    const table = ext === "csv" ? csvToMarkdownTable(fileText ?? "") : null;
+
+                    if (table) return <MarkdownRenderer content={table} disableLoadingDelay />;
+
                     return (
                         <CodeEditor
                             mode={getEditorMode(file.name)}
-                            value={extractFromMarkdown(file.content, EXTRACTION_TYPE.CODE_BLOCK)[0]}
+                            value={fileText}
                             showLineNumbers={true}
                             readOnly={true}
                         />

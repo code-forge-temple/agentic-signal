@@ -26,6 +26,7 @@ import {markdownFilePrefix, markdownImageFilePrefix} from "@shared/utils";
 import {CodeEditor} from "../../CodeEditor";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {DATASOURCE_INPUT_JSON_SCHEMA} from "./types/input.types";
+import {fileBase64, mimeTypeFromExtension} from "./utils";
 
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
@@ -75,24 +76,34 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 let own = dataSource.value?.text || "";
                 let imageCounter = 1;
                 const ownTools: AttachedFile[] = [];
+                const filesWithoutData: string[] = [];
 
                 for (const file of dataSource.value?.files || []) {
                     const ext = file.name.split('.').pop()?.toLowerCase() || "";
                     // isToolsPayload=undefined means infer from extension (backward compat with saved workflows)
                     const isToolsPayload = file.isToolsPayload ?? BINARY_FILE_EXTENSIONS.has(ext);
 
-                    if (isToolsPayload && file.base64) {
-                        // Binary attachment: add a note the LLM can read, collect for tool use.
-                        own += `\n\n[Binary attachment: ${file.name} — available for form file-upload fields]\n\n`;
+                    if (isToolsPayload) {
+                        const base64 = fileBase64(file, ext);
 
-                        ownTools.push({name: file.name, base64: file.base64, mimeType: file.mimeType || "application/octet-stream"});
-                    } else if (isToolsPayload) {
-                        // isToolsPayload=true but no base64 — skip silently (shouldn't happen with new files)
+                        if (base64 === undefined) {
+                            filesWithoutData.push(file.name);
+                        } else {
+                            ownTools.push({name: file.name, base64, mimeType: file.mimeType || mimeTypeFromExtension(ext)});
+                        }
                     } else if (IMAGE_FILE_EXTENSIONS.has(ext)) {
                         own += `\n\n${markdownImageFilePrefix(imageCounter++, file.name)}${file.content}\n\n`;
                     } else {
                         own += `\n\n${markdownFilePrefix(file.name)}${file.content}\n\n`;
                     }
+                }
+
+                if (filesWithoutData.length > 0) {
+                    setError(`No file data saved for ${filesWithoutData.map(name => `"${name}"`).join(", ")} — remove the file and attach it again.`);
+
+                    onResultUpdate(id);
+
+                    return;
                 }
 
                 // Both naturally textual — join into one document rather than keeping separate

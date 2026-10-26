@@ -101,7 +101,7 @@ export async function executeAction (
             const key = action.fileKey ?? action.value;
 
             if (!key) {
-                throw new Error("Upload action requires a fileKey (the original file name or a configured alias).");
+                throw new Error("Upload action requires a fileKey (one of the names in availableFiles).");
             }
 
             // File forwarded from the client via DataSourceNode (by original filename).

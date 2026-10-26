@@ -25,7 +25,7 @@ export const DATA_SOURCE_TYPE_LABELS: Record<DATA_SOURCE_TYPES, string> = {
 export const FileDataSchema = z.object({
     name: z.string(),
     content: z.string(),
-    /** Base64-encoded binary content — present only for binary file types (PDF, DOCX, etc.). */
+    /** The file's bytes, base64-encoded — what tools receive. Workflows saved by older versions may lack it for non-binary files. */
     base64: z.string().optional(),
     mimeType: z.string().optional(),
     /**

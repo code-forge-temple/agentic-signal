@@ -29,7 +29,7 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
         > **Note:** Currently supported file extensions are .txt, .md, .html, .css, .scss, .js, .ts, .tsx, .json, .xml, .csv, .yaml, .yml, .ini, .log, .sh, .sql, .py, .java, .c, .cpp, .h, .bat, .env, .png, .jpg, .jpeg, .gif, .bmp, .webp, .svg).  
 
-        Most attached files are embedded directly into the Markdown text as code blocks or images. Files marked as a **tools payload** (binary types like PDF/DOCX by default, or any file explicitly flagged as one) are instead forwarded as `toolsPayload` attachments for tools to consume — e.g. a form-filling tool uploading a file — and a short note is added to the text so the AI knows the attachment exists.  
+        Most attached files are embedded directly into the Markdown text as code blocks or images. Files marked as a **tools payload** (binary types like PDF/DOCX by default, or any file explicitly flagged as one) are instead forwarded as `toolsPayload` attachments for tools to consume — e.g. a form-filling tool uploading a file — and are left out of the text entirely. A tool that uses them tells the AI their names itself (the [Form Interaction Tool](/docs/nodes/ai/tools/form-interaction) returns them as `availableFiles`).  
 
         ![Data Source Node Attachments](/img/nodes/data-source-params-markdown.webp)
     </TabItem>

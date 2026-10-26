@@ -67,7 +67,7 @@ export const isAttachedFile = (x: unknown): x is AttachedFile =>
  * - check: check a checkbox or radio button
  * - uncheck: uncheck a checkbox
  * - click: click any element (e.g. a custom dropdown trigger or CTA button)
- * - upload: set files on a <input type="file"> using a pre-configured fileKey
+ * - upload: set files on a <input type="file"> using a fileKey (an attached file's name)
  */
 export const FILL_ACTION_TYPES = ['fill', 'select', 'check', 'uncheck', 'click', 'upload'] as const;
 
@@ -81,7 +81,7 @@ export type FillAction = {
     /** Value for fill / select / radio actions. */
     value?: string;
     /**
-     * Key referencing a file path in the tool's configuredFiles map.
+     * Name of an attached file (as sent in `attachedFiles`) to upload.
      * Required when actionType is 'upload'.
      */
     fileKey?: string;

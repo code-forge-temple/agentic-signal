@@ -27,7 +27,7 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
     icon: <FormIcon />,
     toolSchema: {
         name: "formInteraction",
-        description: "Navigates to a web form, reads its fields (labels, types, selectors, options) and its clickable buttons (actionButtons: label + selector, e.g. 'Next' or 'Submit'). Call without actions first to discover both. Then call again with fill actions and submitSelector set to the selector of the matching button from actionButtons — never guess a selector such as '#submitBtn' or 'button[type=submit]'. For multi-page/multi-step forms only the current page's fields and buttons are returned; after each click the tool returns the resulting page's fields and actionButtons, so repeat discover-or-fill, then click, using the newly returned selectors, until submitted is true or there are no more required fields. A single discovery call does not fill or submit anything — keep calling this tool with real actions until it returns submitted: true. Never write out field values, actions, or a submission result as plain text/markdown instead of calling the tool.",
+        description: "Navigates to a web form, reads its fields (labels, types, selectors, options) and its clickable buttons (actionButtons: label + selector, e.g. 'Next' or 'Submit'). Call without actions first to discover both. When files are available for upload, every response also lists their names in availableFiles: for an <input type='file'>, use an upload action with fileKey set to one of those names. Then call again with fill actions and submitSelector set to the selector of the matching button from actionButtons — never guess a selector such as '#submitBtn' or 'button[type=submit]'. For multi-page/multi-step forms only the current page's fields and buttons are returned; after each click the tool returns the resulting page's fields and actionButtons, so repeat discover-or-fill, then click, using the newly returned selectors, until submitted is true or there are no more required fields. A single discovery call does not fill or submit anything — keep calling this tool with real actions until it returns submitted: true. Never write out field values, actions, or a submission result as plain text/markdown instead of calling the tool.",
         parameters: {
             type: "object",
             properties: {
@@ -147,7 +147,7 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
                     ? params.toolsPayload.filter(isAttachedFile)
                     : [];
 
-                return await GraphQLService.formInteraction({
+                const result = await GraphQLService.formInteraction({
                     url: params.url,
                     actions: normalizedActions,
                     submitSelector: params.submitSelector,
@@ -158,6 +158,9 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
                     sessionId: params.sessionId,
                     toolName: FormInteractionToolDescriptor.toolSubtype,
                 });
+
+                // Data Source keeps tools-only files out of the LLM's input, so this is where it learns their names.
+                return attachedFiles.length > 0 ? {...result, availableFiles: attachedFiles.map(file => file.name)} : result;
             } catch (error) {
                 console.error("FormInteraction error:", error);
 

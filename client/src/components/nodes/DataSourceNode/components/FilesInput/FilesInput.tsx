@@ -16,6 +16,7 @@ import {extractFromMarkdown, EXTRACTION_TYPE} from '@shared/utils';
 import {fileExtensionToCodeBlockLang} from "@shared/utils";
 import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS, TRIPLE_BACKTICK} from '@shared/constants';
 import {arrayBufferToBase64} from '@shared/utils';
+import {mimeTypeFromExtension} from '../../utils';
 
 
 type FilesInputProps = {
@@ -107,7 +108,7 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                     reader.onload = (e) => {
                         const dataUrl = e.target?.result as string;
                         const base64 = dataUrl.split(',')[1];
-                        const mime = file.type || `image/${ext}`;
+                        const mime = file.type || mimeTypeFromExtension(ext ?? "");
                         const fileData: FileData = {
                             name: file.name,
                             content: `![${file.name}](${dataUrl})`,
@@ -143,7 +144,7 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                             name: file.name,
                             content,
                             base64,
-                            mimeType: file.type || (isBinaryExt ? 'application/octet-stream' : 'text/plain'),
+                            mimeType: file.type || mimeTypeFromExtension(ext ?? ""),
                             isToolsPayload: isBinaryExt,
                         };
 

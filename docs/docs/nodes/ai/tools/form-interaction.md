@@ -22,7 +22,7 @@ import TabItem from '@theme/TabItem';
             - `selector` (string): CSS selector of the target element.
             - `type` (string): `fill` | `select` | `check` | `uncheck` | `click` | `upload`.
             - `value` (string, optional): Text to type (`fill`), option label/value to choose (`select`); ignored for `check`/`uncheck`/`click`.
-            - `fileKey` (string, optional): Original filename of a binary file attached in the [Data Source Node](/docs/nodes/input/data-source) (e.g. `"my-cv.pdf"`). Required when `type` is `upload`.
+            - `fileKey` (string, optional): Name of the file to upload, one of the names in `availableFiles` (e.g. `"my-cv.pdf"`). Required when `type` is `upload`.
         - `submitSelector` (string, optional): CSS selector of the submit/"Next" button to click after filling. Use the `selector` value from a prior call's `actionButtons` — never a guessed selector such as `#submitBtn`. Omit to only fill without advancing.
         - `typingDelay` (number, user config): Seconds between each field action (`0` = instant fill, no pauses; `1` = default human-like pace; default: `1`)
         - `interactionTimeoutSeconds` (number, user config): Max seconds for one tool call — raise if a high typing delay combined with long text fields pushes past the default (default: `300`, min: `30`, max: `1800`)
@@ -41,6 +41,7 @@ import TabItem from '@theme/TabItem';
         - `formFields`: Visible, interactive fields on the current page — `label`, `name`, `type`, `selector`, `required`, `options` (for select dropdowns), `currentValue`, `placeholder`
         - `actionButtons`: Visible, enabled clickable buttons on the current page — `label`, `selector`. Use one of these selectors for `submitSelector` on the next call.
         - `error`: Present when the call failed (e.g. required fields still empty, or `submitSelector` didn't match anything) — includes guidance for correcting the next call.
+        - `availableFiles`: Names of the files the tool can upload — the files a [Data Source Node](/docs/nodes/input/data-source) passes to tools only. Present only when there are such files. The AI learns the names from here, since those files are kept out of its input.
 
         **Example Output:**
 
@@ -73,7 +74,8 @@ import TabItem from '@theme/TabItem';
             "actionButtons": [
                 {"label": "Submit Application", "selector": "#submitBtn"}
             ],
-            "error": null
+            "error": null,
+            "availableFiles": ["jane-smith-cv.pdf"]
         }
         ```
     </TabItem>

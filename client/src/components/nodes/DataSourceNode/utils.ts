@@ -20,6 +20,13 @@ export const mimeTypeFromExtension = (ext: string): string => {
 };
 
 /**
+ * A text file's own text, from the code block its `content` is saved in. Takes everything up to the closing fence
+ * at the very end, so a file with code blocks of its own (e.g. Markdown) comes out whole.
+ * `undefined` when `content` isn't wrapped in a code block.
+ */
+export const fileText = (content: string): string | undefined => content.match(/^```[a-zA-Z0-9]*\n([\s\S]*)\n```$/)?.[1];
+
+/**
  * The file's bytes as base64. Workflows saved before every attached file kept its `base64` have only the
  * Markdown `content`: a text file's code block or an image's data URL, both rebuilt here. A binary file
  * (PDF, DOCX, …) can't be rebuilt from its placeholder text, so it returns `undefined`.
@@ -33,7 +40,5 @@ export const fileBase64 = (file: FileData, ext: string): string | undefined => {
 
     if (BINARY_FILE_EXTENSIONS.has(ext)) return undefined;
 
-    const text = extractFromMarkdown(file.content, EXTRACTION_TYPE.CODE_BLOCK)[0] ?? file.content;
-
-    return arrayBufferToBase64(new TextEncoder().encode(text).buffer);
+    return arrayBufferToBase64(new TextEncoder().encode(fileText(file.content) ?? file.content).buffer);
 };

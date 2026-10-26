@@ -16,7 +16,7 @@ import {extractFromMarkdown, EXTRACTION_TYPE} from '@shared/utils';
 import {fileExtensionToCodeBlockLang} from "@shared/utils";
 import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS, TRIPLE_BACKTICK} from '@shared/constants';
 import {arrayBufferToBase64} from '@shared/utils';
-import {mimeTypeFromExtension} from '../../utils';
+import {fileText, mimeTypeFromExtension} from '../../utils';
 
 
 type FilesInputProps = {
@@ -263,15 +263,15 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                         );
                     }
 
-                    const fileText = extractFromMarkdown(file.content, EXTRACTION_TYPE.CODE_BLOCK)[0];
-                    const table = ext === "csv" ? csvToMarkdownTable(fileText ?? "") : null;
+                    const text = fileText(file.content);
+                    const rendered = ext === "csv" ? csvToMarkdownTable(text ?? "") : ext === "md" ? text : null;
 
-                    if (table) return <MarkdownRenderer content={table} disableLoadingDelay />;
+                    if (rendered) return <MarkdownRenderer content={rendered} disableLoadingDelay />;
 
                     return (
                         <CodeEditor
                             mode={getEditorMode(file.name)}
-                            value={fileText}
+                            value={text}
                             showLineNumbers={true}
                             readOnly={true}
                         />

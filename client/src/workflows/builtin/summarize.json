@@ -1,0 +1,47 @@
+{
+    "nodes": [
+        {
+            "id": "page-request",
+            "type": "workflow-input",
+            "position": {"x": 242, "y": 234},
+            "data": {
+                "command": "summarize",
+                "description": "Summarize a web page: give its URL, optionally with a question about it."
+            }
+        },
+        {
+            "id": "summary",
+            "type": "llm-process",
+            "position": {"x": 474.5, "y": 177.5},
+            "data": {
+                "model": "",
+                "prompt": "The input gives a web page's URL, perhaps with a question about it. Open the page with webPageToMarkdown. Then reply in Markdown with the page's title and URL, a short summary, and its main points as a list; if the input asks a question about the page, answer it first. State only what the page says. If the page can't be opened, or shows only a bot check, a cookie wall or a login page, say so instead of guessing.",
+                "message": {},
+                "format": {},
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "think": false
+            }
+        },
+        {
+            "id": "read",
+            "type": "ai-tool",
+            "position": {"x": 470, "y": 299.5},
+            "data": {
+                "toolSubtype": "web-page-to-markdown",
+                "userConfig": {"requireToolUse": true}
+            }
+        },
+        {
+            "id": "reply",
+            "type": "workflow-output",
+            "position": {"x": 741, "y": 224.5},
+            "data": {}
+        }
+    ],
+    "edges": [
+        {"source": "page-request", "target": "summary", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "read", "target": "summary", "sourceHandle": "tool", "targetHandle": "tool"},
+        {"source": "summary", "target": "reply", "sourceHandle": "flow", "targetHandle": "flow"}
+    ]
+}

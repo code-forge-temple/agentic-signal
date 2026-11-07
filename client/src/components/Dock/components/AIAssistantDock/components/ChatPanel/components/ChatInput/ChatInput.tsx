@@ -8,13 +8,17 @@ import {useState, useEffect, useRef, useLayoutEffect, useCallback} from 'react';
 import {IconButton} from '@mui/material';
 import {SendDiagonal} from 'iconoir-react';
 import './ChatInput.scss';
-import {ChatInputSuggestions} from './components/ChatInputSuggestions';
+import {ChatInputSuggestions, Suggestion} from './components/ChatInputSuggestions';
 import {ContextGauge} from './components/ContextGauge';
 import {ContextGaugeProps} from './components/contextTooltip';
+import {matchingSuggestions} from './suggestions';
 
 
 type ChatInputProps = {
-    onSend: (text: string) => void;
+    /** Returns whether the text was sent; a refused one stays in the field. */
+    onSend: (text: string) => boolean;
+    /** The commands the chat can run, offered when the message starts with `/`, e.g. "/research", each with what it does. */
+    commands: Suggestion[];
     disabled: boolean;
     panelPosition?: { x: number; y: number };
     /* Sits with the field rather than up in the header: what it answers - is there room for
@@ -22,13 +26,14 @@ type ChatInputProps = {
     contextGauge: ContextGaugeProps;
 };
 
-const SUGGESTIONS = ['@prepare-workflow', '@current-workflow'];
+const KEYWORD_SUGGESTIONS: Suggestion[] = [{value: '@prepare-workflow'}, {value: '@current-workflow'}];
 
-export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatInputProps) => {
+export const ChatInput = ({onSend, commands, disabled, panelPosition, contextGauge}: ChatInputProps) => {
     const [value, setValue] = useState('');
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const prevDisabled = useRef(disabled);
     const [caret, setCaret] = useState<number>(0);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [suggestionsVisible, setSuggestionsVisible] = useState(false);
     const [suggestionPosition, setSuggestionPosition] = useState({top: 0, left: 0});
     const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
@@ -51,41 +56,42 @@ export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatI
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             let caretPixelPos = 0;
-            let inputPaddingLeft = 0;
+            let textStart = 0;
 
             if (ctx) {
                 const computedStyle = window.getComputedStyle(input);
 
-                inputPaddingLeft = parseInt(computedStyle.paddingLeft || '0', 10);
+                textStart = parseFloat(computedStyle.borderLeftWidth || '0') + parseFloat(computedStyle.paddingLeft || '0');
                 ctx.font = computedStyle.font;
                 caretPixelPos = ctx.measureText(textUpToCaret).width;
             }
 
-            const panelX = panelPosition?.x || 0;
-
             setSuggestionPosition({
                 top: rect.top,
-                left: window.scrollX + caretPixelPos - (input.scrollLeft || 0) + inputPaddingLeft + menuSize.width + panelX
+                left: rect.left + textStart + caretPixelPos - (input.scrollLeft || 0) + menuSize.width
             });
         }
     }, [suggestionsVisible, value, caret, menuSize, panelPosition]);
 
     useEffect(() => {
-        const textUpToCaret = value.slice(0, caret);
-        const lastWord = textUpToCaret.split(/\s/).pop() || '';
+        const words = value.slice(0, caret).split(/\s/);
+        const lastWord = words.pop() || '';
+        // `@` keywords go anywhere; a `/` command only opens the message.
+        const options = lastWord.startsWith('@')
+            ? KEYWORD_SUGGESTIONS
+            : lastWord.startsWith('/') && words.every(word => word === '') ? commands : [];
+        const matching = matchingSuggestions(options, lastWord);
 
-        if (lastWord.startsWith('@')) {
-            setSuggestionsVisible(true);
-            setSelectedSuggestionIndex(0);
-        } else {
-            setSuggestionsVisible(false);
-        }
-    }, [value, caret]);
+        setSuggestions(matching);
+        setSuggestionsVisible(matching.length > 0);
+        setSelectedSuggestionIndex(0);
+    }, [value, caret, commands]);
 
     const handleSend = useCallback(() => {
         if (!value.trim() || disabled) return;
 
-        onSend(value.trim());
+        if (!onSend(value.trim())) return;
+
         setValue('');
         setSuggestionsVisible(false);
     }, [disabled, onSend, value]);
@@ -114,7 +120,7 @@ export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatI
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
 
-                setSelectedSuggestionIndex((prev) => (prev + 1) % SUGGESTIONS.length);
+                setSelectedSuggestionIndex((prev) => (prev + 1) % suggestions.length);
 
                 return;
             }
@@ -122,7 +128,7 @@ export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatI
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
 
-                setSelectedSuggestionIndex((prev) => (prev - 1 + SUGGESTIONS.length) % SUGGESTIONS.length);
+                setSelectedSuggestionIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
 
                 return;
             }
@@ -130,7 +136,7 @@ export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatI
             if (e.key === 'Enter') {
                 e.preventDefault();
 
-                handleSuggestionClick(SUGGESTIONS[selectedSuggestionIndex]);
+                handleSuggestionClick(suggestions[selectedSuggestionIndex].value);
 
                 return;
             }
@@ -146,7 +152,7 @@ export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatI
             e.preventDefault();
             handleSend();
         }
-    }, [handleSend, handleSuggestionClick, selectedSuggestionIndex, suggestionsVisible]);
+    }, [handleSend, handleSuggestionClick, selectedSuggestionIndex, suggestions, suggestionsVisible]);
 
     return (
         <div className="chat-input" style={{position: 'relative'}}>
@@ -182,7 +188,7 @@ export const ChatInput = ({onSend, disabled, panelPosition, contextGauge}: ChatI
             </IconButton>
             {suggestionsVisible && (
                 <ChatInputSuggestions
-                    suggestions={SUGGESTIONS}
+                    suggestions={suggestions}
                     selectedIndex={selectedSuggestionIndex}
                     position={suggestionPosition}
                     onSuggestionClick={handleSuggestionClick}

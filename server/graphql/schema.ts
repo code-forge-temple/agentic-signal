@@ -8,9 +8,12 @@ import {makeExecutableSchema} from "npm:@graphql-tools/schema";
 import {generateTypeDefs} from "./schema-generator.ts";
 import {toolResolvers} from "../tools/toolsRegistry.gen.ts";
 import {nodeResolvers} from "../nodes/nodesRegistry.gen.ts";
+import {resolver as workflowsResolver} from "../workflows/mod.ts";
+import {resolver as commandsResolver} from "../commands/mod.ts";
+import {resolver as browserResolver} from "../browser/mod.ts";
 
 const typeDefs = generateTypeDefs();
-const allResolvers = [...toolResolvers, ...nodeResolvers];
+const allResolvers = [...toolResolvers, ...nodeResolvers, workflowsResolver, commandsResolver, browserResolver];
 
 const resolvers = {
     Query: Object.assign(

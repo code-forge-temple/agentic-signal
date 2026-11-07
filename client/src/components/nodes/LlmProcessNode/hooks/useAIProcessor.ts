@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useState, useCallback} from 'react';
+import {useState, useCallback, useEffect, useRef} from 'react';
 import {Message, MessageRole, SystemUserConfigValues, ToolSchema} from '../../../../types/ollama.types';
 import {NodeEnvelope} from '../../../../types/workflow';
 import {LlmProcessNodeData} from '../types/workflow';
@@ -23,6 +23,10 @@ export interface UseAIProcessorOptions {
 export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     const {onSuccess, onError} = options;
     const [error, setError] = useState<string[]>([]);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Unmounting (the node deleted, or its whole layer) cancels the request in flight.
+    useEffect(() => () => abortControllerRef.current?.abort(), []);
 
     const handleFetchModelsError = useCallback((msg: string) => {
         setError(prev => [...prev, msg]);
@@ -63,6 +67,15 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     temperature?: number;
     orchestrationMode?: boolean;
 }) => {
+        // A newer request supersedes one still in flight, whose reply would be stale. A cancelled
+        // request ends quietly below: no error, no feedback, no output.
+        abortControllerRef.current?.abort();
+
+        const controller = new AbortController();
+        const {signal} = controller;
+
+        abortControllerRef.current = controller;
+
         if (!model) {
             const errorMsg = "Please select a model first.";
 
@@ -90,7 +103,10 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                 maxToolRetries,
                 think,
                 temperature,
+                signal,
             });
+
+            if (signal.aborted) return null;
 
             if (!orchestrationResult.success) {
                 setError(prev => [...prev, orchestrationResult.error]);
@@ -167,10 +183,14 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                         try {
                             const ragContext = await ragHandler(baseUserContent);
 
+                            if (signal.aborted) return null;
+
                             if (ragContext) {
                                 userContent = `## CONTEXT\n${ragContext}\n\n${baseUserContent}`;
                             }
                         } catch (ragError) {
+                            if (signal.aborted) return null;
+
                             const errorMsg = `RAG retrieval failed: ${ragError instanceof Error ? ragError.message : String(ragError)}`;
 
                             setError(prev => [...prev, errorMsg]);
@@ -230,8 +250,11 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     tools,
                     maxToolRetries,
                     think,
-                    temperature
+                    temperature,
+                    signal
                 });
+
+                if (signal.aborted) return null;
 
                 if (!phase1Response.success) {
                     const errorMsg = `Failed to fetch AI response (phase 1): ${phase1Response.error}`;
@@ -278,8 +301,11 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                         format: parsedFormat,
                         maxToolRetries,
                         think,
-                        temperature
+                        temperature,
+                        signal
                     });
+
+                    if (signal.aborted) return null;
 
                     if (!phase2Response.success) {
                         const errorMsg = `Failed to fetch AI response (phase 2): ${phase2Response.error}`;
@@ -309,8 +335,11 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     tools,
                     maxToolRetries,
                     think,
-                    temperature
+                    temperature,
+                    signal
                 });
+
+                if (signal.aborted) return null;
 
                 if (!response.success) {
                     const errorMsg = `Failed to fetch AI response: ${response.error}`;
@@ -359,6 +388,8 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
 
             return result;
         } catch (error) {
+            if (signal.aborted) return null;
+
             const errorMsg = `Unexpected error: ${error instanceof Error ? error.message : String(error)}`;
 
             setError(prev => [...prev, errorMsg]);

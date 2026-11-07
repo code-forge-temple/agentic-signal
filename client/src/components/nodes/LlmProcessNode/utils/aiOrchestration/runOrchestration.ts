@@ -57,7 +57,7 @@ export const JSON_SCHEMA_PROMPT_PREFIX = 'Your response must be valid JSON match
  * of the number of tasks produced.
  */
 export async function runOrchestration (params: OrchestrationParams): Promise<OrchestrationResult> {
-    const {input, prompt, model, format, tools, maxToolRetries, think, temperature} = params;
+    const {input, prompt, model, format, tools, maxToolRetries, think, temperature, signal} = params;
 
     // A string input is used as-is; anything else (object, array, number, boolean) is
     // JSON-stringified. Prevents an already-string input from being re-wrapped in quotes
@@ -94,6 +94,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
         maxToolRetries,
         think,
         temperature,
+        signal,
     });
 
     if (!planningResponse.success) {
@@ -194,6 +195,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
             maxToolRetries,
             think,
             temperature,
+            signal,
         });
 
         if (!agentResponse.success) {
@@ -257,6 +259,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
         maxToolRetries,
         think,
         temperature,
+        signal,
     });
 
     if (!aggregationResponse.success) {

@@ -13,10 +13,9 @@ import './FilesInput.scss';
 import {useRef, useEffect, useState} from 'react';
 import {FileData, MarkdownAndFilesDataSource} from '../../types/workflow';
 import {extractFromMarkdown, EXTRACTION_TYPE} from '@shared/utils';
-import {fileExtensionToCodeBlockLang} from "@shared/utils";
-import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS, TRIPLE_BACKTICK} from '@shared/constants';
+import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS} from '@shared/constants';
 import {arrayBufferToBase64} from '@shared/utils';
-import {fileText, mimeTypeFromExtension} from '../../utils';
+import {fileDataFromBytes, fileText} from '../../utils';
 
 
 type FilesInputProps = {
@@ -101,57 +100,17 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
         if (files.length > 0) {
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const ext = file.name.split('.').pop()?.toLowerCase();
                 const reader = new FileReader();
 
-                if (IMAGE_FILE_EXTENSIONS.has(ext || "")) {
-                    reader.onload = (e) => {
-                        const dataUrl = e.target?.result as string;
-                        const base64 = dataUrl.split(',')[1];
-                        const mime = file.type || mimeTypeFromExtension(ext ?? "");
-                        const fileData: FileData = {
-                            name: file.name,
-                            content: `![${file.name}](${dataUrl})`,
-                            base64,
-                            mimeType: mime,
-                            isToolsPayload: false,
-                        };
+                // Every file as bytes, so base64 is always there whatever the tools-only toggle says; the
+                // stored form comes from the converter Workflow Input uses for files sent from outside.
+                reader.onload = (e) => {
+                    const base64 = arrayBufferToBase64(e.target?.result as ArrayBuffer);
+                    const fileData = fileDataFromBytes({name: file.name, base64, mimeType: file.type || undefined});
 
-                        setAttachedFiles((prevFiles) => [...prevFiles, fileData]);
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    // Both binary and text files: read as ArrayBuffer so base64 is always
-                    // available regardless of the isToolsPayload toggle state.
-                    const isBinaryExt = BINARY_FILE_EXTENSIONS.has(ext || "");
-
-                    reader.onload = (e) => {
-                        const buffer = e.target?.result as ArrayBuffer;
-                        const base64 = arrayBufferToBase64(buffer);
-
-                        let content: string;
-
-                        if (isBinaryExt) {
-                            content = `[Binary attachment: ${file.name}]`;
-                        } else {
-                            const text = new TextDecoder('utf-8').decode(buffer);
-                            const lang = fileExtensionToCodeBlockLang(ext);
-
-                            content = `${TRIPLE_BACKTICK}${lang}\n${text}\n${TRIPLE_BACKTICK}`;
-                        }
-
-                        const fileData: FileData = {
-                            name: file.name,
-                            content,
-                            base64,
-                            mimeType: file.type || mimeTypeFromExtension(ext ?? ""),
-                            isToolsPayload: isBinaryExt,
-                        };
-
-                        setAttachedFiles((prevFiles) => [...prevFiles, fileData]);
-                    };
-                    reader.readAsArrayBuffer(file);
-                }
+                    setAttachedFiles((prevFiles) => [...prevFiles, fileData]);
+                };
+                reader.readAsArrayBuffer(file);
             }
 
             if (fileInputRef.current) {

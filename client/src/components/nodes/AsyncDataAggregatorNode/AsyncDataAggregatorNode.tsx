@@ -7,8 +7,7 @@
 import {type NodeProps, useReactFlow} from "@xyflow/react";
 import {assertIsAsyncDataAggregatorNodeData} from "./types/workflow";
 import {useState, useCallback, useMemo} from "react";
-import {BaseNode} from "../BaseNode";
-import {LogsDialog} from "../../LogsDialog";
+import {MonitoredNode} from "../MonitoredNode";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -21,7 +20,6 @@ export function AsyncDataAggregatorNode ({data, id}: NodeProps<AppNode>) {
     assertIsAsyncDataAggregatorNodeData(data);
 
     const [error, setError] = useState<string | null>(null);
-    const [openLogs, setOpenLogs] = useState(false);
     const {title, input, onConfigChange, onResultUpdate} = data;
     const [isRunning, setIsRunning] = useState(false);
     const {getEdges} = useReactFlow();
@@ -64,7 +62,7 @@ export function AsyncDataAggregatorNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -72,13 +70,6 @@ export function AsyncDataAggregatorNode ({data, id}: NodeProps<AppNode>) {
                     output: true
                 }}
                 running={isRunning}
-                title={title}
-                logs={{callback: () => setOpenLogs(true), highlight: false}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
                 title={title}
                 error={error}
             />

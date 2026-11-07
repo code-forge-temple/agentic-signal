@@ -25,15 +25,6 @@
             background: none;
             padding: 0;
         }
-
-        a {
-            color: #90caf9;
-            text-decoration: underline;
-
-            &:hover {
-                color: #64b5f6;
-            }
-        }
     }
 
     .chat-log-empty {
@@ -41,6 +32,26 @@
         color: rgba(255, 255, 255, 0.35);
         font-size: 13px;
         margin: auto;
+    }
+
+    .chat-log-notice {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 12px;
+
+        &::before,
+        &::after {
+            content: "";
+            flex: 1;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        b {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+        }
     }
 
     .chat-log-row {
@@ -114,7 +125,10 @@
         }
 
         .import-workflow-btn {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             width: 100%;
             margin-top: 4px;
             padding: 6px 12px;
@@ -124,7 +138,6 @@
             color: rgba(255, 255, 255, 0.8);
             font-size: 12px;
             cursor: pointer;
-            text-align: left;
             transition: background 0.15s ease, color 0.15s ease;
 
             &:hover {
@@ -137,6 +150,70 @@
                 border-color: rgba(128, 128, 128, 0.35);
                 color: rgba(255, 255, 255, 0.5);
                 cursor: not-allowed;
+            }
+        }
+
+        /* Lined up with the Markdown-drawn messages, whose renderer pads them by 5px. */
+        .chat-log-running {
+            margin: 0;
+            padding: 5px;
+
+            .chat-log-running-spinner {
+                margin-left: 6px;
+                vertical-align: middle;
+            }
+        }
+
+        /* A command the AI Buddy suggests (a `command` block in its reply), waiting for the user. */
+        .chat-log-suggestion {
+            margin: 4px 0 2px;
+            padding: 8px 10px;
+            border: 1px solid rgba(0, 188, 212, 0.35);
+            border-radius: 6px;
+            background: rgba(0, 188, 212, 0.06);
+
+            p {
+                margin: 0 0 8px;
+            }
+
+            .chat-log-suggestion-actions {
+                display: flex;
+                gap: 8px;
+            }
+        }
+
+        /* A suggestion once answered: ran, skipped, or passed over. */
+        .chat-log-suggestion-done {
+            margin: 0;
+            padding: 5px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+
+            b {
+                font-weight: 500;
+            }
+        }
+
+        /* In the link color, since it acts as one; a tag's corners rather than a pill's. */
+        .chat-log-layer-chip {
+            height: 22px;
+            margin: 0 2px;
+            border-radius: 4px;
+            vertical-align: middle;
+            color: #00BCD4;
+            border-color: rgba(0, 188, 212, 0.5);
+            font-size: 12px;
+
+            /* A set size: iconoir draws at 1.5em, which would fill the chip's whole height. */
+            .MuiChip-icon {
+                color: inherit;
+                width: 14px;
+                height: 14px;
+                margin-left: 6px;
+            }
+
+            &:hover {
+                background: rgba(0, 188, 212, 0.12);
             }
         }
 
@@ -172,6 +249,9 @@
             background: transparent;
             padding: 5px;
             cursor: default;
+            // As wide as the message, not as its widest line: a long code block scrolls sideways on its own, and
+            // the Import button under it stays in view.
+            min-width: 0;
         }
     }
 }

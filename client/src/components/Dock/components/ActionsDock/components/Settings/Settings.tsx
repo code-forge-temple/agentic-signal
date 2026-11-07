@@ -6,20 +6,31 @@
 
 import {useState, useEffect} from 'react';
 import {useSettings} from '../../../../../../hooks/useSettings';
-import {IconButton, InputAdornment, Box, LinearProgress, List, ListItem, ListItemText, TextField} from '@mui/material';
-import {Plus, Trash} from 'iconoir-react';
+import {IconButton, Box, List, ListItem, ListItemText} from '@mui/material';
+import {Trash} from 'iconoir-react';
 import {OllamaService} from '../../../../../../services/ollamaService';
 import {DebouncedTextField} from '../../../../../DebouncedTextField';
+import {BasicTabs} from '../../../../../Tabs/Tabs';
+import {PathField} from '../../../../../PathField';
+import {listWorkflowsFolder} from '../../../../../../services/workflowsService';
+import {OutsideConnections} from './components/OutsideConnections';
+import {AddModelField} from './components/AddModelField';
+
+const WORKFLOW_COMMANDS_HINT = "A saved workflow with a Workflow Input becomes a chat command.";
+
+// macOS hands over the app bundle ("Google Chrome.app"); Playwright needs the program inside it.
+function toBrowserExecutable (path: string): string {
+    const bundle = /([^\\/]+)\.app[\\/]?$/.exec(path);
+
+    return bundle ? `${path.replace(/[\\/]$/, "")}/Contents/MacOS/${bundle[1]}` : path;
+}
 
 export const Settings = () => {
     const {settings, setSetting} = useSettings();
-    const [hoveredOllamaListItemIdx, setHoveredOllamaListItemIdx] = useState<number | null>(null);
-
-    const [modelInput, setModelInput] = useState('');
-    const [isPulling, setIsPulling] = useState(false);
-    const [progress, setProgress] = useState<number | null>(null);
     const [models, setModels] = useState<string[]>([]);
     const [isOllamaHostValid, setIsOllamaHostValid] = useState(false);
+    const [workflowsFolderError, setWorkflowsFolderError] = useState<string | null>(null);
+    const [defaultWorkflowsFolder, setDefaultWorkflowsFolder] = useState<string | null>(null);
 
     const fetchModels = async (): Promise<string[]> => {
         const res = await OllamaService.getInstance().fetchModels();
@@ -36,6 +47,27 @@ export const Settings = () => {
         void fetchModels();
     }, [settings.ollamaHost]);
 
+    // Checks the chosen folder, or learns the default one's path, which the field then shows.
+    useEffect(() => {
+        let cancelled = false;
+
+        listWorkflowsFolder(settings.workflowsFolder)
+            .then(({path}) => {
+                if (cancelled) return;
+
+                setWorkflowsFolderError(null);
+
+                if (!settings.workflowsFolder) setDefaultWorkflowsFolder(path);
+            })
+            .catch((error: unknown) => {
+                if (!cancelled) setWorkflowsFolderError(error instanceof Error ? error.message : String(error));
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [settings.workflowsFolder]);
+
     // Checks the freshly fetched names, not `models` state (a closure would only ever see the old list).
     // Sequential, so a slow fetch can't overlap the next attempt.
     const pollForModel = async (modelName: string, maxAttempts = 15, interval = 1000) => {
@@ -49,101 +81,64 @@ export const Settings = () => {
         }
     };
 
-    const handlePullModel = async () => {
-        setIsPulling(true);
-        setProgress(0);
-
-        try {
-            for await (const res of OllamaService.getInstance().pullModel(modelInput)) {
-                if (res.success) {
-                    setProgress(res.reply);
-                } else {
-                    setProgress(null);
-                    setIsPulling(false);
-                    setModelInput(res.error);
-
-                    return;
-                }
-            }
-
-            setProgress(100);
-            await pollForModel(modelInput);
-        } finally {
-            setIsPulling(false);
-            setModelInput('');
-            setProgress(null);
-        }
-    };
-
     const handleDeleteModel = async (model: string) => {
         await OllamaService.getInstance().deleteModel(model);
         await fetchModels();
     };
 
-    return (
+    // Filled in with Chrome's own path when found (SettingsProvider); empty means it wasn't.
+    const generalTab = (
+        <PathField
+            kind="file"
+            label="Browser Executable Path *"
+            pickerTitle="Choose the browser executable"
+            value={settings.browserPath}
+            onChange={(path) => setSetting("browserPath", toBrowserExecutable(path))}
+            error={!settings.browserPath}
+            helperText={settings.browserPath
+                ? "Path to your Chrome Browser executable for Playwright (required for scraping tools like 'Fetch Web Page' Node, etc.)"
+                : "Chrome wasn't found where it's usually installed: enter the path to its executable. Playwright needs it for scraping tools like 'Fetch Web Page' Node, etc."}
+        />
+    );
+
+    // An empty setting means the default folder, shown by its path; entering that folder, or leaving the
+    // field empty, keeps it the default.
+    const workflowsTab = (
         <>
-            <DebouncedTextField
-                label="Browser Executable Path *"
-                variant="outlined"
-                fullWidth
-                value={settings.browserPath}
-                onChange={value => setSetting("browserPath", value)}
-                helperText="Path to your Chrome Browser executable for Playwright (required for scraping tools like 'Fetch Web Page' Node, etc.)"
+            <PathField
+                kind="folder"
+                label="Workflows Folder"
+                pickerTitle="Choose the workflows folder"
+                value={settings.workflowsFolder || defaultWorkflowsFolder || ""}
+                onChange={(path) => setSetting("workflowsFolder", path === defaultWorkflowsFolder ? "" : path)}
+                error={workflowsFolderError !== null}
+                helperText={workflowsFolderError
+                    ?? (settings.workflowsFolder ? WORKFLOW_COMMANDS_HINT : `The default folder. ${WORKFLOW_COMMANDS_HINT}`)}
+                reset={settings.workflowsFolder ? {label: "Use the default folder", onReset: () => setSetting("workflowsFolder", "")} : undefined}
             />
+            <OutsideConnections />
+        </>
+    );
+
+    const ollamaTab = (
+        <>
             <DebouncedTextField
                 label="Ollama Host *"
                 variant="outlined"
                 fullWidth
                 value={settings.ollamaHost}
                 onChange={(value) => setSetting("ollamaHost", value)}
-                sx={{mt: 2}}
             />
-            <Box sx={{display: 'flex', alignItems: 'center', mt: 2}}>
-                <TextField
-                    label="Add Ollama Model"
-                    variant="outlined"
-                    value={
-                        isPulling && progress !== null
-                            ? `Downloading ${modelInput}   ${progress}%`
-                            : modelInput
-                    }
-                    onChange={event => setModelInput(event.target.value)}
-                    disabled={isPulling || !isOllamaHostValid}
-                    fullWidth
-                    helperText={!isOllamaHostValid ? "Invalid Ollama host - cannot add models" : ""}
-                    error={!isOllamaHostValid}
-                    slotProps={{
-                        input: {
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        onClick={() => void handlePullModel()}
-                                        disabled={isPulling || !modelInput.trim() || !isOllamaHostValid}
-                                        aria-label="Add model"
-                                    >
-                                        <Plus />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        }
-                    }}
-                />
-            </Box>
-            {isPulling && progress !== null && (
-                <Box sx={{width: '100%', mt: 1}}>
-                    <LinearProgress variant="determinate" value={progress} />
-                </Box>
-            )}
+            <AddModelField enabled={isOllamaHostValid} onPulled={(model) => pollForModel(model)} />
             <Box sx={{mt: 3, maxHeight: '100%', overflowY: 'auto'}}>
                 <List>
                     {
-                        models.map((model, idx) => (
+                        models.map((model) => (
                             <ListItem
                                 key={model}
-                                onMouseEnter={() => setHoveredOllamaListItemIdx(idx)}
-                                onMouseLeave={() => setHoveredOllamaListItemIdx(null)}
+                                // CSS hover, not state: a state change per row entered would redraw the whole dialog.
                                 sx={{
-                                    backgroundColor: hoveredOllamaListItemIdx === idx ? 'action.hover' : 'inherit',
+                                    '&:hover': {backgroundColor: 'action.hover'},
                                     transition: 'background 0.2s'
                                 }}
                                 secondaryAction={
@@ -164,5 +159,21 @@ export const Settings = () => {
                 </List>
             </Box>
         </>
+    );
+
+    return (
+        // One height for every tab, so the dialog doesn't jump when switching; it still grows when maximized.
+        // On a short screen, what's left of it: MUI caps the dialog at the window less 64px, and its title,
+        // margins and buttons take about 170px more.
+        <Box sx={{display: 'flex', flexDirection: 'column', flex: '1 0 auto', height: 'min(680px, calc(100vh - 230px))'}}>
+            <BasicTabs
+                keepMounted
+                tabs={[
+                    {title: "General", content: generalTab},
+                    {title: "Ollama", content: ollamaTab},
+                    {title: "Workflows", content: workflowsTab},
+                ]}
+            />
+        </Box>
     );
 };

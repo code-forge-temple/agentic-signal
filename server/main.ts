@@ -8,6 +8,7 @@ import {createYoga} from "npm:graphql-yoga";
 import {schema} from "./graphql/schema.ts";
 import {BACKEND_PORT} from "../shared/constants.ts";
 import {webSocketManager} from "./ws/webSocketManager.ts";
+import {commandsListener} from "./commands/mod.ts";
 
 // Prevent uncaught promise rejections from bringing down the entire Deno backend.
 globalThis.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
@@ -49,7 +50,9 @@ const yoga = createYoga({
 });
 
 const port = BACKEND_PORT;
-const hostname = "0.0.0.0";
+// This machine only, by default: anything that can reach this port can run the backend's tools. Docker
+// sets AGENTIC_SIGNAL_HOST=0.0.0.0, since a published port reaches the container's network, not its loopback.
+const hostname = Deno.env.get("AGENTIC_SIGNAL_HOST") ?? "127.0.0.1";
 
 // Set the yoga handler in WebSocketManager
 webSocketManager.setYogaHandler(async (request) => await yoga.fetch(request));
@@ -64,3 +67,7 @@ Deno.serve({
         console.log(`GraphQL WS: ws://${hostname}:${port}/graphql`);
     }
 });
+
+// Outside apps call workflow commands on a port of its own, so it can be opened to the network (the switch in
+// Settings, or AGENTIC_SIGNAL_COMMANDS_HOST) without opening the backend itself.
+await commandsListener.start();

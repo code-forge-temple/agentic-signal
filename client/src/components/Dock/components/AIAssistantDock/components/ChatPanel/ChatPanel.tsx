@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useState, useEffect, useRef, useCallback} from 'react';
+import {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {ChatHeader} from './components/ChatHeader/ChatHeader';
 import {ChatLog} from './components/ChatLog/ChatLog';
 import {ChatInput} from './components/ChatInput/ChatInput';
@@ -14,14 +14,30 @@ import {buildSystemPrompt} from '../../../../../../services/buildSystemPrompt';
 import {FetchAiResponseSuccess, Message, MessageRole} from '../../../../../../types/ollama.types';
 import {TRIPLE_BACKTICK} from '@shared/constants';
 import {DRAG_CANCEL_SELECTOR, AI_ASSISTANT_KEYWORDS, ROLE} from '../../../../../../constants';
-import {ChatMessage, ContextUsage, EMPTY_CONTEXT_USAGE} from '../../constants';
+import {AI_ASSISTANT_TITLE, ChatEntry, ChatMessage, ContextUsage, EMPTY_CONTEXT_USAGE, NOTICE_ROLE} from '../../constants';
 import {useGlobalConfig} from '../../../../../../stores/globalConfig';
 import {useDraggable} from '../../../../../../hooks/useDraggable';
 import {useStreamThrottle} from '../../../../../../hooks/useStreamThrottle';
 import {LlmSettingsDialog} from './components/ChatHeader/components/LlmSettingsDialog';
 import {useLlmSettings} from '../../hooks/useLlmSettings';
-import {getModelSettings} from '../../utils/llmSettings';
-import {isCloudModel, resolveContextLimit} from '../../utils/modelContext';
+import {DEFAULT_CONTEXT_WINDOW, getModelSettings} from '../../utils/llmSettings';
+import {contextWindowWarning, isCloudModel, minimumContextWindow, resolveContextLimit} from '../../utils/modelContext';
+import {useSnackbar} from 'notistack';
+import {NodeEnvelope} from '../../../../../../types/workflow';
+import {CommandError} from '../../../../../../services/commandRouter';
+import {CommandWorkflow, withDefaultModel} from '../../../../../../workflows';
+import {useCommandWorkflows} from '../../../../../../hooks/useCommandWorkflows';
+import {useAiLayerRun} from '../../hooks/useAiLayerRun';
+import {
+    chatCommandsPrompt,
+    commandFailureText,
+    commandReplySystemPrompt,
+    commandResultsLabel,
+    commandResultsMessage,
+    MESSAGE_TIME_NOTE,
+    parseCommandMessage,
+    toModelMessages,
+} from '../../utils/chatCommands';
 
 
 const NO_MODEL = '';
@@ -33,10 +49,11 @@ type ChatPanelProps = {
 };
 
 export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelProps) => {
+    const {enqueueSnackbar} = useSnackbar();
     const {globalData, setGlobalData} = useGlobalConfig();
     const storedModel = globalData['selectedModel'] || '';
 
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatEntry[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>(NO_MODEL);
     const [models, setModels] = useState<string[]>([]);
     const [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -48,6 +65,18 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
     const {settingsMap, contextMap} = useLlmSettings();
 
     const currentStreamRequestId = useRef<symbol | null>(null);
+    // The reply in flight, cancellable on its own: an LLM node running in some layer is left alone.
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => () => abortControllerRef.current?.abort(), []);
+
+    const {run: runOnAiLayer, stop: stopAiLayerRun} = useAiLayerRun();
+    const commandWorkflows = useCommandWorkflows();
+    // What the instructions and a reply need, measured on the instructions themselves (they grow with every
+    // node and tool): shown in the tip, and checked against the selected model's window.
+    const minimumContext = useMemo(() => minimumContextWindow(buildSystemPrompt()), []);
+    const chatCommands = useMemo(() => commandWorkflows.map(w => ({value: `/${w.command}`, description: w.description})), [commandWorkflows]);
+    const isRunningCommandRef = useRef(false);
 
     const {
         ref: panelRef,
@@ -64,11 +93,12 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
             setMessages(prev => {
                 const updated = [...prev];
                 const lastIndex = updated.length - 1;
+                const last = updated[lastIndex];
 
-                if (updated[lastIndex]?.role !== ROLE.ASSISTANT) return prev;
+                if (last?.role !== ROLE.ASSISTANT) return prev;
 
                 updated[lastIndex] = {
-                    role: ROLE.ASSISTANT,
+                    ...last,
                     content: reply,
                     thinking,
                 };
@@ -108,52 +138,46 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         void fetchModels();
     }, [storedModel, setGlobalData]);
 
-    const handleSend = useCallback(async (text: string) => {
-        if (!text || !selectedModel || isLoading) return;
+    const setLastAssistantMessage = useCallback((content: string) => {
+        setMessages(prev => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            const last = updated[lastIndex];
 
+            if (last?.role !== ROLE.ASSISTANT) return prev;
+
+            // An error in a command's reply keeps the results it was answering from.
+            updated[lastIndex] = {role: ROLE.ASSISTANT, content, commandResults: last.commandResults};
+
+            return updated;
+        });
+    }, []);
+
+    // Streams the AI Buddy's reply to `conversation` (already on screen) into `reply`, added after it.
+    const streamReply = useCallback(async (
+        conversation: ChatEntry[],
+        systemPrompt: string,
+        reply: ChatMessage = {role: ROLE.ASSISTANT, content: ''}
+    ) => {
         const requestId = Symbol('stream-request');
 
         currentStreamRequestId.current = requestId;
 
+        const controller = new AbortController();
+
+        abortControllerRef.current = controller;
+
         // Nothing buffered from a previous stream may survive into this one.
         cancel();
 
-        const processedText = text.replace(
-            new RegExp(AI_ASSISTANT_KEYWORDS.CURRENT_WORKFLOW, 'g'),
-            () => {
-                const json = getWorkflowJson();
-
-                return `current workflow:\n\n${TRIPLE_BACKTICK}json\n${json}\n${TRIPLE_BACKTICK}\n`;
-            }
-        );
-
-        const userMessage: ChatMessage = {
-            role: ROLE.USER,
-            content: processedText,
-        };
-
-        const updatedMessages = [...messages, userMessage];
-
-        setMessages(updatedMessages);
         setIsLoading(true);
 
-        const systemMessage: Message = {
-            role: MessageRole.SYSTEM,
-            content: buildSystemPrompt(),
-        };
-
         const ollamaMessages: Message[] = [
-            systemMessage,
-            ...updatedMessages.map(m => ({
-                role: m.role as MessageRole,
-                content: m.content,
-            })),
+            {role: MessageRole.SYSTEM, content: systemPrompt},
+            ...toModelMessages([...conversation, reply]),
         ];
 
-        setMessages(prev => [
-            ...prev,
-            {role: ROLE.ASSISTANT, content: '', thinking: undefined},
-        ]);
+        setMessages(prev => [...prev, reply]);
 
         try {
             const modelSettings = getModelSettings(settingsMap, selectedModel);
@@ -167,7 +191,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
 
             for await (const chunk of OllamaService
                 .getInstance()
-                .streamAIResponse(ollamaMessages, selectedModel, streamOptions)
+                .streamAIResponse(ollamaMessages, selectedModel, streamOptions, controller.signal)
             ) {
                 if (currentStreamRequestId.current !== requestId) {
                     cancel();
@@ -201,19 +225,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                     cancel();
 
                     if (!chunk.error?.toLowerCase().includes('aborted')) {
-                        setMessages(prev => {
-                            const updated = [...prev];
-                            const lastIndex = updated.length - 1;
-
-                            if (updated[lastIndex]?.role !== ROLE.ASSISTANT) return prev;
-
-                            updated[lastIndex] = {
-                                role: ROLE.ASSISTANT,
-                                content: `Error: ${chunk.error}`,
-                            };
-
-                            return updated;
-                        });
+                        setLastAssistantMessage(`Error: ${chunk.error}`);
                     }
 
                     break;
@@ -228,19 +240,132 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                 currentStreamRequestId.current = null;
             }
 
+            if (abortControllerRef.current === controller) {
+                abortControllerRef.current = null;
+            }
+
             setIsLoading(false);
         }
-    }, [messages, selectedModel, isLoading, getWorkflowJson, push, flush, cancel, settingsMap]);
+    }, [selectedModel, push, flush, cancel, settingsMap, setLastAssistantMessage]);
 
-    const handleDeleteMessage = useCallback(async (index: number) => {
+    const handleSend = useCallback(async (text: string) => {
+        if (!text || !selectedModel || isLoading) return;
+
+        const processedText = text.replace(
+            new RegExp(AI_ASSISTANT_KEYWORDS.CURRENT_WORKFLOW, 'g'),
+            () => {
+                const json = getWorkflowJson();
+
+                return `current workflow:\n\n${TRIPLE_BACKTICK}json\n${json}\n${TRIPLE_BACKTICK}\n`;
+            }
+        );
+
+        const userMessage: ChatMessage = {
+            role: ROLE.USER,
+            content: processedText,
+            sentAt: Date.now(),
+        };
+
+        const updatedMessages = [...messages, userMessage];
+
+        setMessages(updatedMessages);
+
+        // The AI Buddy may end a reply suggesting one of the commands, for the user to run or skip.
+        const commandsSection = commandWorkflows.length > 0 ? chatCommandsPrompt(commandWorkflows) : '';
+
+        await streamReply(updatedMessages, buildSystemPrompt() + commandsSection + MESSAGE_TIME_NOTE);
+    }, [messages, selectedModel, isLoading, getWorkflowJson, streamReply, commandWorkflows]);
+
+    // `/command text`: the AI Buddy runs that workflow on its own layer, then answers from the result.
+    const handleCommand = useCallback(async (message: string, commandWorkflow: CommandWorkflow, text: string) => {
+        if (!selectedModel || isLoading) return;
+
+        const {command, description, workflow} = commandWorkflow;
+        const userMessage: ChatMessage = {role: ROLE.USER, content: message, sentAt: Date.now()};
+        const conversation = [...messages, userMessage];
+
+        setMessages([...conversation, {role: ROLE.ASSISTANT, content: `Running **/${command}** on the ${AI_ASSISTANT_TITLE} layer…`, runningCommand: command}]);
+        setIsLoading(true);
+
+        isRunningCommandRef.current = true;
+
+        let result: NodeEnvelope;
+
+        try {
+            result = await runOnAiLayer(command, withDefaultModel(workflow, selectedModel), {payload: text});
+        } catch (error) {
+            setIsLoading(false);
+
+            if (error instanceof CommandError && error.cancelled) return;
+
+            setLastAssistantMessage(commandFailureText(command, error));
+
+            return;
+        } finally {
+            isRunningCommandRef.current = false;
+        }
+
+        const {limit} = resolveContextLimit(selectedModel, getModelSettings(settingsMap, selectedModel), contextMap[selectedModel]);
+        const reply: ChatMessage = {
+            role: ROLE.ASSISTANT,
+            content: '',
+            commandResults: {
+                label: commandResultsLabel(command),
+                content: commandResultsMessage(command, text, result, limit ?? DEFAULT_CONTEXT_WINDOW),
+            },
+        };
+
+        // The reply takes the status message's place (still the last: nothing can be sent while it runs,
+        // and deleting it stops the run), opening with the results folded away.
+        setMessages(prev => prev.slice(0, -1));
+
+        await streamReply(conversation, commandReplySystemPrompt(command, description, text) + MESSAGE_TIME_NOTE, reply);
+    }, [messages, selectedModel, isLoading, runOnAiLayer, setLastAssistantMessage, settingsMap, contextMap, streamReply]);
+
+    const handleSubmit = useCallback((text: string): boolean => {
+        const commandMessage = parseCommandMessage(text);
+
+        if (commandMessage) {
+            const commandWorkflow = commandWorkflows.find(w => w.command === commandMessage.command);
+
+            if (!commandWorkflow) {
+                // eslint-disable-next-line max-len
+                enqueueSnackbar(`Unknown command /${commandMessage.command}. Save a workflow that answers to it to your workflows folder, or type / to see the commands you can run.`, {variant: 'warning'});
+
+                return false;
+            }
+
+            void handleCommand(text, commandWorkflow, commandMessage.text);
+
+            return true;
+        }
+
+        void handleSend(text);
+
+        return true;
+    }, [enqueueSnackbar, handleSend, handleCommand, commandWorkflows]);
+
+    // Running a command the AI Buddy suggested: as if the user had typed it, so it's their message in the chat.
+    const handleRunSuggestion = useCallback((message: string) => {
+        if (!isLoading) handleSubmit(message);
+    }, [isLoading, handleSubmit]);
+
+    const handleSkipSuggestion = useCallback((index: number) => {
+        setMessages(prev => prev.map((message, i) => i === index && message.role === ROLE.ASSISTANT ? {...message, suggestionSkipped: true} : message));
+    }, []);
+
+    const handleDeleteMessage = useCallback((index: number) => {
         const isLastMsg = index === messages.length - 1;
         const isStreamingAssistant =
             isLoading && isLastMsg && messages[index]?.role === ROLE.ASSISTANT;
 
         if (isStreamingAssistant) {
-            await OllamaService.getInstance().abortAIResponse();
+            abortControllerRef.current?.abort();
             currentStreamRequestId.current = null;
             setIsLoading(false);
+
+            // The message is a command's status line: deleting it stops the run.
+            if (isRunningCommandRef.current) stopAiLayerRun();
         }
 
         // Before the state update, so a buffered chunk can't land in the gap and repaint
@@ -251,22 +376,39 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
 
         // The old count would now read high, and nothing re-measures until the next send.
         setContextUsage(EMPTY_CONTEXT_USAGE);
-    }, [messages, isLoading, cancel]);
+    }, [messages, isLoading, cancel, stopAiLayerRun]);
 
     const handleModelChange = useCallback((model: string) => {
         setSelectedModel(model);
         setGlobalData('selectedModel', model, true);
-    }, [setGlobalData]);
 
-    const handleClose = useCallback(async () => {
+        // Marks where the conversation switched models. Another switch straight after updates that
+        // line, and switching straight back removes it.
+        setMessages(prev => {
+            const last = prev[prev.length - 1];
+
+            if (!last) return prev;
+
+            if (last.role !== NOTICE_ROLE) return [...prev, {role: NOTICE_ROLE, model, previousModel: selectedModel}];
+
+            const rest = prev.slice(0, -1);
+
+            return model === last.previousModel ? rest : [...rest, {...last, model}];
+        });
+    }, [setGlobalData, selectedModel]);
+
+    const handleClose = useCallback(() => {
         if (isLoading) {
-            await OllamaService.getInstance().abortAIResponse();
+            abortControllerRef.current?.abort();
             currentStreamRequestId.current = null;
         }
 
-        onClose();
-    }, [isLoading, onClose]);
+        if (isRunningCommandRef.current) stopAiLayerRun();
 
+        onClose();
+    }, [isLoading, onClose, stopAiLayerRun]);
+
+    // Into whichever layer is shown when the button is pressed; the AI Buddy layer offers a new layer instead.
     const handleImportWorkflow = useCallback((json: string) => {
         onLoadWorkflow(json, (error: string) => {
             void handleSend(
@@ -277,11 +419,13 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         });
     }, [onLoadWorkflow, handleSend]);
 
-    const {limit, source} = resolveContextLimit(
+    const resolvedContext = resolveContextLimit(
         selectedModel,
         getModelSettings(settingsMap, selectedModel),
         contextMap[selectedModel]
     );
+    const {limit, source} = resolvedContext;
+    const contextWarning = contextWindowWarning(selectedModel, resolvedContext, minimumContext);
     // Token counts aren't comparable across tokenizers, so a reading only counts while the
     // model that produced it is still selected.
     const usedTokens = contextUsage.model === selectedModel
@@ -300,7 +444,10 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                     onModelChange={handleModelChange}
                     models={models}
                     isFetchingModels={isFetchingModels}
-                    onClose={() => void handleClose()}
+                    // A reply or command in flight keeps the model it started with; a switch then would land mid-reply.
+                    isModelLocked={isLoading}
+                    contextWarning={contextWarning}
+                    onClose={handleClose}
                     onMinimize={() => setIsMinimized(prev => !prev)}
                     isMinimized={isMinimized}
                     onDragHandleMouseDown={handleDragHandleMouseDown}
@@ -310,15 +457,20 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                 {!isMinimized && (
                     <ChatLog
                         messages={messages}
+                        minimumContext={minimumContext}
                         isLoading={isLoading}
                         onLoadWorkflow={handleImportWorkflow}
-                        onDeleteMessage={(index) => void handleDeleteMessage(index)}
+                        onDeleteMessage={handleDeleteMessage}
+                        commands={commandWorkflows}
+                        onRunSuggestion={handleRunSuggestion}
+                        onSkipSuggestion={handleSkipSuggestion}
                     />
                 )}
 
                 {!isMinimized && (
                     <ChatInput
-                        onSend={(text) => void handleSend(text)}
+                        onSend={handleSubmit}
+                        commands={chatCommands}
                         disabled={!selectedModel || isLoading}
                         panelPosition={position}
                         contextGauge={{

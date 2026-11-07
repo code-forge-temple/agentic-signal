@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {OllamaService} from './ollamaService';
 import {MessageRole, StreamAiResponse} from '../types/ollama.types';
 
@@ -17,7 +17,7 @@ type CallOllamaChatArgs = Parameters<OllamaService['callOllamaChat']>;
 type OllamaServiceInternals = {
     callOllamaChat: (...args: unknown[]) => Promise<unknown>;
     recoverToolCallFromContent: (response: unknown, tools: unknown) => void;
-    getOllama: () => Promise<unknown>;
+    getOllama: (signal?: AbortSignal) => Promise<unknown>;
     ollama: unknown;
 };
 
@@ -199,10 +199,40 @@ describe('OllamaService.fetchAIResponse', () => {
         expect(result).toEqual({success: true, final: true, reply: 'Both steps complete.'});
     });
 
-    it('throws a clear error when the model calls a tool that was never registered', async () => {
+    it('tells the model which tools it has when it calls one it was not given, and carries on', async () => {
         const handlerLog: any[] = [];
-        const {service} = mockService([
+        const {service, receivedArgs} = mockService([
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall({}, 'someUnknownTool')]}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: 'Form filled.'}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'fill', images: []}],
+            model: 'm',
+            tools: makeTools(handlerLog),
+            maxToolRetries: 3,
+        });
+
+        expect(handlerLog).toHaveLength(1);
+        expect(result).toEqual({success: true, final: true, reply: 'Form filled.'});
+
+        // The second request answers the made-up call, followed by the usual nudge for the required tool.
+        const contents = (receivedArgs[1][1] as {content: string}[]).map(m => m.content);
+        const answer = contents.indexOf('Error: there is no tool named "someUnknownTool" here. The tools you can call are: formInteraction.');
+
+        expect(answer).toBeGreaterThan(-1);
+        expect(contents[answer + 1]).toBe('You must call the following tools: formInteraction. Please make the tool calls now.');
+    });
+
+    it('stops at the round limit when the model keeps calling a tool it was not given, running nothing', async () => {
+        const handlerLog: any[] = [];
+        const unknownCall = {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall({}, 'someUnknownTool')]}};
+        const {service, getCallCount} = mockService([
+            unknownCall, unknownCall, unknownCall,
+            // The final-summary step offers no tools; a model that still calls one is asked again.
+            unknownCall,
+            {message: {role: 'assistant', content: 'I cannot do that.'}},
         ]);
 
         const result = await service.fetchAIResponse({
@@ -214,7 +244,9 @@ describe('OllamaService.fetchAIResponse', () => {
 
         expect(handlerLog).toHaveLength(0);
         expect(result.success).toBe(false);
-        expect((result as any).error).toMatch(/Tool not found: someUnknownTool/);
+        expect((result as any).error).toMatch(/not called successfully: formInteraction/);
+        // 3 rounds (the limit for one required tool with 3 retries), then 2 final-summary attempts.
+        expect(getCallCount()).toBe(5);
     });
 
     it('passes a string tool result through as-is, without JSON-stringifying it', async () => {
@@ -794,27 +826,111 @@ describe('OllamaService.deleteModel', () => {
     });
 });
 
-describe('OllamaService.abortAIResponse', () => {
-    it('reports success after calling abort on the client', async () => {
-        let aborted = false;
-        const {service} = mockOllamaClient({
-            abort: () => { aborted = true; },
-        });
-
-        const result = await service.abortAIResponse();
-
-        expect(result).toEqual({success: true});
-        expect(aborted).toBe(true);
+describe('OllamaService per-request cancel (signal)', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        OllamaService.reloadInstance();
     });
 
-    it('returns an error response when abort itself throws', async () => {
-        const {service} = mockOllamaClient({
-            abort: () => { throw new Error('nothing to abort'); },
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('gives a request with a signal a client of its own, leaving the shared one alone', async () => {
+        const service = getInternals();
+        const shared = await service.getOllama();
+        const own = await service.getOllama(new AbortController().signal);
+
+        expect(own).not.toBe(shared);
+        expect(await service.getOllama()).toBe(shared);
+    });
+
+    it("cancels that client's requests when the signal aborts, streamed or not", async () => {
+        const seen: (AbortSignal | null | undefined)[] = [];
+
+        vi.stubGlobal('fetch', (_input: unknown, init?: RequestInit) => {
+            seen.push(init?.signal);
+
+            return new Promise(() => {});
         });
 
-        const result = await service.abortAIResponse();
+        const controller = new AbortController();
+        const client = await getInternals().getOllama(controller.signal) as {fetch: typeof fetch};
 
-        expect(result).toEqual({success: false, error: 'nothing to abort'});
+        // Not streamed: ollama-js passes no signal. Streamed: it passes one of its own.
+        void client.fetch('http://x', {});
+        void client.fetch('http://x', {signal: new AbortController().signal});
+
+        controller.abort();
+
+        expect(seen).toHaveLength(2);
+        expect(seen.every(signal => signal?.aborted)).toBe(true);
+    });
+
+    it('still lets ollama-js abort a stream through its own signal', async () => {
+        let seen: AbortSignal | null | undefined;
+
+        vi.stubGlobal('fetch', (_input: unknown, init?: RequestInit) => {
+            seen = init?.signal;
+
+            return new Promise(() => {});
+        });
+
+        const streamController = new AbortController();
+        const client = await getInternals().getOllama(new AbortController().signal) as {fetch: typeof fetch};
+
+        void client.fetch('http://x', {signal: streamController.signal});
+        streamController.abort();
+
+        expect(seen?.aborted).toBe(true);
+    });
+
+    it('starts no tool call once fetchAIResponse is cancelled', async () => {
+        const handlerLog: any[] = [];
+        const controller = new AbortController();
+        const {service} = mockService([
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+        ]);
+        const cannedCall = (service as any).callOllamaChat as (...args: unknown[]) => Promise<unknown>;
+
+        // Cancelled while the model answers with a tool call.
+        (service as any).callOllamaChat = async (...args: unknown[]) => {
+            controller.abort();
+
+            return cannedCall(...args);
+        };
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'fill', images: []}],
+            model: 'm',
+            tools: makeTools(handlerLog),
+            maxToolRetries: 5,
+            signal: controller.signal,
+        });
+
+        expect(handlerLog).toHaveLength(0);
+        expect(result.success).toBe(false);
+    });
+
+    it("hands streamAIResponse's signal to the client it streams from", async () => {
+        const {service, client} = mockOllamaClient({
+            chat: async () => fakeAsyncStream([{message: {content: 'Hi'}}]),
+        });
+        let received: AbortSignal | undefined;
+
+        (service as any).getOllama = async (signal?: AbortSignal) => {
+            received = signal;
+
+            return client;
+        };
+
+        const controller = new AbortController();
+
+        for await (const chunk of service.streamAIResponse([{role: MessageRole.USER, content: 'hi', images: []}], 'm', undefined, controller.signal)) {
+            void chunk;
+        }
+
+        expect(received).toBe(controller.signal);
     });
 });
 

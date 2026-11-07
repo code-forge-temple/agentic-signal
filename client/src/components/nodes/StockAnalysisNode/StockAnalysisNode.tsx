@@ -8,10 +8,9 @@ import {type NodeProps} from "@xyflow/react";
 import {assertIsStockAnalysisNodeData} from "./types/workflow";
 import {StockAnalysisInputSchema, StockDataPoint, STOCK_ANALYSIS_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {useState} from "react";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {runTask} from "../BaseNode/utils";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
-import {LogsDialog} from "../../LogsDialog";
 import {BaseDialog} from "../../BaseDialog";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -28,7 +27,6 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
     assertIsStockAnalysisNodeData(data);
 
     const [error, setError] = useState<string[] | null>(null);
-    const [openLogs, setOpenLogs] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const {title, input, onResultUpdate, onFeedbackSend} = data;
@@ -99,7 +97,7 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -108,15 +106,8 @@ export function StockAnalysisNode ({data, id}: NodeProps<AppNode>) {
                 }}
                 running={isRunning}
                 title={title}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-                settings={{callback: () => setOpenSettings(true), highlight: false}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
+                settings={{callback: () => setOpenSettings(true), highlight: false}}
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>

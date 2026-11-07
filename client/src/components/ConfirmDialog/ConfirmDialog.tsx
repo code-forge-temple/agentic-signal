@@ -16,6 +16,11 @@ export interface ConfirmDialogProps {
     cancelLabel?: string;
     onConfirm: () => void;
     onCancel?: () => void;
+    /** More choices, shown between Cancel and the confirm button; each closes the dialog, as those two do. */
+    extraActions?: {label: string; onClick: () => void}[];
+    /** A set width in px, for more choices than the default width fits on one line. */
+    width?: number;
+    maximizable?: boolean;
 }
 
 export function ConfirmDialog ({
@@ -27,6 +32,9 @@ export function ConfirmDialog ({
     cancelLabel = "Cancel",
     onConfirm,
     onCancel,
+    extraActions,
+    width,
+    maximizable,
 }: ConfirmDialogProps) {
     const handleCancel = () => {
         onCancel?.();
@@ -45,9 +53,22 @@ export function ConfirmDialog ({
             title={title}
             maxWidth="sm"
             fullWidth={false}
+            width={width}
+            maximizable={maximizable}
             actions={
                 <>
                     <Button onClick={handleCancel}>{cancelLabel}</Button>
+                    {extraActions?.map(({label, onClick}) => (
+                        <Button
+                            key={label}
+                            onClick={() => {
+                                onClick();
+                                onClose();
+                            }}
+                        >
+                            {label}
+                        </Button>
+                    ))}
                     <Button variant="contained" onClick={handleConfirm}>{confirmLabel}</Button>
                 </>
             }

@@ -1,0 +1,63 @@
+{
+    "nodes": [
+        {
+            "id": "conversion-request",
+            "type": "workflow-input",
+            "position": {"x": 0, "y": 0},
+            "data": {
+                "command": "convert",
+                "description": "Convert money between currencies, e.g. \"100 EUR to RON\", at the European Central Bank's daily reference rates."
+            }
+        },
+        {
+            "id": "currencies",
+            "type": "llm-process",
+            "position": {"x": 220, "y": 0},
+            "data": {
+                "model": "",
+                "prompt": "The input asks to convert an amount of money from one currency to one or more others. Reply with the amount (1 if none is given), the ISO 4217 code of the currency to convert from, and the codes of the currencies to convert to (e.g. dollars USD, euro EUR, lei RON, pounds GBP).",
+                "format": {
+                    "onSuccess": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"amount\": {\n      \"type\": \"number\"\n    },\n    \"from\": {\n      \"type\": \"string\"\n    },\n    \"to\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"minItems\": 1\n    }\n  },\n  \"required\": [\n    \"amount\",\n    \"from\",\n    \"to\"\n  ],\n  \"additionalProperties\": false\n}"
+                },
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "think": false
+            }
+        },
+        {
+            "id": "rates-url",
+            "type": "json-reformatter",
+            "position": {"x": 440, "y": 0},
+            "data": {
+                "jsonataExpression": "/* Frankfurter: the European Central Bank's reference rates, no key needed. These are the currencies it covers. */\n(\n    $covered := [\"AUD\",\"BRL\",\"CAD\",\"CHF\",\"CNY\",\"CZK\",\"DKK\",\"EUR\",\"GBP\",\"HKD\",\"HUF\",\"IDR\",\"ILS\",\"INR\",\"ISK\",\"JPY\",\"KRW\",\"MXN\",\"MYR\",\"NOK\",\"NZD\",\"PHP\",\"PLN\",\"RON\",\"SEK\",\"SGD\",\"THB\",\"TRY\",\"USD\",\"ZAR\"];\n    $from := $uppercase(from);\n    $to := $filter($map([to], $uppercase), function($code) {$code != $from});\n    $unknown := $filter([$from, $to], function($code) {$not($code in $covered)});\n    $count($unknown) > 0\n        ? $error(\"The European Central Bank publishes no rate for \" & $join($unknown, \", \") & \". It covers \" & $join($covered, \", \") & \".\")\n        : $count($to) = 0\n            ? $error(\"Name a different currency to convert to.\")\n            : {\n                \"url\": \"https://api.frankfurter.dev/v1/latest?amount=\" & $string(amount) & \"&base=\" & $from & \"&symbols=\" & $join($to, \",\"),\n                \"dataType\": \"json\"\n            }\n)"
+            }
+        },
+        {
+            "id": "rates",
+            "type": "get-data",
+            "position": {"x": 620, "y": 0},
+            "data": {"url": "", "dataType": "json", "dataProvidedByUpstream": true}
+        },
+        {
+            "id": "conversion",
+            "type": "json-reformatter",
+            "position": {"x": 840, "y": 0},
+            "data": {
+                "jsonataExpression": "(\n    $lines := $map($keys(rates), function($code) {\"- **\" & $formatNumber($lookup(rates, $code), \"#,##0.00##\") & \" \" & $code & \"**\"});\n    \"**\" & $formatNumber(amount, \"#,##0.##\") & \" \" & base & \"** is:\\n\" & $join($lines, \"\\n\") & \"\\n\\nAt the European Central Bank's reference rates of \" & date & \", via Frankfurter. The bank publishes them once a working day; a bank or exchange office will quote a different rate.\"\n)"
+            }
+        },
+        {
+            "id": "reply",
+            "type": "workflow-output",
+            "position": {"x": 1020, "y": 0},
+            "data": {}
+        }
+    ],
+    "edges": [
+        {"source": "conversion-request", "target": "currencies", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "currencies", "target": "rates-url", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "rates-url", "target": "rates", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "rates", "target": "conversion", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "conversion", "target": "reply", "sourceHandle": "flow", "targetHandle": "flow"}
+    ]
+}

@@ -7,9 +7,8 @@
 import {type NodeProps} from "@xyflow/react";
 import {assertIsDataFlowSpyNodeData} from "./types/workflow";
 import {useState} from "react";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
@@ -22,14 +21,13 @@ export function DataFlowSpyNode ({id, data}: NodeProps<AppNode>) {
     assertIsDataFlowSpyNodeData(data);
 
     const [openOutput, setOpenOutput] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const {title, input} = data;
     const hasOutput = input?.payload !== undefined || input?.toolsPayload !== undefined;
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -37,13 +35,6 @@ export function DataFlowSpyNode ({id, data}: NodeProps<AppNode>) {
                 }}
                 title={title}
                 output={{callback: () => setOpenOutput(true), highlight: hasOutput}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

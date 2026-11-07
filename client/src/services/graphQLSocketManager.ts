@@ -1,6 +1,5 @@
 import {createClient, Client, SubscribePayload} from "graphql-ws";
 import {graphqlBaseUrl} from "../utils/utils";
-import {BACKEND_PORT} from "@shared/constants";
 
 export class GraphQLSocketManager {
     private static instance: GraphQLSocketManager | null = null;
@@ -21,8 +20,11 @@ export class GraphQLSocketManager {
 
         let wsUrl = graphqlBaseUrl;
 
+        // The page's own host, the way its requests go: the dev server passes the connection on to the backend.
+        // "localhost" would be the computer the browser runs on, which isn't the backend's when the app is
+        // opened from another one (the backend on a Jetson, the browser on a PC).
         if (wsUrl.startsWith("/")) {
-            wsUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//localhost:${BACKEND_PORT}${wsUrl}`;
+            wsUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}${wsUrl}`;
         } else {
             wsUrl = wsUrl.replace(/^http/, "ws");
         }

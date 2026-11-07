@@ -59,8 +59,17 @@ export class OllamaService {
         OllamaService.instance = new OllamaService();
     }
 
-    private getOllama = async (): Promise<Ollama> => {
+    /**
+     * The shared client, or with a `signal`, a client of its own for one request: aborting that
+     * signal cancels the request (streamed or not) and nobody else's. The shared client's own
+     * `abort()` would cancel every stream in flight, in every node and in the chat alike.
+     */
+    private getOllama = async (signal?: AbortSignal): Promise<Ollama> => {
         const host = localStorage.getItem("ollamaHost") || "";
+
+        if (signal) {
+            return new Ollama({host, fetch: fetchWithAbortSignal(signal)});
+        }
 
         if (!this.ollama || this.ollamaHost !== host) {
             this.ollama = new Ollama({host});
@@ -94,7 +103,8 @@ export class OllamaService {
         tools,
         maxToolRetries,
         think,
-        temperature
+        temperature,
+        signal
     }: {
         messages: Message[],
         model: string,
@@ -106,10 +116,12 @@ export class OllamaService {
         }[],
         maxToolRetries: number,
         think?: boolean,
-        temperature?: number
+        temperature?: number,
+        /** Cancels the whole exchange: the request in flight, and any tool call not yet started. */
+        signal?: AbortSignal
     }): Promise<FetchAiResponse> => {
         try {
-            const ollama = await this.getOllama();
+            const ollama = await this.getOllama(signal);
             const updatedMessages = messages.map((message) => {
                 if (typeof message.content !== "string") {
                     return {
@@ -178,6 +190,9 @@ export class OllamaService {
                         // multi-step workflows with the same tool (e.g. read-form → fill-form).
                         if (!status || status.retryCount < maxToolRetries) {
                             toolCallsMade = true;
+
+                            // A tool can act on the world (fill and submit a form): none starts after a cancel.
+                            signal?.throwIfAborted();
 
                             const {hasError, toolCallMessage, toolResultMessage} = await this.executeToolCallWithTracking(
                                 toolCall,
@@ -296,6 +311,8 @@ export class OllamaService {
                     for (const toolCall of response.message.tool_calls) {
                         const toolName = toolCall.function.name;
                         const status = toolStatus[toolName];
+
+                        signal?.throwIfAborted();
 
                         const {hasError, toolCallMessage, toolResultMessage} = await this.executeToolCallWithTracking(
                             toolCall, tools, status?.retryCount ?? 0, maxToolRetries
@@ -547,7 +564,20 @@ export class OllamaService {
         const tool = tools.find(t => t.schema.name === toolName);
 
         if (!tool) {
-            throw new Error(`Tool not found: ${toolName}`);
+            // A made-up name, or (in orchestration) a tool another task was given: the model is told
+            // what it can call and carries on, within the conversation's round limit.
+            const available = tools.map(t => t.schema.name).join(", ") || "none";
+
+            return {
+                hasError: true,
+                toolCallMessage: {role: MessageRole.ASSISTANT, content: JSON.stringify(toolCall), images: []},
+                toolResultMessage: {
+                    role: MessageRole.USER,
+                    content: `Error: there is no tool named "${toolName}" here. The tools you can call are: ${available}.`,
+                    images: []
+                },
+                toolName
+            };
         }
 
         const toolResult: unknown = await tool.handler(toolArgs);
@@ -581,10 +611,11 @@ export class OllamaService {
     async *streamAIResponse (
         messages: Message[],
         model: string,
-        settings?: StreamChatOptions
+        settings?: StreamChatOptions,
+        signal?: AbortSignal
     ): AsyncGenerator<StreamAiResponse, void, unknown> {
         try {
-            const ollama = await this.getOllama();
+            const ollama = await this.getOllama(signal);
             const updatedMessages = messages.map((message) => {
                 const {content, images} = extractImagesAndRemove(message.content);
 
@@ -743,23 +774,32 @@ export class OllamaService {
             };
         }
     }
+}
 
-    abortAIResponse = async (): Promise<{ success: true } | ErrorResponse> => {
-        try {
-            const ollama = await this.getOllama();
+/**
+ * A fetch for a one-request client: `signal` cancels it. ollama-js passes a signal of its own for
+ * streams (its iterator's `abort()`); that one keeps working too.
+ */
+function fetchWithAbortSignal (signal: AbortSignal): typeof fetch {
+    return (input, init) => {
+        const ownSignal = init?.signal;
 
-            ollama.abort();
+        if (!ownSignal) return fetch(input, {...init, signal});
 
-            return {
-                success: true
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : String(error)
-            };
+        // Both, by hand: AbortSignal.any() is missing from older WebKit (the Tauri webview on Linux and macOS).
+        const controller = new AbortController();
+        const abort = () => controller.abort();
+
+        for (const source of [signal, ownSignal]) {
+            if (source.aborted) {
+                controller.abort();
+            } else {
+                source.addEventListener("abort", abort, {once: true});
+            }
         }
-    }
+
+        return fetch(input, {...init, signal: controller.signal});
+    };
 }
 
 function extractImagesAndRemove (content: string): { content: string, images: string[] } {

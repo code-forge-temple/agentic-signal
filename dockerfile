@@ -15,5 +15,8 @@ WORKDIR /app/agentic-signal
 RUN bun install
 RUN cd client && bun install
 
-EXPOSE 8080 8000
+# The backend listens on 127.0.0.1 unless told otherwise; a published port needs every interface.
+ENV AGENTIC_SIGNAL_HOST=0.0.0.0
+
+EXPOSE 8080 8000 8001
 CMD ["bun", "run", "dev"]

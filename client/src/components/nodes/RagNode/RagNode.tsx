@@ -6,10 +6,9 @@
 
 import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
 import {useEffect, useState} from "react";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {DebouncedTextField} from "../../DebouncedTextField";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -31,7 +30,6 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
     assertIsRagNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [error, setError] = useState<string[]>([]);
 
     const {models, isFetchingModels, fetchModels} = useFetchModels((msg) => setError(prev => [...prev, msg]));
@@ -123,13 +121,13 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{}}
                 title={title}
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
-                logs={{callback: () => setOpenLogs(true), highlight: error.length > 0}}
+                error={error}
                 extraPorts={
                     <Handle
                         type="source"
@@ -151,13 +149,6 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                         }}
                     />
                 }
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
-                error={error}
             />
 
             <BaseDialog

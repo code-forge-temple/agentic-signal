@@ -20,7 +20,7 @@ type ClickCallback = () => void | Promise<void>;
 
 type OnClick = ClickCallback | {callback: ClickCallback; highlight: boolean};
 
-type BaseNodeProps = {
+export type BaseNodeProps = {
     id: string;
     nodeIcon: React.ReactElement<{className?: string; color?: string}>;
     title: string;

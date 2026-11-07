@@ -11,6 +11,8 @@
     "npm:@mui/material@^7.1.0": "7.3.11_@emotion+react@11.14.0__react@19.2.6_@emotion+styled@11.14.1__@emotion+react@11.14.0___react@19.2.6__react@19.2.6_@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:@tauri-apps/api@^2.9.0": "2.11.0",
     "npm:@tauri-apps/cli@^2.11.2": "2.11.2",
+    "npm:@tauri-apps/plugin-dialog@~2.7.3": "2.7.3",
+    "npm:@tauri-apps/plugin-fs@~2.5.2": "2.5.2",
     "npm:@tauri-apps/plugin-shell@^2.3.4": "2.3.5",
     "npm:@testing-library/jest-dom@^7.0.1": "7.0.1_@testing-library+dom@10.4.1_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10___vitest@4.1.10___@types+node@22.15.15___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10___@types+node@22.15.15___@vitest+coverage-v8@4.1.10___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0",
     "npm:@testing-library/react@^16.3.2": "16.3.2_@testing-library+dom@10.4.1_@types+react@19.2.15_@types+react-dom@19.2.3__@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
@@ -1346,6 +1348,18 @@
         "@tauri-apps/cli-win32-x64-msvc"
       ],
       "bin": true
+    },
+    "@tauri-apps/plugin-dialog@2.7.3": {
+      "integrity": "sha512-CRgE+7TP4tvq9MjBU6f04NLTFIqVMLKHk3hAqlhil00ngK9ACTrXPH3oHpKMProxILodd3YjBoKbMwSI4IEcfA==",
+      "dependencies": [
+        "@tauri-apps/api"
+      ]
+    },
+    "@tauri-apps/plugin-fs@2.5.2": {
+      "integrity": "sha512-XXvMSnFiob+G1H+YHCDf+bzWVumseQuEIhzpbOJzevUfL4k0U+sTApZWJHpoLiamggnVPJm5dJ5sDsniRyWxlg==",
+      "dependencies": [
+        "@tauri-apps/api"
+      ]
     },
     "@tauri-apps/plugin-shell@2.3.5": {
       "integrity": "sha512-jewtULhiQ7lI7+owCKAjc8tYLJr92U16bPOeAa472LHJdgaibLP83NcfAF2e+wkEcA53FxKQAZ7byDzs2eeizg==",
@@ -2965,6 +2979,7 @@
         "natural-compare",
         "optionator"
       ],
+      "deprecated": true,
       "bin": true
     },
     "espree@10.4.0_acorn@8.16.0": {
@@ -6242,6 +6257,8 @@
             "npm:@mui/lab@^7.0.0-beta.13",
             "npm:@mui/material@^7.1.0",
             "npm:@tauri-apps/api@^2.9.0",
+            "npm:@tauri-apps/plugin-dialog@~2.7.3",
+            "npm:@tauri-apps/plugin-fs@~2.5.2",
             "npm:@tauri-apps/plugin-shell@^2.3.4",
             "npm:@testing-library/jest-dom@^7.0.1",
             "npm:@testing-library/react@^16.3.2",

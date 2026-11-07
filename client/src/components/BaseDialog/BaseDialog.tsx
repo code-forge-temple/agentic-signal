@@ -8,8 +8,9 @@ import {Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, T
 import {Xmark, Expand, Collapse} from "iconoir-react";
 import {darkTheme} from "../../utils";
 import {PaperComponent, PaperComponentProps} from "../PaperComponent";
-import {ReactNode, useEffect, useState} from "react";
+import {MouseEvent, ReactNode, useContext, useEffect, useState} from "react";
 import {DRAG_CANCEL_SELECTOR} from "../../constants";
+import {WorkflowLayerContext} from "../../context/WorkflowLayerContext";
 
 const BASE_Z = 1000;
 const FOCUSED_Z = 1009;
@@ -23,6 +24,11 @@ export interface BaseDialogProps {
     actions?: ReactNode;
     maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
     fullWidth?: boolean;
+    /** A set width in px instead of one that follows the content; it still shrinks to fit a small window. */
+    width?: number;
+    maximizable?: boolean;
+    /** Content starts right under the title, without the usual gap: for content that opens with tabs. */
+    compactTop?: boolean;
 }
 
 export function BaseDialog ({
@@ -32,8 +38,12 @@ export function BaseDialog ({
     children,
     actions,
     maxWidth = "md",
-    fullWidth = true
+    fullWidth = true,
+    width,
+    maximizable = true,
+    compactTop = false
 }: BaseDialogProps) {
+    const {isActive: isLayerActive} = useContext(WorkflowLayerContext);
     const [maximized, setMaximized] = useState(false);
     const [zIndex, setZIndex] = useState(BASE_Z);
     const isFocused = zIndex === FOCUSED_Z;
@@ -52,7 +62,9 @@ export function BaseDialog ({
         setZIndex(FOCUSED_Z);
     }, [open]);
 
-    const handleFocus = () => {
+    const handleFocus = (event: MouseEvent<HTMLElement>) => {
+        if (!event.currentTarget.contains(event.target as Node)) return;
+
         dialogSetters.forEach(setter => setter(BASE_Z));
 
         setZIndex(FOCUSED_Z);
@@ -74,11 +86,11 @@ export function BaseDialog ({
                 }}
                 PaperComponent={PaperComponent}
                 slotProps={{
-                    root: {style: {zIndex, pointerEvents: "none"}},
+                    root: {style: {zIndex, pointerEvents: "none", visibility: isLayerActive ? undefined : "hidden"}},
                     paper: paperProps
                 }}
                 aria-labelledby="draggable-dialog-title"
-                maxWidth={maximized ? false : maxWidth}
+                maxWidth={maximized || width ? false : maxWidth}
                 fullWidth={maximized ? false : fullWidth}
                 fullScreen={maximized}
                 hideBackdrop
@@ -92,21 +104,27 @@ export function BaseDialog ({
                         display: 'flex',
                         flexDirection: 'column',
                         height: maximized ? '100vh' : undefined,
-                        minHeight: 0
-                    }
+                        minHeight: 0,
+                        ...(width && !maximized && {width, maxWidth: 'calc(100% - 64px)'})
+                    },
+                    ...(!isLayerActive && {
+                        "& *": {visibility: "hidden !important", transition: "none !important"}
+                    })
                 }}
             >
                 <div onMouseDown={handleFocus} style={{display: "contents", height: '100%'}}>
                     <DialogTitle
-                        style={{cursor: maximized ? 'default' : 'move', display: 'flex', alignItems: 'center'}}
+                        style={{cursor: maximized ? 'default' : 'move', display: 'flex', alignItems: 'center', userSelect: 'none'}}
                         id="draggable-dialog-title"
                     >
                         <span style={{flex: 1}}>{title}</span>
-                        <Tooltip title={maximized ? "Restore" : "Maximize"}>
-                            <IconButton size="medium" onClick={() => setMaximized(m => !m)} sx={{mr: 0.5}}>
-                                {maximized ? <Collapse width={24} height={24} /> : <Expand width={24} height={24} />}
-                            </IconButton>
-                        </Tooltip>
+                        {maximizable && (
+                            <Tooltip title={maximized ? "Restore" : "Maximize"}>
+                                <IconButton size="medium" onClick={() => setMaximized(m => !m)} sx={{mr: 0.5}}>
+                                    {maximized ? <Collapse width={24} height={24} /> : <Expand width={24} height={24} />}
+                                </IconButton>
+                            </Tooltip>
+                        )}
                         <Tooltip title="Close">
                             <IconButton size="medium" onClick={onClose}>
                                 <Xmark width={24} height={24} />
@@ -115,7 +133,8 @@ export function BaseDialog ({
                     </DialogTitle>
                     <DialogContent
                         sx={{
-                            pt: '16px !important', pb: 0, pl: '10px', pr: '10px', m: 2,
+                            pt: compactTop ? '0 !important' : '16px !important', pb: 0, pl: '10px', pr: '10px', m: 2,
+                            ...(compactTop && {mt: 0}),
                             flex: 1,
                             minHeight: 0,
                             display: 'flex',

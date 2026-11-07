@@ -691,3 +691,66 @@ describe('useAIProcessor.processAIRequest', () => {
         });
     });
 });
+
+describe('useAIProcessor cancelling', () => {
+    beforeEach(() => {
+        OllamaService.reloadInstance();
+    });
+
+    /** Each call stays pending until its signal aborts (then fails as aborted) or `release` resolves it. */
+    function mockPendingCalls () {
+        const calls: {signal?: AbortSignal; release: (response: FetchAiResponse) => void}[] = [];
+
+        OllamaService.getInstance().fetchAIResponse = (params) => new Promise((resolve) => {
+            calls.push({signal: params.signal, release: resolve});
+            params.signal?.addEventListener('abort', () => resolve(failure('This operation was aborted')));
+        });
+
+        return calls;
+    }
+
+    const request = {
+        payload: 'hi', prompt: undefined, message: undefined, model: 'm', format: undefined, maxToolRetries: 3,
+    };
+
+    it('cancels the request in flight on unmount, and it ends quietly', async () => {
+        const calls = mockPendingCalls();
+        const onError = vi.fn();
+        const onSuccess = vi.fn();
+        const {result, unmount} = renderHook(() => useAIProcessor({onError, onSuccess}));
+
+        const pending = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+
+        unmount();
+
+        expect(await pending).toBeNull();
+        expect(calls[0].signal?.aborted).toBe(true);
+        expect(onError).not.toHaveBeenCalled();
+        expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('lets a newer request supersede one still in flight', async () => {
+        const calls = mockPendingCalls();
+        const onError = vi.fn();
+        const onSuccess = vi.fn();
+        const {result} = renderHook(() => useAIProcessor({onError, onSuccess}));
+
+        let first: Promise<unknown> | undefined;
+        let second: Promise<unknown> | undefined;
+
+        await act(async () => {
+            first = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+            second = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+            calls[1].release(success('fresh reply'));
+
+            await Promise.all([first, second]);
+        });
+
+        expect(calls[0].signal?.aborted).toBe(true);
+        expect(await first).toBeNull();
+        expect(await second).toBe('fresh reply');
+        expect(onSuccess).toHaveBeenCalledTimes(1);
+        expect(onSuccess).toHaveBeenCalledWith('fresh reply');
+        expect(onError).not.toHaveBeenCalled();
+    });
+});

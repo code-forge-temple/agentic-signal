@@ -1,0 +1,121 @@
+{
+    "nodes": [
+        {
+            "id": "coin-request",
+            "type": "workflow-input",
+            "position": {"x": -398.5, "y": -79.5},
+            "data": {
+                "command": "crypto",
+                "description": "Analyse a cryptocurrency (e.g. bitcoin or SOL): its last 100 days on Coinbase plus the news, ending in BUY / SELL / HOLD with a confidence. Not financial advice."
+            }
+        },
+        {
+            "id": "coin",
+            "type": "llm-process",
+            "position": {"x": -149.5, "y": -16},
+            "data": {
+                "model": "",
+                "prompt": "Find the cryptocurrency the input asks about and its Coinbase trading pair against the US dollar, written like BTC-USD or ETH-USD. Search with duckDuckGoSearch to confirm the coin and its ticker. Reply with the coin's name (e.g. Bitcoin) and its pair. If there is no such coin, reply with the name \"none\" and the pair NONE-USD.",
+                "format": {
+                    "onSuccess": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"name\": {\"type\": \"string\"},\n    \"symbol\": {\"type\": \"string\", \"pattern\": \"^[A-Z0-9]+-USD$\"}\n  },\n  \"required\": [\"name\", \"symbol\"],\n  \"additionalProperties\": false\n}"
+                },
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "think": false
+            }
+        },
+        {
+            "id": "coin-search",
+            "type": "ai-tool",
+            "position": {"x": -136.5, "y": 106},
+            "data": {
+                "toolSubtype": "duckduckgo-search",
+                "userConfig": {"maxResults": 5, "requireToolUse": true}
+            }
+        },
+        {
+            "id": "candles-url",
+            "type": "json-reformatter",
+            "position": {"x": 147.5, "y": 190.5},
+            "data": {
+                "jsonataExpression": "symbol = \"NONE-USD\"\n    ? $error(\"No cryptocurrency by that name was found.\")\n    : {\n        \"url\": \"https://api.exchange.coinbase.com/products/\" & symbol & \"/candles?granularity=86400\",\n        \"dataType\": \"json\"\n    }"
+            }
+        },
+        {
+            "id": "candles",
+            "type": "get-data",
+            "position": {"x": 122, "y": 22.5},
+            "data": {"url": "", "dataType": "json", "dataProvidedByUpstream": true}
+        },
+        {
+            "id": "coin-and-candles",
+            "type": "async-data-aggregator",
+            "position": {"x": 160, "y": -175},
+            "data": {}
+        },
+        {
+            "id": "stock-data",
+            "type": "json-reformatter",
+            "position": {"x": 319.5, "y": -117.5},
+            "data": {
+                "jsonataExpression": "/* Coinbase lists the newest day first, as [time, low, high, open, close, volume]; today's is unfinished, so it's left out. */\n(\n    $coin := $[$type($) = \"object\"][0];\n    $candles := $filter($, function($v) {$type($v) = \"array\"})[0];\n    {\n        \"symbol\": $coin.name & \" (\" & $coin.symbol & \")\",\n        \"data\": $reverse($map($filter($candles, function($c, $i) {$i > 0 and $i <= 100}), function($c) {{\n            \"timestamp\": $fromMillis($c[0] * 1000, \"[Y0001]-[M01]-[D01]\"),\n            \"open\": $c[3],\n            \"high\": $c[2],\n            \"low\": $c[1],\n            \"close\": $c[4],\n            \"volume\": $c[5]\n        }}))\n    }\n)"
+            }
+        },
+        {
+            "id": "indicators",
+            "type": "stock-analysis",
+            "position": {"x": 360.5, "y": 86},
+            "data": {}
+        },
+        {
+            "id": "verdict-search",
+            "type": "ai-tool",
+            "position": {"x": 561.5, "y": -114.5},
+            "data": {
+                "toolSubtype": "duckduckgo-search",
+                "userConfig": {"maxResults": 10, "requireToolUse": true}
+            }
+        },
+        {
+            "id": "verdict",
+            "type": "llm-process",
+            "position": {"x": 600, "y": -215.5},
+            "data": {
+                "model": "",
+                "prompt": "You are a crypto market analyst.\n\nWHEN ASKED TO SPLIT THE INPUT INTO TASKS\nThe input is technical indicators computed from a coin's last 100 daily candles: symbol (the coin's name and its Coinbase pair), close, pctChange, sma5, sma10, volumeRatio, slope, volatility and trend (\"up\", \"down\" or \"sideways\"). Plan exactly the three tasks below and no others, copying each task's text word for word, with <coin> replaced by the coin's name from the input's symbol (e.g. Bitcoin) and <indicators> by the whole input JSON, copied exactly. Give every task the systemPrompt \"Do only the task in the message, nothing else.\" and the tools [\"duckDuckGoSearch\"]; the tasks don't depend on each other.\n1. \"Search the web once with duckDuckGoSearch for '<coin> crypto news'. Then judge <coin> from what the search returned together with these technical indicators: <indicators>. Rules: an up trend with a positive slope and strong volume (volumeRatio well above 1) means BUY; a down trend with a negative slope and strong volume means SELL; anything else means HOLD. Strong positive news turns HOLD into BUY and strong negative news turns HOLD into SELL, raising the confidence; mixed or neutral news keeps the verdict. Confidence: technicals and news strongly agree 0.75-0.9; strong technicals with neutral news 0.6-0.75; mixed signals 0.4-0.6; weak signals 0.3-0.4. Reply only with three lines: PREDICTION: BUY, SELL or HOLD; CONFIDENCE: a number from 0 to 1; REASON: one line citing the indicators and the news.\"\n2. \"Search the web once with duckDuckGoSearch for '<coin> price prediction'. Then judge <coin> from what the search returned together with these technical indicators: <indicators>. Rules: an up trend with a positive slope and strong volume (volumeRatio well above 1) means BUY; a down trend with a negative slope and strong volume means SELL; anything else means HOLD. Strong positive news turns HOLD into BUY and strong negative news turns HOLD into SELL, raising the confidence; mixed or neutral news keeps the verdict. Confidence: technicals and news strongly agree 0.75-0.9; strong technicals with neutral news 0.6-0.75; mixed signals 0.4-0.6; weak signals 0.3-0.4. Reply only with three lines: PREDICTION: BUY, SELL or HOLD; CONFIDENCE: a number from 0 to 1; REASON: one line citing the indicators and the news.\"\n3. \"Search the web once with duckDuckGoSearch for '<coin> crypto market outlook'. Then judge <coin> from what the search returned together with these technical indicators: <indicators>. Rules: an up trend with a positive slope and strong volume (volumeRatio well above 1) means BUY; a down trend with a negative slope and strong volume means SELL; anything else means HOLD. Strong positive news turns HOLD into BUY and strong negative news turns HOLD into SELL, raising the confidence; mixed or neutral news keeps the verdict. Confidence: technicals and news strongly agree 0.75-0.9; strong technicals with neutral news 0.6-0.75; mixed signals 0.4-0.6; weak signals 0.3-0.4. Reply only with three lines: PREDICTION: BUY, SELL or HOLD; CONFIDENCE: a number from 0 to 1; REASON: one line citing the indicators and the news.\"\nDo not plan a task for the final answer: it is written after the three tasks.\n\nWHEN GIVEN THE RESULTS OF THE TASKS\nCombine the three verdicts: PREDICTION is the majority vote (HOLD if all three differ), CONFIDENCE is the mean of the three confidences, rounded to two decimals, and REASON is a short explanation citing the indicators and the news from all three searches. Reply only with these lines, in plain text, with no JSON and no code fences:\nCOIN: <the coin's name and pair>\nPREDICTION: BUY | SELL | HOLD\nCONFIDENCE: <0 to 1>\nREASON: <short explanation>",
+                "message": {},
+                "format": {},
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "think": false,
+                "orchestrationMode": true
+            }
+        },
+        {
+            "id": "disclaimer",
+            "type": "json-reformatter",
+            "position": {"x": 800, "y": -215.5},
+            "data": {"jsonataExpression": "$ & \"\\n\\nNot financial advice.\""}
+        },
+        {
+            "id": "answer",
+            "type": "workflow-output",
+            "position": {"x": 848, "y": -87.5},
+            "data": {}
+        }
+    ],
+    "edges": [
+        {"source": "coin-request", "target": "coin", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "coin-search", "target": "coin", "sourceHandle": "tool", "targetHandle": "tool"},
+        {"source": "coin", "target": "candles-url", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "candles-url", "target": "candles", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "coin", "target": "coin-and-candles", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "candles", "target": "coin-and-candles", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "coin-and-candles", "target": "stock-data", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "stock-data", "target": "indicators", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "indicators", "target": "verdict", "sourceHandle": "flow", "targetHandle": "flow", "data": {"bend": {"x": 514.5, "y": 12}}},
+        {"source": "verdict-search", "target": "verdict", "sourceHandle": "tool", "targetHandle": "tool"},
+        {"source": "verdict", "target": "disclaimer", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "disclaimer", "target": "answer", "sourceHandle": "flow", "targetHandle": "flow"}
+    ]
+}

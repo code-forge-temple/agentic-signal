@@ -11,3 +11,14 @@ body,
   margin: 0;
   background: #141414;
 }
+
+/* One link color for the whole app. The browser's default dark blue barely shows on the dark background,
+   and less still under a night light (f.lux, night mode), which dims blue. */
+a,
+a:visited {
+  color: #00BCD4;
+}
+
+a:hover {
+  color: #4DD0E1;
+}

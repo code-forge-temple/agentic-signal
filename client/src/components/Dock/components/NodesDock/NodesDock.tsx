@@ -12,6 +12,7 @@ import {darkTheme} from '../../../../utils';
 import {useWholeItemScroller} from '../../../../hooks/useWholeItemScroller';
 import {nodeRegistry} from '../../../nodes/nodeRegistry.gen';
 import {AppNodeType} from '../../../nodes/workflow.gen';
+import {AI_LAYER_READ_ONLY_HINT} from '../../../../context/LayersContextBase';
 
 
 type NodeConfig = {
@@ -26,7 +27,7 @@ const nodeConfigs: NodeConfig[] = nodeRegistry.map((desc) => ({
     icon: desc.icon,
 }));
 
-export function NodesDock () {
+export function NodesDock ({readOnly}: {readOnly: boolean}) {
     const {viewportRef, canScrollLeft, canScrollRight, isScrollable, scrollByPage} = useWholeItemScroller<HTMLDivElement>();
 
     const onDragStart = (event: React.DragEvent, nodeType: AppNodeType) => {
@@ -61,13 +62,14 @@ export function NodesDock () {
                         {nodeConfigs.map((config) => (
                             <Tooltip
                                 key={config.type}
-                                title={config.label}
+                                title={readOnly ? `${config.label}: ${AI_LAYER_READ_ONLY_HINT}` : config.label}
                                 placement="bottom"
                                 arrow
                             >
                                 <div
-                                    className="dock-item"
-                                    draggable
+                                    className={`dock-item${readOnly ? " disabled" : ""}`}
+                                    aria-disabled={readOnly}
+                                    draggable={!readOnly}
                                     onDragStart={(event) => {
                                         onDragStart(event, config.type);
                                         onDragStartVisual(event);

@@ -67,7 +67,9 @@ export default defineConfig({
         host: '0.0.0.0',
         port: 8080,
         proxy: {
-            '/graphql': `http://localhost:${BACKEND_PORT}`
+            // WebSockets too: the app's live connection (subscriptions) goes the same way as its requests,
+            // so it reaches the backend from a browser on another computer as well.
+            '/graphql': {target: `http://localhost:${BACKEND_PORT}`, ws: true}
         },
     }
 })

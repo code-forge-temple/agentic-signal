@@ -97,4 +97,18 @@ $dock-stack-breakpoint: 768px;
             }
         }
     }
+
+    /* Still hoverable, for the tooltip that says why it is off. The extra class outranks the
+     * sections' own `cursor: pointer !important`. */
+    .dock-items .dock-item.disabled {
+        opacity: 0.35;
+        cursor: default !important;
+
+        &:hover,
+        &:active {
+            background: #0e2f4a;
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+            transform: none;
+        }
+    }
 }

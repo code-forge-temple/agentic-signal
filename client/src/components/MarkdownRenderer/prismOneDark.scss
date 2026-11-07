@@ -1,0 +1,178 @@
+/* react-syntax-highlighter's Prism one-dark theme (styles/prism/one-dark) as classes, for useInlineStyles={false}:
+ * with inline styles the highlighter scans the whole theme for every token, which took seconds on a long workflow.
+ * Only the rules those inline styles applied (base styles and token classes), so blocks look exactly as before. */
+.code-wrapper {
+    code[class*="language-"] {
+        background: hsl(220, 13%, 18%);
+        color: hsl(220, 14%, 71%);
+        text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+        font-family: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+        direction: ltr;
+        text-align: left;
+        white-space: pre;
+        word-spacing: normal;
+        word-break: normal;
+        line-height: 1.5;
+        -moz-tab-size: 2;
+        -o-tab-size: 2;
+        tab-size: 2;
+        -webkit-hyphens: none;
+        -moz-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+    }
+
+    pre.prismjs {
+        background: hsl(220, 13%, 18%);
+        color: hsl(220, 14%, 71%);
+        text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+        font-family: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+        direction: ltr;
+        text-align: left;
+        white-space: pre;
+        word-spacing: normal;
+        word-break: normal;
+        line-height: 1.5;
+        -moz-tab-size: 2;
+        -o-tab-size: 2;
+        tab-size: 2;
+        -webkit-hyphens: none;
+        -moz-hyphens: none;
+        -ms-hyphens: none;
+        hyphens: none;
+        padding: 1em;
+        margin: 0.5em 0;
+        overflow: auto;
+        border-radius: 0.3em;
+    }
+
+    .token.comment {
+        color: hsl(220, 10%, 40%);
+        font-style: italic;
+    }
+
+    .token.prolog {
+        color: hsl(220, 10%, 40%);
+    }
+
+    .token.cdata {
+        color: hsl(220, 10%, 40%);
+    }
+
+    .token.doctype {
+        color: hsl(220, 14%, 71%);
+    }
+
+    .token.punctuation {
+        color: hsl(220, 14%, 71%);
+    }
+
+    .token.entity {
+        color: hsl(220, 14%, 71%);
+        cursor: help;
+    }
+
+    .token.attr-name {
+        color: hsl(29, 54%, 61%);
+    }
+
+    .token.class-name {
+        color: hsl(29, 54%, 61%);
+    }
+
+    .token.boolean {
+        color: hsl(29, 54%, 61%);
+    }
+
+    .token.constant {
+        color: hsl(29, 54%, 61%);
+    }
+
+    .token.number {
+        color: hsl(29, 54%, 61%);
+    }
+
+    .token.atrule {
+        color: hsl(29, 54%, 61%);
+    }
+
+    .token.keyword {
+        color: hsl(286, 60%, 67%);
+    }
+
+    .token.property {
+        color: hsl(355, 65%, 65%);
+    }
+
+    .token.tag {
+        color: hsl(355, 65%, 65%);
+    }
+
+    .token.symbol {
+        color: hsl(355, 65%, 65%);
+    }
+
+    .token.deleted {
+        color: hsl(355, 65%, 65%);
+    }
+
+    .token.important {
+        color: hsl(355, 65%, 65%);
+    }
+
+    .token.selector {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.string {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.char {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.builtin {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.inserted {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.regex {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.attr-value {
+        color: hsl(95, 38%, 62%);
+    }
+
+    .token.variable {
+        color: hsl(207, 82%, 66%);
+    }
+
+    .token.operator {
+        color: hsl(207, 82%, 66%);
+    }
+
+    .token.function {
+        color: hsl(207, 82%, 66%);
+    }
+
+    .token.url {
+        color: hsl(187, 47%, 55%);
+    }
+
+    .token.bold {
+        font-weight: bold;
+    }
+
+    .token.italic {
+        font-style: italic;
+    }
+
+    .token.namespace {
+        -opacity: 0.8;
+    }
+}

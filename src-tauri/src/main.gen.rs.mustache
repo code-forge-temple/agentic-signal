@@ -39,6 +39,9 @@ fn main() {
             Ok(())
         })
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        // Reads a workflow picked in the dialog: the dialog allows just that file.
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             crate::utils::manage_process::kill_backend_process,
             crate::utils::google_oauth::start_google_oauth_flow,

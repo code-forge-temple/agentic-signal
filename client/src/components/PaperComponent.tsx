@@ -18,14 +18,15 @@ export function PaperComponent (props: PaperComponentProps) {
     const {enableDragging = true, cancel, ...paperProps} = props;
     const nodeRef = useRef<HTMLDivElement>(null);
 
-    if (!enableDragging) {
-        return <Paper {...paperProps} ref={nodeRef} />;
-    }
-
+    // Always wrapped, only switched off: swapping the wrapper in and out (maximize, restore) would
+    // remount the dialog's whole content and lose its state, like the open tab. Pinned at the origin
+    // while off, so a maximized dialog isn't left offset by an earlier drag.
     return (
         <Draggable
             nodeRef={nodeRef as React.RefObject<HTMLDivElement>}
             cancel={cancel}
+            disabled={!enableDragging}
+            position={enableDragging ? undefined : {x: 0, y: 0}}
         >
             <Paper {...paperProps} ref={nodeRef} />
         </Draggable>

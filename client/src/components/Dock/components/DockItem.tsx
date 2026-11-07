@@ -13,12 +13,23 @@ type DockItemProps = {
     icon: React.ReactElement<{className?: string}>;
     onClick: () => void;
     ariaLabel?: string;
+    /** Set when the item can't be used right now; the tooltip then says why. */
+    disabledReason?: string;
 };
 
-export const DockItem = ({title, icon, onClick, ariaLabel}: DockItemProps) => {
+export const DockItem = ({title, icon, onClick, ariaLabel, disabledReason}: DockItemProps) => {
+    const disabled = disabledReason !== undefined;
+
     return (
-        <Tooltip title={title} placement="bottom" arrow>
-            <div className="dock-item" tabIndex={0} aria-label={ariaLabel || title} onClick={onClick} role="button">
+        <Tooltip title={disabled ? `${title}: ${disabledReason}` : title} placement="bottom" arrow>
+            <div
+                className={`dock-item${disabled ? " disabled" : ""}`}
+                tabIndex={disabled ? -1 : 0}
+                aria-label={ariaLabel || title}
+                aria-disabled={disabled}
+                onClick={disabled ? undefined : onClick}
+                role="button"
+            >
                 <div className="dock-item-icon-wrapper">
                     {React.cloneElement(icon, {className: "dock-item-icon"})}
                 </div>

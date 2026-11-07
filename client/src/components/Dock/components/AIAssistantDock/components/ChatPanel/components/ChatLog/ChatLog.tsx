@@ -4,85 +4,60 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useMemo, useRef} from 'react';
 import {CircularProgress} from '@mui/material';
 import './ChatLog.scss';
-import {MarkdownRenderer} from '../../../../../../../MarkdownRenderer';
-import {sanitizeJsonInput} from '../../../../../../../nodes/ToolNode/tools/utils/sanitize';
 import {AI_ASSISTANT_KEYWORDS} from '../../../../../../../../constants';
 import {useAutoScroll} from '../../../../../../../../hooks/useAutoScroll';
-import {ThinkingAccordion} from './components/ThinkingAccordion';
-import {MessageActions} from './components/MessageActions';
+import {useLatestValue} from '../../../../../../../../hooks/useLatestValue';
+import {ChatLogMessage} from './components/ChatLogMessage';
 import {ROLE} from '../../../../../../../../constants';
-import {AI_ASSISTANT_TITLE, ChatMessage} from '../../../../constants';
-
+import {AI_ASSISTANT_TITLE, ChatEntry, ChatMessage, NOTICE_ROLE} from '../../../../constants';
 
 type ChatLogProps = {
-    messages: ChatMessage[];
+    messages: ChatEntry[];
+    /** The smallest context window the AI Buddy works in, in tokens: named in the tip. */
+    minimumContext: number;
     isLoading: boolean;
     onLoadWorkflow: (json: string) => void;
     onDeleteMessage: (index: number) => void;
+    /** The commands the chat can run: a reply's `command` block naming one of them is a suggestion. */
+    commands: {command: string}[];
+    /** Runs a suggested command, `/research …`, as the user's own message. */
+    onRunSuggestion: (message: string) => void;
+    onSkipSuggestion: (index: number) => void;
 };
 
-function extractWorkflowJson (codeString: string): string | null {
-    try {
-        const parsed = sanitizeJsonInput(codeString) as { nodes?: unknown; workflow?: { nodes?: unknown } } | null;
-
-        if (Array.isArray(parsed?.nodes)) return JSON.stringify(parsed, null, 4);
-
-        if (parsed?.workflow && Array.isArray(parsed.workflow.nodes)) return JSON.stringify(parsed.workflow, null, 4);
-    } catch {
-        // ignore parse failures for incomplete or malformed assistant output
-    }
-
-    return null;
-}
-
-export const ChatLog = ({messages, isLoading, onLoadWorkflow, onDeleteMessage}: ChatLogProps) => {
+export const ChatLog = ({messages, minimumContext, isLoading, onLoadWorkflow, onDeleteMessage, commands, onRunSuggestion, onSkipSuggestion}: ChatLogProps) => {
     const chatLogRef = useRef<HTMLDivElement>(null);
     const {updateScroll, setAutoScroll, userInterruptAutoScroll} = useAutoScroll();
     const lastIsAssistant = messages.length > 0 && messages[messages.length - 1].role === ROLE.ASSISTANT;
     const showSpinner = isLoading && !lastIsAssistant;
+    const commandNames = useMemo(() => commands.map(c => c.command), [commands]);
 
-    const renderWorkflowImportButton = useCallback(
-        (codeBlock: string, isStreaming: boolean) => {
-            if (isStreaming) {
-                if(codeBlock.startsWith(`{`)) {
-                    return (
-                        <div className="import-workflow-btn-placeholder">
-                            <CircularProgress size={14} className="chat-log-inline-spinner" />
-                        </div>
-                    );
-                }
+    // The same functions on every redraw, so the messages' memo holds: the chat panel's own callbacks change with
+    // every streamed chunk and every layer switch. Each calls the newest one.
+    const latest = useLatestValue({onLoadWorkflow, onDeleteMessage, onRunSuggestion, onSkipSuggestion});
+    const loadWorkflow = useCallback((json: string) => latest.current.onLoadWorkflow(json), [latest]);
+    const deleteMessage = useCallback((index: number) => latest.current.onDeleteMessage(index), [latest]);
+    const runSuggestion = useCallback((message: string) => latest.current.onRunSuggestion(message), [latest]);
+    const skipSuggestion = useCallback((index: number) => latest.current.onSkipSuggestion(index), [latest]);
 
-                return null;
-            }
+    // Each message's next one, notices aside.
+    const nextMessages = useMemo(() => {
+        const next: (ChatMessage | undefined)[] = [];
+        let after: ChatMessage | undefined;
 
-            const workflowJson = extractWorkflowJson(codeBlock);
+        for (let i = messages.length - 1; i >= 0; i--) {
+            next[i] = after;
 
-            if (!workflowJson) return null;
+            const entry = messages[i];
 
-            return (
-                <button
-                    className="import-workflow-btn"
-                    type="button"
-                    disabled={isStreaming}
-                    onClick={() => {
-                        try {
-                            const sanitized: unknown = sanitizeJsonInput(codeBlock);
+            if (entry.role !== NOTICE_ROLE) after = entry;
+        }
 
-                            onLoadWorkflow(JSON.stringify(sanitized, null, 4));
-                        } catch {
-                            onLoadWorkflow(workflowJson);
-                        }
-                    }}
-                >
-                    ↳ Import to current workflow
-                </button>
-            );
-        },
-        [onLoadWorkflow]
-    );
+        return next;
+    }, [messages]);
 
     useEffect(() => {
         if (chatLogRef.current) {
@@ -111,10 +86,9 @@ export const ChatLog = ({messages, isLoading, onLoadWorkflow, onDeleteMessage}: 
                         <ul>
                             <li><code>{AI_ASSISTANT_KEYWORDS.PREPARE_WORKFLOW}</code> to ask the assistant to generate a workflow</li>
                             <li><code>{AI_ASSISTANT_KEYWORDS.CURRENT_WORKFLOW}</code> to reference your current workflow</li>
+                            <li><code>{"/<command>"}</code> to run a saved workflow on the assistant&apos;s own layer, e.g. <code>/research &lt;topic&gt;</code></li>
                             <li>
-                                {/* eslint-disable-next-line max-len */}
-                                For best performance, you could use one of the finetuned models from <a href="https://ollama.com/code-forge-temple" target="_blank" rel="noopener noreferrer">ollama.com/code-forge-temple</a>.
-                                If that does not work, try other models with 27B parameters and up.
+                                For minimal performance, try models with 27B parameters and up, and a context window of at least {minimumContext / 1024}K tokens.
                             </li>
                         </ul>
                     </div>
@@ -123,32 +97,31 @@ export const ChatLog = ({messages, isLoading, onLoadWorkflow, onDeleteMessage}: 
                 {messages.length === 0 ? (
                     <p className="chat-log-empty">Start a conversation with your {AI_ASSISTANT_TITLE}.</p>
                 ) : messages.map((msg, idx) => {
-                    const isLastMsg = idx === messages.length - 1;
-                    const isStreamingThinking = isLoading && isLastMsg && msg.role === ROLE.ASSISTANT && !!msg.thinking && !msg.content;
-                    const isStreamingAssistant = isLoading && isLastMsg && msg.role === ROLE.ASSISTANT;
+                    // Where the model was switched: a line, not a message.
+                    if (msg.role === NOTICE_ROLE) {
+                        return (
+                            <div key={idx} className="chat-log-notice" role="note">
+                                <span>Model changed to <b>{msg.model}</b></span>
+                            </div>
+                        );
+                    }
+
+                    const nextMessage = nextMessages[idx];
 
                     return (
-                        <div key={idx} className={`chat-log-row ${msg.role}`}>
-                            <MessageActions
-                                onDelete={() => onDeleteMessage(idx)}
-                                deleteTooltip={isLoading && isLastMsg ? 'Cancel & delete' : 'Delete message'}
-                            />
-                            <div className={`chat-log-message ${msg.role}`}>
-                                {msg.thinking && <ThinkingAccordion thinking={msg.thinking} isStreaming={isStreamingThinking} />}
-                                {msg.content && (
-                                    <MarkdownRenderer
-                                        content={msg.content}
-                                        disableLoadingDelay
-                                        codeBlockSuffix={
-                                            msg.role === ROLE.ASSISTANT ?
-                                                (codeBlock: string) => renderWorkflowImportButton(codeBlock, isStreamingAssistant) :
-                                                undefined
-                                        }
-                                    />
-                                )}
-                                {isLoading && isLastMsg && msg.role === ROLE.ASSISTANT && !msg.content && !msg.thinking && <CircularProgress size={14} />}
-                            </div>
-                        </div>
+                        <ChatLogMessage
+                            key={idx}
+                            message={msg}
+                            index={idx}
+                            isLast={idx === messages.length - 1}
+                            busy={isLoading && nextMessage === undefined}
+                            nextMessage={nextMessage}
+                            commandNames={commandNames}
+                            onLoadWorkflow={loadWorkflow}
+                            onDelete={deleteMessage}
+                            onRunSuggestion={runSuggestion}
+                            onSkipSuggestion={skipSuggestion}
+                        />
                     );
                 })}
 

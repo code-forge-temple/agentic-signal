@@ -8,19 +8,32 @@ import {type NodeProps} from "@xyflow/react";
 import {assertIsJsonReformatterNodeData} from "./types/workflow";
 import {useState} from "react";
 import jsonata from "jsonata";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {CodeEditor} from "../../CodeEditor";
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/theme-terminal";
 import {runTask} from "../BaseNode/utils";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
-import {formatErrorMessage} from "../../../utils/utils";
+import {formatErrorMessage, isRecord} from "../../../utils/utils";
+
+// JSONata throws plain objects ({code, message, position, stack}), not Errors: show the message and where
+// in the expression it went wrong, not the whole object. $error("…") (code D3137) is a message meant as is.
+function jsonataErrorMessage (err: unknown): string {
+    if (err instanceof Error) return err.message;
+
+    if (isRecord(err) && typeof err.message === "string") {
+        return typeof err.position === "number" && err.code !== "D3137"
+            ? `${err.message} (at character ${err.position} of the expression)`
+            : err.message;
+    }
+
+    return formatErrorMessage("Unknown error", err);
+}
 
 
 export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
@@ -29,7 +42,6 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
 
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const {title, jsonataExpression, input, onResultUpdate, onConfigChange} = data;
 
@@ -49,7 +61,7 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
                                 ...(input?.toolsPayload !== undefined ? {toolsPayload: input.toolsPayload} : {}),
                             });
                         } catch (err) {
-                            setError(err instanceof Error ? err.message : formatErrorMessage("Unknown error", err));
+                            setError(jsonataErrorMessage(err));
 
                             onResultUpdate(id);
                         }
@@ -73,7 +85,7 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -83,13 +95,6 @@ export function JsonReformatterNode ({data, id}: NodeProps<AppNode>) {
                 running={isRunning}
                 title={title}
                 settings={() => setOpenSettings(true)}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

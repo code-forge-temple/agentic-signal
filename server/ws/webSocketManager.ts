@@ -8,14 +8,22 @@ type SubscriptionHandler = (event: any) => void;
 
 type UnsubscribeFunction = () => void;
 
-type SubscriptionFactory = (nodeId: string, handler: SubscriptionHandler) => UnsubscribeFunction;
+type SubscriptionFactory = (nodeId: string, handler: SubscriptionHandler, variables: Record<string, unknown>) => UnsubscribeFunction;
+
+type SubscriptionTypeOptions = {
+    /** False for an app-wide subscription, which needs no nodeId (e.g. outside workflow commands). */
+    nodeScoped?: boolean;
+};
 
 export class WebSocketManager {
     private static instance: WebSocketManager | null = null;
 
     private activeSubscriptions = new Map<string, Set<WebSocket>>();
 
-    private subscriptionFactories = new Map<string, SubscriptionFactory>();
+    private subscriptionFactories = new Map<string, {factory: SubscriptionFactory; nodeScoped: boolean}>();
+
+    // Per socket, each subscription id's teardown, so a client's "complete" really unsubscribes.
+    private subscriptionCleanups = new Map<WebSocket, Map<string, () => void>>();
 
     private pingIntervals = new Map<WebSocket, ReturnType<typeof setInterval>>();
 
@@ -40,8 +48,8 @@ export class WebSocketManager {
         this.yogaHandler = handler;
     }
 
-    registerSubscriptionType (type: string, factory: SubscriptionFactory): void {
-        this.subscriptionFactories.set(type, factory);
+    registerSubscriptionType (type: string, factory: SubscriptionFactory, {nodeScoped = true}: SubscriptionTypeOptions = {}): void {
+        this.subscriptionFactories.set(type, {factory, nodeScoped});
     }
 
     async handleRequest (request: Request): Promise<Response> {
@@ -84,6 +92,7 @@ export class WebSocketManager {
 
     private setupSocketHandlers (socket: WebSocket): void {
         this.socketSubscriptions.set(socket, new Map());
+        this.subscriptionCleanups.set(socket, new Map());
 
         const pingInterval = setInterval(() => {
             if (socket.readyState === WebSocket.OPEN) {
@@ -119,6 +128,8 @@ export class WebSocketManager {
                         if (subscriptions) {
                             subscriptions.delete(message.id);
                         }
+
+                        this.subscriptionCleanups.get(socket)?.get(message.id)?.();
 
                         break;
                     }
@@ -159,7 +170,19 @@ export class WebSocketManager {
             return;
         }
 
-        if (!nodeIdMatch) {
+        const registered = this.subscriptionFactories.get(subscriptionType);
+
+        if (!registered) {
+            socket.send(JSON.stringify({
+                id,
+                type: 'error',
+                payload: [{message: `Unknown subscription type: ${subscriptionType}`}]
+            }));
+
+            return;
+        }
+
+        if (!nodeIdMatch && registered.nodeScoped) {
             socket.send(JSON.stringify({
                 id,
                 type: 'error',
@@ -169,18 +192,8 @@ export class WebSocketManager {
             return;
         }
 
-        const nodeId = nodeIdMatch;
-        const factory = this.subscriptionFactories.get(subscriptionType);
-
-        if (!factory) {
-            socket.send(JSON.stringify({
-                id,
-                type: 'error',
-                payload: [{message: `Unknown subscription type: ${subscriptionType}`}]
-            }));
-
-            return;
-        }
+        const nodeId = nodeIdMatch ?? "";
+        const factory = registered.factory;
 
         const subscriptionKey = `${subscriptionType}:${nodeId}`;
 
@@ -210,7 +223,7 @@ export class WebSocketManager {
                     }
                 }
             }));
-        });
+        }, payload.variables ?? {});
 
         const closeHandler = () => {
             unsubscribe();
@@ -224,6 +237,13 @@ export class WebSocketManager {
         };
 
         socket.addEventListener('close', closeHandler, {once: true});
+
+        // The client's own "complete": stop now rather than when the socket closes.
+        this.subscriptionCleanups.get(socket)?.set(id, () => {
+            socket.removeEventListener('close', closeHandler);
+            this.subscriptionCleanups.get(socket)?.delete(id);
+            unsubscribe();
+        });
     }
 
     private clearPingInterval (socket: WebSocket): void {
@@ -247,6 +267,7 @@ export class WebSocketManager {
         }
 
         this.socketSubscriptions.delete(socket);
+        this.subscriptionCleanups.delete(socket);
     }
 
     getActiveSubscriptions (): Map<string, Set<WebSocket>> {

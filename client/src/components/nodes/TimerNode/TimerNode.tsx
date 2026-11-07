@@ -6,7 +6,7 @@
 
 import {useCallback, useEffect, useRef, useState} from "react";
 import {Handle, Position, type NodeProps} from "@xyflow/react";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {
     assertIsTimerNodeData,
     defaultTimerNodeData,
@@ -24,7 +24,6 @@ import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {graphQLService} from "./services/timerService";
-import {LogsDialog} from "../../LogsDialog";
 import {isoToLocalDatetime, localDatetimeToIso} from "../../../utils";
 import {runTask} from "../BaseNode/utils";
 
@@ -60,7 +59,6 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
     assertIsTimerNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [error, setError] = useState<string[] | null>(null);
     const {title, onResultUpdate, onConfigChange} = data;
@@ -149,7 +147,7 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 title={title}
@@ -158,7 +156,7 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
                 running={isRunning}
                 stoppable={true}
                 settings={{callback: () => setOpenSettings(true), highlight: false}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
+                error={error}
                 extraPorts={
                     <Handle
                         type="source"
@@ -168,13 +166,6 @@ export function TimerNode ({data, id}: NodeProps<AppNode>) {
                         isValidConnection={({targetHandle}) => targetHandle === NODE_PORT_IDS.TRIGGER}
                     />
                 }
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
-                error={error}
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>

@@ -48,6 +48,33 @@
         max-width: 300px;
     }
 
+    /* As wide as the settings button on the select's other side: a small IconButton is a 27px icon
+       (1.5em of its 18px font) plus 5px padding each side. */
+    .cloud-model-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 37px;
+        flex-shrink: 0;
+    }
+
+    .cloud-model-warning {
+        display: flex;
+        color: #FFB300;
+        cursor: help;
+        border-radius: 4px;
+
+        &:focus-visible {
+            outline: 2px solid #FFB300;
+            outline-offset: 2px;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
+
     .chat-header-loading {
         color: rgba(255, 255, 255, 0.5) !important;
         margin: 0 auto;
@@ -115,5 +142,14 @@
             color: #fff !important;
             background: rgba(255, 255, 255, 0.08) !important;
         }
+    }
+}
+
+/* The model warning's tooltip, rendered outside the header: one paragraph per reason. */
+.model-warning-line {
+    margin: 0;
+
+    & + & {
+        margin-top: 6px;
     }
 }

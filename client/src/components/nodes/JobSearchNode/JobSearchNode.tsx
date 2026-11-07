@@ -33,10 +33,9 @@ import {
 import {JOB_SEARCH_NODE_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {JobSearchService} from "./services/jobSearchService";
 import {ALL_SEED_KEYS, SEED_COMPANIES, SeedCompany, seedKeyOf} from "./seedCompanies";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {CodeEditor} from "../../CodeEditor";
 import {DebouncedTextField} from "../../DebouncedTextField";
@@ -102,7 +101,6 @@ export function JobSearchNode ({data, id}: NodeProps<AppNode>) {
     const [isRunning, setIsRunning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
 
     const {
         input, title, companies, seedCompanies, keywords, remoteOnly, employmentTypes,
@@ -192,7 +190,7 @@ export function JobSearchNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{input: true, output: true}}
@@ -201,13 +199,6 @@ export function JobSearchNode ({data, id}: NodeProps<AppNode>) {
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 run={runSearch}
                 running={isRunning}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

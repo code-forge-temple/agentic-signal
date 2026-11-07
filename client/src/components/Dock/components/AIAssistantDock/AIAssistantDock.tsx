@@ -14,7 +14,12 @@ import './AIAssistantDock.scss';
 import {AI_ASSISTANT_TITLE} from './constants';
 
 
-export const AIAssistantDock = ({onLoadWorkflow, getWorkflowJson}: {onLoadWorkflow: (json: string, onError?: (error: string) => void) => void; getWorkflowJson: () => string}) => {
+type AIAssistantDockProps = {
+    onLoadWorkflow: (json: string, onError?: (error: string) => void) => void;
+    getWorkflowJson: () => string;
+};
+
+export const AIAssistantDock = ({onLoadWorkflow, getWorkflowJson}: AIAssistantDockProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (

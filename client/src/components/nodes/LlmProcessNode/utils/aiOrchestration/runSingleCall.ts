@@ -22,5 +22,6 @@ export async function runSingleCall (params: RunSingleCallParams): Promise<Fetch
         maxToolRetries: params.maxToolRetries,
         think: params.think,
         temperature: params.temperature,
+        signal: params.signal,
     });
 }

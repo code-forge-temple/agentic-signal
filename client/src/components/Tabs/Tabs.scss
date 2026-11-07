@@ -16,4 +16,16 @@
         flex-direction: column;
         padding: 20px 0 0;
     }
+
+    // keepMounted: each tab's content in a panel laid out like .tabs-content itself.
+    .tabs-panel {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+
+        &[hidden] {
+            display: none;
+        }
+    }
 }

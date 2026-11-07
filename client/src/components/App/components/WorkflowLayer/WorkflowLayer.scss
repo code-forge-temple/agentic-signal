@@ -1,0 +1,25 @@
+/************************************************************************
+ *    Copyright (C) 2026 Code Forge Temple                              *
+ *    This file is part of agentic-signal project                       *
+ *    See the LICENSE file in the project root for license details.     *
+ ************************************************************************/
+
+.workflow-layer {
+    position: absolute;
+    inset: 0;
+
+    /* Hidden, not display: none: the nodes keep their measured sizes, so edges and fitView
+     * are right the moment the layer is shown again. */
+    &.workflow-layer-hidden {
+        visibility: hidden;
+        pointer-events: none;
+
+        /* React Flow gives every measured node an inline `visibility: visible`, which beats the
+         * inherited hidden: without this, a hidden layer's nodes show over the shown one. No
+         * transitions either: a `transition: all` would keep an element visible for its length. */
+        * {
+            visibility: hidden !important;
+            transition: none !important;
+        }
+    }
+}

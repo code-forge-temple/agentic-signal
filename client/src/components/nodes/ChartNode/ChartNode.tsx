@@ -18,10 +18,9 @@ import {
     Tooltip,
     Legend
 } from "chart.js";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {ChartDataSchema, type ChartData, CHART_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {runTask} from "../BaseNode/utils";
-import {LogsDialog} from "../../LogsDialog";
 import {BaseDialog} from "../../BaseDialog";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {Icon} from "./constants";
@@ -51,7 +50,6 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [openOutput, setOpenOutput] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const {input, title, onFeedbackSend} = data;
@@ -162,7 +160,7 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -171,15 +169,8 @@ export function ChartNode ({data, id}: NodeProps<AppNode>) {
                 running={isRunning}
                 title={title}
                 output={{callback: () => setOpenOutput(true), highlight: lineData !== undefined}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-                settings={() => setOpenSettings(true)}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
+                settings={() => setOpenSettings(true)}
             />
 
             <BaseDialog open={openSettings} onClose={() => setOpenSettings(false)} title={title}>

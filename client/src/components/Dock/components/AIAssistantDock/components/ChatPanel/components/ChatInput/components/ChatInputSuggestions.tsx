@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {useEffect, useRef} from 'react';
+import {createPortal} from 'react-dom';
 import './ChatInputSuggestions.scss';
 
 
@@ -13,8 +14,14 @@ type Size = {
     height: number;
 }
 
+/** An entry in the menu: what gets typed, and optionally what it does (a command's description). */
+export type Suggestion = {
+    value: string;
+    description?: string;
+};
+
 type ChatInputSuggestionsProps = {
-    suggestions: string[];
+    suggestions: Suggestion[];
     position: { top: number; left: number };
     onSuggestionClick: (option: string) => void;
     selectedIndex: number;
@@ -55,7 +62,9 @@ export const ChatInputSuggestions = ({
         return () => resizeObserver.disconnect();
     }, [getMenuSize, suggestions.length]);
 
-    return (
+    // Rendered into the body: the dock around the chat is moved with a transform, and a fixed element
+    // inside it would be placed from the dock's corner instead of the window's.
+    return createPortal(
         <ul
             ref={listRef}
             className="chat-input-suggestions"
@@ -68,12 +77,17 @@ export const ChatInputSuggestions = ({
             {suggestions.map((option, index) => (
                 <li
                     className={'chat-input-suggestion' + (index === selectedIndex ? ' selected' : '')}
-                    key={option}
-                    onClick={() => onSuggestionClick(option)}
+                    key={option.value}
+                    onClick={() => onSuggestionClick(option.value)}
                     onMouseEnter={() => onSuggestionHover(index)} >
-                    {option}
+                    <span className="chat-input-suggestion-value">{option.value}</span>
+                    {option.description && (
+                        // Cut off when long; hovering shows all of it.
+                        <span className="chat-input-suggestion-description" title={option.description}>{option.description}</span>
+                    )}
                 </li>
             ))}
-        </ul>
+        </ul>,
+        document.body
     );
 }

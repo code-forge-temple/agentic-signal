@@ -1,0 +1,63 @@
+{
+    "nodes": [
+        {
+            "id": "holidays-request",
+            "type": "workflow-input",
+            "position": {"x": 0, "y": 0},
+            "data": {
+                "command": "holidays",
+                "description": "Public holidays of a country, e.g. \"holidays in Romania 2026\". Data: Nager.Date."
+            }
+        },
+        {
+            "id": "country",
+            "type": "llm-process",
+            "position": {"x": 220, "y": 0},
+            "data": {
+                "model": "",
+                "prompt": "The input asks about public holidays in a country. Reply with the country's ISO 3166-1 alpha-2 code (e.g. RO for Romania, DE for Germany, US for the United States), or XX if the input names no real country, and the year asked about, or 0 if the input names no year.",
+                "format": {
+                    "onSuccess": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"countryCode\": {\n      \"type\": \"string\"\n    },\n    \"year\": {\n      \"type\": \"integer\"\n    }\n  },\n  \"required\": [\n    \"countryCode\",\n    \"year\"\n  ],\n  \"additionalProperties\": false\n}"
+                },
+                "maxFeedbackLoops": 0,
+                "maxToolRetries": 3,
+                "think": false
+            }
+        },
+        {
+            "id": "holidays-url",
+            "type": "json-reformatter",
+            "position": {"x": 440, "y": 0},
+            "data": {
+                "jsonataExpression": "/* Nager.Date: no key needed. These are the countries it covers; no year means this year. */\n(\n    $covered := [\"AD\",\"AG\",\"AI\",\"AL\",\"AM\",\"AO\",\"AR\",\"AT\",\"AU\",\"AW\",\"AX\",\"BA\",\"BB\",\"BD\",\"BE\",\"BF\",\"BG\",\"BH\",\"BI\",\"BJ\",\"BL\",\"BM\",\"BO\",\"BQ\",\"BR\",\"BS\",\"BW\",\"BY\",\"BZ\",\"CA\",\"CC\",\"CD\",\"CF\",\"CG\",\"CH\",\"CI\",\"CK\",\"CL\",\"CM\",\"CN\",\"CO\",\"CR\",\"CU\",\"CV\",\"CW\",\"CX\",\"CY\",\"CZ\",\"DE\",\"DJ\",\"DK\",\"DM\",\"DO\",\"DZ\",\"EC\",\"EE\",\"EG\",\"ER\",\"ES\",\"ET\",\"FI\",\"FK\",\"FM\",\"FO\",\"FR\",\"GA\",\"GB\",\"GD\",\"GE\",\"GF\",\"GG\",\"GH\",\"GI\",\"GL\",\"GM\",\"GN\",\"GP\",\"GQ\",\"GR\",\"GT\",\"GW\",\"GY\",\"HK\",\"HN\",\"HR\",\"HT\",\"HU\",\"ID\",\"IE\",\"IM\",\"IQ\",\"IS\",\"IT\",\"JE\",\"JM\",\"JP\",\"KE\",\"KH\",\"KI\",\"KM\",\"KN\",\"KR\",\"KY\",\"KZ\",\"LC\",\"LI\",\"LR\",\"LS\",\"LT\",\"LU\",\"LV\",\"LY\",\"MA\",\"MC\",\"MD\",\"ME\",\"MF\",\"MG\",\"MH\",\"MK\",\"ML\",\"MN\",\"MP\",\"MQ\",\"MR\",\"MS\",\"MT\",\"MW\",\"MX\",\"MZ\",\"NA\",\"NC\",\"NE\",\"NF\",\"NG\",\"NI\",\"NL\",\"NO\",\"NR\",\"NU\",\"NZ\",\"PA\",\"PE\",\"PF\",\"PG\",\"PH\",\"PL\",\"PM\",\"PN\",\"PR\",\"PT\",\"PW\",\"PY\",\"RO\",\"RS\",\"RU\",\"RW\",\"SB\",\"SC\",\"SD\",\"SE\",\"SG\",\"SH\",\"SI\",\"SJ\",\"SK\",\"SL\",\"SM\",\"SN\",\"SO\",\"SR\",\"SS\",\"ST\",\"SV\",\"SX\",\"SY\",\"SZ\",\"TC\",\"TD\",\"TG\",\"TK\",\"TN\",\"TO\",\"TR\",\"TT\",\"TV\",\"TZ\",\"UA\",\"UG\",\"US\",\"UY\",\"VA\",\"VC\",\"VE\",\"VG\",\"VI\",\"VN\",\"VU\",\"WF\",\"WS\",\"YE\",\"ZA\",\"ZM\",\"ZW\"];\n    $code := $uppercase(countryCode);\n    $year := year > 0 ? year : $number($substring($now(), 0, 4));\n    $code in $covered\n        ? {\"url\": \"https://date.nager.at/api/v3/PublicHolidays/\" & $string($year) & \"/\" & $code, \"dataType\": \"json\"}\n        : $error(\"Nager.Date has no public holidays for the country asked about (country code \" & $code & \"). It covers \" & $string($count($covered)) & \" countries.\")\n)"
+            }
+        },
+        {
+            "id": "holidays",
+            "type": "get-data",
+            "position": {"x": 620, "y": 0},
+            "data": {"url": "", "dataType": "json", "dataProvidedByUpstream": true}
+        },
+        {
+            "id": "holiday-list",
+            "type": "json-reformatter",
+            "position": {"x": 840, "y": 0},
+            "data": {
+                "jsonataExpression": "(\n    $names := {\"AD\":\"Andorra\",\"AG\":\"Antigua and Barbuda\",\"AI\":\"Anguilla\",\"AL\":\"Albania\",\"AM\":\"Armenia\",\"AO\":\"Angola\",\"AR\":\"Argentina\",\"AT\":\"Austria\",\"AU\":\"Australia\",\"AW\":\"Aruba\",\"AX\":\"Åland Islands\",\"BA\":\"Bosnia and Herzegovina\",\"BB\":\"Barbados\",\"BD\":\"Bangladesh\",\"BE\":\"Belgium\",\"BF\":\"Burkina Faso\",\"BG\":\"Bulgaria\",\"BH\":\"Bahrain\",\"BI\":\"Burundi\",\"BJ\":\"Benin\",\"BL\":\"Saint Barthélemy\",\"BM\":\"Bermuda\",\"BO\":\"Bolivia\",\"BQ\":\"Caribbean Netherlands\",\"BR\":\"Brazil\",\"BS\":\"Bahamas\",\"BW\":\"Botswana\",\"BY\":\"Belarus\",\"BZ\":\"Belize\",\"CA\":\"Canada\",\"CC\":\"Cocos (Keeling) Islands\",\"CD\":\"DR Congo\",\"CF\":\"Central African Republic\",\"CG\":\"Congo\",\"CH\":\"Switzerland\",\"CI\":\"Ivory Coast\",\"CK\":\"Cook Islands\",\"CL\":\"Chile\",\"CM\":\"Cameroon\",\"CN\":\"China\",\"CO\":\"Colombia\",\"CR\":\"Costa Rica\",\"CU\":\"Cuba\",\"CV\":\"Cape Verde\",\"CW\":\"Curaçao\",\"CX\":\"Christmas Island\",\"CY\":\"Cyprus\",\"CZ\":\"Czechia\",\"DE\":\"Germany\",\"DJ\":\"Djibouti\",\"DK\":\"Denmark\",\"DM\":\"Dominica\",\"DO\":\"Dominican Republic\",\"DZ\":\"Algeria\",\"EC\":\"Ecuador\",\"EE\":\"Estonia\",\"EG\":\"Egypt\",\"ER\":\"Eritrea\",\"ES\":\"Spain\",\"ET\":\"Ethiopia\",\"FI\":\"Finland\",\"FK\":\"Falkland Islands\",\"FM\":\"Micronesia\",\"FO\":\"Faroe Islands\",\"FR\":\"France\",\"GA\":\"Gabon\",\"GB\":\"United Kingdom\",\"GD\":\"Grenada\",\"GE\":\"Georgia\",\"GF\":\"French Guiana\",\"GG\":\"Guernsey\",\"GH\":\"Ghana\",\"GI\":\"Gibraltar\",\"GL\":\"Greenland\",\"GM\":\"Gambia\",\"GN\":\"Guinea\",\"GP\":\"Guadeloupe\",\"GQ\":\"Equatorial Guinea\",\"GR\":\"Greece\",\"GT\":\"Guatemala\",\"GW\":\"Guinea-Bissau\",\"GY\":\"Guyana\",\"HK\":\"Hong Kong\",\"HN\":\"Honduras\",\"HR\":\"Croatia\",\"HT\":\"Haiti\",\"HU\":\"Hungary\",\"ID\":\"Indonesia\",\"IE\":\"Ireland\",\"IM\":\"Isle of Man\",\"IQ\":\"Iraq\",\"IS\":\"Iceland\",\"IT\":\"Italy\",\"JE\":\"Jersey\",\"JM\":\"Jamaica\",\"JP\":\"Japan\",\"KE\":\"Kenya\",\"KH\":\"Cambodia\",\"KI\":\"Kiribati\",\"KM\":\"Comoros\",\"KN\":\"Saint Kitts and Nevis\",\"KR\":\"South Korea\",\"KY\":\"Cayman Islands\",\"KZ\":\"Kazakhstan\",\"LC\":\"Saint Lucia\",\"LI\":\"Liechtenstein\",\"LR\":\"Liberia\",\"LS\":\"Lesotho\",\"LT\":\"Lithuania\",\"LU\":\"Luxembourg\",\"LV\":\"Latvia\",\"LY\":\"Libya\",\"MA\":\"Morocco\",\"MC\":\"Monaco\",\"MD\":\"Moldova\",\"ME\":\"Montenegro\",\"MF\":\"Saint Martin\",\"MG\":\"Madagascar\",\"MH\":\"Marshall Islands\",\"MK\":\"North Macedonia\",\"ML\":\"Mali\",\"MN\":\"Mongolia\",\"MP\":\"Northern Mariana Islands\",\"MQ\":\"Martinique\",\"MR\":\"Mauritania\",\"MS\":\"Montserrat\",\"MT\":\"Malta\",\"MW\":\"Malawi\",\"MX\":\"Mexico\",\"MZ\":\"Mozambique\",\"NA\":\"Namibia\",\"NC\":\"New Caledonia\",\"NE\":\"Niger\",\"NF\":\"Norfolk Island\",\"NG\":\"Nigeria\",\"NI\":\"Nicaragua\",\"NL\":\"Netherlands\",\"NO\":\"Norway\",\"NR\":\"Nauru\",\"NU\":\"Niue\",\"NZ\":\"New Zealand\",\"PA\":\"Panama\",\"PE\":\"Peru\",\"PF\":\"French Polynesia\",\"PG\":\"Papua New Guinea\",\"PH\":\"Philippines\",\"PL\":\"Poland\",\"PM\":\"Saint Pierre and Miquelon\",\"PN\":\"Pitcairn Islands\",\"PR\":\"Puerto Rico\",\"PT\":\"Portugal\",\"PW\":\"Palau\",\"PY\":\"Paraguay\",\"RO\":\"Romania\",\"RS\":\"Serbia\",\"RU\":\"Russia\",\"RW\":\"Rwanda\",\"SB\":\"Solomon Islands\",\"SC\":\"Seychelles\",\"SD\":\"Sudan\",\"SE\":\"Sweden\",\"SG\":\"Singapore\",\"SH\":\"Saint Helena, Ascension and Tristan da Cunha\",\"SI\":\"Slovenia\",\"SJ\":\"Svalbard and Jan Mayen\",\"SK\":\"Slovakia\",\"SL\":\"Sierra Leone\",\"SM\":\"San Marino\",\"SN\":\"Senegal\",\"SO\":\"Somalia\",\"SR\":\"Suriname\",\"SS\":\"South Sudan\",\"ST\":\"São Tomé and Príncipe\",\"SV\":\"El Salvador\",\"SX\":\"Sint Maarten\",\"SY\":\"Syria\",\"SZ\":\"Eswatini\",\"TC\":\"Turks and Caicos Islands\",\"TD\":\"Chad\",\"TG\":\"Togo\",\"TK\":\"Tokelau\",\"TN\":\"Tunisia\",\"TO\":\"Tonga\",\"TR\":\"Türkiye\",\"TT\":\"Trinidad and Tobago\",\"TV\":\"Tuvalu\",\"TZ\":\"Tanzania\",\"UA\":\"Ukraine\",\"UG\":\"Uganda\",\"US\":\"United States\",\"UY\":\"Uruguay\",\"VA\":\"Vatican City\",\"VC\":\"Saint Vincent and the Grenadines\",\"VE\":\"Venezuela\",\"VG\":\"British Virgin Islands\",\"VI\":\"United States Virgin Islands\",\"VN\":\"Vietnam\",\"VU\":\"Vanuatu\",\"WF\":\"Wallis and Futuna\",\"WS\":\"Samoa\",\"YE\":\"Yemen\",\"ZA\":\"South Africa\",\"ZM\":\"Zambia\",\"ZW\":\"Zimbabwe\"};\n    $first := $[0];\n    $line := function($h) {\n        \"- \" & $h.date & \" (\" & $fromMillis($toMillis($h.date), \"[FNn,3-3]\") & \"): \" & $h.name\n            & ($h.localName != $h.name ? \" (\" & $h.localName & \")\" : \"\")\n            & ($h.global ? \"\" : \" - regional: \" & $join($h.counties, \", \"))\n    };\n    \"Public holidays in \" & $lookup($names, $first.countryCode) & \", \" & $substring($first.date, 0, 4) & \":\\n\" & $join($map($, $line), \"\\n\") & \"\\n\\nSource: Nager.Date.\"\n)"
+            }
+        },
+        {
+            "id": "reply",
+            "type": "workflow-output",
+            "position": {"x": 1020, "y": 0},
+            "data": {}
+        }
+    ],
+    "edges": [
+        {"source": "holidays-request", "target": "country", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "country", "target": "holidays-url", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "holidays-url", "target": "holidays", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "holidays", "target": "holiday-list", "sourceHandle": "flow", "targetHandle": "flow"},
+        {"source": "holiday-list", "target": "reply", "sourceHandle": "flow", "targetHandle": "flow"}
+    ]
+}

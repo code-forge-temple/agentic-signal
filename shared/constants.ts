@@ -1,5 +1,8 @@
 export const BACKEND_PORT = 8000;
 
+/** Where outside apps call workflow commands: POST /workflows/<command>. */
+export const COMMANDS_PORT = 8001;
+
 export const TRIPLE_BACKTICK = "```";
 
 export const IMAGE_FILE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg"]);

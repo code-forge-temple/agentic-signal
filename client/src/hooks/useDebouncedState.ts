@@ -13,7 +13,8 @@ export type UseDebouncedStateProps<T> = {
 }
 
 
-export function useDebouncedState<T> ({callback, delay, initialValue}: UseDebouncedStateProps<T>): [T, (value: T) => void] {
+/** [value, set it and call back after the delay, set it without calling back] */
+export function useDebouncedState<T> ({callback, delay, initialValue}: UseDebouncedStateProps<T>): [T, (value: T) => void, (value: T) => void] {
     const timeoutRef = useRef<number | null>(null);
     const [value, setValue] = useState<T>(initialValue);
 
@@ -37,8 +38,20 @@ export function useDebouncedState<T> ({callback, delay, initialValue}: UseDeboun
         }, delay || 300);
     };
 
+    // For a value that came from elsewhere: nothing is called back, and a call still waiting is dropped
+    // (it would overwrite that value with what was typed before it).
+    const replaceValue = (newValue: T) => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+
+        setValue(newValue);
+    };
+
     return [
         value,
-        onValueChange
+        onValueChange,
+        replaceValue
     ]
 }

@@ -9,12 +9,11 @@ import {useCallback, useState} from "react";
 import {assertIsGetDataNodeData, FetchDataType} from "./types/workflow";
 import {GetDataNodeInputSchema, GET_DATA_NODE_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {CodeEditor} from "../../CodeEditor";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {FormControl, InputLabel, MenuItem, Select, FormControlLabel, Switch} from "@mui/material";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {formatErrorMessage, getField, parseUrl} from "../../../utils";
 import {DebouncedTextField} from "../../DebouncedTextField";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
@@ -71,7 +70,6 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
     const [isRunning, setIsRunning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const {input, url, title, dataType, dataProvidedByUpstream, onResultUpdate, onConfigChange} = data;
 
     const dataProvidedByUpstreamRef = useLatestValue(dataProvidedByUpstream);
@@ -135,7 +133,7 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -149,13 +147,6 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 run={handleRun}
                 running={isRunning}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

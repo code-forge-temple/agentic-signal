@@ -10,9 +10,8 @@ import {assertIsDataValidationNodeData} from "./types/workflow";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {CodeEditor} from "../../CodeEditor";
 import {BaseDialog} from "../../BaseDialog";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {useDebouncedState} from "../../../hooks/useDebouncedState";
-import {LogsDialog} from "../../LogsDialog";
 import Ajv, {AnySchema} from "ajv";
 import {runTask} from "../BaseNode/utils";
 import {Icon} from "./constants";
@@ -46,7 +45,6 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
 
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const {
         title, validatePayload, payloadSchema, validateToolsPayload, toolsPayloadSchema,
@@ -113,7 +111,7 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -123,13 +121,6 @@ export function DataValidationNode ({data, id}: NodeProps<AppNode>) {
                 running={isRunning}
                 title={title}
                 settings={{callback: () => setOpenSettings(true), highlight: isPayloadValidationOn && !payloadSchema?.trim()}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

@@ -21,7 +21,7 @@ export function DebouncedTextField ({
     type = 'text',
     ...textFieldProps
 }: DebouncedTextFieldProps) {
-    const [debouncedValue, setDebouncedValue] = useDebouncedState({
+    const [debouncedValue, setDebouncedValue, replaceValue] = useDebouncedState({
         callback: onChange,
         delay,
         initialValue: String(value)
@@ -29,7 +29,7 @@ export function DebouncedTextField ({
 
     useEffect(() => {
         if (String(value) !== debouncedValue) {
-            setDebouncedValue(String(value));
+            replaceValue(String(value));
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value]);

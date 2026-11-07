@@ -7,10 +7,9 @@
 import {type NodeProps} from "@xyflow/react";
 import {useCallback, useState} from "react";
 import {assertIsHttpNodeData} from "./types/workflow";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {isTauri, parseUrl} from "../../../utils";
 import {html as beautifyHtml} from 'js-beautify';
 import {GraphQLService} from "./services/graphqlService";
@@ -30,7 +29,6 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
     const [isRunning, setIsRunning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const {title, url, input, onResultUpdate, onConfigChange} = data;
     const {settings} = useSettings();
 
@@ -69,7 +67,7 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -82,13 +80,6 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 run={handleRun}
                 running={isRunning}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

@@ -15,9 +15,11 @@ type BasicTabsProps = {
     // rendered in the tab pill (e.g. a title plus an inline Switch) and falls back to
     // `title` when omitted, so existing string-only callers are unaffected.
     tabs: { title: string; label?: React.ReactNode; content: React.ReactNode }[];
+    /** Keeps every tab's content mounted, hiding the others, so switching away loses nothing typed. */
+    keepMounted?: boolean;
 }
 
-export function BasicTabs ({tabs}: BasicTabsProps) {
+export function BasicTabs ({tabs, keepMounted = false}: BasicTabsProps) {
     const [value, setValue] = useState(tabs[0].title);
 
     useEffect(() => {
@@ -37,7 +39,13 @@ export function BasicTabs ({tabs}: BasicTabsProps) {
                     </TabList>
                 </Box>
                 <Box className="tabs-content">
-                    {tabs.find(tab => tab.title === value)?.content}
+                    {keepMounted
+                        ? tabs.map(tab => (
+                            <div key={tab.title} className="tabs-panel" hidden={tab.title !== value}>
+                                {tab.content}
+                            </div>
+                        ))
+                        : tabs.find(tab => tab.title === value)?.content}
                 </Box>
             </Box>
         </TabContext>

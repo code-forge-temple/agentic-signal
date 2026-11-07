@@ -42,6 +42,7 @@ export type RunSingleCallParams = {
     maxToolRetries: number;
     think?: boolean;
     temperature?: number;
+    signal?: AbortSignal;
 };
 
 export type OrchestrationParams = {
@@ -59,6 +60,8 @@ export type OrchestrationParams = {
     maxToolRetries: number;
     think?: boolean;
     temperature?: number;
+    /** Cancels every call of the orchestration (planning, agents, aggregation). */
+    signal?: AbortSignal;
 };
 
 export type OrchestrationResult =

@@ -4,335 +4,61 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {ReactFlow, Background, Controls, MiniMap, BackgroundVariant, useReactFlow, useNodesInitialized, ReactFlowProvider, FitViewOptions, Edge} from '@xyflow/react';
-import {flushSync} from 'react-dom';
+import {ReactFlowProvider} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './App.scss';
-import {useWorkflow} from '../../hooks/useWorkflow';
-import {nodeFactory, nodeTypes} from '../nodes';
-import {DEFAULT_EDGE_TYPE, edgeTypes} from '../edges';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useRef, useState} from 'react';
 import {Dock} from '../Dock';
-import {v4 as uuidv4} from 'uuid';
 import {useSnackbar} from 'notistack'
-import {AppNode, AppNodeType} from '../nodes/workflow.gen';
-import {NodeDescriptor} from '../nodes/types';
-import {ElbowEdgeData} from '../edges/ElbowEdge/ElbowEdge';
-import {toolRegistry} from '../nodes/ToolNode/tools/toolRegistry.gen';
-import {nodeRegistry} from '../nodes/nodeRegistry.gen';
-import {NODE_TYPE as TOOL_NODE_TYPE} from '../nodes/ToolNode/constants';
 import {useFullscreen} from '../../hooks/useFullscreen';
-import {assertValidWorkflowEdges} from './utils/workflowUtils';
-import {getDefaultUserConfigValues} from '../../types/ollama.types';
-import {z} from 'zod';
-import {Chip, Backdrop, CircularProgress} from '@mui/material';
-import {ConfirmDialog} from '../ConfirmDialog';
+import {Chip} from '@mui/material';
 import {ErrorBoundary} from '../ErrorBoundary/ErrorBoundary';
-import {isRecord} from '../../utils';
+import {LayersProvider} from '../../context/LayersContext';
+import {LAYER_KIND} from '../../context/LayersContextBase';
+import {useLayers} from '../../hooks/useLayers';
+import {WorkflowLayer} from './components/WorkflowLayer';
+import {LayerSwitcher} from './components/LayerSwitcher';
+import {ConfirmDialog} from '../ConfirmDialog';
+import {useSettings} from '../../hooks/useSettings';
+import {useOutsideCommands} from '../../hooks/useOutsideCommands';
+import {listWorkflowsFolder, saveWorkflowFile} from '../../services/workflowsService';
+import {findWorkflowCommand, workflowFileName, WORKFLOWS_CHANGED_EVENT} from '../../workflows';
 
 
-const ZOD_PATH_SEPARATOR = '→';
+type PendingFolderSave = {
+    name: string;
+    content: string;
+};
 
-const FIT_VIEW_TOP_BUFFER_PX = 16;
-
-const getId = () => uuidv4();
-
-function deleteByPath (obj: Record<string, unknown>, path: string): void {
-    const parts = path.split(".");
-
-    if (parts.length === 1) {
-        delete obj[parts[0]];
-    } else {
-        let current: unknown = obj;
-
-        for (let i = 0; i < parts.length - 1; i++) {
-            if (!isRecord(current)) return;
-
-            current = current[parts[i]];
-        }
-
-        if (isRecord(current)) {
-            delete current[parts[parts.length - 1]];
-        }
-    }
-}
-
-function remapNodeAndEdgeIds<
-    N extends { id: string },
-    E extends { source: string; target: string; sourceHandle?: string | null; targetHandle?: string | null }
-> (nodes: N[], edges: E[]) {
-    const idMap = new Map<string, string>(
-        nodes.map(node => [node.id, getId()])
-    );
-
-    const remappedNodes = nodes.map(node => ({
-        ...node,
-        id: idMap.get(node.id)!
-    }));
-
-    const remappedEdges = edges.map(edge => {
-        const newSource = idMap.get(edge.source) ?? edge.source;
-        const newTarget = idMap.get(edge.target) ?? edge.target;
-        const newId = `xy-edge__${newSource}${edge.sourceHandle ?? ''}-${newTarget}${edge.targetHandle ?? ''}`;
-
-        return {
-            ...edge,
-            source: newSource,
-            target: newTarget,
-            id: newId
-        };
-    });
-
-    return {remappedNodes, remappedEdges};
-}
-
-type LoadableNodeDescriptor = NodeDescriptor<string, { data: { title?: string; toSanitize?: string[] } }>;
-
-const descriptorMap: Record<string, LoadableNodeDescriptor | undefined> = Object.fromEntries(
-    nodeRegistry.map(desc => [desc.type, desc])
-);
-
-const NodeSchema = z.object({
-    id: z.string().min(1, '"id" must be a non-empty string'),
-    type: z.string().min(1, '"type" must be a non-empty string'),
-    data: z.record(z.unknown()),
-    position: z.object({x: z.number(), y: z.number()}, {required_error: '"position" with {x, y} is required'}),
-}).passthrough();
-
-const EdgeSchema = z.object({
-    source: z.string().min(1, '"source" must be a non-empty string'),
-    target: z.string().min(1, '"target" must be a non-empty string'),
-}).passthrough();
-
-const WorkflowSchema = z.object({
-    nodes: z.array(NodeSchema),
-    edges: z.array(EdgeSchema).optional().default([]),
-});
-
-function AppFlow () {
-    const {
-        nodes,
-        edges,
-        addNode,
-        onNodesChange,
-        onEdgesChange,
-        onEdgesDelete,
-        onNodesDelete,
-        onConnect,
-        setNodes,
-        setEdges,
-    } = useWorkflow();
+function AppLayers () {
+    const {layers, activeLayer, getLayerApi} = useLayers();
+    const {settings} = useSettings();
     const {enqueueSnackbar} = useSnackbar();
-    const [pendingWorkflow, setPendingWorkflow] = useState<{nodes: AppNode[], edges: Edge[]} | null>(null);
-    const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
-    const reactFlowInstance = useReactFlow();
-    const nodesInitialized = useNodesInitialized();
-    const fitViewOnLoadRef = useRef(false);
     const dockRef = useRef<HTMLDivElement>(null);
+    // Kept after the dialog closes, so its message doesn't go blank while it fades out.
+    const [pendingFolderSave, setPendingFolderSave] = useState<PendingFolderSave | null>(null);
+    const [isReplaceConfirmOpen, setIsReplaceConfirmOpen] = useState(false);
 
     useFullscreen();
+    useOutsideCommands();
 
-    // Measured rather than hardcoded: the dock's height isn't fixed (it can wrap/resize with its
-    // content), so a constant would drift out of sync and let nodes end up hidden behind it again.
-    const getFitViewPadding = useCallback((): FitViewOptions['padding'] => {
-        const dockHeight = dockRef.current?.getBoundingClientRect().height ?? 0;
+    const getActiveLayerApi = useCallback(() => getLayerApi(activeLayer.id), [getLayerApi, activeLayer.id]);
 
-        return {top: `${dockHeight + FIT_VIEW_TOP_BUFFER_PX}px`, x: '20%', bottom: '20%'};
-    }, []);
+    const handleSave = useCallback(() => getActiveLayerApi()?.save(), [getActiveLayerApi]);
 
-    useEffect(() => {
-        if (nodesInitialized && fitViewOnLoadRef.current) {
-            fitViewOnLoadRef.current = false;
-            void reactFlowInstance.fitView({padding: getFitViewPadding(), duration: 400});
-        }
-        // `nodes` is intentionally included: replacing an existing workflow keeps
-        // nodesInitialized `true` throughout (no false->true edge to react to), so
-        // this effect must also re-run whenever the node set itself changes.
-    }, [nodesInitialized, nodes, reactFlowInstance, getFitViewPadding]);
+    const handleClear = useCallback(() => getActiveLayerApi()?.clear(), [getActiveLayerApi]);
 
-    const handleGetWorkflowJson = useCallback((): string => {
-        const sanitizedNodes = nodes.map(node => {
-            const nodeData = JSON.parse(JSON.stringify(node.data)) as Record<string, unknown>;
-            const toSanitize = Array.isArray(nodeData.toSanitize) ? nodeData.toSanitize as string[] : [];
+    const handleLoadWorkflow = useCallback((json: string, onError?: (error: string) => void) => {
+        getActiveLayerApi()?.loadWorkflowFromJson(json, {onError});
+    }, [getActiveLayerApi]);
 
-            for (const path of toSanitize) {
-                deleteByPath(nodeData, path);
-            }
+    const handleLoadWorkflowFile = useCallback((json: string, fileName: string) => {
+        getActiveLayerApi()?.loadWorkflowFromJson(json, {fileName});
+    }, [getActiveLayerApi]);
 
-            deleteByPath(nodeData, "toSanitize");
+    const handleGetWorkflowJson = useCallback(() => getActiveLayerApi()?.getWorkflowJson() ?? '', [getActiveLayerApi]);
 
-            return {
-                ...node,
-                data: nodeData
-            };
-        });
-
-        return JSON.stringify({nodes: sanitizedNodes, edges}, null, 4);
-    }, [nodes, edges]);
-
-    const handleSave = () => {
-        if (nodes.length === 0 && edges.length === 0) {
-            enqueueSnackbar('Nothing to save.', {variant: 'info'});
-
-            return;
-        }
-
-        const data = handleGetWorkflowJson();
-        const blob = new Blob([data], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-
-        a.href = url;
-        a.download = "workflow.json";
-        a.click();
-
-        URL.revokeObjectURL(url);
-
-        enqueueSnackbar('Workflow saved!', {variant: 'success'});
-    };
-
-    const handleClear = () => {
-        setNodes([]);
-        setEdges([]);
-    };
-
-    const handleLoadWorkflowFromJson = useCallback((jsonString: string, onError?: (error: string) => void) => {
-        flushSync(() => setIsLoadingWorkflow(true));
-
-        setTimeout(() => {
-            try {
-                const raw = JSON.parse(jsonString) as { nodes?: unknown };
-
-                // Auto-assign positions for nodes missing them (models often omit position)
-                if (Array.isArray(raw.nodes)) {
-                    raw.nodes = (raw.nodes as { position?: { x?: unknown; y?: unknown } }[]).map((node, idx) => {
-                        const x = typeof node.position?.x === 'number' ? node.position.x : idx * 300;
-                        const y = typeof node.position?.y === 'number' ? node.position.y : 0;
-
-                        return {...node, position: {x, y}};
-                    });
-                }
-
-                const {nodes: parsedNodes, edges: parsedEdgesRaw} = WorkflowSchema.parse(raw);
-
-                const parsedEdges = parsedEdgesRaw.map(edge => ({...edge, type: DEFAULT_EDGE_TYPE}));
-
-                assertValidWorkflowEdges(parsedNodes, parsedEdges);
-
-                const hydratedNodes = parsedNodes.map((node, idx) => {
-                    if (!descriptorMap[node.type]) {
-                        const valid = Object.keys(descriptorMap).join(', ');
-
-                        throw new Error(`unknown node type "${node.type}". Valid types are: ${valid}`);
-                    }
-
-                    const descriptor = descriptorMap[node.type];
-
-                    if (descriptor?.migrate) {
-                        node = {...node, data: descriptor.migrate(node.data)};
-                    }
-
-                    let updatedNode = node;
-
-                    if (node.type === TOOL_NODE_TYPE) {
-                        const tool = toolRegistry.find(t => t.toolSubtype === node.data.toolSubtype);
-
-                        if (tool) {
-                            const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
-
-                            updatedNode = {
-                                ...node,
-                                data: {
-                                    ...node.data,
-                                    toolSchema: tool.toolSchema,
-                                    userConfigSchema: tool.userConfigSchema,
-                                    userConfig: {
-                                        ...defaultUserConfig,
-                                        ...(node.data.userConfig as Record<string, unknown> | undefined)
-                                    },
-                                    title: tool.title,
-                                    handler: undefined,
-                                    toSanitize: [...descriptor?.defaultData.toSanitize || [], ...tool.toSanitize]
-                                }
-                            };
-                        } else {
-                            updatedNode = {
-                                ...node,
-                                data: {
-                                    ...node.data,
-                                    toolSchema: {},
-                                    title: descriptor?.defaultData.title || node.data.title,
-                                    handler: undefined,
-                                    toSanitize: [...descriptor?.defaultData.toSanitize || []]
-                                }
-                            };
-                        }
-                    } else {
-                        updatedNode = {
-                            ...node,
-                            data: {
-                                ...node.data,
-                                title: descriptor?.defaultData.title || node.data.title,
-                                toSanitize: descriptor?.defaultData.toSanitize
-                            }
-                        };
-                    }
-
-                    try {
-                        descriptor?.assertion(updatedNode.data);
-                    } catch (assertionError) {
-                        if (assertionError instanceof z.ZodError) {
-
-                            const fields = assertionError.errors.map(e => {
-                                const path = ['data', ...e.path].join(ZOD_PATH_SEPARATOR);
-
-                                return `${path}: ${e.message}`;
-                            }).join('; ');
-
-                            throw new Error(`nodes[${idx}] (type "${node.type}"): ${fields}`);
-                        }
-
-                        throw assertionError;
-                    }
-
-                    // The descriptor's assertion has just validated this node's data.
-                    return updatedNode as AppNode;
-                });
-
-                const {remappedNodes, remappedEdges} = remapNodeAndEdgeIds(hydratedNodes, parsedEdges);
-
-                if (nodes.length > 0) {
-                    setPendingWorkflow({nodes: remappedNodes, edges: remappedEdges});
-                } else {
-                    fitViewOnLoadRef.current = true;
-
-                    setNodes(remappedNodes);
-                    setEdges(remappedEdges);
-                }
-            } catch (error) {
-                let rawMessage: string;
-
-                if (error instanceof z.ZodError) {
-                    rawMessage = error.errors.map(e => {
-                        const path = e.path.join(ZOD_PATH_SEPARATOR);
-
-                        return path ? `${path}: ${e.message}` : e.message;
-                    }).join('; ');
-                } else {
-                    rawMessage = error instanceof Error ? error.message : String(error);
-                }
-
-                const message = 'Failed to load workflow: ' + rawMessage;
-
-                enqueueSnackbar(message, {variant: 'error'});
-                onError?.(message);
-            } finally {
-                setIsLoadingWorkflow(false);
-            }
-        }, 100);
-    }, [nodes, setNodes, setEdges, enqueueSnackbar]);
-
-    const handleLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleLoad = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
 
         if (!file) return;
@@ -340,162 +66,92 @@ function AppFlow () {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            handleLoadWorkflowFromJson(e.target?.result as string);
+            handleLoadWorkflowFile(e.target?.result as string, file.name);
             event.target.value = '';
         };
         reader.readAsText(file);
-    };
+    }, [handleLoadWorkflowFile]);
 
-    const handleMergeWorkflow = () => {
-        if (!pendingWorkflow) return;
+    const writeToWorkflowsFolder = useCallback(async ({name, content}: PendingFolderSave) => {
+        try {
+            const path = await saveWorkflowFile(settings.workflowsFolder, name, content);
+            const found = findWorkflowCommand(JSON.parse(content));
 
-        const pending = pendingWorkflow;
+            window.dispatchEvent(new Event(WORKFLOWS_CHANGED_EVENT));
 
-        flushSync(() => {
-            setPendingWorkflow(null);
-            setIsLoadingWorkflow(true);
-        });
+            enqueueSnackbar(found ? `Saved to ${path}. Call it in the chat as /${found.command}.` : `Saved to ${path}.`, {variant: 'success'});
+        } catch (error) {
+            enqueueSnackbar(`Couldn't save to the workflows folder: ${error instanceof Error ? error.message : String(error)}`, {variant: 'error'});
+        }
+    }, [settings.workflowsFolder, enqueueSnackbar]);
 
-        setTimeout(() => {
-            try {
-                const maxY = Math.max(...nodes.map(n => n.position.y + (n.measured?.height ?? 40)));
-                const minX = Math.min(...nodes.map(n => n.position.x));
-                const yOffset = maxY + 100;
-                const pendingMinY = Math.min(...pending.nodes.map(n => n.position.y));
-                const pendingMinX = Math.min(...pending.nodes.map(n => n.position.x));
-                const dx = minX - pendingMinX;
-                const dy = yOffset - pendingMinY;
+    const handleSaveToFolder = useCallback(async () => {
+        const layerApi = getActiveLayerApi();
 
-                const shiftedNodes = pending.nodes.map(node => ({
-                    ...node,
-                    position: {
-                        x: node.position.x + dx,
-                        y: node.position.y + dy
-                    }
-                }));
+        if (!layerApi?.hasNodes()) {
+            enqueueSnackbar('Nothing to save.', {variant: 'info'});
 
-                const shiftedEdges = pending.edges.map(edge => {
-                    const bend = (edge.data as ElbowEdgeData | undefined)?.bend;
+            return;
+        }
 
-                    if (!bend) return edge;
+        const content = layerApi.getWorkflowJson();
+        const command = activeLayer.kind === LAYER_KIND.AI ? findWorkflowCommand(JSON.parse(content))?.command : undefined;
+        const save = {name: workflowFileName(command ?? activeLayer.name), content};
 
-                    return {
-                        ...edge,
-                        data: {...edge.data, bend: {x: bend.x + dx, y: bend.y + dy}}
-                    };
-                });
+        try {
+            const {files} = await listWorkflowsFolder(settings.workflowsFolder);
 
-                setNodes([...nodes, ...shiftedNodes]);
-                setEdges([...edges, ...shiftedEdges]);
-            } finally {
-                setIsLoadingWorkflow(false);
-            }
-        }, 100);
-    };
+            if (files.some(file => file.name === save.name)) {
+                setPendingFolderSave(save);
+                setIsReplaceConfirmOpen(true);
 
-    const handleReplaceWorkflow = () => {
-        if (!pendingWorkflow) return;
-
-        flushSync(() => {
-            setPendingWorkflow(null);
-            setIsLoadingWorkflow(true);
-        });
-
-        setTimeout(() => {
-            try {
-                fitViewOnLoadRef.current = true;
-
-                setNodes(pendingWorkflow.nodes);
-                setEdges(pendingWorkflow.edges);
-            } finally {
-                setIsLoadingWorkflow(false);
-            }
-        }, 100);
-    };
-
-    const onDragOver = useCallback((event: React.DragEvent) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-    }, []);
-
-    const onDrop = useCallback(
-        (event: React.DragEvent) => {
-            event.preventDefault();
-
-            const nodeType = event.dataTransfer.getData('application/reactflow') as AppNodeType;
-
-            if (typeof nodeType === 'undefined' || !nodeType) {
                 return;
             }
+        } catch (error) {
+            enqueueSnackbar(`Couldn't open the workflows folder: ${error instanceof Error ? error.message : String(error)}`, {variant: 'error'});
 
-            const zoom = reactFlowInstance.getZoom?.() ?? 1;
-            const position = reactFlowInstance.screenToFlowPosition({
-                x: event.clientX - 20 * zoom,
-                y: event.clientY - 20 * zoom,
-            });
+            return;
+        }
 
-            addNode(nodeFactory(nodeType, getId(), position));
-        }, [addNode, reactFlowInstance]);
+        await writeToWorkflowsFolder(save);
+    }, [getActiveLayerApi, activeLayer.name, activeLayer.kind, settings.workflowsFolder, enqueueSnackbar, writeToWorkflowsFolder]);
 
     return (
         <>
-            <Backdrop open={isLoadingWorkflow} sx={{zIndex: 9999, color: '#fff'}}>
-                <CircularProgress color="inherit" />
-            </Backdrop>
-            <Dock ref={dockRef} onSave={handleSave} onLoad={handleLoad} onClear={handleClear} onLoadWorkflow={handleLoadWorkflowFromJson} getWorkflowJson={handleGetWorkflowJson} />
-            <ConfirmDialog
-                open={pendingWorkflow !== null}
-                onClose={() => setPendingWorkflow(null)}
-                title="Load Workflow"
-                message="A workflow is already loaded. Would you like to add to the existing workflow or replace it?"
-                confirmLabel="Add to Existing"
-                cancelLabel="Replace"
-                onConfirm={handleMergeWorkflow}
-                onCancel={handleReplaceWorkflow}
+            <Dock
+                ref={dockRef}
+                readOnly={activeLayer.kind === LAYER_KIND.AI}
+                onSave={handleSave}
+                onSaveToFolder={() => void handleSaveToFolder()}
+                onLoad={handleLoad}
+                onClear={handleClear}
+                onLoadWorkflow={handleLoadWorkflow}
+                onLoadWorkflowFile={handleLoadWorkflowFile}
+                getWorkflowJson={handleGetWorkflowJson}
             />
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onEdgesDelete={onEdgesDelete}
-                onNodesDelete={onNodesDelete}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-                onConnect={onConnect}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                defaultEdgeOptions={{
-                    type: DEFAULT_EDGE_TYPE,
-                    animated: false
+            <ConfirmDialog
+                open={isReplaceConfirmOpen}
+                onClose={() => setIsReplaceConfirmOpen(false)}
+                title="Replace Workflow"
+                message={`"${pendingFolderSave?.name}" is already in your workflows folder. Replace it?`}
+                confirmLabel="Replace"
+                maximizable={false}
+                onConfirm={() => {
+                    if (pendingFolderSave) void writeToWorkflowsFolder(pendingFolderSave);
                 }}
-                colorMode={'dark'}
-                deleteKeyCode="Delete"
-                defaultViewport={{x: 0, y: 0, zoom: 2}}
-            >
-                <Background
-                    variant={BackgroundVariant.Dots}
-                    gap={16}
-                    size={1}
-                    color="#333"
-                />
-                <MiniMap />
-                <Controls fitViewOptions={{padding: getFitViewPadding()}} />
-            </ReactFlow>
+            />
+            {layers.map(layer => (
+                <ReactFlowProvider key={layer.id}>
+                    <ErrorBoundary onError={(error) => enqueueSnackbar(
+                        `An unexpected error occurred in ${layer.name}: ` + error.message,
+                        {variant: 'error'}
+                    )}>
+                        <WorkflowLayer layer={layer} isActive={layer.id === activeLayer.id} dockRef={dockRef} />
+                    </ErrorBoundary>
+                </ReactFlowProvider>
+            ))}
+            <LayerSwitcher />
         </>
-    );
-}
-
-function AppFlowWithBoundary () {
-    const {enqueueSnackbar} = useSnackbar();
-
-    return (
-        <ErrorBoundary onError={(error) => enqueueSnackbar(
-            'An unexpected error occurred: ' + error.message,
-            {variant: 'error'}
-        )}>
-            <AppFlow />
-        </ErrorBoundary>
     );
 }
 
@@ -507,9 +163,9 @@ export function App () {
                 size="small"
                 className="version-tag"
             />
-            <ReactFlowProvider>
-                <AppFlowWithBoundary />
-            </ReactFlowProvider>
+            <LayersProvider>
+                <AppLayers />
+            </LayersProvider>
         </div>
     );
 }

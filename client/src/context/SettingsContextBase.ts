@@ -9,6 +9,8 @@ import {createContext} from "react";
 export type Settings = {
     ollamaHost: string;
     browserPath: string;
+    /** Where workflows are saved; empty means the backend's default folder. */
+    workflowsFolder: string;
 };
 
 export type SettingsContextType = {

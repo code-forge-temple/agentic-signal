@@ -7,9 +7,8 @@
 import {type NodeProps} from "@xyflow/react";
 import {useCallback, useEffect, useState} from "react";
 import {assertIsDelayedSnapshotNodeData} from "./types/workflow";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {runTask} from "../BaseNode/utils";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {Icon} from "./constants";
@@ -28,7 +27,6 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
 
     const [openOutput, setOpenOutput] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isRunning, setIsRunning] = useState(false);
 
@@ -128,7 +126,7 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -141,13 +139,6 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
                 stoppable={true}
                 settings={{callback: () => setOpenSettings(true), highlight: false}}
                 output={{callback: () => setOpenOutput(true), highlight: hasSnapshot}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

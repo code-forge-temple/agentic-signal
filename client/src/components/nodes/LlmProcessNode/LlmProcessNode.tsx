@@ -8,13 +8,12 @@ import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
 import {assertIsLlmProcessNodeData, defaultLlmProcessNodeData} from "./types/workflow";
 import {assertIsToolNodeData, ToolNode} from "../ToolNode/types/workflow";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {Box, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Slider, Switch, Typography} from "@mui/material";
 import {CodeEditor} from "../../CodeEditor";
 import {useAIProcessor} from "./hooks/useAIProcessor";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {BasicTabs} from "../../Tabs/Tabs";
 import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hooks/useRunOnTriggerChange";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
@@ -41,7 +40,6 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
     assertIsLlmProcessNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const currentRetryRef = useRef(0);
     const {getNodes, getEdges} = useReactFlow();
@@ -313,7 +311,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -324,7 +322,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                 run={handleRun}
                 running={isRunning}
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
-                logs={{callback: () => setOpenLogs(true), highlight: error.length > 0}}
+                error={error}
                 extraPorts = {
                     <>
                         <Handle
@@ -354,13 +352,6 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
                         <TimerTriggerPort />
                     </>
                 }
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
-                error={error}
             />
 
             <BaseDialog

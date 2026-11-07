@@ -6,13 +6,11 @@
 
 import {type NodeProps} from "@xyflow/react";
 import {assertIsDataSourceNodeData, DATA_SOURCE_TYPE_LABELS, DATA_SOURCE_TYPES} from "./types/workflow";
-import {AttachedFile} from "@shared/types.gen";
 import {useCallback, useState} from "react";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
-import {LogsDialog} from "../../LogsDialog";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
@@ -21,16 +19,13 @@ import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {JsonInput} from "./components/JsonInput";
 import {FilesInput} from "./components/FilesInput";
-import {IMAGE_FILE_EXTENSIONS, BINARY_FILE_EXTENSIONS} from "@shared/constants";
-import {markdownFilePrefix, markdownImageFilePrefix} from "@shared/utils";
 import {CodeEditor} from "../../CodeEditor";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {DATASOURCE_INPUT_JSON_SCHEMA} from "./types/input.types";
-import {fileBase64, mimeTypeFromExtension} from "./utils";
+import {buildDataSourceEnvelope} from "./utils";
 
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
-const toArray = (x: unknown): unknown[] => x === undefined ? [] : (Array.isArray(x) ? x : [x]);
 
 export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -39,7 +34,6 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
     const [openSettings, setOpenSettings] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [openLogs, setOpenLogs] = useState(false);
     const {title, dataSource, input, onResultUpdate, onConfigChange} = data;
 
     const handleRun = useCallback(() => {
@@ -47,79 +41,16 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
         onResultUpdate(id);
 
         void runTask(async () => {
-            const up = input?.payload;
-            const upTools = input?.toolsPayload;
-            const upIsString = typeof up === 'string';
+            // Shared with Workflow Input's outside calls, so both put out the same thing for the same data.
+            try {
+                onResultUpdate(id, buildDataSourceEnvelope(dataSource, input));
+            } catch (e) {
+                setError(e instanceof Error ? e.message : String(e));
 
-            if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
-                try {
-                    const own: unknown = JSON.parse(dataSource.value || "{}");
-                    // Upstream and own are kept as distinct array elements rather than merged —
-                    // an object-spread merge would silently drop upstream keys on collision.
-                    // JSON mode never contributes its own new tools attachments.
-                    const payload = up === undefined
-                        ? own
-                        : upIsString
-                            ? [own, ...toArray(up)]
-                            : [...toArray(up), own];
-                    const toolsPayload = toArray(upTools);
-
-                    onResultUpdate(id, {payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})});
-                } catch (e) {
-                    setError("Invalid JSON data: " + (e instanceof Error ? e.message : String(e)));
-
-                    onResultUpdate(id);
-                }
-
-                return;
-            } else if(dataSource.type === DATA_SOURCE_TYPES.MARKDOWN_AND_FILES) {
-                let own = dataSource.value?.text || "";
-                let imageCounter = 1;
-                const ownTools: AttachedFile[] = [];
-                const filesWithoutData: string[] = [];
-
-                for (const file of dataSource.value?.files || []) {
-                    const ext = file.name.split('.').pop()?.toLowerCase() || "";
-                    // isToolsPayload=undefined means infer from extension (backward compat with saved workflows)
-                    const isToolsPayload = file.isToolsPayload ?? BINARY_FILE_EXTENSIONS.has(ext);
-
-                    if (isToolsPayload) {
-                        const base64 = fileBase64(file, ext);
-
-                        if (base64 === undefined) {
-                            filesWithoutData.push(file.name);
-                        } else {
-                            ownTools.push({name: file.name, base64, mimeType: file.mimeType || mimeTypeFromExtension(ext)});
-                        }
-                    } else if (IMAGE_FILE_EXTENSIONS.has(ext)) {
-                        own += `\n\n${markdownImageFilePrefix(imageCounter++, file.name)}${file.content}\n\n`;
-                    } else {
-                        own += `\n\n${markdownFilePrefix(file.name)}${file.content}\n\n`;
-                    }
-                }
-
-                if (filesWithoutData.length > 0) {
-                    setError(`No file data saved for ${filesWithoutData.map(name => `"${name}"`).join(", ")} — remove the file and attach it again.`);
-
-                    onResultUpdate(id);
-
-                    return;
-                }
-
-                // Both naturally textual — join into one document rather than keeping separate
-                // array elements. Otherwise, upstream is kept distinct (spread if already an
-                // array, wrapped as one element otherwise) with own appended last.
-                const payload = up === undefined
-                    ? own
-                    : upIsString
-                        ? up + own
-                        : [...toArray(up), own];
-                const toolsPayload = [...toArray(upTools), ...ownTools];
-
-                onResultUpdate(id, {payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})});
+                onResultUpdate(id);
             }
         }, setIsRunning);
-    }, [dataSource.type, dataSource.value, id, onResultUpdate, input]);
+    }, [dataSource, id, onResultUpdate, input]);
 
     useAutoRunOnInputChange({
         clearError: () => { setError(null); },
@@ -139,7 +70,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={Icon}
                 ports={{
@@ -153,13 +84,6 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
                 run={handleRun}
                 running={isRunning}
                 settings={() => setOpenSettings(true)}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={title}
                 error={error}
             />
 

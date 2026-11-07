@@ -11,20 +11,32 @@ import {AIAssistantDock} from "./components/AIAssistantDock";
 import './Dock.scss';
 
 type DockProps = {
+    /** The active layer is the AI layer: nodes can't be added, and Clear and Load are off (Save stays on). */
+    readOnly: boolean;
     onSave: () => void;
+    onSaveToFolder: () => void;
     onClear: () => void;
     onLoad: (event: React.ChangeEvent<HTMLInputElement>) => void;
     onLoadWorkflow: (json: string, onError?: (error: string) => void) => void;
+    /** A workflow file the desktop app's own dialog picked. */
+    onLoadWorkflowFile: (json: string, fileName: string) => void;
     getWorkflowJson: () => string;
 };
 
-export const Dock = forwardRef<HTMLDivElement, DockProps>(({onSave, onLoad, onClear, onLoadWorkflow, getWorkflowJson}, ref) => {
+export const Dock = forwardRef<HTMLDivElement, DockProps>(({readOnly, onSave, onSaveToFolder, onLoad, onClear, onLoadWorkflow, onLoadWorkflowFile, getWorkflowJson}, ref) => {
     return (
         <>
             <div className="dock" ref={ref}>
                 <AIAssistantDock onLoadWorkflow={onLoadWorkflow} getWorkflowJson={getWorkflowJson} />
-                <ActionsDock onSave={onSave} onLoad={onLoad} onClear={onClear} />
-                <NodesDock />
+                <ActionsDock
+                    readOnly={readOnly}
+                    onSave={onSave}
+                    onSaveToFolder={onSaveToFolder}
+                    onLoad={onLoad}
+                    onLoadWorkflow={onLoadWorkflowFile}
+                    onClear={onClear}
+                />
+                <NodesDock readOnly={readOnly} />
             </div>
         </>
     );

@@ -7,11 +7,10 @@
 import {useEffect, useCallback} from "react";
 import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
 import {assertIsToolNodeData} from "./types/workflow";
-import {BaseNode} from "../BaseNode";
+import {MonitoredNode} from "../MonitoredNode";
 import {useState} from "react";
 import {BaseDialog} from "../../BaseDialog";
 import {CodeEditor} from "../../CodeEditor";
-import {LogsDialog} from "../../LogsDialog";
 import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {MenuItem, Select, FormControl, InputLabel} from "@mui/material";
 import {UserConfigFields} from "./UserConfigFields";
@@ -33,7 +32,6 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
     assertIsToolNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
-    const [openLogs, setOpenLogs] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const {title, toolSubtype, userConfig, handler, cleanup, onConfigChange, toSanitize} = data;
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
@@ -166,7 +164,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
     return (
         <>
-            <BaseNode
+            <MonitoredNode
                 id={id}
                 nodeIcon={selectedTool?.icon || Icon}
                 ports={{}}
@@ -189,13 +187,6 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                 }
                 title={selectedTool?.title || title}
                 settings={{callback: () => setOpenSettings(true), highlight: !!hasMissingConfig}}
-                logs={{callback: () => setOpenLogs(true), highlight: error !== null}}
-            />
-
-            <LogsDialog
-                open={openLogs}
-                onClose={() => setOpenLogs(false)}
-                title={selectedTool?.title || title}
                 error={error}
             />
 

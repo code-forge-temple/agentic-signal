@@ -12,6 +12,7 @@ import {closeSession, getOrCreateSession} from "./utils/sessionManager.ts";
 import {devLog} from "../../utils/logger.ts";
 import {withTimeout} from "./utils/withTimeout.ts";
 import {setPageSize} from "../../utils/browserUtils.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 const NAV_TIMEOUT_MS = 20_000;
 
@@ -95,7 +96,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 devLog(`[FormInteraction] [${i + 1}/${actions.length}] ${action.actionType} → ${action.selector}${valuePreview}`);
 
                 await executeAction(page, action, attachedFilePathMap, typingDelay).catch((err) => {
-                    const msg = err instanceof Error ? err.message : String(err);
+                    const msg = errorMessage(err);
 
                     console.warn(`[FormInteraction] [${i + 1}/${actions.length}] ✗ ${action.actionType} → ${action.selector}: ${msg}`);
                     failedActions.push(`${action.actionType} ${action.selector}: ${msg}`);
@@ -211,7 +212,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
             }
         })(), interactionTimeoutMs, `Form interaction timed out after ${interactionTimeoutMs / 1000}s`);
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
 
         console.error(`[FormInteraction] ✗ error: ${message}`);
         result.error = `Form interaction failed: ${message}`;

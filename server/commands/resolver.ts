@@ -7,6 +7,7 @@
 import {createGraphQLError} from "npm:graphql-yoga";
 import {commandGateway, CommandConnection, CommandRequestEvent, CommandResponse} from "./service.ts";
 import {commandsListener, CommandsNetworkAccess} from "./listener.ts";
+import {errorMessage} from "../../shared/utils.ts";
 
 
 export const resolver = {
@@ -23,7 +24,7 @@ export const resolver = {
                 return await commandsListener.setNetworkAccess(enabled);
             } catch (error) {
                 // Yoga would turn an ordinary error into "Unexpected error."; this one says why for Settings.
-                throw createGraphQLError(error instanceof Error ? error.message : String(error));
+                throw createGraphQLError(errorMessage(error));
             }
         },
     },

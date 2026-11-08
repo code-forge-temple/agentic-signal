@@ -4,43 +4,60 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useState, useCallback} from 'react';
+import {useState, useCallback, useRef} from 'react';
 import {OllamaService} from '../services/ollamaService';
+import {errorMessage} from '@shared/utils';
 
 
+/**
+ * The models installed on the Ollama host. `fetchModels` resolves with their names, or with none when the host can't be
+ * reached, which also empties the list and reports the error; `reachable` tells which happened last. Only the newest
+ * fetch updates the list, so an answer from a host typed earlier can't replace the current one's.
+ */
 export function useFetchModels (onError?: (error: string) => void) {
     const [models, setModels] = useState<string[]>([]);
     const [isFetchingModels, setIsFetchingModels] = useState(false);
+    const [reachable, setReachable] = useState(false);
+    const newestRef = useRef(0);
 
-    const fetchModels = useCallback(async () => {
+    const fetchModels = useCallback(async (): Promise<string[]> => {
+        const request = ++newestRef.current;
+        const isNewest = () => request === newestRef.current;
+
         setIsFetchingModels(true);
 
         try {
-            const fetchResponse = await OllamaService.getInstance().fetchModels();
+            const response = await OllamaService.getInstance().fetchModels();
 
-            if (fetchResponse.success) {
-                const modelNames = fetchResponse.models.map(model => model.name);
+            if (!response.success) throw new Error(response.error);
 
-                setModels(modelNames);
+            const names = response.models.map(model => model.name);
 
-                return modelNames;
-            } else {
-                const errorMsg = `Failed to fetch models: ${fetchResponse.error}`;
-
-                onError?.(errorMsg);
-
-                return [];
+            if (isNewest()) {
+                setModels(names);
+                setReachable(true);
             }
-        } catch (error) {
-            const errorMsg = `Failed to fetch models: ${error instanceof Error ? error.message : String(error)}`;
 
-            onError?.(errorMsg);
+            return names;
+        } catch (error) {
+            if (isNewest()) {
+                setModels([]);
+                setReachable(false);
+                onError?.(`Failed to fetch models: ${errorMessage(error)}`);
+            }
 
             return [];
         } finally {
-            setIsFetchingModels(false);
+            if (isNewest()) setIsFetchingModels(false);
         }
     }, [onError]);
 
-    return {models, isFetchingModels, fetchModels};
+    /** Forgets the list until the next fetch answers: for a host that just changed, which may be a wrong one. */
+    const resetModels = useCallback(() => {
+        newestRef.current++;
+        setModels([]);
+        setReachable(false);
+    }, []);
+
+    return {models, isFetchingModels, reachable, fetchModels, resetModels};
 }

@@ -23,6 +23,7 @@ import {CodeEditor} from "../../CodeEditor";
 import {FieldsetGroup} from "../../FieldsetGroup";
 import {DATASOURCE_INPUT_JSON_SCHEMA} from "./types/input.types";
 import {buildDataSourceEnvelope} from "./utils";
+import {errorMessage} from "@shared/utils";
 
 
 const DATA_SOURCE_TYPE_LABEL = "Data Source Type";
@@ -45,7 +46,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
             try {
                 onResultUpdate(id, buildDataSourceEnvelope(dataSource, input));
             } catch (e) {
-                setError(e instanceof Error ? e.message : String(e));
+                setError(errorMessage(e));
 
                 onResultUpdate(id);
             }

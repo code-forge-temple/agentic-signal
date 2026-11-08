@@ -19,6 +19,7 @@ import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {BasicTabs} from "../../Tabs/Tabs";
 import {Box, Switch, Tooltip} from "@mui/material";
+import {errorMessage} from "@shared/utils";
 
 
 const ajv = new Ajv();
@@ -35,7 +36,7 @@ function validateAgainstSchema (schema: string | undefined, value: unknown): {va
 
         return valid ? {valid: true} : {valid: false, message: ajv.errorsText(validateFn.errors)};
     } catch (e) {
-        return {valid: false, message: e instanceof Error ? e.message : String(e)};
+        return {valid: false, message: errorMessage(e)};
     }
 }
 

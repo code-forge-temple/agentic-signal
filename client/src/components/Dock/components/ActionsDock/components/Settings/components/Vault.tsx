@@ -14,6 +14,7 @@ import {useCommandConnections} from "../../../../../../../hooks/useCommandConnec
 import {changeVaultPassword, lockVault, requestVaultAccess, resetVault, useVaultStore} from "../../../../../../../stores/vault";
 import {WrongPasswordError} from "../../../../../../../services/vault/crypto";
 import {MIN_PASSWORD_LENGTH} from "../../../../../../../services/vault/vault";
+import {errorMessage} from "@shared/utils";
 
 
 const plural = (count: number, one: string) => `${count} ${one}${count === 1 ? "" : "s"}`;
@@ -47,7 +48,7 @@ function ChangePasswordDialog ({open, onClose}: {open: boolean; onClose: () => v
             enqueueSnackbar("Vault password changed.", {variant: "success"});
             close();
         } catch (err) {
-            setError(err instanceof WrongPasswordError ? "The current password is wrong." : `Couldn't change it: ${err instanceof Error ? err.message : String(err)}`);
+            setError(err instanceof WrongPasswordError ? "The current password is wrong." : `Couldn't change it: ${errorMessage(err)}`);
         } finally {
             setBusy(false);
         }

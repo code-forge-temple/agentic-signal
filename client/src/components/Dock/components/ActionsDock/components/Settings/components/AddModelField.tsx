@@ -13,21 +13,31 @@ import {OllamaService} from "../../../../../../../services/ollamaService";
 type AddModelFieldProps = {
     /** Ollama answers at the host set, so models can be added. */
     enabled: boolean;
+    /** A new host hasn't answered yet (the list below says so): no "invalid host" note meanwhile. */
+    checking: boolean;
     /** Called once the model is downloaded, to wait until Ollama lists it. */
     onPulled: (model: string) => Promise<void>;
 };
+
+// The line under the field: why it can't take a model, or what went wrong with the last one.
+function noteFor (enabled: boolean, checking: boolean, error: string | null): {text: string; failed: boolean} {
+    if (enabled) return {text: error ?? "", failed: error !== null};
+
+    return checking ? {text: "", failed: false} : {text: "Invalid Ollama host - cannot add models", failed: true};
+}
 
 /*
  * A model to download, then its progress. Both stay here, so a keystroke or a progress update
  * redraws this field only, not the whole Settings dialog with its list of models.
  */
-export function AddModelField ({enabled, onPulled}: AddModelFieldProps) {
+export function AddModelField ({enabled, checking, onPulled}: AddModelFieldProps) {
     const [model, setModel] = useState("");
     // null while nothing is downloading.
     const [progress, setProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const isPulling = progress !== null;
     const pulled = model.trim();
+    const note = noteFor(enabled, checking, error);
 
     const handlePull = async () => {
         setError(null);
@@ -65,8 +75,8 @@ export function AddModelField ({enabled, onPulled}: AddModelFieldProps) {
                     }}
                     disabled={isPulling || !enabled}
                     fullWidth
-                    helperText={!enabled ? "Invalid Ollama host - cannot add models" : error ?? ""}
-                    error={!enabled || error !== null}
+                    helperText={note.text}
+                    error={note.failed}
                     slotProps={{
                         input: {
                             endAdornment: (

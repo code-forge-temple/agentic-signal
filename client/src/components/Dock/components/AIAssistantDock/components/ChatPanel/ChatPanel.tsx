@@ -18,6 +18,7 @@ import {AI_ASSISTANT_TITLE, ChatEntry, ChatMessage, ChatNotice, ContextUsage, EM
 import {useGlobalConfig} from '../../../../../../stores/globalConfig';
 import {useDraggable} from '../../../../../../hooks/useDraggable';
 import {useStreamThrottle} from '../../../../../../hooks/useStreamThrottle';
+import {useFetchModels} from '../../../../../../hooks/useFetchModels';
 import {LlmSettingsDialog} from './components/ChatHeader/components/LlmSettingsDialog';
 import {useLlmSettings} from '../../hooks/useLlmSettings';
 import {DEFAULT_CONTEXT_WINDOW, getModelSettings} from '../../utils/llmSettings';
@@ -59,8 +60,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
 
     const [messages, setMessages] = useState<ChatEntry[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>(NO_MODEL);
-    const [models, setModels] = useState<string[]>([]);
-    const [isFetchingModels, setIsFetchingModels] = useState(false);
+    const {models, isFetchingModels, fetchModels} = useFetchModels();
     const [isLoading, setIsLoading] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [contextUsage, setContextUsage] = useState<ContextUsage>(EMPTY_CONTEXT_USAGE);
@@ -112,35 +112,16 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         },
     });
 
+    // The saved model, if Ollama still has it; otherwise none, and the saved choice is cleared.
     useEffect(() => {
-        const fetchModels = async () => {
-            setIsFetchingModels(true);
+        void fetchModels().then((names) => {
+            if (storedModel && names.includes(storedModel)) return setSelectedModel(storedModel);
 
-            const res = await OllamaService.getInstance().fetchModels();
+            setSelectedModel(NO_MODEL);
 
-            if (res.success) {
-                const names = res.models.map(m => m.name);
-
-                setModels(names);
-
-                if (storedModel && names.includes(storedModel)) {
-                    setSelectedModel(storedModel);
-                } else {
-                    setSelectedModel(NO_MODEL);
-
-                    if (storedModel) setGlobalData('selectedModel', NO_MODEL, true);
-                }
-            } else {
-                setSelectedModel(NO_MODEL);
-
-                if (storedModel) setGlobalData('selectedModel', NO_MODEL, true);
-            }
-
-            setIsFetchingModels(false);
-        };
-
-        void fetchModels();
-    }, [storedModel, setGlobalData]);
+            if (storedModel) setGlobalData('selectedModel', NO_MODEL, true);
+        });
+    }, [storedModel, setGlobalData, fetchModels]);
 
     const setLastAssistantMessage = useCallback((content: string) => {
         setMessages(prev => {

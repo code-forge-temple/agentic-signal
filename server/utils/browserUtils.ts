@@ -1,4 +1,5 @@
 import {Browser, BrowserContext, chromium, LaunchOptions, Page} from "npm:playwright";
+import {errorMessage} from "../../shared/utils.ts";
 
 
 // The window's size once restored from the taskbar: a 1280×800 page in Chrome's frame on Windows.
@@ -105,7 +106,7 @@ export async function newMinimizedPage (browser: Browser): Promise<Page> {
             await session.detach().catch(() => {});
         }
     } catch (error) {
-        console.warn(`Couldn't open the browser minimized, so it opens normally: ${error instanceof Error ? error.message : String(error)}`);
+        console.warn(`Couldn't open the browser minimized, so it opens normally: ${errorMessage(error)}`);
         await context?.close().catch(() => {});
 
         return await browser.newPage();
@@ -150,7 +151,7 @@ export async function launchBrowser<T> (
             browser = await chromium.launch(options);
             page = await newMinimizedPage(browser);
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+            const message = errorMessage(error);
 
             throw new Error(`Browser launch or page initialization failed: ${message}`);
         }

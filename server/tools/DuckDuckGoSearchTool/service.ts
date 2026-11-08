@@ -6,6 +6,7 @@
 
 import {DuckDuckGoResult} from "./types.ts";
 import {launchBrowser} from "../../utils/browserUtils.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 const SEARCH_TIMEOUT_MS = 20_000;
 
@@ -43,7 +44,7 @@ export async function fetchDuckDuckGoResults (query: string, browserPath?: strin
             SEARCH_TIMEOUT_MS
         );
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
 
         throw new Error(`DuckDuckGo search failed for ${query}: ${message}`);
     }

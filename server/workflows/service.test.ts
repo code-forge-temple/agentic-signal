@@ -6,6 +6,7 @@
 
 import {join} from "node:path";
 import {listWorkflows, resolveWorkflowsFolder, saveWorkflow} from "./service.ts";
+import {errorMessage} from "../../shared/utils.ts";
 
 // Hand-rolled, like keyedLock.test.ts: the server has no test dependencies.
 function assertEquals<T> (actual: T, expected: T): void {
@@ -19,7 +20,7 @@ async function assertRejects (fn: () => Promise<unknown>, pattern: RegExp): Prom
     try {
         await fn();
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
 
         if (!pattern.test(message)) throw new Error(`Rejected with "${message}", expected ${pattern}`);
 

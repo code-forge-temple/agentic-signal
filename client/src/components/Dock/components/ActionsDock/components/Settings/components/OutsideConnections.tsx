@@ -15,6 +15,7 @@ import {fetchCommandsEndpoint} from "../../../../../../../services/outsideComman
 import {copyText} from "../../../../../../../utils/clipboard";
 import {AddConnectionForm} from "./AddConnectionForm";
 import {NetworkAccessSwitch} from "./NetworkAccessSwitch";
+import {errorMessage} from "@shared/utils";
 
 
 const ENDPOINT_PLACEHOLDER = "http://127.0.0.1:8001/workflows/";
@@ -52,7 +53,7 @@ export function OutsideConnections () {
     const handleAdd = (name: string, commands: string[]) => {
         addConnection(name, commands)
             .then(copyToken)
-            .catch((error: unknown) => enqueueSnackbar(`Couldn't add the connection: ${error instanceof Error ? error.message : String(error)}`, {variant: "error"}));
+            .catch((error: unknown) => enqueueSnackbar(`Couldn't add the connection: ${errorMessage(error)}`, {variant: "error"}));
     };
 
     const handleCopy = (connection: CommandConnection) => {

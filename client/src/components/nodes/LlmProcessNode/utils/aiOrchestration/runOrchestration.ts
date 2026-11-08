@@ -11,6 +11,7 @@ import {buildAggregationMessage, buildDependencyContext} from "./messageBuilders
 import {runSingleCall} from "./runSingleCall";
 import {buildToolsDescription, resolveTaskTools} from "./toolResolution";
 import {formatErrorMessage} from "../../../../../utils/utils";
+import {errorMessage} from "@shared/utils";
 
 /** Fixed JSON Schema used to constrain the orchestrator's planning response. */
 const ORCHESTRATOR_PLAN_SCHEMA = {
@@ -129,7 +130,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
 
         return {
             success: false,
-            error: `Failed to parse orchestrator plan: ${e instanceof Error ? e.message : String(e)}`
+            error: `Failed to parse orchestrator plan: ${errorMessage(e)}`
         };
     }
 
@@ -235,7 +236,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
 
         return {
             success: false,
-            error: `Invalid aggregation format schema: ${e instanceof Error ? e.message : String(e)}`
+            error: `Invalid aggregation format schema: ${errorMessage(e)}`
         };
     }
 
@@ -290,7 +291,7 @@ export async function runOrchestration (params: OrchestrationParams): Promise<Or
 
         return {
             success: false,
-            error: `Failed to parse aggregation response: ${e instanceof Error ? e.message : String(e)}`
+            error: `Failed to parse aggregation response: ${errorMessage(e)}`
         };
     }
 

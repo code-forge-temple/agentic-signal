@@ -32,7 +32,7 @@ The docks live outside the layers and act on the shown one through `getActiveLay
 
 ## The Workflow Engine
 
-Each `WorkflowLayer` uses `hooks/useWorkflow.ts`, which holds the layer's `nodes` and `edges` (React Flow state) and gives every node's `data` three callbacks:
+Each `WorkflowLayer` uses `hooks/useWorkflow.ts`, which holds the layer's `nodes` and `edges` (React Flow state) and gives every node's `data` three callbacks. How each one changes the nodes is in `utils/workflowNodes.ts`, as pure functions with their own tests:
 
 | Callback | What it does |
 |----------|--------------|
@@ -82,7 +82,7 @@ Workflows are **not** kept across a reload: layers live in memory.
 
 | State | Where | Persisted |
 |-------|-------|-----------|
-| Ollama host, browser path, workflows folder, the update check | `context/SettingsContext.tsx` | `localStorage` keys `ollamaHost`, `browserPath`, `workflowsFolder`, `checkForUpdates` |
+| Ollama host, browser path, workflows folder, the update check | `context/SettingsContext.tsx`; the storage in `context/settingsStorage.ts`, also for code outside React and for Clear App Data | `localStorage` keys `ollamaHost`, `browserPath`, `workflowsFolder`, `checkForUpdates` |
 | Global key/value store (selected model, model settings, outside connections, shared secrets for the session, ...) | `stores/globalConfig.ts` (zustand) | Only keys written with `persist: true`, under `agentic-signal.globalData.<key>`; kept in sync across tabs |
 | Saved credentials and outside connections' tokens | `stores/vault.ts` | Encrypted, in the `agentic-signal.vault` entry ([credentials.md](credentials.md#the-vault)) |
 

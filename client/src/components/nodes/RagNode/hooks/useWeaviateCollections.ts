@@ -9,6 +9,7 @@ import {z} from "zod";
 import {WeaviateMetaObjectsResponseSchema} from "@shared/types.gen";
 import {DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {defaultRagNodeData} from "../types/workflow";
+import {errorMessage} from "@shared/utils";
 
 
 export const FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX = "Failed to fetch collections";
@@ -148,7 +149,7 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
 
             setAvailableCollections(items);
         } catch (err) {
-            onError(`${FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX}: ${err instanceof Error ? err.message : String(err)}`);
+            onError(`${FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX}: ${errorMessage(err)}`);
 
             setAvailableCollections([]);
         } finally {

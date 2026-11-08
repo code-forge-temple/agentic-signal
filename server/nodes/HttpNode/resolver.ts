@@ -7,6 +7,7 @@
 import {GraphQLContext} from "../../graphql/types.ts";
 import {graphqlMethodName} from "./schema.ts";
 import {fetchRenderedHtml} from "./service.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 
 export const resolver = {
@@ -23,7 +24,7 @@ export const resolver = {
             try {
                 return await fetchRenderedHtml(url, browserPath);
             } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
+                const message = errorMessage(error);
 
                 throw new Error(`Fetch rendered HTML failed: ${message}`);
             }

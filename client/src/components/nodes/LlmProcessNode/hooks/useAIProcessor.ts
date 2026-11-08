@@ -13,6 +13,7 @@ import Ajv from 'ajv';
 import {runOrchestration, runSingleCall, JSON_SCHEMA_PROMPT_PREFIX} from '../utils/aiOrchestration';
 import {assertIsSerializedInput, getExpectedOutputType, llmResponseJsonParse, parseFormat, serializeInput} from '../utils/formatUtils';
 import {formatErrorMessage} from '../../../../utils/utils';
+import {errorMessage} from '@shared/utils';
 
 
 export interface UseAIProcessorOptions {
@@ -139,7 +140,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
             try {
                 ({parsedFormat, onErrorValidator} = parseFormat(format));
             } catch (parseError) {
-                const errorMsg = `Invalid format JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+                const errorMsg = `Invalid format JSON: ${errorMessage(parseError)}`;
 
                 setError(prev => [...prev, errorMsg]);
                 onError?.(errorMsg);
@@ -191,7 +192,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                         } catch (ragError) {
                             if (signal.aborted) return null;
 
-                            const errorMsg = `RAG retrieval failed: ${ragError instanceof Error ? ragError.message : String(ragError)}`;
+                            const errorMsg = `RAG retrieval failed: ${errorMessage(ragError)}`;
 
                             setError(prev => [...prev, errorMsg]);
                             onError?.(errorMsg);
@@ -376,7 +377,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
                     }
                 }
             } catch (parseError) {
-                const errorMsg = `Failed to parse AI response: ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+                const errorMsg = `Failed to parse AI response: ${errorMessage(parseError)}`;
 
                 setError(prev => [...prev, errorMsg]);
                 onError?.(errorMsg);
@@ -390,7 +391,7 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
         } catch (error) {
             if (signal.aborted) return null;
 
-            const errorMsg = `Unexpected error: ${error instanceof Error ? error.message : String(error)}`;
+            const errorMsg = `Unexpected error: ${errorMessage(error)}`;
 
             setError(prev => [...prev, errorMsg]);
             onError?.(errorMsg);

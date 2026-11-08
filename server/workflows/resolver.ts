@@ -6,6 +6,7 @@
 
 import {createGraphQLError} from "npm:graphql-yoga";
 import {listWorkflows, saveWorkflow, WorkflowsFolder} from "./service.ts";
+import {errorMessage} from "../../shared/utils.ts";
 
 
 // Yoga replaces an ordinary error's message with "Unexpected error."; these ("the folder doesn't
@@ -14,7 +15,7 @@ async function withReadableErrors<T> (work: () => Promise<T>): Promise<T> {
     try {
         return await work();
     } catch (error) {
-        throw createGraphQLError(error instanceof Error ? error.message : String(error));
+        throw createGraphQLError(errorMessage(error));
     }
 }
 

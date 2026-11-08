@@ -6,36 +6,19 @@
 
 import React, {useState, useCallback, useEffect} from "react";
 import {Settings, SettingsContext} from "./SettingsContextBase";
+import {readSettings, saveSetting} from "./settingsStorage";
 import {detectBrowserPath} from "../services/browserService";
 
 // The desktop app starts the backend along with the window, so the first requests can come too early.
 const DETECT_ATTEMPTS = 10;
 const DETECT_RETRY_MS = 1500;
 
-const defaultSettings: Settings = {
-    ollamaHost: localStorage.getItem("ollamaHost") || "",
-    browserPath: localStorage.getItem("browserPath") || "",
-    workflowsFolder: localStorage.getItem("workflowsFolder") || "",
-    checkForUpdates: localStorage.getItem("checkForUpdates") !== "false",
-};
-
 export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
-    const [settings, setSettings] = useState<Settings>(defaultSettings);
+    const [settings, setSettings] = useState<Settings>(readSettings);
 
     const setSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
-        setSettings(prev => {
-            const updated = {...prev, [key]: value};
-
-            if (key === "ollamaHost") localStorage.setItem("ollamaHost", value as string);
-
-            if (key === "browserPath") localStorage.setItem("browserPath", value as string);
-
-            if (key === "workflowsFolder") localStorage.setItem("workflowsFolder", value as string);
-
-            if (key === "checkForUpdates") localStorage.setItem("checkForUpdates", String(value));
-
-            return updated;
-        });
+        saveSetting(key, value);
+        setSettings(prev => ({...prev, [key]: value}));
     }, []);
 
     // An empty browser path takes Chrome's, found where the backend runs (it's the backend that starts it).
@@ -54,7 +37,7 @@ export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
                         setSettings((prev) => {
                             if (prev.browserPath) return prev;
 
-                            localStorage.setItem("browserPath", path);
+                            saveSetting("browserPath", path);
 
                             return {...prev, browserPath: path};
                         });

@@ -9,6 +9,7 @@ import {ToolDefinition} from "../types";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {computeIndicators} from "../../../StockAnalysisNode/utils";
 import {isStockDataPointArray, StockDataPoint} from "../../../StockAnalysisNode/types/workflow";
+import {errorMessage} from "@shared/utils";
 
 
 export const StockAnalysisToolDescriptor: ToolDefinition = {
@@ -64,7 +65,7 @@ export const StockAnalysisToolDescriptor: ToolDefinition = {
                 ...result
             };
         } catch (err) {
-            return {error: err instanceof Error ? err.message : String(err)};
+            return {error: errorMessage(err)};
         }
     }
 };

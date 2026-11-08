@@ -8,6 +8,7 @@ import {NodeEnvelope} from "../../../../../types/workflow";
 import {Message, MessageRole} from "../../../../../types/ollama.types";
 import {CommandError} from "../../../../../services/commandRouter";
 import {AI_ASSISTANT_TITLE, ChatEntry, NOTICE_ROLE} from "../constants";
+import {errorMessage} from "@shared/utils";
 
 
 // How much of the model's context window a result may take, leaving the rest to the conversation
@@ -66,7 +67,7 @@ export function parseCommandSuggestion (code: string, language: string | undefin
 /** "/research failed at **GET Data**: HTTP 404": a failed run, naming the node it failed at when known. */
 export function commandFailureText (command: string, error: unknown): string {
     const failedNode = error instanceof CommandError ? error.node : undefined;
-    const reason = failedNode?.message ?? (error instanceof Error ? error.message : String(error));
+    const reason = failedNode?.message ?? (errorMessage(error));
 
     return `/${command} failed${failedNode ? ` at **${failedNode.nodeTitle}**` : ""}: ${reason}`;
 }

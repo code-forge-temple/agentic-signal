@@ -7,6 +7,7 @@
 import {z} from "zod";
 import {DatePosted, Seniority} from "./types.ts";
 import {parseApiResponse} from "../../utils/apiResponse.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 const FETCH_TIMEOUT_MS = 15_000;
 
@@ -23,7 +24,7 @@ export async function fetchJson<T> (url: string, label: string, schema: z.ZodTyp
             signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         });
     } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = errorMessage(err);
 
         throw new Error(`${label} request failed: ${message}`);
     }

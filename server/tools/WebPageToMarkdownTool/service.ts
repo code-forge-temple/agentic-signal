@@ -8,6 +8,7 @@
 import {WebPageToMarkdownResult} from "./types.ts";
 import {launchBrowser, setPageSize} from "../../utils/browserUtils.ts";
 import TurndownService from "npm:turndown";
+import {errorMessage} from "../../../shared/utils.ts";
 
 const PAGE_TIMEOUT_MS = 30_000;
 // Budget for the whole operation (browser launch, navigation, consent and redirect
@@ -183,7 +184,7 @@ export async function fetchWebPageAsMarkdown (url: string, browserPath?: string)
             TOTAL_TIMEOUT_MS
         );
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
 
         // Playwright appends a multi-line call log to its messages. The full text stays in
         // the server log; the caller (and so the LLM) gets only the first line. No URL in

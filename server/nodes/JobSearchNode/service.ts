@@ -23,6 +23,7 @@ import {
     pool,
     withinDateWindow,
 } from "./utils.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 import seedCompanies from "./data/seed-companies.json" with {type: "json"};
 
 const CONCURRENCY = 8;
@@ -94,7 +95,7 @@ class JobSearchService {
                 errors.push({
                     company: entry.token,
                     ats: entry.ats,
-                    message: err instanceof Error ? err.message : String(err),
+                    message: errorMessage(err),
                 });
             }
         });

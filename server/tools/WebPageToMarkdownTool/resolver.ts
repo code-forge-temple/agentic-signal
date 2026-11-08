@@ -8,6 +8,7 @@ import {GraphQLContext} from "../../graphql/types.ts";
 import {WebPageToMarkdownResult} from "./types.ts";
 import {fetchWebPageAsMarkdown} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 
 // Each URL opens its own real (non-headless) browser window — see service.ts.
@@ -42,7 +43,7 @@ export const resolver = {
                         url: batch[j],
                         content: "",
                         excerpt: "",
-                        error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)
+                        error: errorMessage(outcome.reason)
                     }));
             }
 

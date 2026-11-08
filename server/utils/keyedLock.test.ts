@@ -4,6 +4,7 @@
  ************************************************************************/
 
 import {pendingKeyCount, withKeyedLock} from "./keyedLock.ts";
+import {errorMessage} from "../../shared/utils.ts";
 
 // Hand-rolled rather than pulling in @std/assert: the server has no test dependencies today,
 // and these two are all this file needs.
@@ -18,7 +19,7 @@ async function assertRejects (fn: () => Promise<unknown>, message: string): Prom
     try {
         await fn();
     } catch (error) {
-        const actual = error instanceof Error ? error.message : String(error);
+        const actual = errorMessage(error);
 
         if (!actual.includes(message)) throw new Error(`Expected rejection "${message}", got "${actual}"`);
 

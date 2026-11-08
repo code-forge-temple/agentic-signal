@@ -11,6 +11,7 @@ import {useCredentials} from "../../../../../../../hooks/useCredentials";
 import {copyText} from "../../../../../../../utils/clipboard";
 import {AddCredentialForm} from "./AddCredentialForm";
 import {CredentialIcons} from "./CredentialIcons";
+import {errorMessage} from "@shared/utils";
 
 
 /* The tokens, API keys and secrets kept across reloads (encrypted in the vault), for the nodes and tools that use them. */
@@ -18,7 +19,7 @@ export function Credentials () {
     const {enqueueSnackbar} = useSnackbar();
     const {known, saved, save, remove, locked} = useCredentials();
 
-    const reportError = (error: unknown) => enqueueSnackbar(`Couldn't change the vault: ${error instanceof Error ? error.message : String(error)}`, {variant: "error"});
+    const reportError = (error: unknown) => enqueueSnackbar(`Couldn't change the vault: ${errorMessage(error)}`, {variant: "error"});
 
     const handleAdd = (name: string, value: string) => {
         const replacing = saved.some(credential => credential.key === name);

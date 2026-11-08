@@ -25,6 +25,7 @@ import {useVaultStartup} from '../../hooks/useVaultStartup';
 import {VaultDialog} from '../VaultDialog';
 import {listWorkflowsFolder, saveWorkflowFile} from '../../services/workflowsService';
 import {findWorkflowCommand, workflowFileName, WORKFLOWS_CHANGED_EVENT} from '../../workflows';
+import {errorMessage} from '@shared/utils';
 
 
 type PendingFolderSave = {
@@ -84,7 +85,7 @@ function AppLayers () {
 
             enqueueSnackbar(found ? `Saved to ${path}. Call it in the chat as /${found.command}.` : `Saved to ${path}.`, {variant: 'success'});
         } catch (error) {
-            enqueueSnackbar(`Couldn't save to the workflows folder: ${error instanceof Error ? error.message : String(error)}`, {variant: 'error'});
+            enqueueSnackbar(`Couldn't save to the workflows folder: ${errorMessage(error)}`, {variant: 'error'});
         }
     }, [settings.workflowsFolder, enqueueSnackbar]);
 
@@ -111,7 +112,7 @@ function AppLayers () {
                 return;
             }
         } catch (error) {
-            enqueueSnackbar(`Couldn't open the workflows folder: ${error instanceof Error ? error.message : String(error)}`, {variant: 'error'});
+            enqueueSnackbar(`Couldn't open the workflows folder: ${errorMessage(error)}`, {variant: 'error'});
 
             return;
         }

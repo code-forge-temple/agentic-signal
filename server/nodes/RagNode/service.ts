@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {Ollama} from "npm:ollama";
-import {extractFileBlocksFromMarkdown, extractQueryFromMarkdown} from "../../../shared/utils.ts";
+import {extractFileBlocksFromMarkdown, extractQueryFromMarkdown, errorMessage} from "../../../shared/utils.ts";
 import {RagIngestAndRetrieveArgs, RagRetrieveResult} from "./types.ts";
 import {chunkText, hashString} from "./utils/textUtils.ts";
 import {
@@ -163,7 +163,7 @@ export async function ragIngestAndRetrieve (args: RagIngestAndRetrieveArgs): Pro
         return {
             success: false,
             context: null,
-            error: error instanceof Error ? error.message : String(error),
+            error: errorMessage(error),
         };
     }
 }

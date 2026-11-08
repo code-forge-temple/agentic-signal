@@ -5,14 +5,12 @@
  ************************************************************************/
 
 import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, TRIPLE_BACKTICK} from "@shared/constants";
-import {
-    arrayBufferToBase64,
+import {arrayBufferToBase64,
     extractFromMarkdown,
     EXTRACTION_TYPE,
     fileExtensionToCodeBlockLang,
     markdownFilePrefix,
-    markdownImageFilePrefix
-} from "@shared/utils";
+    markdownImageFilePrefix, errorMessage} from "@shared/utils";
 import {AttachedFile} from "@shared/types.gen";
 import {NodeEnvelope} from "../../../types/workflow";
 import {DATA_SOURCE_TYPES, DataSourceNodeData, FileData} from "./types/workflow";
@@ -97,7 +95,7 @@ export function buildDataSourceEnvelope (dataSource: DataSourceNodeData["dataSou
         try {
             own = JSON.parse(dataSource.value || "{}");
         } catch (e) {
-            throw new Error("Invalid JSON data: " + (e instanceof Error ? e.message : String(e)));
+            throw new Error("Invalid JSON data: " + (errorMessage(e)));
         }
 
         // Upstream and own are kept as distinct array elements rather than merged —

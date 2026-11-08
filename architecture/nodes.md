@@ -82,7 +82,7 @@ export function FooNode ({data, id}: NodeProps<AppNode>) {
 
                 onResultUpdate(id, {payload: result});
             } catch (err) {
-                setError(err instanceof Error ? err.message : formatErrorMessage("Unknown error", err));
+                setError(errorMessage(err)); // from @shared/utils
             }
         }, setIsRunning);
     };
@@ -142,7 +142,7 @@ The client subscribes through `GraphQLSocketManager.getInstance().subscribe<{foo
 
 Most nodes need nothing beyond the steps above. A node that needs special handling in the engine is referenced by type in a few app-level places. Keep that list short:
 
-- `hooks/useWorkflow.ts`: the Async Data Aggregator (collects inputs per source) and LLM nodes (receive feedback);
+- `utils/workflowNodes.ts`: the Async Data Aggregator (collects inputs per source) and LLM nodes (receive feedback);
 - `components/App/utils/workflowUtils.ts`: which handles may connect;
 - `workflows/commands.ts`: Workflow Input (command discovery) and LLM Process (the AI Buddy's model filled into built-in workflows).
 

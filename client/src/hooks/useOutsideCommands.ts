@@ -14,6 +14,7 @@ import {NodeEnvelope} from "../types/workflow";
 import {useCommandConnections} from "./useCommandConnections";
 import {useCommandWorkflows} from "./useCommandWorkflows";
 import {useLatestValue} from "./useLatestValue";
+import {errorMessage} from "@shared/utils";
 
 
 type CommandRequestEvent = {
@@ -59,7 +60,7 @@ export function useOutsideCommands (): void {
                 try {
                     envelope = commandInputEnvelope(JSON.parse(input));
                 } catch (error) {
-                    await respondToCommand(id, {error: {code: "bad_request", message: error instanceof Error ? error.message : String(error)}}).catch(() => {});
+                    await respondToCommand(id, {error: {code: "bad_request", message: errorMessage(error)}}).catch(() => {});
 
                     return;
                 }
@@ -83,7 +84,7 @@ export function useOutsideCommands (): void {
                     ? {code: "unknown_command", message: `No workflow answers to /${command}.`}
                     : {
                         code: commandError?.code ?? "node_failed",
-                        message: error instanceof Error ? error.message : String(error),
+                        message: errorMessage(error),
                         node: commandError?.node?.nodeTitle ?? null,
                     }}).catch(() => {});
             } finally {

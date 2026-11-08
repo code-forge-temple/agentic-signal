@@ -11,6 +11,7 @@ import {useSnackbar} from "notistack";
 import {isTauri} from "../../utils";
 import {pickPathNatively} from "./nativePicker";
 import {PathKind} from "./types";
+import {errorMessage} from "@shared/utils";
 
 
 const SAVE_DELAY_MS = 300;
@@ -67,7 +68,7 @@ export function PathField ({label, kind, pickerTitle, value, onChange, helperTex
             .then((path) => {
                 if (path) onChange(path);
             })
-            .catch((err: unknown) => enqueueSnackbar(`Couldn't open the dialog: ${err instanceof Error ? err.message : String(err)}`, {variant: "error"}));
+            .catch((err: unknown) => enqueueSnackbar(`Couldn't open the dialog: ${errorMessage(err)}`, {variant: "error"}));
     };
 
     const handleReset = () => {

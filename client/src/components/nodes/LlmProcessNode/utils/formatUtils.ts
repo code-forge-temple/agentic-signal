@@ -6,6 +6,7 @@
 
 import Ajv from "ajv";
 import {sanitizeJsonInput} from "../../ToolNode/tools/utils/sanitize";
+import {errorMessage} from "@shared/utils";
 
 
 // ---------------------------------------------------------------------------
@@ -158,9 +159,9 @@ export function llmResponseJsonParse<T = unknown> (reply: string): T {
         catch (sanitizeError) {
             throw new Error(
                 `Failed to parse JSON: ${
-                    error instanceof Error ? error.message : String(error)
+                    errorMessage(error)
                 }; sanitization fallback failed: ${
-                    sanitizeError instanceof Error ? sanitizeError.message : String(sanitizeError)
+                    errorMessage(sanitizeError)
                 }`
             );
         }

@@ -22,6 +22,8 @@ import {workflowsFolderPath} from "../../../../services/workflowsService";
 import {openWorkflowFileNatively} from "./nativeWorkflowFile";
 import {VAULT_STORAGE_KEY} from "../../../../services/vault/vault";
 import {UPDATE_NOTIFIED_KEY} from "../../../App/components/VersionTag";
+import {clearSettings} from "../../../../context/settingsStorage";
+import {errorMessage} from "@shared/utils";
 
 
 // Set just before Clear App Data reloads the page, so the Settings dialog comes back open.
@@ -63,7 +65,7 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
 
                 if (picked !== null) onLoadWorkflow(picked.json, picked.fileName);
             } catch (error) {
-                enqueueSnackbar(`Couldn't open the workflow: ${error instanceof Error ? error.message : String(error)}`, {variant: "error"});
+                enqueueSnackbar(`Couldn't open the workflow: ${errorMessage(error)}`, {variant: "error"});
             }
         })();
     };
@@ -93,11 +95,7 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
 
     const handleClearAppData = () => {
         clearPersistedGlobalData();
-        // Written straight to localStorage by SettingsContext, outside the global store's prefix.
-        localStorage.removeItem("ollamaHost");
-        localStorage.removeItem("browserPath");
-        localStorage.removeItem("workflowsFolder");
-        localStorage.removeItem("checkForUpdates");
+        clearSettings();
         localStorage.removeItem(UPDATE_NOTIFIED_KEY);
         // The vault is an entry of its own, apart from the global store's keys.
         localStorage.removeItem(VAULT_STORAGE_KEY);

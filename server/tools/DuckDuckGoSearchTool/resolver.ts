@@ -8,6 +8,7 @@ import {GraphQLContext} from "../../graphql/types.ts";
 import {DuckDuckGoResult} from "./types.ts";
 import {fetchDuckDuckGoResults} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 export const resolver = {
     Query: {
@@ -25,7 +26,7 @@ export const resolver = {
             try {
                 results = await fetchDuckDuckGoResults(query, browserPath);
             } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
+                const message = errorMessage(error);
 
                 throw new Error(`DuckDuckGo query failed: ${message}`);
             }

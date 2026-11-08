@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {launchBrowser} from "../../utils/browserUtils.ts";
+import {errorMessage} from "../../../shared/utils.ts";
 
 
 export async function fetchRenderedHtml (url: string, browserPath?: string): Promise<string> {
@@ -20,7 +21,7 @@ export async function fetchRenderedHtml (url: string, browserPath?: string): Pro
             30_000
         );
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
 
         throw new Error(`Failed to render HTML for ${url}: ${message}`);
     }

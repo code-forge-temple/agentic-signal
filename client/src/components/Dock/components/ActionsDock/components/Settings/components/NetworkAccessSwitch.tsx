@@ -8,6 +8,7 @@ import {useEffect, useState} from "react";
 import {Box, FormControlLabel, Switch, Typography} from "@mui/material";
 import {useSnackbar} from "notistack";
 import {CommandsNetworkAccess, fetchCommandsNetworkAccess, setCommandsNetworkAccess} from "../../../../../../../services/outsideCommandsService";
+import {errorMessage} from "@shared/utils";
 
 
 /** The line under the switch: who can call, and on which address. */
@@ -49,7 +50,7 @@ export function NetworkAccessSwitch () {
         setSaving(true);
         void setCommandsNetworkAccess(enabled)
             .then(setAccess)
-            .catch((error: unknown) => enqueueSnackbar(`Couldn't change it: ${error instanceof Error ? error.message : String(error)}`, {variant: "error"}))
+            .catch((error: unknown) => enqueueSnackbar(`Couldn't change it: ${errorMessage(error)}`, {variant: "error"}))
             .finally(() => setSaving(false));
     };
 

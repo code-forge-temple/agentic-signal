@@ -18,6 +18,8 @@ import {
     ToolSchema,
     isToolError,
 } from "../types/ollama.types";
+import {errorMessage} from "@shared/utils";
+import {savedOllamaHost} from "../context/settingsStorage";
 
 type OllamaModel = {
     name: string;
@@ -65,7 +67,7 @@ export class OllamaService {
      * `abort()` would cancel every stream in flight, in every node and in the chat alike.
      */
     private getOllama = async (signal?: AbortSignal): Promise<Ollama> => {
-        const host = localStorage.getItem("ollamaHost") || "";
+        const host = savedOllamaHost();
 
         if (signal) {
             return new Ollama({host, fetch: fetchWithAbortSignal(signal)});
@@ -91,7 +93,7 @@ export class OllamaService {
         } catch (error) {
             return {
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: errorMessage(error)
             };
         }
     };
@@ -402,7 +404,7 @@ export class OllamaService {
 
             return {
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: errorMessage(error)
             };
         }
     }
@@ -686,7 +688,7 @@ export class OllamaService {
         } catch (error) {
             yield {
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: errorMessage(error)
             };
         }
     }
@@ -720,7 +722,7 @@ export class OllamaService {
             // permanently, so a transient outage must not poison that cache.
             return {
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: errorMessage(error)
             };
         }
     }
@@ -752,7 +754,7 @@ export class OllamaService {
         } catch (error) {
             yield {
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: errorMessage(error)
             };
         }
     }
@@ -770,7 +772,7 @@ export class OllamaService {
         } catch (error) {
             return {
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: errorMessage(error)
             };
         }
     }

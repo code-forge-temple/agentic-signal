@@ -9,6 +9,7 @@ import {useLayers} from "../../../../../hooks/useLayers";
 import {AI_LAYER} from "../../../../../context/LayersContextBase";
 import {CommandError, CommandRouter} from "../../../../../services/commandRouter";
 import {NodeEnvelope} from "../../../../../types/workflow";
+import {errorMessage} from "@shared/utils";
 
 
 // The new workflow's Workflow Input should be listening well within this.
@@ -30,7 +31,7 @@ export function useAiLayerRun () {
         try {
             layer.replaceWorkflow(JSON.stringify(workflow));
         } catch (error) {
-            return Promise.reject(new CommandError("no_listener", `The workflow couldn't be loaded: ${error instanceof Error ? error.message : String(error)}`));
+            return Promise.reject(new CommandError("no_listener", `The workflow couldn't be loaded: ${errorMessage(error)}`));
         }
 
         abortControllerRef.current?.abort();

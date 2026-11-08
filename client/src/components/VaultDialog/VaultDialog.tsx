@@ -13,6 +13,7 @@ import {WrongPasswordError} from "../../services/vault/crypto";
 import {MIN_PASSWORD_LENGTH} from "../../services/vault/vault";
 import {createVaultKeepingSaved} from "../../services/vault/migration";
 import {VAULT_RESET_MESSAGE} from "./constants";
+import {errorMessage} from "@shared/utils";
 
 
 const TITLES: Record<VaultPrompt, string> = {
@@ -74,7 +75,7 @@ export function VaultDialog () {
             if (creating) await createVaultKeepingSaved(password);
             else await unlockVault(password);
         } catch (err) {
-            setError(err instanceof WrongPasswordError ? "Wrong password." : `Couldn't open the vault: ${err instanceof Error ? err.message : String(err)}`);
+            setError(err instanceof WrongPasswordError ? "Wrong password." : `Couldn't open the vault: ${errorMessage(err)}`);
             setBusy(false);
         }
     };

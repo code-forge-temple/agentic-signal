@@ -7,6 +7,7 @@
 import {Browser, chromium, LaunchOptions, Page} from "npm:playwright";
 import {withTimeout} from "./withTimeout.ts";
 import {newMinimizedPage} from "../../../utils/browserUtils.ts";
+import {errorMessage} from "../../../../shared/utils.ts";
 
 // How long an idle form session is kept alive before its browser is closed.
 // Generous because a human may be watching/solving a captcha between LLM calls.
@@ -45,9 +46,9 @@ export async function closeSession (key: string): Promise<void> {
     clearTimeout(session.idleTimer);
 
     await withTimeout(session.page.close(), CLOSE_TIMEOUT_MS, "page.close timed out")
-        .catch((err) => console.warn(`[FormInteraction] session close: ${err instanceof Error ? err.message : String(err)}`));
+        .catch((err) => console.warn(`[FormInteraction] session close: ${errorMessage(err)}`));
     await withTimeout(session.browser.close(), CLOSE_TIMEOUT_MS, "browser.close timed out")
-        .catch((err) => console.warn(`[FormInteraction] session close: ${err instanceof Error ? err.message : String(err)}`));
+        .catch((err) => console.warn(`[FormInteraction] session close: ${errorMessage(err)}`));
 }
 
 /**

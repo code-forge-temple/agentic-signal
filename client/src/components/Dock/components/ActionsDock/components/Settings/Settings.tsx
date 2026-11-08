@@ -6,8 +6,8 @@
 
 import {useState, useEffect} from 'react';
 import {useSettings} from '../../../../../../hooks/useSettings';
-import {IconButton, Box, List, ListItem, ListItemText, FormControlLabel, Switch, Typography} from '@mui/material';
-import {Trash} from 'iconoir-react';
+import {useFetchModels} from '../../../../../../hooks/useFetchModels';
+import {Box, FormControlLabel, Switch, Typography} from '@mui/material';
 import {OllamaService} from '../../../../../../services/ollamaService';
 import {DebouncedTextField} from '../../../../../DebouncedTextField';
 import {BasicTabs} from '../../../../../Tabs/Tabs';
@@ -15,8 +15,10 @@ import {PathField} from '../../../../../PathField';
 import {listWorkflowsFolder} from '../../../../../../services/workflowsService';
 import {OutsideConnections} from './components/OutsideConnections';
 import {AddModelField} from './components/AddModelField';
+import {ModelList} from './components/ModelList';
 import {Credentials} from './components/Credentials';
 import {Vault} from './components/Vault';
+import {errorMessage} from '@shared/utils';
 
 const WORKFLOW_COMMANDS_HINT = "A saved workflow with a Workflow Input becomes a chat command.";
 
@@ -29,25 +31,17 @@ function toBrowserExecutable (path: string): string {
 
 export const Settings = () => {
     const {settings, setSetting} = useSettings();
-    const [models, setModels] = useState<string[]>([]);
-    const [isOllamaHostValid, setIsOllamaHostValid] = useState(false);
+    const {models, isFetchingModels, reachable: isOllamaHostValid, fetchModels, resetModels} = useFetchModels();
+    // Only a host that hasn't answered yet: the refetches after a download leave a reachable host's list in place.
+    const checkingHost = isFetchingModels && !isOllamaHostValid;
     const [workflowsFolderError, setWorkflowsFolderError] = useState<string | null>(null);
     const [defaultWorkflowsFolder, setDefaultWorkflowsFolder] = useState<string | null>(null);
 
-    const fetchModels = async (): Promise<string[]> => {
-        const res = await OllamaService.getInstance().fetchModels();
-        const names = res.success ? res.models.map(m => m.name) : [];
-
-        setModels(names);
-        setIsOllamaHostValid(res.success);
-
-        return names;
-    };
-
+    // A new host shows nothing, and can't take a new model, until it answers.
     useEffect(() => {
-        setModels([]);
+        resetModels();
         void fetchModels();
-    }, [settings.ollamaHost]);
+    }, [settings.ollamaHost, fetchModels, resetModels]);
 
     // Checks the chosen folder, or learns the default one's path, which the field then shows.
     useEffect(() => {
@@ -62,7 +56,7 @@ export const Settings = () => {
                 if (!settings.workflowsFolder) setDefaultWorkflowsFolder(path);
             })
             .catch((error: unknown) => {
-                if (!cancelled) setWorkflowsFolderError(error instanceof Error ? error.message : String(error));
+                if (!cancelled) setWorkflowsFolderError(errorMessage(error));
             });
 
         return () => {
@@ -143,35 +137,8 @@ export const Settings = () => {
                 value={settings.ollamaHost}
                 onChange={(value) => setSetting("ollamaHost", value)}
             />
-            <AddModelField enabled={isOllamaHostValid} onPulled={(model) => pollForModel(model)} />
-            <Box sx={{mt: 3, maxHeight: '100%', overflowY: 'auto'}}>
-                <List>
-                    {
-                        models.map((model) => (
-                            <ListItem
-                                key={model}
-                                // CSS hover, not state: a state change per row entered would redraw the whole dialog.
-                                sx={{
-                                    '&:hover': {backgroundColor: 'action.hover'},
-                                    transition: 'background 0.2s'
-                                }}
-                                secondaryAction={
-                                    <IconButton
-                                        edge="end"
-                                        aria-label="delete"
-                                        onClick={() => void handleDeleteModel(model)}
-                                        size="small"
-                                    >
-                                        <Trash style={{fontSize: 16}} />
-                                    </IconButton>
-                                }
-                            >
-                                <ListItemText primary={model} />
-                            </ListItem>
-                        ))
-                    }
-                </List>
-            </Box>
+            <AddModelField enabled={isOllamaHostValid} checking={checkingHost} onPulled={(model) => pollForModel(model)} />
+            <ModelList models={models} checking={checkingHost} onDelete={(model) => void handleDeleteModel(model)} />
         </>
     );
 

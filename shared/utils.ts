@@ -109,3 +109,6 @@ export const getFileExtension = (fileName: string | undefined, fileType?: string
 export const markdownImageFilePrefix = (index: number, fileName: string): string => `### Image ${index} (file name ${fileName}) attached\n`;
 
 export const markdownFilePrefix = (fileName: string): string => `### File name "${fileName}"\n`;
+
+/** An error's message, or the thrown value as text when it isn't an Error. */
+export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));

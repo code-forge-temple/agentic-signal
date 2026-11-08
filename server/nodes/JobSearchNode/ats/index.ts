@@ -9,6 +9,7 @@ import {fetchGreenhouse} from "./greenhouse.ts";
 import {fetchLever} from "./lever.ts";
 import {fetchAshby} from "./ashby.ts";
 import {fetchWorkable} from "./workable.ts";
+import {errorMessage} from "../../../../shared/utils.ts";
 
 export const PROVIDERS: Record<AtsProvider, (token: string) => Promise<NormalizedJob[]>> = {
     greenhouse: fetchGreenhouse,
@@ -79,7 +80,7 @@ export async function resolveAndFetch (
 
             if (jobs.length > 0) return {ats, jobs};
         } catch (err) {
-            failures.push(`${ats}: ${err instanceof Error ? err.message : String(err)}`);
+            failures.push(`${ats}: ${errorMessage(err)}`);
         }
     }
 

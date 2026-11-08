@@ -22,6 +22,8 @@ import {DropdownButton} from "../../DropdownButton/DropdownButton";
 import {DocMagnifyingGlass} from "iconoir-react";
 import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from "./hooks/useWeaviateCollections";
 import {useGlobalConfig} from "../../../stores/globalConfig";
+import {errorMessage} from "@shared/utils";
+import {savedOllamaHost} from "../../../context/settingsStorage";
 
 
 const EMBEDDING_MODEL_LABEL = "Embedding Model";
@@ -78,7 +80,7 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
     useEffect(() => {
         onConfigChange(id, {
             handler: async (input: string): Promise<string> => {
-                const ollamaHost = localStorage.getItem("ollamaHost") || "";
+                const ollamaHost = savedOllamaHost();
 
                 try {
                     return await ragService.ingestAndRetrieve({
@@ -93,7 +95,7 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                         weaviateApiKey,
                     });
                 } catch (err) {
-                    const msg = err instanceof Error ? err.message : String(err);
+                    const msg = errorMessage(err);
 
                     setError(prev => [...prev, msg]);
 

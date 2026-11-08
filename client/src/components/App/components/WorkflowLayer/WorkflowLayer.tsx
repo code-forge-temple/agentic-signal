@@ -30,6 +30,7 @@ import {useLatestValue} from '../../../../hooks/useLatestValue';
 import {AI_LAYER_READ_ONLY_HINT, isDefaultLayerName, LAYER_KIND, Layer, LoadWorkflowOptions} from '../../../../context/LayersContextBase';
 import {WorkflowLayerContext} from '../../../../context/WorkflowLayerContext';
 import {findWorkflowCommand, layerNameFromFileName} from '../../../../workflows';
+import {errorMessage} from '@shared/utils';
 
 
 const ZOD_PATH_SEPARATOR = '→';
@@ -236,7 +237,7 @@ function describeLoadError (error: unknown): string {
         }).join('; ');
     }
 
-    return error instanceof Error ? error.message : String(error);
+    return errorMessage(error);
 }
 
 /** A workflow waiting on the user's choice: add it to this one, replace this one, or open it in a new layer. */

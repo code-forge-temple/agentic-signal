@@ -83,4 +83,4 @@ Never edit a `*.gen.*` file. Change the template or the source folder instead.
 | [architecture/commands.md](architecture/commands.md) | Commands end to end: router, Workflow Input/Output, the chat, outside apps |
 | [architecture/ai-buddy.md](architecture/ai-buddy.md) | The chat assistant: prompt, keywords, commands, rendering performance |
 | [architecture/credentials.md](architecture/credentials.md) | The global store, shared secrets, sanitizing, Settings → Credentials |
-| [architecture/build-and-release.md](architecture/build-and-release.md) | Dev setup, scripts, tests, Tauri, Docker, CI, the docs site, the PRO repo |
+| [architecture/build-and-release.md](architecture/build-and-release.md) | Dev setup, scripts, tests, code health, Tauri, Docker, CI, the docs site, the PRO repo |

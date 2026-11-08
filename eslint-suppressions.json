@@ -1,0 +1,455 @@
+{
+  "client/src/components/App/components/WorkflowLayer/WorkflowLayer.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/App/utils/workflowUtils.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/BaseDialog/BaseDialog.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/CodeEditor/CodeEditor.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/CodeEditor/utils.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/Dock/components/AIAssistantDock/components/ChatPanel/ChatPanel.tsx": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/Dock/components/AIAssistantDock/components/ChatPanel/components/ChatLog/components/ChatLogMessage.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/FieldsetGroup/FieldsetGroup.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/VaultDialog/VaultDialog.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/BaseNode/BaseNode.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ChartNode/ChartNode.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/DataSourceNode/components/FilesInput/FilesInput.tsx": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/DataSourceNode/utils.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/JobSearchNode/JobSearchNode.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/LlmProcessNode/LlmProcessNode.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/LlmProcessNode/hooks/useAIProcessor.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 2
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/LlmProcessNode/utils/aiOrchestration/runOrchestration.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/LlmProcessNode/utils/formatUtils.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/RagNode/RagNode.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/RagNode/hooks/useWeaviateCollections.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/StockAnalysisNode/types/workflow.ts": {
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/TimerNode/TimerNode.tsx": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-nested-callbacks": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/ToolNode.tsx": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/UserConfigFields.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/FetchWeatherDataTool/descriptor.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/FetchWeatherDataTool/mappers.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/FormInteractionTool/descriptor.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/MaxTool/descriptor.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/MinTool/descriptor.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/SortTool/descriptor.tsx": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/components/nodes/ToolNode/tools/utils/GoogleToolOauthConfigFields.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/hooks/useOutsideCommands.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/hooks/useWholeItemScroller.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "client/src/hooks/useWorkflow.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-nested-callbacks": {
+      "count": 8
+    }
+  },
+  "client/src/services/buildSystemPrompt.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/services/commandConnections.ts": {
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/services/ollamaService.ts": {
+    "complexity": {
+      "count": 4
+    },
+    "max-depth": {
+      "count": 5
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "client/src/services/vault/vault.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "client/src/types/workflow.ts": {
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/utils/csv.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "client/src/utils/utils.ts": {
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "scripts/generate-docs-schemas.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "server/commands/service.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/nodes/JobSearchNode/ats/ashby.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/JobSearchNode/ats/index.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/JobSearchNode/ats/lever.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/JobSearchNode/ats/workable.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/JobSearchNode/service.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/RagNode/service.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/RagNode/utils/weaviateClient.ts": {
+    "max-params": {
+      "count": 2
+    }
+  },
+  "server/nodes/TimerNode/service.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/nodes/TimerNode/types.ts": {
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "server/tools/FormInteractionTool/service.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "server/tools/FormInteractionTool/types.ts": {
+    "sonarjs/expression-complexity": {
+      "count": 1
+    }
+  },
+  "server/tools/FormInteractionTool/utils/actionExecutor.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "server/tools/FormInteractionTool/utils/fieldExtractor.ts": {
+    "complexity": {
+      "count": 3
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    },
+    "sonarjs/expression-complexity": {
+      "count": 2
+    },
+    "sonarjs/no-identical-functions": {
+      "count": 2
+    }
+  },
+  "server/tools/GdriveFetchFilesTool/service.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "server/tools/WebPageToMarkdownTool/service.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "server/utils/keyedLock.test.ts": {
+    "sonarjs/no-identical-functions": {
+      "count": 1
+    }
+  },
+  "server/ws/webSocketManager.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  }
+}

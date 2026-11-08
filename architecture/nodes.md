@@ -150,4 +150,4 @@ Most nodes need nothing beyond the steps above. A node that needs special handli
 
 The PRO nodes (Slack Input, Slack Output, SMS, Reddit Post) live in the private `agentic-signal-pro` repo. Each has `src/<Name>Node/client/src`, and optionally `server` and `src-tauri`. `link.sh` / `link.bat` there symlink those folders into this repo's `client/src/components/nodes/`, `server/nodes/` and `src-tauri/src/nodes/`, and write `.gitignore` entries so they're never committed here. They follow the same anatomy, so a change to a shared API (`BaseNode`, `MonitoredNode`, the descriptor type, the global store) can break them: check them too.
 
-The repo-wide `eslint .` doesn't follow the symlinked folders. Lint them explicitly, e.g. `bunx eslint client/src/components/nodes/SlackInputNode`.
+`eslint .` doesn't follow the symlinked folders, but `bun run lint` lints them too, against the PRO repo's own record of tolerated code-health violations ([build-and-release.md](build-and-release.md#code-health)).

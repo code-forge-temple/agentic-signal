@@ -1,0 +1,29 @@
+{
+    "hooks": {
+        "PostToolUse": [
+            {
+                "matcher": "Edit|Write|MultiEdit",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bun run \"$CLAUDE_PROJECT_DIR/scripts/code-health.ts\" --hook after-edit",
+                        "timeout": 30,
+                        "statusMessage": "Checking code health"
+                    }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bun run \"$CLAUDE_PROJECT_DIR/scripts/code-health.ts\" --hook stop",
+                        "timeout": 120,
+                        "statusMessage": "Checking code health of the changed files"
+                    }
+                ]
+            }
+        ]
+    }
+}

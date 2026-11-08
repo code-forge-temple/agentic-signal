@@ -4,6 +4,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import {codeHealthConfig} from './eslint.code-health.js'
 
 export default defineConfig(
     globalIgnores(['dist', 'src-tauri', '**/*.gen.ts']),
@@ -101,4 +102,5 @@ export default defineConfig(
             '@typescript-eslint/no-unsafe-assignment': 'off',
         },
     },
+    ...codeHealthConfig,
 )

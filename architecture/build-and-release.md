@@ -30,9 +30,29 @@ bun run dev          # backend (deno task dev, with --watch) + client (vite) tog
 | Command | What it checks |
 |---------|----------------|
 | `cd client && bunx tsc -b` | The client's types (the build's own typecheck). `tsc --noEmit -p .` checks nothing: the root config has `files: []`. |
-| `bun run lint` | ESLint over the repo, with type-aware rules (floating and misused promises, unsafe `any` assignments, ...). It doesn't follow the symlinked PRO folders: lint those by path. |
-| `bun run test` | `deno task test` (the backend), then the client's Vitest suite. |
+| `bun run lint` | ESLint over the repo, with type-aware rules (floating and misused promises, unsafe `any` assignments, ...) and the code-health limits (below). `scripts/lint.ts` runs it twice: on the repo, then on the linked PRO folders, which `eslint .` never enters because it doesn't follow symlinks. |
+| `bun run lint:prune` | Shrinks the record of tolerated code-health violations after some were fixed. Lint fails until it's run. |
+| `bun run health` | The code-health score of each file (below). |
+| `bun run test` | `deno task test` (the backend), the scripts' tests (`bun test ./scripts/`), then the client's Vitest suite. |
 | `bun run circular` | Circular imports in `client/src` (madge). |
+
+## Code Health
+
+Limits on complexity, nesting and size, and a score per file, so code stays easy to change, for people and for AI assistants alike.
+
+- **The limits** are in `eslint.code-health.js`:
+  - complexity 10, cognitive complexity 15, nesting 4, 4 parameters, callbacks 3 deep, 3 operators in a condition;
+  - 70 lines a function (150 in `.tsx`), 400 a file;
+  - no identical functions or duplicated branches.
+
+  Tests have no size or nesting limits.
+- **The ratchet:** `eslint.config.js` makes the limits errors. The violations that existed when the limits came in are recorded in `eslint-suppressions.json` (ESLint's bulk suppressions), so only new ones fail. A recorded one that's fixed fails too, until `bun run lint:prune` drops it, so the record only shrinks. The PRO folders' record is `eslint-suppressions.json` in the PRO repo, which keeps their file names out of this one. Never add to the records by hand.
+- **The score** (`scripts/code-health.ts`, `bun run health`):
+  - Each file starts at 10 and loses points for every broken limit, scaled by how far over it is, plus a "brain method" penalty for a function that's complex, long and deeply nested at once. It never goes below 1.
+  - 9.5 and up counts as healthy.
+  - `--changed` compares changed files with the last commit, `--files` the files named, and `--hotspots` ranks low scores by how often git saw the file change.
+  - It lints without type information, so a file takes milliseconds.
+- **For Claude Code:** the `code-health` skill (`.claude/skills/code-health/`) says to measure before and after a change and to refactor instead of finishing when a score drops. The hooks in `.claude/settings.json` run `bun run health --hook after-edit` after each edit and `--hook stop` at the end of a turn. Each exits 2 when a file got worse, which hands the findings back to Claude. The end-of-turn check blocks at most once a turn.
 
 ## The Desktop App (Tauri)
 

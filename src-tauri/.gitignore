@@ -3,3 +3,6 @@
 /target/
 /gen/schemas
 /bin/
+
+# Made from LICENSE.md at each build (sync-license.ts)
+/LICENSE.txt

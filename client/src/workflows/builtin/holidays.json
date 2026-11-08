@@ -6,7 +6,7 @@
             "position": {"x": 0, "y": 0},
             "data": {
                 "command": "holidays",
-                "description": "Public holidays of a country, e.g. \"holidays in Romania 2026\". Data: Nager.Date."
+                "description": "Public holidays of a country, e.g. \"holidays in the United States 2026\". Data: Nager.Date."
             }
         },
         {
@@ -15,7 +15,7 @@
             "position": {"x": 220, "y": 0},
             "data": {
                 "model": "",
-                "prompt": "The input asks about public holidays in a country. Reply with the country's ISO 3166-1 alpha-2 code (e.g. RO for Romania, DE for Germany, US for the United States), or XX if the input names no real country, and the year asked about, or 0 if the input names no year.",
+                "prompt": "The input asks about public holidays in a country. Reply with the country's ISO 3166-1 alpha-2 code (e.g. US for the United States, DE for Germany, GB for the United Kingdom), or XX if the input names no real country, and the year asked about, or 0 if the input names no year.",
                 "format": {
                     "onSuccess": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"countryCode\": {\n      \"type\": \"string\"\n    },\n    \"year\": {\n      \"type\": \"integer\"\n    }\n  },\n  \"required\": [\n    \"countryCode\",\n    \"year\"\n  ],\n  \"additionalProperties\": false\n}"
                 },

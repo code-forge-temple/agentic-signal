@@ -117,7 +117,7 @@ export function formatUtcOffset (minutesEast: number): string {
     return `GMT${minutesEast > 0 ? "+" : "-"}${Math.floor(minutes / 60)}${rest ? `:${String(rest).padStart(2, "0")}` : ""}`;
 }
 
-/** "[Sun 1 Nov 2026, 14:03 GMT+2]": when a message was sent, in the user's time zone, weekday included. */
+/** "[Sun 1 Nov 2026, 14:03 GMT-5]": when a message was sent, in the user's time zone, weekday included. */
 export function messageTimeStamp (sentAt: number): string {
     const date = new Date(sentAt);
     const time = [date.getHours(), date.getMinutes()].map(part => String(part).padStart(2, "0")).join(":");
@@ -132,7 +132,7 @@ export function messageTimeStamp (sentAt: number): string {
  * by its own sense of the date instead ("Monday, 3 November 2024").
  */
 // eslint-disable-next-line max-len
-export const MESSAGE_TIME_NOTE = "\n\nEach user message starts with when it was sent, in the user's time zone, for example [Sun 1 Nov 2026, 14:03 GMT+2]. The stamp on the latest message is the current date and time: trust it over anything you remember. Use it for dates and times such as today, tomorrow, this weekend or this year, and for how long ago something was said. Don't repeat it in your replies.";
+export const MESSAGE_TIME_NOTE = "\n\nEach user message starts with when it was sent, in the user's time zone, for example [Sun 1 Nov 2026, 14:03 GMT-5]. The stamp on the latest message is the current date and time: trust it over anything you remember. Use it for dates and times such as today, tomorrow, this weekend or this year, and for how long ago something was said. Don't repeat it in your replies.";
 
 /**
  * The chat as the model reads it: the user's messages stamped with when they were sent, a command reply's

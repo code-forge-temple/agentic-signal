@@ -3,19 +3,25 @@
         {
             "id": "weather-request",
             "type": "workflow-input",
-            "position": {"x": 0, "y": 0},
+            "position": {
+                "x": 0,
+                "y": 0
+            },
             "data": {
                 "command": "weather",
-                "description": "Weather now and for the next 7 days anywhere, e.g. \"will it rain in Cluj tomorrow?\". Data: Open-Meteo."
+                "description": "Weather now and for the next 7 days anywhere, e.g. \"will it rain in New York tomorrow?\". Data: Open-Meteo."
             }
         },
         {
             "id": "place",
             "type": "llm-process",
-            "position": {"x": 220, "y": 0},
+            "position": {
+                "x": 220,
+                "y": 0
+            },
             "data": {
                 "model": "",
-                "prompt": "The input asks about the weather somewhere. Reply with the place as it is named on a map, just the city or town (e.g. Cluj-Napoca, not \"Cluj, Romania\"). Complete a short name of the same place (Cluj is Cluj-Napoca), but never swap in a different place: a name you don't recognise is copied as written. Also reply with the country's ISO 3166-1 alpha-2 code if the input names or clearly implies the country (e.g. RO), otherwise an empty string.",
+                "prompt": "The input asks about the weather somewhere. Reply with the place as it is named on a map, just the city or town (e.g. New York, not \"New York, USA\"). Complete a short name of the same place (NYC is New York), but never swap in a different place: a name you don't recognise is copied as written. Also reply with the country's ISO 3166-1 alpha-2 code if the input names or clearly implies the country (e.g. US), otherwise an empty string.",
                 "format": {
                     "onSuccess": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"place\": {\n      \"type\": \"string\"\n    },\n    \"countryCode\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"place\",\n    \"countryCode\"\n  ],\n  \"additionalProperties\": false\n}"
                 },
@@ -27,7 +33,10 @@
         {
             "id": "geocode-url",
             "type": "json-reformatter",
-            "position": {"x": 440, "y": 110},
+            "position": {
+                "x": 440,
+                "y": 110
+            },
             "data": {
                 "jsonataExpression": "/* Open-Meteo's place search: no key needed. */\n{\n    \"url\": \"https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=\" & $encodeUrlComponent(place) & (countryCode ? \"&countryCode=\" & $uppercase(countryCode) : \"\"),\n    \"dataType\": \"json\"\n}"
             }
@@ -35,13 +44,23 @@
         {
             "id": "geocode",
             "type": "get-data",
-            "position": {"x": 620, "y": 110},
-            "data": {"url": "", "dataType": "json", "dataProvidedByUpstream": true}
+            "position": {
+                "x": 620,
+                "y": 110
+            },
+            "data": {
+                "url": "",
+                "dataType": "json",
+                "dataProvidedByUpstream": true
+            }
         },
         {
             "id": "forecast-url",
             "type": "json-reformatter",
-            "position": {"x": 840, "y": 110},
+            "position": {
+                "x": 840,
+                "y": 110
+            },
             "data": {
                 "jsonataExpression": "(\n    $found := results[0];\n    $found\n        ? {\n            \"url\": \"https://api.open-meteo.com/v1/forecast?latitude=\" & $string($found.latitude) & \"&longitude=\" & $string($found.longitude) & \"&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7\",\n            \"dataType\": \"json\"\n        }\n        : $error(\"Open-Meteo knows no place by that name. Try the full name of the city or town, or add its country.\")\n)"
             }
@@ -49,19 +68,32 @@
         {
             "id": "forecast",
             "type": "get-data",
-            "position": {"x": 1020, "y": 110},
-            "data": {"url": "", "dataType": "json", "dataProvidedByUpstream": true}
+            "position": {
+                "x": 1020,
+                "y": 110
+            },
+            "data": {
+                "url": "",
+                "dataType": "json",
+                "dataProvidedByUpstream": true
+            }
         },
         {
             "id": "place-and-forecast",
             "type": "async-data-aggregator",
-            "position": {"x": 1240, "y": 0},
+            "position": {
+                "x": 1240,
+                "y": 0
+            },
             "data": {}
         },
         {
             "id": "forecast-report",
             "type": "json-reformatter",
-            "position": {"x": 1380, "y": 0},
+            "position": {
+                "x": 1380,
+                "y": 0
+            },
             "data": {
                 "jsonataExpression": "/* The place and its forecast as Markdown, weather codes in words; the chat's AI Buddy answers the question from it. */\n(\n    $codes := {\"0\":\"clear sky\",\"1\":\"mainly clear\",\"2\":\"partly cloudy\",\"3\":\"overcast\",\"45\":\"fog\",\"48\":\"freezing fog\",\"51\":\"light drizzle\",\"53\":\"drizzle\",\"55\":\"heavy drizzle\",\"56\":\"light freezing drizzle\",\"57\":\"freezing drizzle\",\"61\":\"light rain\",\"63\":\"rain\",\"65\":\"heavy rain\",\"66\":\"light freezing rain\",\"67\":\"freezing rain\",\"71\":\"light snow\",\"73\":\"snow\",\"75\":\"heavy snow\",\"77\":\"snow grains\",\"80\":\"light showers\",\"81\":\"showers\",\"82\":\"heavy showers\",\"85\":\"light snow showers\",\"86\":\"snow showers\",\"95\":\"thunderstorm\",\"96\":\"thunderstorm with hail\",\"99\":\"thunderstorm with heavy hail\"};\n    $sky := function($code) {$lookup($codes, $string($code))};\n    $where := $[$exists(results)][0].results[0];\n    $f := $[$exists(daily)][0];\n    $now := $f.current;\n    $days := $f.daily;\n    $chance := function($percent) {$type($percent) = \"number\" ? \" (\" & $string($percent) & \" %)\" : \"\"};\n    $day := function($date, $i) {\n        $fromMillis($toMillis($date), \"[FNn,3-3] [D] [MNn,3-3]\") & ($i = 0 ? \" (today)\" : ($i = 1 ? \" (tomorrow)\" : \"\"))\n    };\n    $rows := $map($days.time, function($date, $i) {\n        \"| \" & $day($date, $i) & \" | \" & $sky($days.weather_code[$i])\n            & \" | \" & $days.temperature_2m_min[$i] & \" / \" & $days.temperature_2m_max[$i] & \" °C\"\n            & \" | \" & $days.precipitation_sum[$i] & \" mm\" & $chance($days.precipitation_probability_max[$i])\n            & \" | \" & $days.wind_speed_10m_max[$i] & \" km/h |\"\n    });\n    \"**\" & $join([$where.name, $where.admin1, $where.country], \", \") & \"**, now (\" & $substringAfter($now.time, \"T\") & \" local time): \"\n        & $sky($now.weather_code) & \", \" & $now.temperature_2m & \" °C (feels like \" & $now.apparent_temperature & \" °C), humidity \"\n        & $now.relative_humidity_2m & \" %, precipitation \" & $now.precipitation & \" mm, wind \" & $now.wind_speed_10m & \" km/h.\\n\\n\"\n        & \"| Day | Sky | Min / max | Precipitation (chance) | Max wind |\\n|---|---|---|---|---|\\n\" & $join($rows, \"\\n\")\n        & \"\\n\\nWeather data by Open-Meteo.com\"\n)"
             }
@@ -69,19 +101,67 @@
         {
             "id": "reply",
             "type": "workflow-output",
-            "position": {"x": 1560, "y": 0},
+            "position": {
+                "x": 1560,
+                "y": 0
+            },
             "data": {}
         }
     ],
     "edges": [
-        {"source": "weather-request", "target": "place", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "place", "target": "geocode-url", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "geocode-url", "target": "geocode", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "geocode", "target": "forecast-url", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "forecast-url", "target": "forecast", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "geocode", "target": "place-and-forecast", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "forecast", "target": "place-and-forecast", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "place-and-forecast", "target": "forecast-report", "sourceHandle": "flow", "targetHandle": "flow"},
-        {"source": "forecast-report", "target": "reply", "sourceHandle": "flow", "targetHandle": "flow"}
+        {
+            "source": "weather-request",
+            "target": "place",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "place",
+            "target": "geocode-url",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "geocode-url",
+            "target": "geocode",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "geocode",
+            "target": "forecast-url",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "forecast-url",
+            "target": "forecast",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "geocode",
+            "target": "place-and-forecast",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "forecast",
+            "target": "place-and-forecast",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "place-and-forecast",
+            "target": "forecast-report",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        },
+        {
+            "source": "forecast-report",
+            "target": "reply",
+            "sourceHandle": "flow",
+            "targetHandle": "flow"
+        }
     ]
 }

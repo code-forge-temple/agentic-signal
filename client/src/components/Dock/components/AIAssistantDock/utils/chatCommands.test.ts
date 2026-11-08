@@ -190,7 +190,7 @@ describe('parseCommandSuggestion', () => {
     });
 
     it('takes the block\'s language in any case', () => {
-        expect(parseCommandSuggestion('/weather Cluj', 'Command', commands)?.command).toBe('weather');
+        expect(parseCommandSuggestion('/weather New York', 'Command', commands)?.command).toBe('weather');
     });
 
     it('leaves other blocks as code: another language, an unknown command, no command, or more than one line', () => {
@@ -198,6 +198,6 @@ describe('parseCommandSuggestion', () => {
         expect(parseCommandSuggestion('/research UBI', undefined, commands)).toBeNull();
         expect(parseCommandSuggestion('/nosuch thing', 'command', commands)).toBeNull();
         expect(parseCommandSuggestion('research UBI', 'command', commands)).toBeNull();
-        expect(parseCommandSuggestion('/research UBI\n/weather Cluj', 'command', commands)).toBeNull();
+        expect(parseCommandSuggestion('/research UBI\n/weather New York', 'command', commands)).toBeNull();
     });
 });

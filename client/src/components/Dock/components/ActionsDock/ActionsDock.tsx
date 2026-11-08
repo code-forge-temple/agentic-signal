@@ -20,6 +20,7 @@ import {useSnackbar} from "notistack";
 import {useSettings} from "../../../../hooks/useSettings";
 import {workflowsFolderPath} from "../../../../services/workflowsService";
 import {openWorkflowFileNatively} from "./nativeWorkflowFile";
+import {VAULT_STORAGE_KEY} from "../../../../services/vault/vault";
 
 
 // Set just before Clear App Data reloads the page, so the Settings dialog comes back open.
@@ -109,6 +110,8 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
         localStorage.removeItem("ollamaHost");
         localStorage.removeItem("browserPath");
         localStorage.removeItem("workflowsFolder");
+        // The vault is an entry of its own, apart from the global store's keys.
+        localStorage.removeItem(VAULT_STORAGE_KEY);
         sessionStorage.setItem(REOPEN_SETTINGS_FLAG, "1");
         // Reload so every in-memory copy (settings, global store, API keys) starts from empty.
         window.location.reload();
@@ -142,7 +145,7 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
                         onClose={() => setOpenClearAppData(false)}
                         title="Clear App Data"
                         // eslint-disable-next-line max-len
-                        message="This removes all saved settings (Ollama host, browser path, workflows folder, AI Assistant model and chat settings) and any API keys, then reloads the app. Any unsaved workflow on the canvas will be lost. Workflows already saved to the folder stay."
+                        message="This removes all saved settings (Ollama host, browser path, workflows folder, AI Assistant model and chat settings) and the vault with your saved credentials and outside connections, then reloads the app. Any unsaved workflow on the canvas will be lost. Workflows already saved to the folder stay."
                         confirmLabel="Clear and Reload"
                         maximizable={false}
                         onConfirm={handleClearAppData}

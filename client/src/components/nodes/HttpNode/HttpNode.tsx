@@ -20,6 +20,7 @@ import {useSettings} from "../../../hooks/useSettings";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {withCredentials} from "../../../services/credentialPlaceholders";
 
 
 export function HttpNode ({data, id}: NodeProps<AppNode>) {
@@ -46,8 +47,8 @@ export function HttpNode ({data, id}: NodeProps<AppNode>) {
                     throw new Error("Browser executable path must be specified. Please set Browser Executable Path in the app Settings.");
                 }
 
-                const parsedUrl = parseUrl(url);
-                const html = await GraphQLService.renderHtml(parsedUrl, settings.browserPath);
+                // `{{NAME}}` credentials in the URL are filled in only to render the page.
+                const html = await withCredentials(url, filledUrl => GraphQLService.renderHtml(parseUrl(filledUrl), settings.browserPath));
 
                 onResultUpdate(id, {
                     payload: beautifyHtml(html),

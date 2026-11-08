@@ -11,11 +11,12 @@ import {sanitizeStringInput} from "../utils/sanitize";
 import {FetchWeatherDataToolConfigFields} from "./components/FetchWeatherDataToolConfigFields";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
+import {GLOBAL_SECRETS, LOCAL_SECRETS, TOOL_SUBTYPE} from "./constants";
 import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse, WeatherApiResponseSchema} from "./mappers";
 
 
 export const FetchWeatherDataToolDescriptor:ToolDefinition = {
-    toolSubtype: "fetch-weather-data",
+    toolSubtype: TOOL_SUBTYPE,
     title: "Fetch Weather Data Tool",
     icon: <Thunderstorm />,
     toolSchema: {
@@ -38,9 +39,10 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
         }
     },
     userConfigSchema: extendSystemUserConfigSchema({
-        apiKey: {type: "string", description: "WeatherAPI.com API Key", required: true}
+        [LOCAL_SECRETS.API_KEY]: {type: "string", description: "WeatherAPI.com API Key", required: true}
     }),
-    toSanitize: ["userConfig.apiKey"],
+    globalSecrets: Object.values(GLOBAL_SECRETS),
+    toSanitize: Object.values(LOCAL_SECRETS).map(field => `userConfig.${field}`),
     renderConfig: function ({userConfig, onConfigChange}) {
         return (
             <>
@@ -49,7 +51,7 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
                     onConfigChange={onConfigChange}
                 />
                 <UserConfigFields
-                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, ["apiKey"])}
+                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, Object.values(LOCAL_SECRETS))}
                     userConfig={userConfig}
                     onConfigChange={onConfigChange}
                 />

@@ -26,6 +26,13 @@ import {globalToolProp} from "./tools/utils/utils";
 import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
 
 
+// A config field's value: the one shared under `<toolSubtype>.<field>` (saved in Settings → Credentials, or typed
+// into any node of the tool this session) first, as the tools' settings fields show it; the node's own copy only
+// when nothing is shared. An empty shared value counts too: it was cleared, for every node.
+function configValue (globalData: Record<string, string | undefined>, toolSubtype: string, config: Record<string, unknown> | undefined, key: string): unknown {
+    return globalData[globalToolProp(toolSubtype, key)] ?? config?.[key];
+}
+
 
 export function ToolNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -44,10 +51,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             const missingKeys = requiredKeys.filter(key => {
                 const schema = selectedTool.userConfigSchema?.[key];
 
-                return schema?.required && !(
-                    userConfig?.[key] ||
-                    globalData[globalToolProp(toolSubtype, key)]
-                );
+                return schema?.required && !configValue(globalData, toolSubtype, userConfig, key);
             });
 
             if (missingKeys.length > 0) {
@@ -67,9 +71,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             } else {
                 if (selectedTool.handlerFactory && (!handler || missingKeys.length === 0)) {
                     const effectiveUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                        const localConfig: unknown = userConfig?.[configKey];
-
-                        configWithFallbacks[configKey] = (localConfig != null && localConfig !== "") ? localConfig : globalData[globalToolProp(toolSubtype, configKey)];
+                        configWithFallbacks[configKey] = configValue(globalData, toolSubtype, userConfig, configKey);
 
                         return configWithFallbacks;
                     }, {...(userConfig || {})} as Record<string, any>);
@@ -94,10 +96,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
 
     const hasMissingConfig = !toolSubtype ||
         (selectedTool?.userConfigSchema && Object.entries(selectedTool.userConfigSchema).some(
-            ([key, schema]) => schema.required && !(
-                userConfig?.[key] ||
-                globalData[globalToolProp(toolSubtype, key)]
-            )
+            ([key, schema]) => schema.required && !configValue(globalData, toolSubtype, userConfig, key)
         ));
 
     const handleUserConfigChange = useCallback((key: string, value: string | number | boolean) => {
@@ -114,10 +113,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
             const missingKeys = requiredKeys.filter(key => {
                 const schema = selectedTool.userConfigSchema?.[key];
 
-                return schema?.required && !(
-                    userConfig?.[key] ||
-                    globalData[globalToolProp(toolSubtype, key)]
-                );
+                return schema?.required && !configValue(globalData, toolSubtype, userConfig, key);
             });
 
             if (missingKeys.length > 0) {
@@ -132,9 +128,7 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                 setError(errorMessage);
             } else {
                 const effectiveNewUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                    const localConfig: unknown = newUserConfig[configKey];
-
-                    configWithFallbacks[configKey] = (localConfig != null && localConfig !== "") ? localConfig : globalData[globalToolProp(toolSubtype, configKey)];
+                    configWithFallbacks[configKey] = configValue(globalData, toolSubtype, newUserConfig, configKey);
 
                     return configWithFallbacks;
                 }, {...newUserConfig} as Record<string, any>);

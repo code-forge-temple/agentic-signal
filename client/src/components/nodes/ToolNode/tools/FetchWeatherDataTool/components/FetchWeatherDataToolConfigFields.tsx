@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useGlobalConfig} from "../../../../../../stores/globalConfig";
-import {globalToolProp} from "../../utils/utils";
+import {GLOBAL_SECRETS, LOCAL_SECRETS} from "../constants";
 import {DebouncedTextField} from "../../../../../DebouncedTextField";
 
 type FetchWeatherDataToolConfigFieldsProps = {
@@ -15,16 +15,15 @@ type FetchWeatherDataToolConfigFieldsProps = {
 
 export function FetchWeatherDataToolConfigFields ({userConfig, onConfigChange}: FetchWeatherDataToolConfigFieldsProps) {
     const {globalData, setGlobalData} = useGlobalConfig();
-    const globalApiKeyKey = globalToolProp("fetch-weather-data", "apiKey");
-    const apiKeyValue = globalData[globalApiKeyKey] || userConfig?.apiKey || "";
+    const apiKeyValue = globalData[GLOBAL_SECRETS.API_KEY] ?? userConfig?.apiKey ?? "";
 
     return (
         <DebouncedTextField
             label="WeatherAPI.com API Key"
             value={apiKeyValue}
             onChange={(value) => {
-                onConfigChange("apiKey", value);
-                setGlobalData(globalApiKeyKey, value);
+                onConfigChange(LOCAL_SECRETS.API_KEY, value);
+                setGlobalData(GLOBAL_SECRETS.API_KEY, value);
             }}
             fullWidth
             sx={{mb: 1}}

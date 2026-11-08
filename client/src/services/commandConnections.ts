@@ -4,21 +4,25 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {sha256} from "@noble/hashes/sha2.js";
 import {isRecord} from "../utils";
-import {sha256} from "../utils/sha256";
 import {normalizeCommand} from "../workflows";
+import {hasWebCrypto} from "./vault/crypto";
 
 
 /** An outside app allowed to call workflow commands with its token. */
 export type CommandConnection = {
     id: string;
     name: string;
-    token: string;
+    /** The token's SHA-256, all the backend needs to accept a call: so calls work while the vault is locked. */
+    tokenHash?: string;
+    /** Only in a connection saved before there was a vault: the token itself, in plain text. Creating the vault moves it there. */
+    token?: string;
     /** The commands it may call; empty means all. */
     commands: string[];
 };
 
-/** Kept in the global store with the API keys: persisted, and gone with Clear App Data. */
+/** Kept in the global store (persisted, and gone with Clear App Data); the tokens themselves are in the vault. */
 export const COMMAND_CONNECTIONS_KEY = "commandConnections";
 
 export function parseCommandConnections (raw: string | undefined): CommandConnection[] {
@@ -27,7 +31,8 @@ export function parseCommandConnections (raw: string | undefined): CommandConnec
 
         return Array.isArray(parsed)
             ? parsed.filter((item): item is CommandConnection => isRecord(item)
-                && typeof item.id === "string" && typeof item.name === "string" && typeof item.token === "string" && Array.isArray(item.commands))
+                && typeof item.id === "string" && typeof item.name === "string" && Array.isArray(item.commands)
+                && (typeof item.tokenHash === "string" || typeof item.token === "string"))
             : [];
     } catch {
         return [];
@@ -49,8 +54,8 @@ export function newCommandToken (): string {
 /** What the backend gets instead of the token itself. */
 export async function sha256Hex (text: string): Promise<string> {
     const bytes = new TextEncoder().encode(text);
-    // Missing on a page opened over plain http from another computer: the same hash, computed in code.
-    const digest = typeof crypto.subtle === "undefined" ? sha256(bytes) : new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+    // Web Crypto is missing on a page opened over plain http from another computer: the same hash, computed in code.
+    const digest = hasWebCrypto() ? new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)) : sha256(bytes);
 
     return [...digest].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }

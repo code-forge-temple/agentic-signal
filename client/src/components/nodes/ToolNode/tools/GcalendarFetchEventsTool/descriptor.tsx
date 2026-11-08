@@ -8,8 +8,8 @@ import GoogleCalendar from "./assets/google-calendar.svg";
 import {ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
 import {CalendarEventResult} from "@shared/types.gen";
-import {OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler} from "./constants";
-import {ACCESS_TOKEN_TYPE_OAUTH} from "../utils/oauth";
+import {GLOBAL_SECRETS, LOCAL_SECRETS, OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler, TOOL_SUBTYPE} from "./constants";
+import {ACCESS_TOKEN_KEY, ACCESS_TOKEN_TYPE_OAUTH, GOOGLE_CLIENT_ID_KEY} from "../utils/oauth";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
 import {GoogleToolOauthConfigFields} from "../utils/GoogleToolOauthConfigFields";
@@ -18,7 +18,7 @@ import {excludeKeysFromObject} from "../../../../../utils";
 
 
 export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
-    toolSubtype: "gcalendar-fetch-events",
+    toolSubtype: TOOL_SUBTYPE,
     title: "Google Calendar Fetch Events Tool",
     icon: <GoogleCalendar />,
     toolSchema: {
@@ -48,11 +48,11 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
         }
     },
     userConfigSchema: extendSystemUserConfigSchema({
-        googleClientId: {
+        [GOOGLE_CLIENT_ID_KEY]: {
             type: "string",
             description: "Google OAuth2 Client ID (from Google Cloud Console)"
         },
-        accessToken: {
+        [ACCESS_TOKEN_KEY]: {
             type: ACCESS_TOKEN_TYPE_OAUTH,
             description: "Google Calendar Authentication",
             provider: OAUTH_PROVIDER,
@@ -68,12 +68,13 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
             maximum: 250
         }
     }),
-    toSanitize: ["userConfig.accessToken"],
+    globalSecrets: Object.values(GLOBAL_SECRETS),
+    toSanitize: [ACCESS_TOKEN_KEY, ...Object.values(LOCAL_SECRETS)].map(field => `userConfig.${field}`),
     renderConfig: function ({userConfig, onConfigChange}){
         return (
             <>
                 <GoogleToolOauthConfigFields
-                    toolSubtype="gcalendar-fetch-events"
+                    toolSubtype={TOOL_SUBTYPE}
                     scope={OAUTH_PROVIDER_SCOPE}
                     provider={OAUTH_PROVIDER}
                     oauthHandler={oauthHandler}
@@ -82,7 +83,7 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
                     onConfigChange={onConfigChange}
                 />
                 <UserConfigFields
-                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, ["accessToken", "googleClientId"])}
+                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, [ACCESS_TOKEN_KEY, GOOGLE_CLIENT_ID_KEY])}
                     userConfig={userConfig}
                     onConfigChange={onConfigChange}
                 />

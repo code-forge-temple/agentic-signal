@@ -1,1 +1,2 @@
-export const globalToolProp = (toolSubtype: string, key: string) => `${toolSubtype}.${key}`;
+/** The global store key a tool's config field is shared under, typed as the exact string. */
+export const globalToolProp = <S extends string, K extends string>(toolSubtype: S, key: K) => `${toolSubtype}.${key}` as const;

@@ -3,6 +3,12 @@ import {isTauri} from "../../../../../utils";
 
 export const ACCESS_TOKEN_TYPE_OAUTH = "oauth";
 
+/** The Google tools' Client ID: its userConfig field and its global store key. One Client ID serves every Google tool. */
+export const GOOGLE_CLIENT_ID_KEY = "googleClientId";
+
+/** The Google tools' access token field. It's shared for the session under `<toolSubtype>.accessToken`. */
+export const ACCESS_TOKEN_KEY = "accessToken";
+
 export const googleOauthHandler = async ({
     clientId,
     scope,
@@ -27,7 +33,7 @@ export const googleOauthHandler = async ({
             });
 
             if (result && result.accessToken) {
-                onConfigChange("accessToken", result.accessToken);
+                onConfigChange(ACCESS_TOKEN_KEY, result.accessToken);
             } else {
                 alert("OAuth failed: No access token received");
             }
@@ -50,7 +56,7 @@ export const googleOauthHandler = async ({
             scope,
             callback: (response: { access_token: string; error?: string }) => {
                 if (response.access_token) {
-                    onConfigChange("accessToken", response.access_token);
+                    onConfigChange(ACCESS_TOKEN_KEY, response.access_token);
                 } else {
                     alert(
                         `OAuth authentication failed: ${

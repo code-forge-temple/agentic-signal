@@ -12,9 +12,10 @@ import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {BraveSearchToolConfigFields} from "./components/BraveSearchToolConfigFields";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
+import {GLOBAL_SECRETS, LOCAL_SECRETS, TOOL_SUBTYPE} from "./constants";
 
 export const BraveSearchToolDescriptor:ToolDefinition = {
-    toolSubtype: "brave-search",
+    toolSubtype: TOOL_SUBTYPE,
     title: "Brave Search Tool",
     icon: <Brave />,
     toolSchema: {
@@ -29,7 +30,7 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
         }
     },
     userConfigSchema: extendSystemUserConfigSchema({
-        apiKey: {type: "string", description: "Brave Search API Key", required: true},
+        [LOCAL_SECRETS.API_KEY]: {type: "string", description: "Brave Search API Key", required: true},
         maxResults: {
             type: "integer",
             description: "Maximum number of results to return",
@@ -38,7 +39,8 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
             maximum: 20
         }
     }),
-    toSanitize: ["userConfig.apiKey"],
+    globalSecrets: Object.values(GLOBAL_SECRETS),
+    toSanitize: Object.values(LOCAL_SECRETS).map(field => `userConfig.${field}`),
     renderConfig: function ({userConfig, onConfigChange}) {
         return (
             <>
@@ -47,7 +49,7 @@ export const BraveSearchToolDescriptor:ToolDefinition = {
                     onConfigChange={onConfigChange}
                 />
                 <UserConfigFields
-                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, ["apiKey"])}
+                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, Object.values(LOCAL_SECRETS))}
                     userConfig={userConfig}
                     onConfigChange={onConfigChange}
                 />

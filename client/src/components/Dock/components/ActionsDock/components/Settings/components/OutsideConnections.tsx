@@ -19,17 +19,20 @@ import {NetworkAccessSwitch} from "./NetworkAccessSwitch";
 
 const ENDPOINT_PLACEHOLDER = "http://127.0.0.1:8001/workflows/";
 
-/** "/research, /echo · token as_3f9a1c…": what it may call, and enough of the token to tell it apart. */
-function describeConnection ({commands, token}: CommandConnection): string {
+/**
+ * "/research, /echo · token as_3f9a1c…": what it may call, and enough of the token to tell it apart. The token lives
+ * in the vault, so while it's locked the line says so instead.
+ */
+function describeConnection ({commands}: CommandConnection, token: string | undefined): string {
     const allowed = commands.length > 0 ? commands.map(command => `/${command}`).join(", ") : "All commands";
 
-    return `${allowed} · token ${token.slice(0, 9)}…`;
+    return `${allowed} · ${token ? `token ${token.slice(0, 9)}…` : "token locked in the vault"}`;
 }
 
 /* The outside apps (Scribe Pal, scripts) allowed to call workflow commands, each with its own token. */
 export function OutsideConnections () {
     const {enqueueSnackbar} = useSnackbar();
-    const {connections, addConnection, removeConnection} = useCommandConnections();
+    const {connections, tokens, getToken, addConnection, removeConnection} = useCommandConnections();
     const [endpoint, setEndpoint] = useState(ENDPOINT_PLACEHOLDER);
 
     useEffect(() => {
@@ -38,14 +41,22 @@ export function OutsideConnections () {
         }).catch(() => {});
     }, []);
 
-    const copyToken = (token: string) => {
+    const copyToken = (token: string | null) => {
+        if (token === null) return;
+
         copyText(token)
             .then(() => enqueueSnackbar("Token copied.", {variant: "success"}))
             .catch(() => enqueueSnackbar("Couldn't copy the token.", {variant: "error"}));
     };
 
     const handleAdd = (name: string, commands: string[]) => {
-        copyToken(addConnection(name, commands).token);
+        addConnection(name, commands)
+            .then(copyToken)
+            .catch((error: unknown) => enqueueSnackbar(`Couldn't add the connection: ${error instanceof Error ? error.message : String(error)}`, {variant: "error"}));
+    };
+
+    const handleCopy = (connection: CommandConnection) => {
+        getToken(connection).then(copyToken).catch(() => enqueueSnackbar("Couldn't copy the token.", {variant: "error"}));
     };
 
     return (
@@ -93,7 +104,7 @@ export function OutsideConnections () {
                             secondaryAction={
                                 <>
                                     <Tooltip title="Copy token">
-                                        <IconButton size="small" aria-label={`Copy ${connection.name}'s token`} onClick={() => copyToken(connection.token)}>
+                                        <IconButton size="small" aria-label={`Copy ${connection.name}'s token`} onClick={() => handleCopy(connection)}>
                                             <Copy style={{fontSize: 16}} />
                                         </IconButton>
                                     </Tooltip>
@@ -105,7 +116,7 @@ export function OutsideConnections () {
                                 </>
                             }
                         >
-                            <ListItemText primary={connection.name} secondary={describeConnection(connection)} />
+                            <ListItemText primary={connection.name} secondary={describeConnection(connection, connection.token ?? tokens?.[connection.id])} />
                         </ListItem>
                     ))}
                 </List>

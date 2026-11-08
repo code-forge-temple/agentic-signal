@@ -39,6 +39,13 @@ export type NodeDescriptor<T extends string, N extends DataNode> = {
      * so it's safe to run unconditionally on every load.
      */
     migrate?: (data: Record<string, unknown>) => Record<string, unknown>;
+    /**
+     * The global store keys this node shares its secrets under (tokens, API keys): every node that declares a key
+     * shows and runs with the same value, and Settings → Credentials offers to save it, shown with this node's
+     * icon. Optional; most nodes have none. The data fields that hold them belong in `defaultData.toSanitize`, so
+     * they never reach a saved workflow.
+     */
+    globalSecrets?: readonly string[];
     defaultData: N["data"];
     metadata: {
         description: string;

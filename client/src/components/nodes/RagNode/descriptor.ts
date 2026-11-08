@@ -6,7 +6,7 @@
 
 import {NodeDescriptor} from "../types";
 import {RagNode as component} from "./RagNode";
-import {Icon, NODE_TYPE, TITLE} from "./constants";
+import {GLOBAL_SECRETS, Icon, LOCAL_SECRETS, NODE_TYPE, TITLE} from "./constants";
 import {assertIsRagNodeData, defaultRagNodeData, RagNode, RagNodeDataSchema} from "./types/workflow";
 import {NODE_PORT_IDS} from '../../../constants';
 
@@ -25,9 +25,10 @@ export const RagNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, RagNode> = {
             [NODE_PORT_IDS.CONTEXT]: true,
         },
     },
+    globalSecrets: Object.values(GLOBAL_SECRETS),
     defaultData: {
         title: TITLE,
         ...defaultRagNodeData,
-        toSanitize: ["handler"],
+        toSanitize: ["handler", ...Object.values(LOCAL_SECRETS)],
     }
 };

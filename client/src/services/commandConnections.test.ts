@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {describe, expect, it} from 'vitest';
+import {afterEach, describe, expect, it, vi} from 'vitest';
 import {newCommandToken, parseCommandConnections, parseCommandList, sha256Hex} from './commandConnections';
 
 
@@ -43,7 +43,20 @@ describe('newCommandToken', () => {
 });
 
 describe('sha256Hex', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it('hashes like the backend does', async () => {
         expect(await sha256Hex('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    });
+
+    it('gives the same hashes on a page without crypto.subtle (plain http from another computer)', async () => {
+        const texts = ['', 'as_' + 'ab12'.repeat(12), 'x'.repeat(55), 'x'.repeat(64), 'Zoë, € and 🙂'];
+        const expected = await Promise.all(texts.map(sha256Hex));
+
+        vi.stubGlobal('crypto', {getRandomValues: crypto.getRandomValues.bind(crypto)});
+
+        expect(await Promise.all(texts.map(sha256Hex))).toEqual(expected);
     });
 });

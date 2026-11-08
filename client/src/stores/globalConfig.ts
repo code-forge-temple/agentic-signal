@@ -69,6 +69,20 @@ export const getPersistedValue = (key: string): string | undefined => {
     return localStorage.getItem(`${GLOBAL_CONFIG_STORAGE_PREFIX}${key}`) ?? undefined;
 };
 
+/** The keys persisted in localStorage, with or without a value loaded in the mirror. */
+export const persistedGlobalDataKeys = (): string[] => {
+    if (!hasLocalStorage()) return [];
+
+    return Array.from({length: localStorage.length}, (_, i) => localStorage.key(i))
+        .filter((storageKey): storageKey is string => !!storageKey?.startsWith(GLOBAL_CONFIG_STORAGE_PREFIX))
+        .map(storageKey => storageKey.substring(GLOBAL_CONFIG_STORAGE_PREFIX.length));
+};
+
+/** Stops persisting one key; its value stays in the mirror for the session. */
+export const forgetPersistedGlobalData = (key: string): void => {
+    if (hasLocalStorage()) localStorage.removeItem(`${GLOBAL_CONFIG_STORAGE_PREFIX}${key}`);
+};
+
 /**
  * Removes every persisted global value from localStorage, leaving other keys on the origin alone.
  * The in-memory mirror is not touched — callers are expected to reload the app afterwards.

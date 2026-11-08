@@ -21,6 +21,8 @@ import {LayerSwitcher} from './components/LayerSwitcher';
 import {ConfirmDialog} from '../ConfirmDialog';
 import {useSettings} from '../../hooks/useSettings';
 import {useOutsideCommands} from '../../hooks/useOutsideCommands';
+import {useVaultStartup} from '../../hooks/useVaultStartup';
+import {VaultDialog} from '../VaultDialog';
 import {listWorkflowsFolder, saveWorkflowFile} from '../../services/workflowsService';
 import {findWorkflowCommand, workflowFileName, WORKFLOWS_CHANGED_EVENT} from '../../workflows';
 
@@ -41,6 +43,7 @@ function AppLayers () {
 
     useFullscreen();
     useOutsideCommands();
+    useVaultStartup();
 
     const getActiveLayerApi = useCallback(() => getLayerApi(activeLayer.id), [getLayerApi, activeLayer.id]);
 
@@ -151,6 +154,7 @@ function AppLayers () {
                 </ReactFlowProvider>
             ))}
             <LayerSwitcher />
+            <VaultDialog />
         </>
     );
 }

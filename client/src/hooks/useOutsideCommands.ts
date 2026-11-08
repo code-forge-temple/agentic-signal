@@ -93,7 +93,10 @@ export function useOutsideCommands (): void {
 
         void (async () => {
             // Only the tokens' hashes leave the app.
-            const hashed = await Promise.all(connections.map(async ({name, token, commands}) => ({name, tokenHash: await sha256Hex(token), commands})));
+            // A connection saved before there was a vault still holds its token: its hash is computed here until the vault takes it.
+            const hashed = await Promise.all(connections.map(async ({name, token, tokenHash, commands}) => ({
+                name, tokenHash: tokenHash ?? await sha256Hex(token ?? ""), commands,
+            })));
 
             if (cancelled) return;
 

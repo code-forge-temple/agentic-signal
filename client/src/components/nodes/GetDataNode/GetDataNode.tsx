@@ -23,6 +23,7 @@ import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {withCredentials} from "../../../services/credentialPlaceholders";
 
 
 const DATA_TYPE_LABEL = "Data Type *";
@@ -63,6 +64,15 @@ function validateGetDataInput (url: string | undefined, dataType: FetchDataType 
     return validation.data;
 }
 
+// The URL may hold `{{NAME}}` credentials, set here or by the upstream node; they're filled in only to check and fetch it.
+function fetchData (url: string | undefined, dataType: FetchDataType | undefined): Promise<unknown> {
+    return withCredentials(url ?? "", async filledUrl => {
+        const validated = validateGetDataInput(url === undefined ? undefined : filledUrl, dataType);
+
+        return await fetchDataFromUrl(validated.url, validated.dataType);
+    });
+}
+
 export function GetDataNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
     assertIsGetDataNodeData(data);
@@ -90,9 +100,7 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
                     const upstreamDataType = getField<FetchDataType | undefined>(input?.payload, "dataType", undefined);
 
                     try {
-                        const validated = validateGetDataInput(upstreamUrl, upstreamDataType);
-
-                        const getData = await fetchDataFromUrl(validated.url, validated.dataType);
+                        const getData = await fetchData(upstreamUrl, upstreamDataType);
 
                         onResultUpdate(id, {payload: getData, ...forwardToolsPayload()});
                     } catch (error) {
@@ -114,9 +122,7 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
 
         void runTask(async () => {
             try {
-                validateGetDataInput(mergedUrl, mergedDataType);
-
-                const getData = await fetchDataFromUrl(mergedUrl, mergedDataType);
+                const getData = await fetchData(mergedUrl, mergedDataType);
 
                 onResultUpdate(id, {payload: getData, ...forwardToolsPayload()});
             } catch (error) {

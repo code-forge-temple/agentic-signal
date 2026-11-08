@@ -9,12 +9,14 @@
     "npm:@mozilla/readability@*": "0.6.0",
     "npm:@mui/lab@^7.0.0-beta.13": "7.0.0_@emotion+react@11.14.0__react@19.2.6_@emotion+styled@11.14.1__@emotion+react@11.14.0___react@19.2.6__react@19.2.6_@mui+material@7.3.11__@emotion+react@11.14.0___react@19.2.6__@emotion+styled@11.14.1___@emotion+react@11.14.0____react@19.2.6___react@19.2.6__@types+react@19.2.15__react@19.2.6__react-dom@19.2.6___react@19.2.6_@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:@mui/material@^7.1.0": "7.3.11_@emotion+react@11.14.0__react@19.2.6_@emotion+styled@11.14.1__@emotion+react@11.14.0___react@19.2.6__react@19.2.6_@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
+    "npm:@noble/ciphers@^2.4.0": "2.4.0",
+    "npm:@noble/hashes@^2.4.0": "2.4.0",
     "npm:@tauri-apps/api@^2.9.0": "2.11.0",
     "npm:@tauri-apps/cli@^2.11.2": "2.11.2",
     "npm:@tauri-apps/plugin-dialog@~2.7.3": "2.7.3",
     "npm:@tauri-apps/plugin-fs@~2.5.2": "2.5.2",
     "npm:@tauri-apps/plugin-shell@^2.3.4": "2.3.5",
-    "npm:@testing-library/jest-dom@^7.0.1": "7.0.1_@testing-library+dom@10.4.1_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10___vitest@4.1.10___@types+node@22.15.15___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10___@types+node@22.15.15___@vitest+coverage-v8@4.1.10___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0",
+    "npm:@testing-library/jest-dom@^7.0.1": "7.0.1_@testing-library+dom@10.4.1_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10___vitest@4.1.10___@types+node@22.15.15___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10___@types+node@22.15.15___@vitest+coverage-v8@4.1.10___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0",
     "npm:@testing-library/react@^16.3.2": "16.3.2_@testing-library+dom@10.4.1_@types+react@19.2.15_@types+react-dom@19.2.3__@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6",
     "npm:@types/js-beautify@^1.14.3": "1.14.3",
     "npm:@types/jsonata@^1.3.1": "1.5.1",
@@ -26,7 +28,7 @@
     "npm:@types/react@^19.2.7": "19.2.15",
     "npm:@types/turndown@*": "5.0.6",
     "npm:@vitejs/plugin-react@^4.4.1": "4.7.0_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4_@babel+core@7.29.7_@types+node@24.12.4_sass-embedded@1.100.0_@types+node@22.15.15",
-    "npm:@vitest/coverage-v8@^4.1.10": "4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0",
+    "npm:@vitest/coverage-v8@^4.1.10": "4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0",
     "npm:@xyflow/react@^12.6.4": "12.10.2_react@19.2.6_react-dom@19.2.6__react@19.2.6_@types+react@19.2.15",
     "npm:ace-builds@^1.42.0": "1.44.0",
     "npm:ajv@^8.17.1": "8.20.0",
@@ -47,8 +49,8 @@
     "npm:graphql@*": "16.14.0",
     "npm:iconoir-react@^7.11.0": "7.11.0_react@19.2.6",
     "npm:js-beautify@^1.15.4": "1.15.4",
-    "npm:jsdom@*": "29.1.1_css-tree@3.2.1",
-    "npm:jsdom@^30.0.1": "30.0.1_css-tree@3.2.1",
+    "npm:jsdom@*": "29.1.1_css-tree@3.2.1_@noble+hashes@2.4.0",
+    "npm:jsdom@^30.0.1": "30.0.1_css-tree@3.2.1_@noble+hashes@2.4.0",
     "npm:jsonata@^2.0.6": "2.2.1",
     "npm:madge@8": "8.0.0_typescript@5.9.3",
     "npm:mustache@^4.2.0": "4.2.0",
@@ -74,7 +76,7 @@
     "npm:uuid@^11.1.0": "11.1.1",
     "npm:vite-plugin-svgr@^4.3.0": "4.5.0_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4_@svgr+core@8.1.0__@babel+core@7.29.7__typescript@5.9.3_@types+node@24.12.4_sass-embedded@1.100.0_typescript@5.9.3_@types+node@22.15.15",
     "npm:vite@^6.3.5": "6.4.2_@types+node@24.12.4_sass-embedded@1.100.0_picomatch@4.0.4_@types+node@22.15.15",
-    "npm:vitest@^4.1.10": "4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0",
+    "npm:vitest@^4.1.10": "4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0",
     "npm:zod-to-json-schema@^3.25.2": "3.25.2_zod@3.25.64",
     "npm:zod@3.25.64": "3.25.64",
     "npm:zustand@^5.0.12": "5.0.13_@types+react@19.2.15_react@19.2.6"
@@ -662,6 +664,15 @@
     "@exodus/bytes@1.15.1": {
       "integrity": "sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q=="
     },
+    "@exodus/bytes@1.15.1_@noble+hashes@2.4.0": {
+      "integrity": "sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q==",
+      "dependencies": [
+        "@noble/hashes"
+      ],
+      "optionalPeers": [
+        "@noble/hashes"
+      ]
+    },
     "@fastify/busboy@3.2.0": {
       "integrity": "sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA=="
     },
@@ -943,6 +954,12 @@
       "optionalPeers": [
         "@types/react"
       ]
+    },
+    "@noble/ciphers@2.4.0": {
+      "integrity": "sha512-AnjFn0Jv92laAkvMrghlFZq4qQCIN/4DxFV/eooqtC2YTjB7kBeLMS2T9KJX4Dn+ZVXLOwK0lSgqDtx9gvxtiw=="
+    },
+    "@noble/hashes@2.4.0": {
+      "integrity": "sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA=="
     },
     "@one-ini/wasm@0.1.1": {
       "integrity": "sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw=="
@@ -1390,10 +1407,26 @@
         "dom-accessibility-api@0.6.3",
         "picocolors",
         "redent",
-        "vitest"
+        "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0"
       ],
       "optionalPeers": [
-        "vitest"
+        "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0"
+      ]
+    },
+    "@testing-library/jest-dom@7.0.1_@testing-library+dom@10.4.1_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10___vitest@4.1.10___@types+node@22.15.15___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10___@types+node@22.15.15___@vitest+coverage-v8@4.1.10___jsdom@29.1.1____css-tree@3.2.1___vite@6.4.2____@types+node@24.12.4____sass-embedded@1.100.0____picomatch@4.0.4____@types+node@22.15.15___sass-embedded@1.100.0__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0": {
+      "integrity": "sha512-oMDTC3oA+6CXSO2JZnvOI7CA6oVub6kij5ggk9ohwye5slmkwxYDXcPOVxgMw/RQlticjtO0C1RZkR97HgrWMw==",
+      "dependencies": [
+        "@adobe/css-tools",
+        "@testing-library/dom",
+        "aria-query@5.3.2",
+        "css.escape",
+        "dom-accessibility-api@0.6.3",
+        "picocolors",
+        "redent",
+        "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0"
+      ],
+      "optionalPeers": [
+        "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0"
       ]
     },
     "@testing-library/react@16.3.2_@testing-library+dom@10.4.1_@types+react@19.2.15_@types+react-dom@19.2.3__@types+react@19.2.15_react@19.2.6_react-dom@19.2.6__react@19.2.6": {
@@ -1750,7 +1783,23 @@
         "obug",
         "std-env",
         "tinyrainbow",
-        "vitest"
+        "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0"
+      ]
+    },
+    "@vitest/coverage-v8@4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0": {
+      "integrity": "sha512-IM49HmthevbgAO4anp1hwtoT9wYe59w0LR00gr+eagHE+ZJ5lK4sLPeO0ubgoJcwLk6dehU3R24N+FbEEKDc8g==",
+      "dependencies": [
+        "@bcoe/v8-coverage",
+        "@vitest/utils",
+        "ast-v8-to-istanbul",
+        "istanbul-lib-coverage",
+        "istanbul-lib-report",
+        "istanbul-reports",
+        "magicast",
+        "obug",
+        "std-env",
+        "tinyrainbow",
+        "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0"
       ]
     },
     "@vitest/expect@4.1.10": {
@@ -2457,6 +2506,13 @@
       "dependencies": [
         "whatwg-mimetype",
         "whatwg-url@16.0.1"
+      ]
+    },
+    "data-urls@7.0.0_@noble+hashes@2.4.0": {
+      "integrity": "sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==",
+      "dependencies": [
+        "whatwg-mimetype",
+        "whatwg-url@16.0.1_@noble+hashes@2.4.0"
       ]
     },
     "data-view-buffer@1.0.2": {
@@ -3434,7 +3490,13 @@
     "html-encoding-sniffer@6.0.0": {
       "integrity": "sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==",
       "dependencies": [
-        "@exodus/bytes"
+        "@exodus/bytes@1.15.1"
+      ]
+    },
+    "html-encoding-sniffer@6.0.0_@noble+hashes@2.4.0": {
+      "integrity": "sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==",
+      "dependencies": [
+        "@exodus/bytes@1.15.1_@noble+hashes@2.4.0"
       ]
     },
     "html-escaper@2.0.2": {
@@ -3783,11 +3845,11 @@
         "@asamuzakjp/dom-selector@7.1.1",
         "@bramus/specificity",
         "@csstools/css-syntax-patches-for-csstree@1.1.5_css-tree@3.2.1",
-        "@exodus/bytes",
+        "@exodus/bytes@1.15.1",
         "css-tree",
-        "data-urls",
+        "data-urls@7.0.0",
         "decimal.js",
-        "html-encoding-sniffer",
+        "html-encoding-sniffer@6.0.0",
         "is-potential-custom-element-name",
         "lru-cache@11.5.1",
         "parse5",
@@ -3802,6 +3864,32 @@
         "xml-name-validator"
       ]
     },
+    "jsdom@29.1.1_css-tree@3.2.1_@noble+hashes@2.4.0": {
+      "integrity": "sha512-ECi4Fi2f7BdJtUKTflYRTiaMxIB0O6zfR1fX0GXpUrf6flp8QIYn1UT20YQqdSOfk2dfkCwS8LAFoJDEppNK5Q==",
+      "dependencies": [
+        "@asamuzakjp/css-color@5.1.11_@csstools+css-parser-algorithms@4.0.0__@csstools+css-tokenizer@4.0.0_@csstools+css-tokenizer@4.0.0",
+        "@asamuzakjp/dom-selector@7.1.1",
+        "@bramus/specificity",
+        "@csstools/css-syntax-patches-for-csstree@1.1.5_css-tree@3.2.1",
+        "@exodus/bytes@1.15.1_@noble+hashes@2.4.0",
+        "css-tree",
+        "data-urls@7.0.0_@noble+hashes@2.4.0",
+        "decimal.js",
+        "html-encoding-sniffer@6.0.0_@noble+hashes@2.4.0",
+        "is-potential-custom-element-name",
+        "lru-cache@11.5.1",
+        "parse5",
+        "saxes",
+        "symbol-tree",
+        "tough-cookie@6.0.1",
+        "undici@7.26.0",
+        "w3c-xmlserializer",
+        "webidl-conversions",
+        "whatwg-mimetype",
+        "whatwg-url@16.0.1_@noble+hashes@2.4.0",
+        "xml-name-validator"
+      ]
+    },
     "jsdom@30.0.1_css-tree@3.2.1": {
       "integrity": "sha512-52v7mUVUfNQVYYqE1lcdaymWL0njO7lTLUog6ZvW2U5KsbiLk/GnZlVJ+qx0xfNJZ6Gn+KSpPNE52vurbxZwrA==",
       "dependencies": [
@@ -3809,11 +3897,11 @@
         "@asamuzakjp/dom-selector@8.3.2",
         "@bramus/specificity",
         "@csstools/css-syntax-patches-for-csstree@1.1.7_css-tree@3.2.1",
-        "@exodus/bytes",
+        "@exodus/bytes@1.15.1",
         "css-tree",
-        "data-urls",
+        "data-urls@7.0.0",
         "decimal.js",
-        "html-encoding-sniffer",
+        "html-encoding-sniffer@6.0.0",
         "is-potential-custom-element-name",
         "lru-cache@11.5.2",
         "parse5",
@@ -3825,6 +3913,32 @@
         "webidl-conversions",
         "whatwg-mimetype",
         "whatwg-url@17.1.0",
+        "xml-name-validator"
+      ]
+    },
+    "jsdom@30.0.1_css-tree@3.2.1_@noble+hashes@2.4.0": {
+      "integrity": "sha512-52v7mUVUfNQVYYqE1lcdaymWL0njO7lTLUog6ZvW2U5KsbiLk/GnZlVJ+qx0xfNJZ6Gn+KSpPNE52vurbxZwrA==",
+      "dependencies": [
+        "@asamuzakjp/css-color@6.0.7_@csstools+css-parser-algorithms@4.0.0__@csstools+css-tokenizer@4.0.0_@csstools+css-tokenizer@4.0.0",
+        "@asamuzakjp/dom-selector@8.3.2",
+        "@bramus/specificity",
+        "@csstools/css-syntax-patches-for-csstree@1.1.7_css-tree@3.2.1",
+        "@exodus/bytes@1.15.1_@noble+hashes@2.4.0",
+        "css-tree",
+        "data-urls@7.0.0_@noble+hashes@2.4.0",
+        "decimal.js",
+        "html-encoding-sniffer@6.0.0_@noble+hashes@2.4.0",
+        "is-potential-custom-element-name",
+        "lru-cache@11.5.2",
+        "parse5",
+        "saxes",
+        "symbol-tree",
+        "tough-cookie@6.0.2",
+        "undici@8.10.0",
+        "w3c-xmlserializer",
+        "webidl-conversions",
+        "whatwg-mimetype",
+        "whatwg-url@17.1.0_@noble+hashes@2.4.0",
         "xml-name-validator"
       ]
     },
@@ -5980,7 +6094,7 @@
       "integrity": "sha512-R9jUTe5S4Qb0HCd4TNqpC7oGcrMssMRGXLW80ubjWsW9VH5GF8y1Y0SFLY9AbqSk6nt0PnOx4H4WNJYZ13GUPw==",
       "dependencies": [
         "@types/node@22.15.15",
-        "@vitest/coverage-v8",
+        "@vitest/coverage-v8@4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0",
         "@vitest/expect",
         "@vitest/mocker",
         "@vitest/pretty-format",
@@ -6005,8 +6119,42 @@
       ],
       "optionalPeers": [
         "@types/node@22.15.15",
-        "@vitest/coverage-v8",
+        "@vitest/coverage-v8@4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0",
         "jsdom@29.1.1_css-tree@3.2.1"
+      ],
+      "bin": true
+    },
+    "vitest@4.1.10_@types+node@22.15.15_@vitest+coverage-v8@4.1.10__vitest@4.1.10__@types+node@22.15.15__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0": {
+      "integrity": "sha512-R9jUTe5S4Qb0HCd4TNqpC7oGcrMssMRGXLW80ubjWsW9VH5GF8y1Y0SFLY9AbqSk6nt0PnOx4H4WNJYZ13GUPw==",
+      "dependencies": [
+        "@types/node@22.15.15",
+        "@vitest/coverage-v8@4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0",
+        "@vitest/expect",
+        "@vitest/mocker",
+        "@vitest/pretty-format",
+        "@vitest/runner",
+        "@vitest/snapshot",
+        "@vitest/spy",
+        "@vitest/utils",
+        "es-module-lexer",
+        "expect-type",
+        "jsdom@29.1.1_css-tree@3.2.1_@noble+hashes@2.4.0",
+        "magic-string",
+        "obug",
+        "pathe",
+        "picomatch",
+        "std-env",
+        "tinybench",
+        "tinyexec",
+        "tinyglobby",
+        "tinyrainbow",
+        "vite@6.4.2_@types+node@24.12.4_sass-embedded@1.100.0_picomatch@4.0.4_@types+node@22.15.15",
+        "why-is-node-running"
+      ],
+      "optionalPeers": [
+        "@types/node@22.15.15",
+        "@vitest/coverage-v8@4.1.10_vitest@4.1.10__@types+node@22.15.15__@vitest+coverage-v8@4.1.10__jsdom@29.1.1___css-tree@3.2.1__vite@6.4.2___@types+node@24.12.4___sass-embedded@1.100.0___picomatch@4.0.4___@types+node@22.15.15__sass-embedded@1.100.0_@types+node@22.15.15_jsdom@29.1.1__css-tree@3.2.1_vite@6.4.2__@types+node@24.12.4__sass-embedded@1.100.0__picomatch@4.0.4__@types+node@22.15.15_sass-embedded@1.100.0_@noble+hashes@2.4.0",
+        "jsdom@29.1.1_css-tree@3.2.1_@noble+hashes@2.4.0"
       ],
       "bin": true
     },
@@ -6040,7 +6188,15 @@
     "whatwg-url@16.0.1": {
       "integrity": "sha512-1to4zXBxmXHV3IiSSEInrreIlu02vUOvrhxJJH5vcxYTBDAx51cqZiKdyTxlecdKNSjj8EcxGBxNf6Vg+945gw==",
       "dependencies": [
-        "@exodus/bytes",
+        "@exodus/bytes@1.15.1",
+        "tr46",
+        "webidl-conversions"
+      ]
+    },
+    "whatwg-url@16.0.1_@noble+hashes@2.4.0": {
+      "integrity": "sha512-1to4zXBxmXHV3IiSSEInrreIlu02vUOvrhxJJH5vcxYTBDAx51cqZiKdyTxlecdKNSjj8EcxGBxNf6Vg+945gw==",
+      "dependencies": [
+        "@exodus/bytes@1.15.1_@noble+hashes@2.4.0",
         "tr46",
         "webidl-conversions"
       ]
@@ -6048,7 +6204,15 @@
     "whatwg-url@17.1.0": {
       "integrity": "sha512-3GeworPmc2ZfEEHP7lEbUfBX/L75wdEsi0rLNhXcXxnoN5jyq0SL5gCy06SGW2cyTIZdTvWIDQNQoza++vKeaw==",
       "dependencies": [
-        "@exodus/bytes",
+        "@exodus/bytes@1.15.1",
+        "tr46",
+        "webidl-conversions"
+      ]
+    },
+    "whatwg-url@17.1.0_@noble+hashes@2.4.0": {
+      "integrity": "sha512-3GeworPmc2ZfEEHP7lEbUfBX/L75wdEsi0rLNhXcXxnoN5jyq0SL5gCy06SGW2cyTIZdTvWIDQNQoza++vKeaw==",
+      "dependencies": [
+        "@exodus/bytes@1.15.1_@noble+hashes@2.4.0",
         "tr46",
         "webidl-conversions"
       ]
@@ -6256,6 +6420,8 @@
             "npm:@eslint/js@^9.25.0",
             "npm:@mui/lab@^7.0.0-beta.13",
             "npm:@mui/material@^7.1.0",
+            "npm:@noble/ciphers@^2.4.0",
+            "npm:@noble/hashes@^2.4.0",
             "npm:@tauri-apps/api@^2.9.0",
             "npm:@tauri-apps/plugin-dialog@~2.7.3",
             "npm:@tauri-apps/plugin-fs@~2.5.2",

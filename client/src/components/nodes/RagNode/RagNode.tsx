@@ -10,7 +10,7 @@ import {MonitoredNode} from "../MonitoredNode";
 import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {BaseDialog} from "../../BaseDialog";
 import {DebouncedTextField} from "../../DebouncedTextField";
-import {Icon} from "./constants";
+import {GLOBAL_SECRETS, Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {assertIsRagNodeData, defaultRagNodeData} from "./types/workflow";
@@ -21,6 +21,7 @@ import {useFetchModels} from "../../../hooks/useFetchModels";
 import {DropdownButton} from "../../DropdownButton/DropdownButton";
 import {DocMagnifyingGlass} from "iconoir-react";
 import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from "./hooks/useWeaviateCollections";
+import {useGlobalConfig} from "../../../stores/globalConfig";
 
 
 const EMBEDDING_MODEL_LABEL = "Embedding Model";
@@ -42,9 +43,20 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
         chunkOverlap,
         topK,
         weaviateUrl,
-        weaviateApiKey,
+        weaviateApiKey: savedWeaviateApiKey,
         onConfigChange,
     } = data;
+
+    const {globalData, setGlobalData} = useGlobalConfig();
+    // Shared by every RAG node; Settings → Credentials keeps it after a reload.
+    const weaviateApiKey = globalData[GLOBAL_SECRETS.API_KEY] || "";
+    const setWeaviateApiKey = (value: string) => setGlobalData(GLOBAL_SECRETS.API_KEY, value);
+
+    // A key in an older workflow file (saved before keys were stripped) becomes the shared one, if none is set yet.
+    useEffect(() => {
+        if (!weaviateApiKey && savedWeaviateApiKey) setWeaviateApiKey(savedWeaviateApiKey);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const {
         availableCollections,
@@ -170,8 +182,8 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                         label="API Key (optional)"
                         fullWidth
                         size="small"
-                        value={weaviateApiKey ?? ""}
-                        onChange={value => onConfigChange(id, {weaviateApiKey: value})}
+                        value={weaviateApiKey}
+                        onChange={value => setWeaviateApiKey(value)}
                         helperText="Leave blank for unauthenticated local Weaviate"
                     />
                     <FormControl fullWidth size="small">

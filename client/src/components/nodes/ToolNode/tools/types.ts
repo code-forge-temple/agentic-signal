@@ -21,7 +21,18 @@ export type ToolDefinition = {
     toolSchema: ToolSchema;
     userConfigSchema: UserConfigSchema;
     handlerFactory: (userConfig: any) => (params: any) => Promise<any>;
+    /**
+     * Dot paths into the tool node's data (e.g. `userConfig.apiKey`) that are deleted when the workflow is saved, so
+     * secrets such as API keys and access tokens never reach a workflow file. They're added to the generic ToolNode's
+     * own list when this tool is picked. Empty when the tool holds no secrets.
+     */
     toSanitize: string[];
+    /**
+     * The global store keys this tool's secrets are shared under (e.g. `brave-search.apiKey`): every tool node of
+     * the kind shows and runs with the same value, and Settings → Credentials offers to save it. Session-only
+     * values, like the Google access tokens, aren't listed. Optional; most tools have none.
+     */
+    globalSecrets?: readonly string[];
     renderConfig?: (props: RenderConfigProps) => ReactNode;
     /**
      * Optional per-tool cleanup, bound to userConfig at config-time like handlerFactory.

@@ -15,6 +15,8 @@ import {PathField} from '../../../../../PathField';
 import {listWorkflowsFolder} from '../../../../../../services/workflowsService';
 import {OutsideConnections} from './components/OutsideConnections';
 import {AddModelField} from './components/AddModelField';
+import {Credentials} from './components/Credentials';
+import {Vault} from './components/Vault';
 
 const WORKFLOW_COMMANDS_HINT = "A saved workflow with a Workflow Input becomes a chat command.";
 
@@ -172,6 +174,8 @@ export const Settings = () => {
                     {title: "General", content: generalTab},
                     {title: "Ollama", content: ollamaTab},
                     {title: "Workflows", content: workflowsTab},
+                    {title: "Credentials", content: <Credentials />},
+                    {title: "Vault", content: <Vault />},
                 ]}
             />
         </Box>

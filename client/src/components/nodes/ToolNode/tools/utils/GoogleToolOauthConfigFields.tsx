@@ -7,12 +7,10 @@
 import {Box, Button, Chip, Typography} from "@mui/material";
 import {useGlobalConfig} from "../../../../../stores/globalConfig";
 import {globalToolProp} from "./utils";
+import {ACCESS_TOKEN_KEY, GOOGLE_CLIENT_ID_KEY} from "./oauth";
 import {DebouncedTextField} from "../../../../DebouncedTextField";
 import {FieldsetGroup} from "../../../../FieldsetGroup";
 
-
-const GOOGLE_CLIENT_ID_KEY = 'googleClientId';
-const ACCESS_TOKEN_KEY = 'accessToken';
 
 type GoogleToolConfigFieldsProps = {
     toolSubtype: string;
@@ -40,9 +38,10 @@ export function GoogleToolOauthConfigFields ({
     onConfigChange,
 }: GoogleToolConfigFieldsProps) {
     const {globalData, setGlobalData} = useGlobalConfig();
-    const googleClientId = globalData[GOOGLE_CLIENT_ID_KEY] || userConfig[GOOGLE_CLIENT_ID_KEY] || '';
+    // An empty shared value counts: it was cleared, for every node (ToolNode runs with it the same way).
+    const googleClientId = globalData[GOOGLE_CLIENT_ID_KEY] ?? userConfig[GOOGLE_CLIENT_ID_KEY] ?? '';
     const GLOBAL_ACCESS_TOKEN_KEY = globalToolProp(toolSubtype, ACCESS_TOKEN_KEY);
-    const accessToken = globalData[GLOBAL_ACCESS_TOKEN_KEY] || userConfig[ACCESS_TOKEN_KEY] || '';
+    const accessToken = globalData[GLOBAL_ACCESS_TOKEN_KEY] ?? userConfig[ACCESS_TOKEN_KEY] ?? '';
     const isConnected = !!accessToken.length;
 
     return (

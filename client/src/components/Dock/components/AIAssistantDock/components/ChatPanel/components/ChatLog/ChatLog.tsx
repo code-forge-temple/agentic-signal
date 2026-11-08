@@ -21,6 +21,8 @@ type ChatLogProps = {
     isLoading: boolean;
     onLoadWorkflow: (json: string) => void;
     onDeleteMessage: (index: number) => void;
+    /** Rewind & resend: drops everything after the user's message at `index` and sends it again. */
+    onResendMessage: (index: number) => void;
     /** The commands the chat can run: a reply's `command` block naming one of them is a suggestion. */
     commands: {command: string}[];
     /** Runs a suggested command, `/research …`, as the user's own message. */
@@ -28,7 +30,7 @@ type ChatLogProps = {
     onSkipSuggestion: (index: number) => void;
 };
 
-export const ChatLog = ({messages, minimumContext, isLoading, onLoadWorkflow, onDeleteMessage, commands, onRunSuggestion, onSkipSuggestion}: ChatLogProps) => {
+export const ChatLog = ({messages, minimumContext, isLoading, onLoadWorkflow, onDeleteMessage, onResendMessage, commands, onRunSuggestion, onSkipSuggestion}: ChatLogProps) => {
     const chatLogRef = useRef<HTMLDivElement>(null);
     const {updateScroll, setAutoScroll, userInterruptAutoScroll} = useAutoScroll();
     const lastIsAssistant = messages.length > 0 && messages[messages.length - 1].role === ROLE.ASSISTANT;
@@ -37,9 +39,10 @@ export const ChatLog = ({messages, minimumContext, isLoading, onLoadWorkflow, on
 
     // The same functions on every redraw, so the messages' memo holds: the chat panel's own callbacks change with
     // every streamed chunk and every layer switch. Each calls the newest one.
-    const latest = useLatestValue({onLoadWorkflow, onDeleteMessage, onRunSuggestion, onSkipSuggestion});
+    const latest = useLatestValue({onLoadWorkflow, onDeleteMessage, onResendMessage, onRunSuggestion, onSkipSuggestion});
     const loadWorkflow = useCallback((json: string) => latest.current.onLoadWorkflow(json), [latest]);
     const deleteMessage = useCallback((index: number) => latest.current.onDeleteMessage(index), [latest]);
+    const resendMessage = useCallback((index: number) => latest.current.onResendMessage(index), [latest]);
     const runSuggestion = useCallback((message: string) => latest.current.onRunSuggestion(message), [latest]);
     const skipSuggestion = useCallback((index: number) => latest.current.onSkipSuggestion(index), [latest]);
 
@@ -115,10 +118,13 @@ export const ChatLog = ({messages, minimumContext, isLoading, onLoadWorkflow, on
                             index={idx}
                             isLast={idx === messages.length - 1}
                             busy={isLoading && nextMessage === undefined}
+                            // Only a user's message changes with it, so a reply's memo holds.
+                            resendDisabled={msg.role === ROLE.USER && isLoading}
                             nextMessage={nextMessage}
                             commandNames={commandNames}
                             onLoadWorkflow={loadWorkflow}
                             onDelete={deleteMessage}
+                            onResend={resendMessage}
                             onRunSuggestion={runSuggestion}
                             onSkipSuggestion={skipSuggestion}
                         />

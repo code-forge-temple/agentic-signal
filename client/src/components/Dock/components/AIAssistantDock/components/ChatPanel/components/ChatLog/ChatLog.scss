@@ -91,6 +91,15 @@
                 color: rgba(255, 100, 100, 0.9);
                 background: rgba(255, 80, 80, 0.12);
             }
+
+            &.resend:hover {
+                color: rgba(120, 180, 255, 0.95);
+                background: rgba(100, 160, 255, 0.12);
+            }
+
+            &.Mui-disabled {
+                color: rgba(255, 255, 255, 0.12);
+            }
         }
     }
 

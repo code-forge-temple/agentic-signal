@@ -51,6 +51,7 @@ const props = (overrides: Partial<ComponentProps<typeof ChatLog>> = {}): Compone
     isLoading: false,
     onLoadWorkflow: vi.fn(),
     onDeleteMessage: vi.fn(),
+    onResendMessage: vi.fn(),
     commands: [],
     onRunSuggestion: vi.fn(),
     onSkipSuggestion: vi.fn(),
@@ -125,6 +126,27 @@ describe('ChatLog', () => {
         expect(before).not.toHaveBeenCalled();
         expect(after).toHaveBeenCalledTimes(1);
         expect(JSON.parse(after.mock.calls[0][0] as string)).toMatchObject({nodes: [{id: 'second'}]});
+    });
+
+    it('offers Rewind & resend on the user\'s messages only, and resends the one clicked', () => {
+        const onResendMessage = vi.fn();
+
+        render(<ChatLog {...props({onResendMessage})} />);
+
+        const buttons = screen.getAllByRole('button', {name: 'Rewind & resend message'});
+
+        // The three user messages; the two replies have none.
+        expect(buttons).toHaveLength(3);
+
+        fireEvent.click(buttons[1]);
+
+        expect(onResendMessage).toHaveBeenCalledWith(2);
+    });
+
+    it('disables Rewind & resend while a reply runs', () => {
+        render(<ChatLog {...props({isLoading: true})} />);
+
+        expect(screen.getAllByRole('button', {name: 'Rewind & resend message'}).every(button => (button as HTMLButtonElement).disabled)).toBe(true);
     });
 
     it('offers the Import button only once the reply has finished', async () => {

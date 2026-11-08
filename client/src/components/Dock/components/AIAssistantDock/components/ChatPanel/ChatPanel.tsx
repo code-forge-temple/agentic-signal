@@ -14,7 +14,7 @@ import {buildSystemPrompt} from '../../../../../../services/buildSystemPrompt';
 import {FetchAiResponseSuccess, Message, MessageRole} from '../../../../../../types/ollama.types';
 import {TRIPLE_BACKTICK} from '@shared/constants';
 import {DRAG_CANCEL_SELECTOR, AI_ASSISTANT_KEYWORDS, ROLE} from '../../../../../../constants';
-import {AI_ASSISTANT_TITLE, ChatEntry, ChatMessage, ContextUsage, EMPTY_CONTEXT_USAGE, NOTICE_ROLE} from '../../constants';
+import {AI_ASSISTANT_TITLE, ChatEntry, ChatMessage, ChatNotice, ContextUsage, EMPTY_CONTEXT_USAGE, NOTICE_ROLE} from '../../constants';
 import {useGlobalConfig} from '../../../../../../stores/globalConfig';
 import {useDraggable} from '../../../../../../hooks/useDraggable';
 import {useStreamThrottle} from '../../../../../../hooks/useStreamThrottle';
@@ -22,6 +22,7 @@ import {LlmSettingsDialog} from './components/ChatHeader/components/LlmSettingsD
 import {useLlmSettings} from '../../hooks/useLlmSettings';
 import {DEFAULT_CONTEXT_WINDOW, getModelSettings} from '../../utils/llmSettings';
 import {contextWindowWarning, isCloudModel, minimumContextWindow, resolveContextLimit} from '../../utils/modelContext';
+import {withModelSwitch} from '../../utils/modelSwitch';
 import {useSnackbar} from 'notistack';
 import {NodeEnvelope} from '../../../../../../types/workflow';
 import {CommandError} from '../../../../../../services/commandRouter';
@@ -41,6 +42,9 @@ import {
 
 
 const NO_MODEL = '';
+
+// eslint-disable-next-line max-len
+const unknownCommandText = (command: string) => `Unknown command /${command}. Save a workflow that answers to it to your workflows folder, or type / to see the commands you can run.`;
 
 type ChatPanelProps = {
     onClose: () => void;
@@ -248,6 +252,14 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         }
     }, [selectedModel, push, flush, cancel, settingsMap, setLastAssistantMessage]);
 
+    const respond = useCallback(async (conversation: ChatEntry[]) => {
+        setMessages(conversation);
+
+        const commandsSection = commandWorkflows.length > 0 ? chatCommandsPrompt(commandWorkflows) : '';
+
+        await streamReply(conversation, buildSystemPrompt() + commandsSection + MESSAGE_TIME_NOTE);
+    }, [commandWorkflows, streamReply]);
+
     const handleSend = useCallback(async (text: string) => {
         if (!text || !selectedModel || isLoading) return;
 
@@ -266,23 +278,16 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
             sentAt: Date.now(),
         };
 
-        const updatedMessages = [...messages, userMessage];
+        await respond([...messages, userMessage]);
+    }, [messages, selectedModel, isLoading, getWorkflowJson, respond]);
 
-        setMessages(updatedMessages);
-
-        // The AI Buddy may end a reply suggesting one of the commands, for the user to run or skip.
-        const commandsSection = commandWorkflows.length > 0 ? chatCommandsPrompt(commandWorkflows) : '';
-
-        await streamReply(updatedMessages, buildSystemPrompt() + commandsSection + MESSAGE_TIME_NOTE);
-    }, [messages, selectedModel, isLoading, getWorkflowJson, streamReply, commandWorkflows]);
-
-    // `/command text`: the AI Buddy runs that workflow on its own layer, then answers from the result.
-    const handleCommand = useCallback(async (message: string, commandWorkflow: CommandWorkflow, text: string) => {
+    // `history`: what comes before the message, the whole chat or less when a message is resent.
+    const handleCommand = useCallback(async (message: string, commandWorkflow: CommandWorkflow, text: string, history: ChatEntry[] = messages) => {
         if (!selectedModel || isLoading) return;
 
         const {command, description, workflow} = commandWorkflow;
         const userMessage: ChatMessage = {role: ROLE.USER, content: message, sentAt: Date.now()};
-        const conversation = [...messages, userMessage];
+        const conversation = [...history, userMessage];
 
         setMessages([...conversation, {role: ROLE.ASSISTANT, content: `Running **/${command}** on the ${AI_ASSISTANT_TITLE} layer…`, runningCommand: command}]);
         setIsLoading(true);
@@ -329,8 +334,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
             const commandWorkflow = commandWorkflows.find(w => w.command === commandMessage.command);
 
             if (!commandWorkflow) {
-                // eslint-disable-next-line max-len
-                enqueueSnackbar(`Unknown command /${commandMessage.command}. Save a workflow that answers to it to your workflows folder, or type / to see the commands you can run.`, {variant: 'warning'});
+                enqueueSnackbar(unknownCommandText(commandMessage.command), {variant: 'warning'});
 
                 return false;
             }
@@ -349,6 +353,33 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
     const handleRunSuggestion = useCallback((message: string) => {
         if (!isLoading) handleSubmit(message);
     }, [isLoading, handleSubmit]);
+
+    const handleResendMessage = useCallback((index: number) => {
+        const message = messages[index];
+
+        if (message?.role !== ROLE.USER || !selectedModel || isLoading) return;
+
+        const commandMessage = parseCommandMessage(message.content);
+        const commandWorkflow = commandMessage && commandWorkflows.find(w => w.command === commandMessage.command);
+
+        if (commandMessage && !commandWorkflow) {
+            enqueueSnackbar(unknownCommandText(commandMessage.command), {variant: 'warning'});
+
+            return;
+        }
+
+        // A model switch among the dropped entries still holds: it's redrawn before the resent message.
+        const firstSwitch = messages.slice(index + 1).find((entry): entry is ChatNotice => entry.role === NOTICE_ROLE);
+        const history: ChatEntry[] = firstSwitch && firstSwitch.previousModel !== selectedModel
+            ? withModelSwitch(messages.slice(0, index), selectedModel, firstSwitch.previousModel)
+            : messages.slice(0, index);
+
+        // The old count would read high until the new reply measures it.
+        setContextUsage(EMPTY_CONTEXT_USAGE);
+
+        if (commandMessage && commandWorkflow) void handleCommand(message.content, commandWorkflow, commandMessage.text, history);
+        else void respond([...history, {...message, sentAt: Date.now()}]);
+    }, [messages, selectedModel, isLoading, commandWorkflows, enqueueSnackbar, handleCommand, respond]);
 
     const handleSkipSuggestion = useCallback((index: number) => {
         setMessages(prev => prev.map((message, i) => i === index && message.role === ROLE.ASSISTANT ? {...message, suggestionSkipped: true} : message));
@@ -382,19 +413,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         setSelectedModel(model);
         setGlobalData('selectedModel', model, true);
 
-        // Marks where the conversation switched models. Another switch straight after updates that
-        // line, and switching straight back removes it.
-        setMessages(prev => {
-            const last = prev[prev.length - 1];
-
-            if (!last) return prev;
-
-            if (last.role !== NOTICE_ROLE) return [...prev, {role: NOTICE_ROLE, model, previousModel: selectedModel}];
-
-            const rest = prev.slice(0, -1);
-
-            return model === last.previousModel ? rest : [...rest, {...last, model}];
-        });
+        setMessages(prev => withModelSwitch(prev, model, selectedModel));
     }, [setGlobalData, selectedModel]);
 
     const handleClose = useCallback(() => {
@@ -461,6 +480,7 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
                         isLoading={isLoading}
                         onLoadWorkflow={handleImportWorkflow}
                         onDeleteMessage={handleDeleteMessage}
+                        onResendMessage={handleResendMessage}
                         commands={commandWorkflows}
                         onRunSuggestion={handleRunSuggestion}
                         onSkipSuggestion={handleSkipSuggestion}

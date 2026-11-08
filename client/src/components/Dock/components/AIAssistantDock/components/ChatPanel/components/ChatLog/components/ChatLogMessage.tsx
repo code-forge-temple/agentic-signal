@@ -24,11 +24,13 @@ type ChatLogMessageProps = {
     isLast: boolean;
     /** A reply or command is running and nothing came after this message: as the last one, it may be streaming. */
     busy: boolean;
+    resendDisabled: boolean;
     /** The message after this one, notices aside: it tells what became of this message's suggestion. */
     nextMessage: ChatMessage | undefined;
     commandNames: string[];
     onLoadWorkflow: (json: string) => void;
     onDelete: (index: number) => void;
+    onResend: (index: number) => void;
     onRunSuggestion: (message: string) => void;
     onSkipSuggestion: (index: number) => void;
 };
@@ -42,10 +44,12 @@ export const ChatLogMessage = memo(({
     index,
     isLast,
     busy,
+    resendDisabled,
     nextMessage,
     commandNames,
     onLoadWorkflow,
     onDelete,
+    onResend,
     onRunSuggestion,
     onSkipSuggestion,
 }: ChatLogMessageProps) => {
@@ -115,10 +119,16 @@ export const ChatLogMessage = memo(({
     }, [isStreaming, onLoadWorkflow]);
 
     const handleDelete = useCallback(() => onDelete(index), [onDelete, index]);
+    const handleResend = useCallback(() => onResend(index), [onResend, index]);
 
     return (
         <div className={`chat-log-row ${message.role}`}>
-            <MessageActions onDelete={handleDelete} deleteTooltip={busy && isLast ? 'Cancel & delete' : 'Delete message'} />
+            <MessageActions
+                onDelete={handleDelete}
+                deleteTooltip={busy && isLast ? 'Cancel & delete' : 'Delete message'}
+                onResend={isAssistant ? undefined : handleResend}
+                resendDisabled={resendDisabled}
+            />
             <div className={`chat-log-message ${message.role}`}>
                 {message.commandResults && (
                     <ThinkingAccordion thinking={message.commandResults.content} isStreaming={false} label={message.commandResults.label} defaultOpen={false} />

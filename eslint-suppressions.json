@@ -398,26 +398,6 @@
       "count": 1
     }
   },
-  "server/tools/FormInteractionTool/utils/fieldExtractor.ts": {
-    "complexity": {
-      "count": 3
-    },
-    "max-depth": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/expression-complexity": {
-      "count": 2
-    },
-    "sonarjs/no-identical-functions": {
-      "count": 2
-    }
-  },
   "server/tools/GdriveFetchFilesTool/service.ts": {
     "complexity": {
       "count": 1

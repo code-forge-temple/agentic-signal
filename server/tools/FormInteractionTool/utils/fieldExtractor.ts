@@ -4,258 +4,199 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import type {Page} from "npm:playwright";
 import {FormInteractionButton, FormInteractionField} from "../types.ts";
 
-/**
- * Returns the names/labels of required fields that are still empty.
- * An empty array means the form is ready to submit.
+
+/*
+ * The functions down to evaluateWith run inside the page. page.evaluate sends one function's source and nothing it refers
+ * to, so evaluateWith sends the helpers along as source too: each may call the others, and nothing outside them.
  */
-export async function checkEmptyRequiredFields (page: any): Promise<string[]> {
-    return page.evaluate((): string[] => {
-        // getComputedStyle(el) only reflects the element's OWN display/visibility —
-        // it does not account for an ancestor having display:none (e.g. a hidden page
-        // of a multi-step form), so a field inside a hidden step still reads as visible.
-        // checkVisibility() correctly walks the whole ancestor chain.
-        const isVisible = (el: Element): boolean =>
-            typeof (el as any).checkVisibility === "function"
-                ? (el as any).checkVisibility({visibilityProperty: true})
-                : (el as HTMLElement).offsetParent !== null && window.getComputedStyle(el).visibility !== "hidden";
 
-        const missing: string[] = [];
+// checkVisibility() walks the ancestor chain, so a field in a hidden step of a multi-step form isn't visible;
+// getComputedStyle only reflects the element's own styles, so it's the fallback for browsers without it.
+function isVisible (el: Element): boolean {
+    const element = el as HTMLElement & {checkVisibility?: (options: object) => boolean};
 
-        document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-            "input[required], select[required], textarea[required]"
-        ).forEach((el) => {
-            // Only validate visible fields — hidden pages of multi-step forms
-            // must not block submission of the current page.
-            if (!isVisible(el)) return;
+    if (typeof element.checkVisibility === "function") return element.checkVisibility({visibilityProperty: true});
 
-            const isCheckbox = (el as HTMLInputElement).type === "checkbox";
-            const isEmpty = isCheckbox
-                ? !(el as HTMLInputElement).checked
-                : !el.value.trim();
-
-            if (isEmpty) {
-                const lbl = el.id
-                    ? document.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(el.id)}"]`)
-                    : null;
-
-                missing.push(lbl?.innerText?.replace("*", "").trim() || el.name || el.id || "unknown");
-            }
-        });
-
-        // Also check contenteditable rich-text fields marked aria-required.
-        document.querySelectorAll<HTMLElement>('[contenteditable="true"][aria-required="true"]').forEach((el) => {
-            if (!isVisible(el)) return;
-
-            if (!el.innerText?.trim()) {
-                const lbl = el.id
-                    ? document.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(el.id)}"]`)
-                    : null;
-                const labelledBy = el.getAttribute("aria-labelledby");
-                const labelByRef = labelledBy ? document.getElementById(labelledBy) : null;
-
-                missing.push(
-                    lbl?.innerText?.replace("*", "").trim() ||
-                    labelByRef?.innerText?.replace("*", "").trim() ||
-                    el.getAttribute("aria-label") ||
-                    el.id ||
-                    "Rich text field"
-                );
-            }
-        });
-
-        return missing;
-    });
+    return element.offsetParent !== null && window.getComputedStyle(el).visibility !== "hidden";
 }
 
-/** Extracts all visible, interactive form fields from the current page. */
-export async function extractFormFields (page: any): Promise<FormInteractionField[]> {
-    const fields: FormInteractionField[] = await page.evaluate((): FormInteractionField[] => {
-        // getComputedStyle(el) only reflects the element's OWN display/visibility —
-        // it does not account for an ancestor having display:none (e.g. a hidden page
-        // of a multi-step form), so a field inside a hidden step still reads as visible.
-        // checkVisibility() correctly walks the whole ancestor chain.
-        const isVisible = (el: Element): boolean =>
-            typeof (el as any).checkVisibility === "function"
-                ? (el as any).checkVisibility({visibilityProperty: true})
-                : (el as HTMLElement).offsetParent !== null && window.getComputedStyle(el).visibility !== "hidden";
+// A selector that finds exactly this element: its id, its tag and name, or its position among the page's elements that
+// match those (Playwright's `>> nth=`, counted over the whole page, unlike CSS's :nth-child and :nth-of-type).
+function selectorOf (el: Element): string {
+    if (el.id) return `#${CSS.escape(el.id)}`;
 
-        const SKIP_TYPES = new Set(["hidden", "submit", "button", "reset", "image"]);
-        const results: FormInteractionField[] = [];
+    const tag = el.tagName.toLowerCase();
+    const name = el.getAttribute("name");
+    const base = name ? `${tag}[name="${CSS.escape(name)}"]` : tag;
+    const matches = Array.from(document.querySelectorAll(base));
 
-        const inputs = Array.from(
-            document.querySelectorAll('input, select, textarea, [contenteditable="true"]')
-        ) as Element[];
-
-        for (const el of inputs) {
-            // Skip invisible elements.
-            if (!isVisible(el) || (el as HTMLInputElement).type === "hidden") continue;
-
-            const isContentEditable = el.getAttribute("contenteditable") === "true";
-            const inputType = isContentEditable
-                ? "contenteditable"
-                : ((el as HTMLInputElement).type ?? el.tagName.toLowerCase());
-
-            if (SKIP_TYPES.has(inputType)) continue;
-
-            // Do NOT deduplicate radio buttons — return each one individually so
-            // the LLM receives the exact selector for each option (#workOnsite,
-            // #workHybrid, #workRemote) rather than a single group entry that
-            // forces it to guess a combined selector.
-
-            // --- Label resolution ---
-            let label = "";
-
-            if (el.id) {
-                const lbl = document.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(el.id)}"]`);
-
-                if (lbl) label = lbl.innerText.trim();
-            }
-
-            if (!label) {
-                label =
-                    el.getAttribute("aria-label")?.trim() ||
-                    (el.getAttribute("aria-labelledby")
-                        ? document.getElementById(el.getAttribute("aria-labelledby")!)?.innerText?.trim() ?? ""
-                        : "") ||
-                    (el as HTMLInputElement).placeholder?.trim() ||
-                    "";
-            }
-
-            if (!label) {
-                // Walk up a few levels looking for a <label> or visible text node.
-                let ancestor: Element | null = el.parentElement;
-
-                for (let depth = 0; depth < 4 && ancestor && !label; depth++) {
-                    const lbl = ancestor.querySelector("label");
-
-                    if (lbl && !lbl.contains(el)) {
-                        label = lbl.innerText.trim();
-                    } else {
-                        const textNodes = Array.from(ancestor.childNodes)
-                            .filter((n) => n.nodeType === Node.TEXT_NODE)
-                            .map((n) => n.textContent?.trim() ?? "")
-                            .filter(Boolean);
-
-                        if (textNodes.length) label = textNodes.join(" ").trim();
-                    }
-
-                    ancestor = ancestor.parentElement;
-                }
-            }
-
-            if (!label) label = (el as HTMLInputElement).name || el.id || "";
-
-            // --- Selector building ---
-            let selector = "";
-
-            if (el.id) {
-                selector = `#${CSS.escape(el.id)}`;
-            } else if ((el as HTMLInputElement).name) {
-                const tag = el.tagName.toLowerCase();
-                const elName = (el as HTMLInputElement).name;
-                const candidates = document.querySelectorAll(`${tag}[name="${elName}"]`);
-
-                if (candidates.length === 1) {
-                    selector = `${tag}[name="${elName}"]`;
-                } else {
-                    const idx = Array.from(candidates).indexOf(el as Element);
-
-                    selector = `${tag}[name="${elName}"]:nth-of-type(${idx + 1})`;
-                }
-            } else {
-                const tag = el.tagName.toLowerCase();
-                const all = Array.from(document.querySelectorAll(tag));
-                const idx = all.indexOf(el as Element);
-
-                selector = `${tag}:nth-child(${idx + 1})`;
-            }
-
-            // --- Options for <select> ---
-            let options: string[] | undefined;
-
-            if (el instanceof HTMLSelectElement) {
-                options = Array.from(el.options)
-                    .filter((o) => o.value && o.text.trim())
-                    .map((o) => o.text.trim());
-            }
-
-            // --- Current value (type-aware) ---
-            // Checkboxes: use .checked, not .value (always "on").
-            // Radio buttons: report value only when this specific radio is selected.
-            // Everything else: .value as before.
-            let currentValue: string | undefined;
-
-            if (inputType === "contenteditable") {
-                currentValue = (el as HTMLElement).innerText?.trim() || undefined;
-            } else if (inputType === "checkbox") {
-                currentValue = (el as HTMLInputElement).checked ? "on" : undefined;
-            } else if (inputType === "radio") {
-                currentValue = (el as HTMLInputElement).checked ? (el as HTMLInputElement).value : undefined;
-            } else {
-                currentValue = (el as HTMLInputElement).value || undefined;
-            }
-
-            results.push({
-                label: label.substring(0, 120),
-                name: ((el as HTMLInputElement).name || el.id || "").substring(0, 120),
-                type: inputType,
-                selector,
-                required: (el as HTMLInputElement).required || el.getAttribute("aria-required") === "true" || false,
-                options: options?.length ? options : undefined,
-                currentValue,
-                placeholder: (el as HTMLInputElement).placeholder || el.getAttribute("placeholder") || undefined,
-            });
-        }
-
-        return results;
-    });
-
-    return fields as FormInteractionField[];
+    return matches.length === 1 ? base : `${base} >> nth=${matches.indexOf(el)}`;
 }
 
-/** Extracts all visible, enabled clickable controls (buttons, submit/reset inputs) from the current page. */
-export async function extractActionButtons (page: any): Promise<FormInteractionButton[]> {
-    const buttons: FormInteractionButton[] = await page.evaluate((): FormInteractionButton[] => {
-        const isVisible = (el: Element): boolean =>
-            typeof (el as any).checkVisibility === "function"
-                ? (el as any).checkVisibility({visibilityProperty: true})
-                : (el as HTMLElement).offsetParent !== null && window.getComputedStyle(el).visibility !== "hidden";
+function labelElementFor (el: Element): HTMLElement | null {
+    return el.id ? document.querySelector<HTMLElement>(`label[for="${CSS.escape(el.id)}"]`) : null;
+}
 
-        const results: FormInteractionButton[] = [];
+function ariaLabelOf (el: Element): string {
+    const labelledBy = el.getAttribute("aria-labelledby");
 
-        const controls = Array.from(
-            document.querySelectorAll('button, input[type="submit"], input[type="button"], input[type="reset"]')
-        ) as Element[];
+    return el.getAttribute("aria-label")?.trim() || (labelledBy ? document.getElementById(labelledBy)?.innerText?.trim() ?? "" : "");
+}
 
-        for (const el of controls) {
-            if (!isVisible(el) || (el as HTMLButtonElement).disabled) continue;
+// A <label> in the ancestor that isn't the field's own, or the ancestor's loose text.
+function labelIn (ancestor: Element, el: Element): string {
+    const label = ancestor.querySelector("label");
 
-            const label =
-                (el.tagName.toLowerCase() === "button"
-                    ? (el as HTMLElement).innerText?.trim()
-                    : (el as HTMLInputElement).value?.trim()) ||
-                el.getAttribute("aria-label")?.trim() ||
-                "";
+    if (label && !label.contains(el)) return label.innerText.trim();
 
-            let selector = "";
+    return Array.from(ancestor.childNodes)
+        .filter(node => node.nodeType === Node.TEXT_NODE)
+        .map(node => node.textContent?.trim() ?? "")
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+}
 
-            if (el.id) {
-                selector = `#${CSS.escape(el.id)}`;
-            } else {
-                const tag = el.tagName.toLowerCase();
-                const all = Array.from(document.querySelectorAll(tag));
-                const idx = all.indexOf(el as Element);
+// Up to four levels up.
+function nearbyLabelOf (el: Element): string {
+    let ancestor = el.parentElement;
 
-                selector = `${tag}:nth-of-type(${idx + 1})`;
-            }
+    for (let depth = 0; depth < 4 && ancestor; depth++, ancestor = ancestor.parentElement) {
+        const label = labelIn(ancestor, el);
 
-            results.push({label: label.substring(0, 120) || "(unlabeled)", selector});
-        }
+        if (label) return label;
+    }
 
-        return results;
-    });
+    return "";
+}
 
-    return buttons;
+function labelOf (el: Element): string {
+    const input = el as HTMLInputElement;
+    const described = labelElementFor(el)?.innerText.trim() || ariaLabelOf(el) || input.placeholder?.trim();
+    const found = described || nearbyLabelOf(el);
+
+    return found || input.name || el.id || "";
+}
+
+function fieldTypeOf (el: Element): string {
+    return el.getAttribute("contenteditable") === "true" ? "contenteditable" : (el as HTMLInputElement).type ?? el.tagName.toLowerCase();
+}
+
+function optionsOf (el: Element): string[] | undefined {
+    if (!(el instanceof HTMLSelectElement)) return undefined;
+
+    const options = Array.from(el.options).filter(option => option.value && option.text.trim()).map(option => option.text.trim());
+
+    return options.length > 0 ? options : undefined;
+}
+
+// A checkbox's value is always "on", so it's reported only when checked; a radio's, only for the selected one.
+function currentValueOf (el: Element, type: string): string | undefined {
+    const input = el as HTMLInputElement;
+
+    if (type === "contenteditable") return (el as HTMLElement).innerText?.trim() || undefined;
+
+    if (type === "checkbox") return input.checked ? "on" : undefined;
+
+    if (type === "radio") return input.checked ? input.value : undefined;
+
+    return input.value || undefined;
+}
+
+// Each radio button is a field of its own, so the LLM gets every option's exact selector instead of guessing one for
+// the group.
+function fieldOf (el: Element): FormInteractionField | null {
+    const type = fieldTypeOf(el);
+
+    if (!isVisible(el) || ["hidden", "submit", "button", "reset", "image"].includes(type)) return null;
+
+    const input = el as HTMLInputElement;
+
+    return {
+        label: labelOf(el).substring(0, 120),
+        name: (input.name || el.id || "").substring(0, 120),
+        type,
+        selector: selectorOf(el),
+        required: input.required || el.getAttribute("aria-required") === "true" || false,
+        options: optionsOf(el),
+        currentValue: currentValueOf(el, type),
+        placeholder: input.placeholder || el.getAttribute("placeholder") || undefined,
+    };
+}
+
+function readFormFields (): FormInteractionField[] {
+    return Array.from(document.querySelectorAll('input, select, textarea, [contenteditable="true"]'))
+        .map(fieldOf)
+        .filter((field): field is FormInteractionField => field !== null);
+}
+
+function buttonOf (el: Element): FormInteractionButton | null {
+    if (!isVisible(el) || (el as HTMLButtonElement).disabled) return null;
+
+    const text = el.tagName.toLowerCase() === "button" ? (el as HTMLElement).innerText?.trim() : (el as HTMLInputElement).value?.trim();
+    const label = text || el.getAttribute("aria-label")?.trim() || "";
+
+    return {label: label.substring(0, 120) || "(unlabeled)", selector: selectorOf(el)};
+}
+
+function readActionButtons (): FormInteractionButton[] {
+    return Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], input[type="reset"]'))
+        .map(buttonOf)
+        .filter((button): button is FormInteractionButton => button !== null);
+}
+
+function withoutStar (el: HTMLElement | null): string {
+    return el?.innerText?.replace("*", "").trim() ?? "";
+}
+
+function missingFieldName (el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string | null {
+    const filled = el.type === "checkbox" ? (el as HTMLInputElement).checked : el.value.trim() !== "";
+
+    if (!isVisible(el) || filled) return null;
+
+    return withoutStar(labelElementFor(el)) || el.name || el.id || "unknown";
+}
+
+function missingRichTextName (el: HTMLElement): string | null {
+    if (!isVisible(el) || el.innerText?.trim()) return null;
+
+    const labelledBy = el.getAttribute("aria-labelledby");
+    const labelled = withoutStar(labelElementFor(el)) || withoutStar(labelledBy ? document.getElementById(labelledBy) : null);
+
+    return labelled || el.getAttribute("aria-label") || el.id || "Rich text field";
+}
+
+// Hidden steps of a multi-step form don't block the step on screen.
+function readMissingRequired (): string[] {
+    const fields = Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        "input[required], select[required], textarea[required]"
+    )).map(missingFieldName);
+    const richText = Array.from(document.querySelectorAll<HTMLElement>('[contenteditable="true"][aria-required="true"]')).map(missingRichTextName);
+
+    return [...fields, ...richText].filter((name): name is string => name !== null);
+}
+
+type InPage = (...args: never[]) => unknown;
+
+const evaluateWith = async <T> (page: Page, main: () => T, helpers: InPage[]): Promise<T> =>
+    await page.evaluate<T>(`(() => {\n${helpers.map(String).join("\n")}\nreturn (${String(main)})();\n})()`);
+
+const LABEL_HELPERS = [labelElementFor, ariaLabelOf, labelIn, nearbyLabelOf, labelOf];
+
+/** The labels (or names) of the visible required fields still empty; none means the form can be submitted. */
+export async function checkEmptyRequiredFields (page: Page): Promise<string[]> {
+    return await evaluateWith(page, readMissingRequired, [isVisible, labelElementFor, withoutStar, missingFieldName, missingRichTextName]);
+}
+
+/** Every visible, interactive form field on the page. */
+export async function extractFormFields (page: Page): Promise<FormInteractionField[]> {
+    return await evaluateWith(page, readFormFields, [isVisible, selectorOf, ...LABEL_HELPERS, fieldTypeOf, optionsOf, currentValueOf, fieldOf]);
+}
+
+/** Every visible, enabled clickable control on the page: buttons and submit / button / reset inputs. */
+export async function extractActionButtons (page: Page): Promise<FormInteractionButton[]> {
+    return await evaluateWith(page, readActionButtons, [isVisible, selectorOf, buttonOf]);
 }

@@ -6,7 +6,7 @@
 
 
 import {WebPageToMarkdownResult} from "./types.ts";
-import {launchBrowser} from "../../utils/browserUtils.ts";
+import {launchBrowser, setPageSize} from "../../utils/browserUtils.ts";
 import TurndownService from "npm:turndown";
 
 const PAGE_TIMEOUT_MS = 30_000;
@@ -49,7 +49,7 @@ export async function fetchWebPageAsMarkdown (url: string, browserPath?: string)
                     "Accept-Language": "en-US,en;q=0.9",
                 });
 
-                await page.setViewportSize({width: 1280, height: 800});
+                await setPageSize(page, {width: 1280, height: 800});
 
                 // "domcontentloaded" rather than "load": shop pages full of trackers and ads can
                 // miss the "load" event entirely even though their content is already there.

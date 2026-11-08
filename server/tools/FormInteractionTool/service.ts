@@ -11,6 +11,7 @@ import {cleanupTempDir, writeTempFiles} from "./utils/fileUtils.ts";
 import {closeSession, getOrCreateSession} from "./utils/sessionManager.ts";
 import {devLog} from "../../utils/logger.ts";
 import {withTimeout} from "./utils/withTimeout.ts";
+import {setPageSize} from "../../utils/browserUtils.ts";
 
 const NAV_TIMEOUT_MS = 20_000;
 
@@ -72,7 +73,7 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
                 });
 
                 await page.setExtraHTTPHeaders({"Accept-Language": "en-US,en;q=0.9"});
-                await page.setViewportSize({width: 1280, height: 800});
+                await setPageSize(page, {width: 1280, height: 800});
 
                 // --- Navigate (only for a brand-new session — a reused session is
                 // already sitting on whatever page/step the previous call left it on). ---

@@ -6,6 +6,7 @@
 
 import {Browser, chromium, LaunchOptions, Page} from "npm:playwright";
 import {withTimeout} from "./withTimeout.ts";
+import {newMinimizedPage} from "../../../utils/browserUtils.ts";
 
 // How long an idle form session is kept alive before its browser is closed.
 // Generous because a human may be watching/solving a captcha between LLM calls.
@@ -84,7 +85,7 @@ export async function getOrCreateSession (
     }
 
     const browser = await chromium.launch(launchOptions);
-    const page = await browser.newPage();
+    const page = await newMinimizedPage(browser);
 
     sessions.set(key, {browser, page, idleTimer: scheduleExpiry(key)});
 

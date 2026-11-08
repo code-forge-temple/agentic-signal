@@ -65,7 +65,7 @@ export function changeReport (changes: FileChange[]): string {
 
         const current = describePenalties(change.health.penalties).map(line => `         ${line}`);
 
-        return [`  ${score.padEnd(11)}${change.file}${mark}`, ...current, ...newProblems(change.added)].join("\n");
+        return [`  ${score.padEnd(12)}${change.file}${mark}`, ...current, ...newProblems(change.added)].join("\n");
     });
     const worse = changes.filter(change => change.regression).length;
 

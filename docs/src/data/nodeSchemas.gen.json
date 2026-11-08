@@ -670,5 +670,27 @@
       "toolSubtype"
     ],
     "additionalProperties": false
+  },
+  "workflow-input": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "type": "string",
+        "description": "The command that starts the workflow: lowercase letters, digits and hyphens, e.g. \"research\". Called as /research in the AI Buddy chat, or with POST /workflows/research from outside."
+      },
+      "description": {
+        "type": "string",
+        "description": "What the command does, shown in the AI Buddy chat's command list and to outside apps listing the commands."
+      }
+    },
+    "required": [
+      "command"
+    ],
+    "additionalProperties": false
+  },
+  "workflow-output": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
   }
 }

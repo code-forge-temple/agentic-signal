@@ -13,9 +13,9 @@ import TabItem from '@theme/TabItem';
 <Tabs>
     <TabItem value="inputs" label="Inputs" default>
         - `query` ¹ (string): Google Drive search query using Google Drive search operators (e.g., `"name contains \"report\""`).  
-        - `googleClientId` (string, user config): Google OAuth2 Client ID.  
+        - `googleClientId` (string, user config): Google OAuth2 Client ID. One Client ID serves every Google tool; save it in [Settings → Credentials](../../../getting-started/configuration#credentials) as `googleClientId` to keep it after a reload.  
         You must [create an OAuth2 client in Google Cloud Console](../../../getting-started/google-oauth-client) before using this tool.  
-        - `accessToken` (OAuth, user config): Google Drive Authentication.  
+        - `accessToken` (OAuth, user config): Google Drive Authentication. Connecting one Google Drive tool connects all of them, until the app reloads.  
         This field will be auto-filled if you use the **CONNECT DRIVE** button.
         - `maxResults` (integer, user config): Maximum number of files to fetch (default: 5, min: 1, max: 50)
         - `requireToolUse` (boolean, user config): Require tool use (forces the LLM to always call this tool; default: true)

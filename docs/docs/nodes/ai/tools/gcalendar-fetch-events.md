@@ -15,9 +15,9 @@ import TabItem from '@theme/TabItem';
         - `query` ¹ (string): Text search query to find events by summary or description.
         - `timeMin` ¹ (string, optional): Lower bound (inclusive) for event start time (RFC3339 timestamp).  
         - `timeMax` ¹ (string, optional): Upper bound (exclusive) for event end time (RFC3339 timestamp).  
-        - `googleClientId` (string, user config): Google OAuth2 Client ID.  
+        - `googleClientId` (string, user config): Google OAuth2 Client ID. One Client ID serves every Google tool; save it in [Settings → Credentials](../../../getting-started/configuration#credentials) as `googleClientId` to keep it after a reload.  
         You must [create an OAuth2 client in Google Cloud Console](../../../getting-started/google-oauth-client) before using this tool.  
-        - `accessToken` (OAuth, user config): Google Calendar Authentication.  
+        - `accessToken` (OAuth, user config): Google Calendar Authentication. Connecting one Google Calendar tool connects all of them, until the app reloads.  
         This field will be auto-filled if you use the **CONNECT CALENDAR** button.
         - `maxResults` (integer, user config): Maximum number of events to fetch (default: 10, min: 1, max: 100)
         - `requireToolUse` (boolean, user config): Require tool use (forces the LLM to always call this tool; default: true)

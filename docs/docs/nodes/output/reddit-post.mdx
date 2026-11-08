@@ -24,6 +24,9 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
         - **Reddit Client ID**: Your app's Client ID from Reddit
         - **Reddit Client Secret**: Your app's Client Secret (keep private!)
         - **Connect Reddit**: OAuth authentication button
+
+        Every Reddit Post node shares the Client ID and Secret: save them in [Settings → Credentials](../../getting-started/configuration#credentials) as `redditClientId` and `redditClientSecret` to keep them after a reload. **Connect Reddit** connects every Reddit Post node, until the app reloads.
+
         > You must [create an OAuth2 client in Reddit Developer Portal](../../getting-started/reddit-oauth-client) before using this tool.  
 
         ![Reddit Post Node Configuration](/img/nodes/reddit-post-params.webp)

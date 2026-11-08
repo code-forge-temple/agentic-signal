@@ -29,12 +29,16 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
         Obtain this from your Slack app's **OAuth & Permissions** page after installing the app to your workspace.
 
+        Every Slack node shares it: type it into one, and the others have it too. Save it in [Settings → Credentials](../../getting-started/configuration#credentials) as `slackBotToken` to keep it after a reload.
+
         ![Slack Input Node Configuration](/img/nodes/slack-input-node-params.webp)
     </TabItem>
     <TabItem value="app-token" label="App Token (Socket Mode)">
         The **App-Level Token** used to establish a Socket Mode connection (starts with `xapp-`).
 
         Generate this from your Slack app's **Basic Information** page under **App-Level Tokens**. The token requires the `connections:write` scope.
+
+        Every Slack Input node shares it. Save it in [Settings → Credentials](../../getting-started/configuration#credentials) as `slackAppToken` to keep it after a reload.
 
         ![Slack Input Node Configuration](/img/nodes/slack-input-node-params.webp)
     </TabItem>

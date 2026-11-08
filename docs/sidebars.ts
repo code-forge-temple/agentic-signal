@@ -24,6 +24,15 @@ const sidebars: SidebarsConfig = {
             ],
         },
         'getting-started/configuration',
+        {
+            type: 'category',
+            label: 'Using Agentic Signal',
+            items: [
+                'getting-started/layers',
+                'getting-started/ai-buddy',
+                'getting-started/outside-apps',
+            ],
+        },
         'getting-started/google-oauth-client',
         'getting-started/reddit-oauth-client',
         'getting-started/slack-bot-setup',
@@ -45,6 +54,7 @@ const sidebars: SidebarsConfig = {
                         'nodes/input/get-data',
                         'nodes/input/timer',
                         'nodes/input/slack-input',
+                        'nodes/input/workflow-input',
                     ],
                 },
                 {
@@ -96,6 +106,7 @@ const sidebars: SidebarsConfig = {
                         'nodes/output/reddit-post',
                         'nodes/output/slack-output',
                         'nodes/output/sms',
+                        'nodes/output/workflow-output',
                     ],
                 },
             ],

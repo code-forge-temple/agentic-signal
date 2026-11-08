@@ -16,7 +16,7 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="url" label="URL" default>
-        The endpoint to fetch data from (e.g., `https://api.example.com/data`).
+        The endpoint to fetch data from (e.g., `https://api.example.com/data`). It can hold saved credentials as `{{name}}`: see [Credentials in the URL](#credentials-in-the-url).
 
         ![AI Data Processing Node Model](/img/nodes/get-data-params.webp)
     </TabItem>
@@ -32,6 +32,7 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
     <TabItem value="upstream" label="Upstream Input">
         Enable `dataProvidedByUpstream` to receive `url` and `dataType` from an upstream node instead of configuring them directly.
         This is useful when the request target or format should be determined dynamically by earlier workflow steps.
+        Credential placeholders in an upstream URL are filled in too.
 
         ![AI Data Processing Node Model](/img/nodes/get-data-params.webp)
     </TabItem>
@@ -41,6 +42,23 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 </Tabs>
 
 ---
+
+## Credentials in the URL
+
+A key saved in [Settings → Credentials](/docs/getting-started/configuration#credentials) can go into the URL as `{{name}}`:
+
+```
+https://api.example.com/data?apikey={{myApiKey}}
+```
+
+- The value is filled in only to send the request, exactly as it is saved. If it holds characters such as `&` or spaces, save it URL-encoded. A whole URL saved as a credential works too: `{{myPrivateFeedUrl}}`.
+- The node, the workflow file and the data passed between nodes keep `{{myApiKey}}`. Errors show the placeholder, not the value.
+- If the name isn't saved, or the vault is locked, the node stops with an error that says which.
+- Placeholders in a URL provided by an upstream node are filled in too.
+
+:::caution
+With **Provided by Upstream**, whatever builds the URL decides which key is sent and to which site: an LLM, a fetched page or an outside app could point `{{name}}` somewhere else. Use it only with sources you trust, and check workflows from others before running them.
+:::
 
 ## Example Usage
 
@@ -58,7 +76,7 @@ For example usage, see the [Timeseries Chart workflow](/docs/workflows/data/time
 - **Use correct data type**: Match the Data Type to the expected response for reliable parsing.
 - **Validate URLs**: Ensure the URL is correct and accessible.
 - **Handle errors**: Downstream nodes should handle possible fetch errors or missing data.
-- **Secure endpoints**: Avoid exposing sensitive API keys in public workflows.
+- **Secure endpoints**: Save API keys in Settings → Credentials and write `{{name}}` in the URL, so they stay out of workflow files.
 
 ## Troubleshooting
 

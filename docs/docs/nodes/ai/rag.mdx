@@ -59,6 +59,8 @@ It connects exclusively to the **AI Data Processing Node** via a dedicated RAG p
     <TabItem value="api-key" label="API Key (optional)">
         Weaviate API key. Leave blank for unauthenticated local instances.
 
+        Every RAG node shares it, so a blank key applies to all of them. Save it in [Settings → Credentials](../../getting-started/configuration#credentials) as `weaviateApiKey` to keep it after a reload.
+
         ![RAG Node Parameters](/img/nodes/rag-node-params.webp)
     </TabItem>
     <TabItem value="config-schema" label="Configuration Schema">

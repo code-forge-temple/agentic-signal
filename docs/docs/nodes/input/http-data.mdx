@@ -12,7 +12,7 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 <Tabs>
     <TabItem value="url" label="URL" default>
-        The web page to fetch and render (e.g., `https://example.com`).
+        The web page to fetch and render (e.g., `https://example.com`). It can hold saved credentials as `{{name}}`: see [Credentials in the URL](#credentials-in-the-url).
 
         ![AI Data Processing Node Model](/img/nodes/fetch-web-page-params.jpg)
     </TabItem>
@@ -22,6 +22,14 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 </Tabs>
 
 ---
+
+## Credentials in the URL
+
+A key saved in [Settings → Credentials](/docs/getting-started/configuration#credentials) can go into the URL as `{{name}}`, for example `https://example.com/report?token={{myToken}}`.
+
+- The value is filled in only to fetch the page, exactly as it is saved. A whole URL saved as a credential works too: `{{myPrivatePageUrl}}`.
+- The node and the workflow file keep `{{myToken}}`. Errors show the placeholder, not the value.
+- If the name isn't saved, or the vault is locked, the node stops with an error that says which.
 
 ## Example Usage
 

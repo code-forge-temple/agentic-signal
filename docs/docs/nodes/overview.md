@@ -42,6 +42,8 @@ Legend:
 - [Chart](/docs/nodes/output/chart)
 - [Data Flow Spy](/docs/nodes/output/data-flow-spy)
 - [Timer](/docs/nodes/input/timer)
+- [Workflow Input](/docs/nodes/input/workflow-input)
+- [Workflow Output](/docs/nodes/output/workflow-output)
 - [Reddit Post](/docs/nodes/output/reddit-post) <span className="pro-badge">PRO</span>
 - [Slack Input](/docs/nodes/input/slack-input) <span className="pro-badge">PRO</span>
 - [Slack Output](/docs/nodes/output/slack-output) <span className="pro-badge">PRO</span>

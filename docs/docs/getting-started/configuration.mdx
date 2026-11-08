@@ -73,14 +73,64 @@ import TabItem from '@theme/TabItem';
 
 ## Configure Agentic Signal Client Settings
 
-![Current Time Workflow](/img/settings-preview.webp)
+Open **Settings** from the actions dock (the gear button). The settings are split into five tabs.
 
-1. Open the **Settings** panel from the dock in the `Agentic Signal` client.
-2. **Browser Executable Path:** You  need to provide the path to your Chrome browser executable. This is required for web browsing capabilities.
-3. **Ollama Host:** Enter the URL of your Ollama server in the "Ollama Host" field (e.g., `http://localhost:11434`).
-4. In the **Ollama Models** section:
-   - **Add a model:** Enter the model name (e.g., `llama3.1:8b`) and click the plus (+) button. Download progress will be shown.
-   - **Remove a model:** Click the trash icon next to any installed model to delete it.
+### General
+
+![Settings: General](/img/settings-general.webp)
+
+- **Browser Executable Path:** the path to your Chrome browser, used by the tools that open web pages. Left empty, Agentic Signal looks for Chrome in its usual place. Chrome opens minimized, in the taskbar, so it doesn't pull you away from what you're doing. Click it there to watch.
+- **Check for updates at startup** (on by default): at each start, Agentic Signal asks GitHub for the latest release's version number. When a newer version is out, a notice says so once, and the version tag in the top right corner turns green until you update. Click it to open the release's page. With the desktop app installed from GitHub Releases, download the new installer there. If you run Agentic Signal from its code (the web app, Docker, or a desktop app you built yourself, as with the PRO nodes), pull the latest code and build again: the page lists what's new. Nothing is downloaded or installed by itself.
+
+### Ollama
+
+![Settings: Ollama](/img/settings-ollama.webp)
+
+- **Ollama Host:** the URL of your Ollama server (e.g., `http://localhost:11434`).
+- **Ollama Models:**
+  - **Add a model:** enter the model name (e.g., `llama3.1:8b`) and click the plus (+) button. Download progress is shown.
+  - **Remove a model:** click the trash icon next to any installed model.
+
+### Workflows
+
+![Settings: Workflows](/img/settings-workflows.webp)
+
+- **Workflows Folder:** where your workflows are saved and read from. Workflows saved here whose [Workflow Input](../nodes/input/workflow-input) names a command can be run from the [AI Buddy chat](./ai-buddy#commands). Left empty, it is the `.agentic-signal/workflows` folder in your home folder. The Windows app adds a button to pick the folder.
+- **Outside connections:** tokens for the apps allowed to call your workflows, and whether other computers on your network may call. See [Calling Workflows from Outside Apps](./outside-apps).
+
+### Credentials
+
+![Settings: Credentials](/img/settings-credentials.webp)
+
+Tokens and API keys that nodes and tools need, such as a Slack bot token, a Weaviate API key or a Brave Search API key.
+
+- **Nodes share their keys.** Every node or tool that uses a key shows the same value. Type it into one Slack node, and every Slack node has it. Change it in one, and it changes everywhere.
+- **Typed into a node, a key lasts until the app reloads.** Saved here, it is kept on this computer, encrypted in the [vault](#vault), and filled in for every node that uses it once the vault is unlocked.
+- **Keys never go into workflow files.** A saved or downloaded workflow leaves them out, so you can share it safely.
+
+To save one, pick it in the **Key** list (each shows the icons of the nodes and tools that use it), enter its value and click **Add**. You can also save a key under a name of your own (letters, digits, `_`, `.` and `-`). Saved keys are listed below the form, each with a button to copy its placeholder (`{{name}}`, see below) and one to remove it. The first key you save asks you to create the vault's password.
+
+**Using a saved key in a URL.** Copy its placeholder from the list, or write its name in double braces, in the URL of a [GET Data](/docs/nodes/input/get-data) or [Fetch Web Page](/docs/nodes/input/http-data) node, for example `https://api.example.com/data?apikey={{myApiKey}}`. The value is filled in only when the request is sent. The node and the workflow file keep `{{myApiKey}}`, and errors show the placeholder, not the value. If the name isn't saved, or the vault is locked, the node stops with an error that says so.
+
+Sign-ins that expire within the hour, such as the Google and Reddit connections, aren't offered here. Connecting in one node connects every node of the same kind until the app reloads.
+
+### Vault
+
+![Settings: Vault](/img/settings-vault.webp)
+
+Your saved credentials, and the tokens of your [outside connections](./outside-apps), are kept encrypted in the **vault**, with a password of your choice. The password itself is never stored anywhere: each time you unlock, it is turned into the encryption key (AES-256, with a key made by PBKDF2-SHA256 over 600,000 rounds).
+
+- **Creating the password:** the first time you save a credential or add an outside connection, Agentic Signal asks you to choose one, typed twice. Use at least 8 characters.
+- **Unlocking:** when the app starts and a vault exists, it asks for the password. **Not now** leaves the vault locked: nodes can't use your saved keys and tokens can't be copied until you unlock from this tab, but outside apps can still call your workflows.
+- **This tab** shows whether the vault is locked and what it holds, with **Unlock** / **Lock Now**, **Change Password** and **Reset Vault**.
+- **Forgot your password?** It can't be recovered. **Forgot password?** in the unlock window, or **Reset Vault** here, deletes the vault: your saved credentials and your outside connections. Save the keys again, and give your outside apps new tokens.
+- Each browser tab unlocks on its own.
+
+![Unlocking the vault at startup](/img/vault-unlock.webp)
+
+### Clear App Data
+
+The **Clear App Data** button at the bottom of Settings removes every saved setting, the vault and its contents, and reloads the app. Workflows saved in the workflows folder stay.
 
 ### Advanced: Manual Ollama CLI
 

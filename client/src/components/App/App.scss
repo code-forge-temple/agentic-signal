@@ -24,4 +24,15 @@
     font-weight: 500 !important;
     backdrop-filter: blur(8px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+    &.update-available {
+        background-color: rgba(76, 175, 80, 0.2) !important;
+        color: #a5d6a7 !important;
+        border-color: rgba(129, 199, 132, 0.6) !important;
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(76, 175, 80, 0.32) !important;
+        }
+    }
 }

@@ -6,7 +6,7 @@
 
 import {useState, useEffect} from 'react';
 import {useSettings} from '../../../../../../hooks/useSettings';
-import {IconButton, Box, List, ListItem, ListItemText} from '@mui/material';
+import {IconButton, Box, List, ListItem, ListItemText, FormControlLabel, Switch, Typography} from '@mui/material';
 import {Trash} from 'iconoir-react';
 import {OllamaService} from '../../../../../../services/ollamaService';
 import {DebouncedTextField} from '../../../../../DebouncedTextField';
@@ -90,17 +90,29 @@ export const Settings = () => {
 
     // Filled in with Chrome's own path when found (SettingsProvider); empty means it wasn't.
     const generalTab = (
-        <PathField
-            kind="file"
-            label="Browser Executable Path *"
-            pickerTitle="Choose the browser executable"
-            value={settings.browserPath}
-            onChange={(path) => setSetting("browserPath", toBrowserExecutable(path))}
-            error={!settings.browserPath}
-            helperText={settings.browserPath
-                ? "Path to your Chrome Browser executable for Playwright (required for scraping tools like 'Fetch Web Page' Node, etc.)"
-                : "Chrome wasn't found where it's usually installed: enter the path to its executable. Playwright needs it for scraping tools like 'Fetch Web Page' Node, etc."}
-        />
+        <>
+            <PathField
+                kind="file"
+                label="Browser Executable Path *"
+                pickerTitle="Choose the browser executable"
+                value={settings.browserPath}
+                onChange={(path) => setSetting("browserPath", toBrowserExecutable(path))}
+                error={!settings.browserPath}
+                helperText={settings.browserPath
+                    ? "Path to your Chrome Browser executable for Playwright (required for scraping tools like 'Fetch Web Page' Node, etc.)"
+                    : "Chrome wasn't found where it's usually installed: enter the path to its executable. Playwright needs it for scraping tools like 'Fetch Web Page' Node, etc."}
+            />
+            <Box sx={{mt: 2}}>
+                <FormControlLabel
+                    control={<Switch checked={settings.checkForUpdates} onChange={(_event, checked) => setSetting("checkForUpdates", checked)} />}
+                    label="Check for updates at startup"
+                />
+                <Typography variant="caption" color="text.secondary" component="p">
+                    Asks GitHub for the latest release&apos;s version number, nothing more. When a newer version is out, the version tag in the top right corner
+                    turns green and links to the release.
+                </Typography>
+            </Box>
+        </>
     );
 
     // An empty setting means the default folder, shown by its path; entering that folder, or leaving the

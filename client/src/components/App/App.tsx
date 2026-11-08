@@ -11,13 +11,13 @@ import {useCallback, useRef, useState} from 'react';
 import {Dock} from '../Dock';
 import {useSnackbar} from 'notistack'
 import {useFullscreen} from '../../hooks/useFullscreen';
-import {Chip} from '@mui/material';
 import {ErrorBoundary} from '../ErrorBoundary/ErrorBoundary';
 import {LayersProvider} from '../../context/LayersContext';
 import {LAYER_KIND} from '../../context/LayersContextBase';
 import {useLayers} from '../../hooks/useLayers';
 import {WorkflowLayer} from './components/WorkflowLayer';
 import {LayerSwitcher} from './components/LayerSwitcher';
+import {VersionTag} from './components/VersionTag';
 import {ConfirmDialog} from '../ConfirmDialog';
 import {useSettings} from '../../hooks/useSettings';
 import {useOutsideCommands} from '../../hooks/useOutsideCommands';
@@ -162,11 +162,7 @@ function AppLayers () {
 export function App () {
     return (
         <div style={{width: '100vw', height: '100vh', position: 'relative'}}>
-            <Chip
-                label={`v${__APP_VERSION__}`}
-                size="small"
-                className="version-tag"
-            />
+            <VersionTag />
             <LayersProvider>
                 <AppLayers />
             </LayersProvider>

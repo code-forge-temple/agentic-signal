@@ -41,6 +41,8 @@ function getBuildFlag (name: string): boolean {
 export default defineConfig({
     define: {
         '__APP_VERSION__': JSON.stringify(pkg.version),
+        // True only in the release workflow's build: GitHub Actions sets GITHUB_ACTIONS for every step.
+        '__RELEASE_BUILD__': JSON.stringify(process.env.GITHUB_ACTIONS === "true"),
     },
     plugins: [
         preprocessor({

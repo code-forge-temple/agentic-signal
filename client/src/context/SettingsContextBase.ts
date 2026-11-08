@@ -11,6 +11,7 @@ export type Settings = {
     browserPath: string;
     /** Where workflows are saved; empty means the backend's default folder. */
     workflowsFolder: string;
+    checkForUpdates: boolean;
 };
 
 export type SettingsContextType = {

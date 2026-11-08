@@ -13,7 +13,7 @@ import {BaseDialog} from "../../../BaseDialog";
 import {ConfirmDialog} from "../../../ConfirmDialog";
 import {DockItem} from "../DockItem";
 import {Settings} from "./components/Settings";
-import {isTauri} from "../../../../utils";
+import {isTauri, openExternalUrl} from "../../../../utils";
 import {clearPersistedGlobalData} from "../../../../stores/globalConfig";
 import {AI_LAYER_READ_ONLY_HINT} from "../../../../context/LayersContextBase";
 import {useSnackbar} from "notistack";
@@ -21,6 +21,7 @@ import {useSettings} from "../../../../hooks/useSettings";
 import {workflowsFolderPath} from "../../../../services/workflowsService";
 import {openWorkflowFileNatively} from "./nativeWorkflowFile";
 import {VAULT_STORAGE_KEY} from "../../../../services/vault/vault";
+import {UPDATE_NOTIFIED_KEY} from "../../../App/components/VersionTag";
 
 
 // Set just before Clear App Data reloads the page, so the Settings dialog comes back open.
@@ -74,21 +75,7 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
         }
     }, []);
 
-    const handleOpenDocs = async () => {
-        const url = "https://agentic-signal.com";
-
-        if (isTauri()) {
-            try {
-                const shell = await import("@tauri-apps/plugin-shell");
-
-                await shell.open(url);
-            } catch (error) {
-                console.error("Failed to open URL with Tauri:", error);
-            }
-        } else {
-            window.open(url, "_blank", "noopener,noreferrer");
-        }
-    };
+    const handleOpenDocs = () => openExternalUrl("https://agentic-signal.com");
 
     const handleCloseApp = async () => {
         if (isTauri()) {
@@ -110,6 +97,8 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
         localStorage.removeItem("ollamaHost");
         localStorage.removeItem("browserPath");
         localStorage.removeItem("workflowsFolder");
+        localStorage.removeItem("checkForUpdates");
+        localStorage.removeItem(UPDATE_NOTIFIED_KEY);
         // The vault is an entry of its own, apart from the global store's keys.
         localStorage.removeItem(VAULT_STORAGE_KEY);
         sessionStorage.setItem(REOPEN_SETTINGS_FLAG, "1");
@@ -145,7 +134,7 @@ export function ActionsDock ({readOnly, onSave, onSaveToFolder, onLoad, onLoadWo
                         onClose={() => setOpenClearAppData(false)}
                         title="Clear App Data"
                         // eslint-disable-next-line max-len
-                        message="This removes all saved settings (Ollama host, browser path, workflows folder, AI Assistant model and chat settings) and the vault with your saved credentials and outside connections, then reloads the app. Any unsaved workflow on the canvas will be lost. Workflows already saved to the folder stay."
+                        message="This removes all saved settings (Ollama host, browser path, workflows folder, update check, AI Assistant model and chat settings) and the vault with your saved credentials and outside connections, then reloads the app. Any unsaved workflow on the canvas will be lost. Workflows already saved to the folder stay."
                         confirmLabel="Clear and Reload"
                         maximizable={false}
                         onConfirm={handleClearAppData}

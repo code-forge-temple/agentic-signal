@@ -16,6 +16,7 @@ const defaultSettings: Settings = {
     ollamaHost: localStorage.getItem("ollamaHost") || "",
     browserPath: localStorage.getItem("browserPath") || "",
     workflowsFolder: localStorage.getItem("workflowsFolder") || "",
+    checkForUpdates: localStorage.getItem("checkForUpdates") !== "false",
 };
 
 export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
@@ -30,6 +31,8 @@ export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
             if (key === "browserPath") localStorage.setItem("browserPath", value as string);
 
             if (key === "workflowsFolder") localStorage.setItem("workflowsFolder", value as string);
+
+            if (key === "checkForUpdates") localStorage.setItem("checkForUpdates", String(value));
 
             return updated;
         });

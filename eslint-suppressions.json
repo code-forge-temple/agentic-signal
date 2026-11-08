@@ -248,14 +248,6 @@
       "count": 1
     }
   },
-  "client/src/hooks/useWorkflow.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "max-nested-callbacks": {
-      "count": 8
-    }
-  },
   "client/src/services/buildSystemPrompt.ts": {
     "complexity": {
       "count": 1

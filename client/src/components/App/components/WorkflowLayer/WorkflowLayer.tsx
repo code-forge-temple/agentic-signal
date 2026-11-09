@@ -58,7 +58,7 @@ export function WorkflowLayer ({layer, isActive, dockRef}: WorkflowLayerProps) {
     const {enqueueSnackbar} = useSnackbar();
     const readOnly = layer.kind === LAYER_KIND.AI;
     const {fitViewPadding, fitViewOnLoad} = useFitViewOnLoad(dockRef, nodes);
-    const {isLoading, loadWorkflowFromJson, replaceWorkflow, question} = useWorkflowLoading({layer, readOnly, nodes, edges, setNodes, setEdges, fitViewOnLoad});
+    const {isLoading, loadWorkflowFromJson, replaceWorkflow, question} = useWorkflowLoading({layer, readOnly, nodes, setNodes, setEdges, fitViewOnLoad});
     const {onDragOver, onDrop} = useNodeDrop(addNode, readOnly);
 
     const getWorkflowJson = useCallback(() => workflowToJson(nodes, edges), [nodes, edges]);

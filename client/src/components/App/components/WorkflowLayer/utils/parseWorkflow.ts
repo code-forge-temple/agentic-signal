@@ -16,6 +16,7 @@ import {NODE_TYPE as TOOL_NODE_TYPE} from '../../../../nodes/ToolNode/constants'
 import {assertValidWorkflowEdges} from '../../../utils/workflowUtils';
 import {getDefaultUserConfigValues} from '../../../../../types/ollama.types';
 import {Workflow} from '../types';
+import {isRecord} from '../../../../../utils';
 
 
 const ZOD_PATH_SEPARATOR = '→';
@@ -93,11 +94,12 @@ const positionOf = (node: RawNode, index: number) => ({
     y: typeof node.position?.y === 'number' ? node.position.y : 0,
 });
 
-// Models often leave positions out: a missing coordinate is filled in, so the file still loads.
-function withPositions (raw: {nodes?: unknown}) {
-    if (!Array.isArray(raw.nodes)) return raw;
+// Models often leave positions out: a missing coordinate is filled in, so the file still loads. Anything that isn't
+// an object is left for the schema to report.
+function withPositions (raw: unknown) {
+    if (!isRecord(raw) || !Array.isArray(raw.nodes)) return raw;
 
-    return {...raw, nodes: (raw.nodes as RawNode[]).map((node, index) => ({...node, position: positionOf(node, index)}))};
+    return {...raw, nodes: raw.nodes.map((node: unknown, index) => (isRecord(node) ? {...node, position: positionOf(node as RawNode, index)} : node))};
 }
 
 function descriptorFor (type: string): LoadableNodeDescriptor {
@@ -157,7 +159,7 @@ function hydrateNode (node: ParsedNode, index: number): AppNode {
 
 /** Validates and hydrates a workflow JSON into nodes and edges with fresh ids. Throws on anything invalid. */
 export function parseWorkflowJson (jsonString: string): Workflow {
-    const {nodes, edges: rawEdges} = WorkflowSchema.parse(withPositions(JSON.parse(jsonString) as {nodes?: unknown}));
+    const {nodes, edges: rawEdges} = WorkflowSchema.parse(withPositions(JSON.parse(jsonString)));
     const edges = rawEdges.map(edge => ({...edge, type: DEFAULT_EDGE_TYPE}));
 
     assertValidWorkflowEdges(nodes, edges);

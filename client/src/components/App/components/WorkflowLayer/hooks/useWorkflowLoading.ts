@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useCallback, useState} from 'react';
+import {Dispatch, SetStateAction, useCallback, useState} from 'react';
 import {Edge} from '@xyflow/react';
 import {useSnackbar} from 'notistack';
 import {AppNode} from '../../../../nodes/workflow.gen';
@@ -20,11 +20,11 @@ import {useLoadingOverlay} from './useLoadingOverlay';
 /** A workflow waiting on the user's choice: add it to this one, replace this one, or open it in a new layer. */
 type PendingWorkflow = Workflow & {json: string; fileName?: string};
 
-type WorkflowLoadingOptions = Workflow & {
+type WorkflowLoadingOptions = Pick<Workflow, 'nodes'> & {
     layer: Layer;
     readOnly: boolean;
-    setNodes: (nodes: AppNode[]) => void;
-    setEdges: (edges: Edge[]) => void;
+    setNodes: Dispatch<SetStateAction<AppNode[]>>;
+    setEdges: Dispatch<SetStateAction<Edge[]>>;
     fitViewOnLoad: () => void;
 };
 
@@ -44,7 +44,7 @@ const layerNameOf = (fileName: string | undefined) => (fileName ? layerNameFromF
  * Loading a workflow into the layer: straight in when the layer is empty, otherwise after the load question; and, for
  * the AI Buddy, a replace with no question.
  */
-export function useWorkflowLoading ({layer, readOnly, nodes, edges, setNodes, setEdges, fitViewOnLoad}: WorkflowLoadingOptions) {
+export function useWorkflowLoading ({layer, readOnly, nodes, setNodes, setEdges, fitViewOnLoad}: WorkflowLoadingOptions) {
     const {enqueueSnackbar} = useSnackbar();
     const {addLayer, renameLayer} = useLayers();
     const [pendingWorkflow, setPendingWorkflow] = useState<PendingWorkflow | null>(null);
@@ -91,12 +91,12 @@ export function useWorkflowLoading ({layer, readOnly, nodes, edges, setNodes, se
         showWorkflow(workflow);
     }, [showWorkflow]);
 
-    const question = useLoadQuestion({pendingWorkflow, setPendingWorkflow, whileLoading, showWorkflow, addLayer, nodes, edges, setNodes, setEdges});
+    const question = useLoadQuestion({pendingWorkflow, setPendingWorkflow, whileLoading, showWorkflow, addLayer, nodes, setNodes, setEdges});
 
     return {isLoading, loadWorkflowFromJson, replaceWorkflow, question};
 }
 
-type LoadQuestionOptions = Workflow & Pick<WorkflowLoadingOptions, 'setNodes' | 'setEdges'> & {
+type LoadQuestionOptions = Pick<WorkflowLoadingOptions, 'nodes' | 'setNodes' | 'setEdges'> & {
     pendingWorkflow: PendingWorkflow | null;
     setPendingWorkflow: (workflow: PendingWorkflow | null) => void;
     whileLoading: ReturnType<typeof useLoadingOverlay>[1];
@@ -105,17 +105,19 @@ type LoadQuestionOptions = Workflow & Pick<WorkflowLoadingOptions, 'setNodes' | 
 };
 
 function useLoadQuestion (options: LoadQuestionOptions): LoadQuestion {
-    const {pendingWorkflow: pending, setPendingWorkflow, whileLoading, showWorkflow, addLayer, nodes, edges, setNodes, setEdges} = options;
+    const {pendingWorkflow: pending, setPendingWorkflow, whileLoading, showWorkflow, addLayer, nodes, setNodes, setEdges} = options;
     const close = () => setPendingWorkflow(null);
 
     const merge = () => {
         if (!pending) return;
 
+        // Placed under the nodes as shown when the user chose, then added to the layer as it is by now: a running
+        // workflow may have updated its nodes in the meantime.
         whileLoading(() => {
             const placed = placeBelow(nodes, pending);
 
-            setNodes([...nodes, ...placed.nodes]);
-            setEdges([...edges, ...placed.edges]);
+            setNodes(current => [...current, ...placed.nodes]);
+            setEdges(current => [...current, ...placed.edges]);
         }, close);
     };
 

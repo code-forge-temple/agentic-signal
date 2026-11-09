@@ -38,6 +38,9 @@ export const LlmProcessNodeDataSchema = z.object({
 
 export type LlmProcessNodeData = z.infer<typeof LlmProcessNodeDataSchema>;
 
+/** Saves changes to the node's settings. */
+export type ChangeLlmProcessNodeData = (data: Partial<LlmProcessNodeData>) => void;
+
 export function assertIsLlmProcessNodeData (data: unknown): asserts data is LlmProcessNodeData {
     LlmProcessNodeDataSchema.parse(data);
 }

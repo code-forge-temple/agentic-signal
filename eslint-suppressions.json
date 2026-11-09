@@ -96,20 +96,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/LlmProcessNode/LlmProcessNode.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/expression-complexity": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/LlmProcessNode/utils/aiOrchestration/runOrchestration.ts": {
     "complexity": {
       "count": 1

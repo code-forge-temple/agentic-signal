@@ -112,9 +112,12 @@ export const ChatPanel = ({onClose, onLoadWorkflow, getWorkflowJson}: ChatPanelP
         },
     });
 
-    // The saved model, if Ollama still has it; otherwise none, and the saved choice is cleared.
+    // The saved model, if Ollama still has it; otherwise none, and the saved choice is cleared. While Ollama can't be
+    // reached nothing is known about the model, so the saved choice stays for next time.
     useEffect(() => {
         void fetchModels().then((names) => {
+            if (names === null) return;
+
             if (storedModel && names.includes(storedModel)) return setSelectedModel(storedModel);
 
             setSelectedModel(NO_MODEL);

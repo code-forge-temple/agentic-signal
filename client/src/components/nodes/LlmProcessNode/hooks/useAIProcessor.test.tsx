@@ -123,7 +123,7 @@ describe('useAIProcessor.processAIRequest', () => {
     });
 
     describe('other exposed behavior', () => {
-        it('fetchModels reports an error via onError when OllamaService.fetchModels fails', async () => {
+        it('fetchModels shows a failure in the error log only: no onError, so no output cleared and no feedback sent', async () => {
             OllamaService.reloadInstance();
 
             const service = OllamaService.getInstance();
@@ -133,14 +133,15 @@ describe('useAIProcessor.processAIRequest', () => {
             const onError = vi.fn();
             const {result} = renderHook(() => useAIProcessor({onError}));
 
-            let models: string[] = [];
+            let models: string[] | null = [];
 
             await act(async () => {
                 models = await result.current.fetchModels();
             });
 
-            expect(models).toEqual([]);
-            expect(onError).toHaveBeenCalledWith(expect.stringContaining('daemon not running'));
+            expect(models).toBeNull();
+            expect(result.current.error).toEqual([expect.stringContaining('daemon not running')]);
+            expect(onError).not.toHaveBeenCalled();
         });
 
         it('clearError resets the error list back to empty', async () => {

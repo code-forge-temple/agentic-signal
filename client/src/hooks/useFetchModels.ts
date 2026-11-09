@@ -9,10 +9,15 @@ import {OllamaService} from '../services/ollamaService';
 import {errorMessage} from '@shared/utils';
 
 
+/** Whether a fetch showed that Ollama doesn't have the model; null (Ollama couldn't be asked) shows nothing. */
+export const isModelGone = (model: string | undefined, fetchedModels: string[] | null): boolean =>
+    Boolean(model && fetchedModels && !fetchedModels.includes(model));
+
 /**
- * The models installed on the Ollama host. `fetchModels` resolves with their names, or with none when the host can't be
- * reached, which also empties the list and reports the error; `reachable` tells which happened last. Only the newest
- * fetch updates the list, so an answer from a host typed earlier can't replace the current one's.
+ * The models installed on the Ollama host. `fetchModels` resolves with their names, or with null when the host can't be
+ * reached, which also empties the list and reports the error; `reachable` tells which happened last. Null means nothing
+ * is known about any model, so a caller must not take it as "the model is gone". Only the newest fetch updates the
+ * list, so an answer from a host typed earlier can't replace the current one's.
  */
 export function useFetchModels (onError?: (error: string) => void) {
     const [models, setModels] = useState<string[]>([]);
@@ -20,7 +25,7 @@ export function useFetchModels (onError?: (error: string) => void) {
     const [reachable, setReachable] = useState(false);
     const newestRef = useRef(0);
 
-    const fetchModels = useCallback(async (): Promise<string[]> => {
+    const fetchModels = useCallback(async (): Promise<string[] | null> => {
         const request = ++newestRef.current;
         const isNewest = () => request === newestRef.current;
 
@@ -46,7 +51,7 @@ export function useFetchModels (onError?: (error: string) => void) {
                 onError?.(`Failed to fetch models: ${errorMessage(error)}`);
             }
 
-            return [];
+            return null;
         } finally {
             if (isNewest()) setIsFetchingModels(false);
         }

@@ -14,6 +14,7 @@ import {runTask} from "../BaseNode/utils";
 import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hooks/useRunOnTriggerChange";
 import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
+import {isModelGone} from "../../../hooks/useFetchModels";
 import {Message} from "../../../types/ollama.types";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -103,7 +104,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
         if (!openSettings) return;
 
         void fetchModels().then(fetchedModels => {
-            if (model && !fetchedModels.includes(model)) change({model: ""});
+            if (isModelGone(model, fetchedModels)) change({model: ""});
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openSettings]);

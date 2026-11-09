@@ -23,14 +23,18 @@ export function useAIProcessor (options: UseAIProcessorOptions = {}) {
     // Unmounting (the node deleted, or its whole layer) cancels the request in flight.
     useEffect(() => () => abortControllerRef.current?.abort(), []);
 
+    const showError = useCallback((message: string) => setError(prev => [...prev, message]), []);
+
     const fail = useCallback((message: string): null => {
-        setError(prev => [...prev, message]);
+        showError(message);
         onError?.(message);
 
         return null;
-    }, [onError]);
+    }, [showError, onError]);
 
-    const {models, isFetchingModels, fetchModels} = useFetchModels(fail);
+    // A model list that couldn't be fetched only shows in the logs: no run failed, so the output stays and no feedback
+    // goes upstream.
+    const {models, isFetchingModels, fetchModels} = useFetchModels(showError);
 
     const processAIRequest = useCallback(async (request: AIRequest) => {
         // A newer request supersedes one still in flight, whose reply would be stale. A cancelled

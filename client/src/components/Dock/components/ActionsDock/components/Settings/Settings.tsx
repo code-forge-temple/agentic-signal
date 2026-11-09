@@ -68,7 +68,8 @@ export const Settings = () => {
     // Sequential, so a slow fetch can't overlap the next attempt.
     const pollForModel = async (modelName: string, maxAttempts = 15, interval = 1000) => {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            const names = await fetchModels();
+            // a failed attempt counts as "not listed yet"
+            const names = await fetchModels() ?? [];
 
             // an untagged pull ("llama3") is listed under Ollama's default tag ("llama3:latest")
             if (names.includes(modelName) || names.includes(`${modelName}:latest`)) return;

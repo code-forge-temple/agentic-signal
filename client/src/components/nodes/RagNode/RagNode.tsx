@@ -17,7 +17,7 @@ import {assertIsRagNodeData, defaultRagNodeData} from "./types/workflow";
 import {ragService} from "./services/ragService";
 import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
-import {useFetchModels} from "../../../hooks/useFetchModels";
+import {isModelGone, useFetchModels} from "../../../hooks/useFetchModels";
 import {DropdownButton} from "../../DropdownButton/DropdownButton";
 import {DocMagnifyingGlass} from "iconoir-react";
 import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from "./hooks/useWeaviateCollections";
@@ -121,7 +121,7 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
     useEffect(() => {
         if (openSettings) {
             void fetchModels().then(fetchedModels => {
-                if (embeddingModel && !fetchedModels.includes(embeddingModel) && !isEmbeddingModelLockedRef.current) {
+                if (isModelGone(embeddingModel, fetchedModels) && !isEmbeddingModelLockedRef.current) {
                     onConfigChange(id, {embeddingModel: ""});
                 }
             });

@@ -110,20 +110,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/LlmProcessNode/hooks/useAIProcessor.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 4
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/LlmProcessNode/utils/aiOrchestration/runOrchestration.ts": {
     "complexity": {
       "count": 1

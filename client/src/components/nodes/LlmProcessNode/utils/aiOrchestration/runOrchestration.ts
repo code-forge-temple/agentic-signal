@@ -46,8 +46,8 @@ export const JSON_SCHEMA_PROMPT_PREFIX = 'Your response must be valid JSON match
 
 /**
  * Runs the orchestration pipeline against any input (array, string, object, or a bare
- * primitive) the caller has confirmed is present — see the `orchestrationMode` guard in
- * useAIProcessor.ts, the only place that decides whether this function gets called:
+ * primitive) the caller has confirmed is present — see `isOrchestrated` in
+ * utils/aiRequest.ts, the only place that decides whether this function gets called:
  *  1. Planning call  — orchestrator (using the node's system prompt) decomposes
  *                      the input into a structured list of agent tasks.
  *  2. Sequential agent calls — one per task, independent, raw text output.

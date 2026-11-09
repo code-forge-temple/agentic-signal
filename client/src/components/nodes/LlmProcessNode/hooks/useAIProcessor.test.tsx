@@ -3,7 +3,7 @@
  *    This file is part of agentic-signal project                       *
  ************************************************************************/
 
-import {act, renderHook} from '@testing-library/react';
+import {act, renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {useAIProcessor} from './useAIProcessor';
 import {OllamaService} from '../../../../services/ollamaService';
@@ -87,6 +87,38 @@ describe('useAIProcessor.processAIRequest', () => {
 
             expect(returned).toBeNull();
             expect(onError).toHaveBeenCalledWith('Please provide a prompt, message, or input data.');
+        });
+
+        it('sends no user message for a null input with no message', async () => {
+            const {receivedCalls} = mockFetchAIResponse([success('ok')]);
+            const {result} = renderHook(() => useAIProcessor({}));
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload: null, prompt: 'Be brief.', message: undefined, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(),
+                });
+            });
+
+            expect(receivedCalls[0].messages).toEqual([{role: 'system', content: 'Be brief.'}]);
+        });
+
+        it.each([0, false, ''])('sends an input of %j to the model like any other value', async (payload) => {
+            const {receivedCalls} = mockFetchAIResponse([success('ok')]);
+            const onError = vi.fn();
+            const onSuccess = vi.fn();
+            const {result} = renderHook(() => useAIProcessor({onError, onSuccess}));
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload, prompt: undefined, message: undefined, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(),
+                });
+            });
+
+            expect(onError).not.toHaveBeenCalled();
+            expect(onSuccess).toHaveBeenCalledWith('ok');
+            expect(receivedCalls[0].messages).toEqual([{role: 'user', content: String(payload)}]);
         });
     });
 
@@ -697,12 +729,18 @@ describe('useAIProcessor cancelling', () => {
         OllamaService.reloadInstance();
     });
 
-    /** Each call stays pending until its signal aborts (then fails as aborted) or `release` resolves it. */
+    /**
+     * Each call stays pending until its signal aborts (then fails as aborted) or `release` resolves it. Like fetch, a
+     * call made with a signal already aborted fails at once.
+     */
     function mockPendingCalls () {
         const calls: {signal?: AbortSignal; release: (response: FetchAiResponse) => void}[] = [];
 
         OllamaService.getInstance().fetchAIResponse = (params) => new Promise((resolve) => {
             calls.push({signal: params.signal, release: resolve});
+
+            if (params.signal?.aborted) return resolve(failure('This operation was aborted'));
+
             params.signal?.addEventListener('abort', () => resolve(failure('This operation was aborted')));
         });
 
@@ -721,12 +759,42 @@ describe('useAIProcessor cancelling', () => {
 
         const pending = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
 
+        await waitFor(() => expect(calls).toHaveLength(1));
         unmount();
 
         expect(await pending).toBeNull();
         expect(calls[0].signal?.aborted).toBe(true);
         expect(onError).not.toHaveBeenCalled();
         expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('does not send a request a newer one superseded before it went out', async () => {
+        const calls = mockPendingCalls();
+        const onError = vi.fn();
+        const onSuccess = vi.fn();
+        const {result} = renderHook(() => useAIProcessor({onError, onSuccess}));
+
+        let first: Promise<unknown> | undefined;
+        let second: Promise<unknown> | undefined;
+
+        await act(async () => {
+            first = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+            second = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+        });
+        await waitFor(() => expect(calls).toHaveLength(1));
+        expect(calls[0].signal?.aborted).toBe(false);
+
+        await act(async () => {
+            calls[0].release(success('fresh reply'));
+
+            await Promise.all([first, second]);
+        });
+
+        expect(calls).toHaveLength(1);
+        expect(await first).toBeNull();
+        expect(await second).toBe('fresh reply');
+        expect(onSuccess).toHaveBeenCalledTimes(1);
+        expect(onError).not.toHaveBeenCalled();
     });
 
     it('lets a newer request supersede one still in flight', async () => {
@@ -740,7 +808,14 @@ describe('useAIProcessor cancelling', () => {
 
         await act(async () => {
             first = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+        });
+        await waitFor(() => expect(calls).toHaveLength(1));
+        await act(async () => {
             second = result.current.processAIRequest({...request, conversationHistory: makeHistory()});
+        });
+        await waitFor(() => expect(calls).toHaveLength(2));
+
+        await act(async () => {
             calls[1].release(success('fresh reply'));
 
             await Promise.all([first, second]);

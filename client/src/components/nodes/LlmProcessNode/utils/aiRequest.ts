@@ -33,15 +33,18 @@ export type AIRequest = Pick<LlmProcessNodeData, 'prompt' | 'message' | 'model' 
 /** A failure the node reports as it is, unlike an unexpected error. */
 export class RequestFailure extends Error {}
 
+// Only null and undefined are no input: 0, false and "" reach the model like any other value.
+const hasInput = (request: AIRequest) => request.payload != undefined;
+
 // Any input can be split into tasks (an array, a string, an object, even a number). Without input, the node's own
 // prompt and message go the normal way: orchestration has no notion of `message`.
-const isOrchestrated = (request: AIRequest) => Boolean(request.orchestrationMode) && request.payload != undefined;
+const isOrchestrated = (request: AIRequest) => Boolean(request.orchestrationMode) && hasInput(request);
 
 /** Why the request can't be sent at all; null when it can. */
 export function invalidRequest (request: AIRequest): string | null {
     if (!request.model) return "Please select a model first.";
 
-    if (!isOrchestrated(request) && !request.prompt && !request.message && !request.payload) return "Please provide a prompt, message, or input data.";
+    if (!request.prompt && !request.message && !hasInput(request)) return "Please provide a prompt, message, or input data.";
 
     return null;
 }
@@ -88,9 +91,9 @@ function requestFormat (request: AIRequest): RequestFormat {
 
 // The input as the user message, between the node's prefix and suffix; null with neither input nor message.
 function userContent (request: AIRequest): string | null {
-    if (request.payload === undefined && !request.message) return null;
+    if (!hasInput(request) && !request.message) return null;
 
-    const input = request.payload ? serializeInput(request.payload) : "";
+    const input = hasInput(request) ? serializeInput(request.payload) : "";
 
     assertIsSerializedInput(input);
 
@@ -126,12 +129,8 @@ const firstMessages = (systemPrompt: string | undefined, content: string | null)
     ...(content === null ? [] : [message(MessageRole.USER, content)]),
 ];
 
-/**
- * The messages to send: a first run's system prompt and input (with the RAG context); feedback continues the
- * conversation. Only the RAG context is waited for: without it the messages come at once, so the request goes out in
- * the same tick as the run that sent it (a newer run, or an unmount, then cancels that very request).
- */
-function conversation (request: AIRequest, systemPrompt: string | undefined, signal: AbortSignal): Message[] | Promise<Message[]> {
+/** The messages to send: a first run's system prompt and input (with the RAG context); feedback continues the conversation. */
+async function conversation (request: AIRequest, systemPrompt: string | undefined, signal: AbortSignal): Promise<Message[]> {
     const history = request.conversationHistory.value;
 
     if (history.length > 0 && request.feedback) return [...history, message(MessageRole.USER, feedbackRequest(request.feedback))];
@@ -142,7 +141,7 @@ function conversation (request: AIRequest, systemPrompt: string | undefined, sig
 
     if (content === null || !request.ragHandler) return firstMessages(systemPrompt, content);
 
-    return withRagContext(content, request.ragHandler, signal).then(withContext => firstMessages(systemPrompt, withContext));
+    return firstMessages(systemPrompt, await withRagContext(content, request.ragHandler, signal));
 }
 
 const callSettings = (request: AIRequest, signal: AbortSignal) => ({
@@ -241,9 +240,11 @@ export async function runAIRequest (request: AIRequest, signal: AbortSignal): Pr
     if (isOrchestrated(request)) return orchestrate(request, signal);
 
     const format = requestFormat(request);
-    const built = conversation(request, format.twoPhase ? request.prompt : format.systemPrompt, signal);
-    // Not awaited unless it has to be: see conversation.
-    const messages = Array.isArray(built) ? built : await built;
+    const messages = await conversation(request, format.twoPhase ? request.prompt : format.systemPrompt, signal);
+
+    // A newer run, or an unmount, may have cancelled this one while its messages were put together: nothing is sent.
+    stopIfCancelled(signal);
+
     const text = format.twoPhase ? await twoPhaseReply(messages, request, format, signal) : await singleReply(messages, request, format, signal);
 
     request.conversationHistory.onChange([...messages, message(MessageRole.ASSISTANT, text)]);

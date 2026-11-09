@@ -9,9 +9,19 @@ import {OllamaService} from '../services/ollamaService';
 import {errorMessage} from '@shared/utils';
 
 
+// An untagged name ("llama3") is listed under Ollama's default tag ("llama3:latest").
+const isListed = (model: string, names: string[]) => names.includes(model) || names.includes(`${model}:latest`);
+
 /** Whether a fetch showed that Ollama doesn't have the model; null (Ollama couldn't be asked) shows nothing. */
 export const isModelGone = (model: string | undefined, fetchedModels: string[] | null): boolean =>
-    Boolean(model && fetchedModels && !fetchedModels.includes(model));
+    Boolean(model && fetchedModels && !isListed(model, fetchedModels));
+
+/**
+ * What a model field offers: the fetched list, plus the saved model while the list doesn't show it (Ollama out of
+ * reach, or an untagged name), so the field never looks emptied.
+ */
+export const modelOptions = (model: string | undefined, models: string[]): string[] =>
+    model && !models.includes(model) ? [model, ...models] : models;
 
 /**
  * The models installed on the Ollama host. `fetchModels` resolves with their names, or with null when the host can't be

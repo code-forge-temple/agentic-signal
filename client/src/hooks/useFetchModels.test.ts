@@ -6,7 +6,7 @@
 
 import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {isModelGone, useFetchModels} from './useFetchModels';
+import {isModelGone, modelOptions, useFetchModels} from './useFetchModels';
 import {OllamaService} from '../services/ollamaService';
 
 
@@ -58,5 +58,25 @@ describe('isModelGone', () => {
         expect(isModelGone('llama3', null)).toBe(false);
         expect(isModelGone('', ['qwen3'])).toBe(false);
         expect(isModelGone(undefined, null)).toBe(false);
+    });
+
+    it('finds an untagged name under the default tag Ollama lists it by', () => {
+        expect(isModelGone('llama3', ['llama3:latest'])).toBe(false);
+        expect(isModelGone('llama3:8b', ['llama3:latest'])).toBe(true);
+    });
+});
+
+describe('modelOptions', () => {
+    it('adds the saved model while the list does not show it, so the field never looks emptied', () => {
+        expect(modelOptions('gemma3:27b', [])).toEqual(['gemma3:27b']);
+        expect(modelOptions('llama3', ['llama3:latest'])).toEqual(['llama3', 'llama3:latest']);
+    });
+
+    it('is the list itself when it shows the saved model, or nothing is saved', () => {
+        const models = ['gemma3:27b', 'qwen3:32b'];
+
+        expect(modelOptions('qwen3:32b', models)).toBe(models);
+        expect(modelOptions('', models)).toBe(models);
+        expect(modelOptions(undefined, models)).toBe(models);
     });
 });

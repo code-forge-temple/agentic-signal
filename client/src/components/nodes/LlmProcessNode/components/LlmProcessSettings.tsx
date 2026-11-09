@@ -6,6 +6,7 @@
 
 import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {BaseDialog} from "../../../BaseDialog";
+import {modelOptions} from "../../../../hooks/useFetchModels";
 import {ChangeLlmProcessNodeData, LlmProcessNodeData} from "../types/workflow";
 import {RunOptions} from "./RunOptions";
 import {PromptTabs} from "./PromptTabs";
@@ -47,7 +48,7 @@ export function LlmProcessSettings ({open, onClose, title, data, change, models,
                         <MenuItem value="" disabled>
                             {isFetchingModels ? "Loading models..." : "Select a model..."}
                         </MenuItem>
-                        {models.map(model => <MenuItem key={model} value={model}>{model}</MenuItem>)}
+                        {modelOptions(data.model, models).map(model => <MenuItem key={model} value={model}>{model}</MenuItem>)}
                     </Select>
                 </FormControl>
                 <RunOptions data={data} change={change} currentLoop={currentLoop} />

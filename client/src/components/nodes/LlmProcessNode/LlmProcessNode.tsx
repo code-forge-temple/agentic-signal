@@ -135,7 +135,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 
-    const hasMissingConfig = !model || (models.length > 0 && !models.includes(model));
+    const hasMissingConfig = !model || (models.length > 0 && isModelGone(model, models));
 
     return (
         <>

@@ -65,16 +65,19 @@ Nodes with an error log render `MonitoredNode` (`nodes/MonitoredNode/`) instead,
 
 ## Saving and Loading
 
-**Loading** (`parseWorkflowJson` in `WorkflowLayer.tsx`):
+`WorkflowLayer.tsx` only wires the pieces together. The logic is in its `utils/` (pure, with tests) and `hooks/` folders.
+
+**Loading** (`parseWorkflowJson` in `WorkflowLayer/utils/parseWorkflow.ts`):
 
 - positions are filled in where a file (often an LLM's) leaves them out;
 - each node's data runs through its descriptor's `migrate` and then its `assertion`;
-- the descriptor's default title is used;
-- edges are validated.
+- the descriptor's default title is used, and an AI Tool node takes its tool's schema, title and default settings;
+- edges are validated;
+- every node and edge gets a fresh id.
 
-A load into a non-empty layer asks Replace / Add to Existing / Add to New Layer. A layer still named `Layer N` takes the file's name. `replaceWorkflow` skips the question; the AI Buddy uses it.
+A load into a non-empty layer asks Replace / Add to Existing / Add to New Layer (`hooks/useWorkflowLoading.ts`). Add to Existing puts the loaded workflow under the current one, left sides lined up (`utils/mergeWorkflow.ts`). A layer still named `Layer N` takes the file's name. `replaceWorkflow` skips the question; the AI Buddy uses it.
 
-**Saving** (`getWorkflowJson`): removes React Flow's runtime fields and every injected callback, deletes each node's `data.toSanitize` paths (inputs, tokens, API keys), then drops `toSanitize` itself. The web app downloads the file. The desktop app and **Save to Workflows Folder** write it to the backend-owned workflows folder (`services/workflowsService.ts`).
+**Saving** (`workflowToJson` in `utils/workflowFile.ts`): copies each node's data through JSON, which drops the injected callbacks, deletes the node's `data.toSanitize` paths (inputs, tokens, API keys), then drops `toSanitize` itself. The rest of each node is kept as React Flow holds it. The web app downloads the file. The desktop app and **Save to Workflows Folder** write it to the backend-owned workflows folder (`services/workflowsService.ts`).
 
 Workflows are **not** kept across a reload: layers live in memory.
 

@@ -1,15 +1,4 @@
 {
-  "client/src/components/App/components/WorkflowLayer/WorkflowLayer.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "client/src/components/App/utils/workflowUtils.ts": {
     "complexity": {
       "count": 1

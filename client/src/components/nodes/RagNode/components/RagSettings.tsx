@@ -10,6 +10,7 @@ import {BaseDialog} from "../../../BaseDialog";
 import {DebouncedTextField} from "../../../DebouncedTextField";
 import {DropdownButton, DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {modelOptions} from "../../../../hooks/useFetchModels";
+import {saveCountWithin} from "../../../../utils/countWithin";
 import {defaultRagNodeData, RagNodeData} from "../types/workflow";
 import {useWeaviateCollections} from "../hooks/useWeaviateCollections";
 
@@ -89,7 +90,7 @@ function ChunkFields ({data, change}: {data: RagNodeData; change: ChangeData}) {
                 fullWidth
                 size="small"
                 value={data.chunkSize ?? defaultRagNodeData.chunkSize}
-                onChange={value => change({chunkSize: Math.max(64, Math.min(2048, parseInt(value)))})}
+                onChange={value => saveCountWithin(value, 64, 2048, count => change({chunkSize: count}))}
             />
             <DebouncedTextField
                 label="Chunk Overlap (words)"
@@ -97,7 +98,7 @@ function ChunkFields ({data, change}: {data: RagNodeData; change: ChangeData}) {
                 fullWidth
                 size="small"
                 value={data.chunkOverlap ?? defaultRagNodeData.chunkOverlap}
-                onChange={value => change({chunkOverlap: Math.max(0, Math.min(256, parseInt(value)))})}
+                onChange={value => saveCountWithin(value, 0, 256, count => change({chunkOverlap: count}))}
             />
             <DebouncedTextField
                 label="Top-K Results"
@@ -105,7 +106,7 @@ function ChunkFields ({data, change}: {data: RagNodeData; change: ChangeData}) {
                 fullWidth
                 size="small"
                 value={data.topK ?? defaultRagNodeData.topK}
-                onChange={value => change({topK: Math.max(1, Math.min(20, parseInt(value)))})}
+                onChange={value => saveCountWithin(value, 1, 20, count => change({topK: count}))}
                 helperText="Number of most relevant chunks to inject as context"
             />
         </>

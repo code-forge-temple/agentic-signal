@@ -21,13 +21,6 @@ export function runSettings (data: LlmProcessNodeData) {
     };
 }
 
-/** A typed count kept within its range; null when the text isn't a number, as in a cleared field. */
-export function countWithin (text: string, min: number, max: number): number | null {
-    const count = parseInt(text);
-
-    return Number.isNaN(count) ? null : Math.max(min, Math.min(max, count));
-}
-
 /** The run settings an AI request takes: the temperature only while it is turned on. */
 export function requestSettings (data: LlmProcessNodeData) {
     const {maxToolRetries, think, temperatureEnabled, temperature, orchestrationMode} = runSettings(data);

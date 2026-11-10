@@ -7,15 +7,9 @@
 import {Box, FormControlLabel, Slider, Switch, Typography} from "@mui/material";
 import {DebouncedTextField} from "../../../DebouncedTextField";
 import {ChangeLlmProcessNodeData, LlmProcessNodeData} from "../types/workflow";
-import {countWithin, runSettings} from "../utils/runSettings";
+import {runSettings} from "../utils/runSettings";
+import {saveCountWithin} from "../../../../utils/countWithin";
 
-
-// A cleared field saves nothing: the node keeps its count until a number is typed.
-const saveCount = (text: string, min: number, save: (count: number) => void) => {
-    const count = countWithin(text, min, 10);
-
-    if (count !== null) save(count);
-};
 
 function SettingSwitch ({label, checked, onChange}: {label: string; checked: boolean | undefined; onChange: (checked: boolean) => void}) {
     return (
@@ -40,7 +34,7 @@ export function RunOptions ({data, change, currentLoop}: {data: LlmProcessNodeDa
                 fullWidth
                 size="small"
                 value={settings.maxFeedbackLoops}
-                onChange={value => saveCount(value, 0, count => change({maxFeedbackLoops: count}))}
+                onChange={value => saveCountWithin(value, 0, 10, count => change({maxFeedbackLoops: count}))}
                 sx={{mb: 2}}
                 helperText={`Current loop: ${Math.min(currentLoop, settings.maxFeedbackLoops)}/${settings.maxFeedbackLoops}`}
             />
@@ -50,7 +44,7 @@ export function RunOptions ({data, change, currentLoop}: {data: LlmProcessNodeDa
                 fullWidth
                 size="small"
                 value={settings.maxToolRetries}
-                onChange={value => saveCount(value, 3, count => change({maxToolRetries: count}))}
+                onChange={value => saveCountWithin(value, 3, 10, count => change({maxToolRetries: count}))}
                 sx={{mb: 2}}
                 helperText="Maximum number of retry attempts for each required tool"
             />

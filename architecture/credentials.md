@@ -148,19 +148,19 @@ The vault protects secrets at rest: a copied browser profile or app data. Once u
 
 1. Add `LOCAL_SECRETS` and `GLOBAL_SECRETS` to the node's `constants.tsx`. Reuse an existing store key when the secret is the same one another node uses.
 2. In the descriptor: `globalSecrets: Object.values(GLOBAL_SECRETS)`, and add `...Object.values(LOCAL_SECRETS)` to `defaultData.toSanitize`.
-3. In the component, read and write the shared value, and seed it once from the node's data:
+3. In a hook of the node, read and write the shared value, and seed it once from the node's data (RAG's `hooks/useWeaviateApiKey.ts` does this):
 
 ```tsx
 const {apiKey: savedApiKey} = data;
 const {globalData, setGlobalData} = useGlobalConfig();
 const apiKey = globalData[GLOBAL_SECRETS.API_KEY] || "";
-const setApiKey = (value: string) => setGlobalData(GLOBAL_SECRETS.API_KEY, value);
+const setApiKey = useCallback((value: string) => setGlobalData(GLOBAL_SECRETS.API_KEY, value), [setGlobalData]);
 
-// A key in an older workflow file becomes the shared one, if none is set yet.
-useEffect(() => {
+// A key in an older workflow file becomes the shared one, if none is set yet. Once, when the node mounts
+// (hooks/useOnMount.ts): a key cleared later in Settings must stay cleared.
+useOnMount(() => {
     if (!apiKey && savedApiKey) setApiKey(savedApiKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+});
 ```
 
 4. Bind the settings field to `apiKey` / `setApiKey` (`type="password"`). Credentials lists the key automatically.

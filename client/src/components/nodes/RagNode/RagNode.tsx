@@ -4,29 +4,22 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
-import {useEffect, useState} from "react";
+import {type NodeProps} from "@xyflow/react";
+import {useCallback, useState} from "react";
 import {MonitoredNode} from "../MonitoredNode";
-import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
-import {BaseDialog} from "../../BaseDialog";
-import {DebouncedTextField} from "../../DebouncedTextField";
-import {GLOBAL_SECRETS, Icon} from "./constants";
+import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
-import {assertIsRagNodeData, defaultRagNodeData} from "./types/workflow";
-import {ragService} from "./services/ragService";
-import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
-import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
-import {isModelGone, modelOptions, useFetchModels} from "../../../hooks/useFetchModels";
-import {DropdownButton} from "../../DropdownButton/DropdownButton";
-import {DocMagnifyingGlass} from "iconoir-react";
+import {assertIsRagNodeData, RagNodeData} from "./types/workflow";
+import {isModelGone, useFetchModels} from "../../../hooks/useFetchModels";
+import {useOnOpen} from "../../../hooks/useOnOpen";
+import {DropdownMenuItem} from "../../DropdownButton/DropdownButton";
 import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from "./hooks/useWeaviateCollections";
-import {useGlobalConfig} from "../../../stores/globalConfig";
-import {errorMessage} from "@shared/utils";
-import {savedOllamaHost} from "../../../context/settingsStorage";
+import {useWeaviateApiKey} from "./hooks/useWeaviateApiKey";
+import {useRagHandler} from "./hooks/useRagHandler";
+import {RagPort} from "./components/RagPort";
+import {RagSettings} from "./components/RagSettings";
 
-
-const EMBEDDING_MODEL_LABEL = "Embedding Model";
 
 export function RagNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
@@ -34,102 +27,29 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
 
     const [openSettings, setOpenSettings] = useState(false);
     const [error, setError] = useState<string[]>([]);
+    const showError = useCallback((message: string) => setError(prev => [...prev, message]), []);
+    const {title, embeddingModel, collectionName, weaviateUrl, onConfigChange} = data;
+    const {models, isFetchingModels, fetchModels} = useFetchModels(showError);
+    const [weaviateApiKey, setWeaviateApiKey] = useWeaviateApiKey(data.weaviateApiKey);
+    const change = (changes: Partial<RagNodeData>) => onConfigChange(id, changes);
+    const collections = useWeaviateCollections({id, weaviateUrl, weaviateApiKey, onConfigChange, onError: showError});
 
-    const {models, isFetchingModels, fetchModels} = useFetchModels((msg) => setError(prev => [...prev, msg]));
+    useRagHandler({id, settings: data, weaviateApiKey, onConfigChange, showError});
 
-    const {
-        title,
-        embeddingModel,
-        collectionName,
-        chunkSize,
-        chunkOverlap,
-        topK,
-        weaviateUrl,
-        weaviateApiKey: savedWeaviateApiKey,
-        onConfigChange,
-    } = data;
-
-    const {globalData, setGlobalData} = useGlobalConfig();
-    // Shared by every RAG node; Settings → Credentials keeps it after a reload.
-    const weaviateApiKey = globalData[GLOBAL_SECRETS.API_KEY] || "";
-    const setWeaviateApiKey = (value: string) => setGlobalData(GLOBAL_SECRETS.API_KEY, value);
-
-    // A key in an older workflow file (saved before keys were stripped) becomes the shared one, if none is set yet.
-    useEffect(() => {
-        if (!weaviateApiKey && savedWeaviateApiKey) setWeaviateApiKey(savedWeaviateApiKey);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const {
-        availableCollections,
-        loadingCollections,
-        isEmbeddingModelLocked,
-        isEmbeddingModelLockedRef,
-        checkCollectionLockByName,
-        selectCollection,
-        fetchCollections,
-    } = useWeaviateCollections({
-        id,
-        weaviateUrl,
-        weaviateApiKey,
-        onConfigChange,
-        onError: (msg) => setError(prev => [...prev, msg]),
-    });
-
-    // Rebuild the handler whenever any config value changes
-    useEffect(() => {
-        onConfigChange(id, {
-            handler: async (input: string): Promise<string> => {
-                const ollamaHost = savedOllamaHost();
-
-                try {
-                    return await ragService.ingestAndRetrieve({
-                        input,
-                        collectionName: collectionName || defaultRagNodeData.collectionName,
-                        embeddingModel: embeddingModel || "",
-                        chunkSize: chunkSize ?? defaultRagNodeData.chunkSize,
-                        chunkOverlap: chunkOverlap ?? defaultRagNodeData.chunkOverlap,
-                        topK: topK ?? defaultRagNodeData.topK,
-                        ollamaHost,
-                        weaviateUrl: weaviateUrl || defaultRagNodeData.weaviateUrl,
-                        weaviateApiKey,
-                    });
-                } catch (err) {
-                    const msg = errorMessage(err);
-
-                    setError(prev => [...prev, msg]);
-
-                    throw new Error(msg);
-                }
-            },
+    // A model Ollama no longer has is dropped, unless the collection locks it; the lock itself is checked again.
+    useOnOpen(openSettings, () => {
+        void fetchModels().then((fetchedModels) => {
+            if (isModelGone(embeddingModel, fetchedModels) && !collections.isEmbeddingModelLockedRef.current) change({embeddingModel: ""});
         });
 
-    }, [
-        id,
-        embeddingModel,
-        collectionName,
-        chunkSize,
-        chunkOverlap,
-        topK,
-        weaviateUrl,
-        weaviateApiKey,
-        onConfigChange
-    ]);
+        collections.checkCollectionLockByName(collectionName ?? "").catch(() => { /* ignore */ });
+    });
 
-    const {getNode, getEdges} = useReactFlow();
+    const pickCollection = (item: DropdownMenuItem) => {
+        setError(prev => prev.filter(message => !message.includes(FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX)));
 
-    useEffect(() => {
-        if (openSettings) {
-            void fetchModels().then(fetchedModels => {
-                if (isModelGone(embeddingModel, fetchedModels) && !isEmbeddingModelLockedRef.current) {
-                    onConfigChange(id, {embeddingModel: ""});
-                }
-            });
-
-            checkCollectionLockByName(collectionName ?? "").catch(() => { /* ignore */ });
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [openSettings]);
+        void collections.selectCollection(item);
+    };
 
     const hasMissingConfig = !embeddingModel || !collectionName || !weaviateUrl;
 
@@ -142,134 +62,21 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                 title={title}
                 settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 error={error}
-                extraPorts={
-                    <Handle
-                        type="source"
-                        id={NODE_PORT_IDS.CONTEXT}
-                        position={Position.Right}
-                        style={{backgroundColor: NODE_PORT_COLORS.CONTEXT}}
-                        isValidConnection={({target, targetHandle}) => {
-                            const targetNode = getNode(target);
-
-                            if (!targetNode || targetNode.type !== LLM_NODE_TYPE) return false;
-
-                            if (targetHandle !== NODE_PORT_IDS.CONTEXT) return false;
-
-                            const alreadyConnected = getEdges().some(
-                                edge => edge.target === target && edge.targetHandle === NODE_PORT_IDS.CONTEXT
-                            );
-
-                            return !alreadyConnected;
-                        }}
-                    />
-                }
+                extraPorts={<RagPort />}
             />
-
-            <BaseDialog
+            <RagSettings
                 open={openSettings}
                 onClose={() => setOpenSettings(false)}
                 title={title}
-            >
-                <Box sx={{display: "flex", flexDirection: "column", gap: 2, pt: 1}}>
-                    <DebouncedTextField
-                        label="Weaviate URL"
-                        fullWidth
-                        size="small"
-                        value={weaviateUrl ?? defaultRagNodeData.weaviateUrl}
-                        onChange={value => onConfigChange(id, {weaviateUrl: value})}
-                        helperText="e.g. http://localhost:8080"
-                    />
-
-                    <DebouncedTextField
-                        label="API Key (optional)"
-                        fullWidth
-                        size="small"
-                        value={weaviateApiKey}
-                        onChange={value => setWeaviateApiKey(value)}
-                        helperText="Leave blank for unauthenticated local Weaviate"
-                    />
-                    <FormControl fullWidth size="small">
-                        <InputLabel id="rag-embedding-model-label">{EMBEDDING_MODEL_LABEL}</InputLabel>
-                        <Select
-                            labelId="rag-embedding-model-label"
-                            label={EMBEDDING_MODEL_LABEL}
-                            value={embeddingModel || ""}
-                            onChange={e => onConfigChange(id, {embeddingModel: e.target.value})}
-                            disabled={isFetchingModels || isEmbeddingModelLocked}
-                        >
-                            <MenuItem value="" disabled>
-                                {isFetchingModels ? "Loading models..." : "Select a model..."}
-                            </MenuItem>
-                            {modelOptions(embeddingModel, models).map(m => (
-                                <MenuItem key={m} value={m}>{`${m}${isEmbeddingModelLocked && embeddingModel === m ? " (locked by collection)" : ""}`}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    {isEmbeddingModelLocked && (
-                        <Box sx={{mt: -1.5, ml: 1.75, fontSize: "0.75rem", color: "text.secondary"}}>
-                            Model is locked to the existing collection. Edit the collection name to unlock.
-                        </Box>
-                    )}
-
-                    <Box sx={{display: "flex", alignItems: "flex-start", gap: 1}}>
-                        <DebouncedTextField
-                            label="Collection Name"
-                            fullWidth
-                            size="small"
-                            value={collectionName ?? defaultRagNodeData.collectionName}
-                            onChange={value => {
-                                onConfigChange(id, {collectionName: value});
-                                checkCollectionLockByName(value).catch(() => { /* ignore */ });
-                            }}
-                            helperText="Namespace for this knowledge base in Weaviate"
-                        />
-                        <DropdownButton
-                            buttonLabel={<DocMagnifyingGlass style={{verticalAlign: "middle"}} />}
-                            menuItems={availableCollections}
-                            loading={loadingCollections}
-                            disabled={!weaviateUrl}
-                            noItemsAvailable="No collections found"
-                            onButtonClick={() => void fetchCollections()}
-                            onMenuItemClick={item => {
-                                setError(prev =>
-                                    prev.filter(err => !err.includes(FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX))
-                                );
-
-                                void selectCollection(item);
-                            }}
-                            sx={{height: 40, minWidth: 40, p: 0, flexShrink: 0}}
-                        />
-                    </Box>
-
-                    <DebouncedTextField
-                        label="Chunk Size (words)"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={chunkSize ?? defaultRagNodeData.chunkSize}
-                        onChange={value => onConfigChange(id, {chunkSize: Math.max(64, Math.min(2048, parseInt(value)))})}
-                    />
-
-                    <DebouncedTextField
-                        label="Chunk Overlap (words)"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={chunkOverlap ?? defaultRagNodeData.chunkOverlap}
-                        onChange={value => onConfigChange(id, {chunkOverlap: Math.max(0, Math.min(256, parseInt(value)))})}
-                    />
-
-                    <DebouncedTextField
-                        label="Top-K Results"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={topK ?? defaultRagNodeData.topK}
-                        onChange={value => onConfigChange(id, {topK: Math.max(1, Math.min(20, parseInt(value)))})}
-                        helperText="Number of most relevant chunks to inject as context"
-                    />
-                </Box>
-            </BaseDialog>
+                data={data}
+                change={change}
+                apiKey={weaviateApiKey}
+                setApiKey={setWeaviateApiKey}
+                models={models}
+                isFetchingModels={isFetchingModels}
+                collections={collections}
+                onPickCollection={pickCollection}
+            />
         </>
     );
 }

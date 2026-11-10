@@ -115,14 +115,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/TimerNode/TimerNode.tsx": {
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "max-nested-callbacks": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/ToolNode/ToolNode.tsx": {
     "complexity": {
       "count": 2

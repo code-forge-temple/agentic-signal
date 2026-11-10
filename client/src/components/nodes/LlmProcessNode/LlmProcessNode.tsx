@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useReactFlow, type NodeProps} from "@xyflow/react";
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {v4 as uuidv4} from "uuid";
 import {assertIsLlmProcessNodeData, LlmProcessNodeData} from "./types/workflow";
 import {MonitoredNode} from "../MonitoredNode";
@@ -15,6 +15,7 @@ import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hook
 import {useRunOnInputChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {isModelGone} from "../../../hooks/useFetchModels";
+import {useOnOpen} from "../../../hooks/useOnOpen";
 import {Message} from "../../../types/ollama.types";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -100,14 +101,12 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
 
     const feedbackLoopsLeft = () => currentRetryRef.current < maxFeedbackLoops;
 
-    useEffect(() => {
-        if (!openSettings) return;
-
+    // A model Ollama no longer has is dropped when Settings opens.
+    useOnOpen(openSettings, () => {
         void fetchModels().then(fetchedModels => {
             if (isModelGone(model, fetchedModels)) change({model: ""});
         });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [openSettings]);
+    });
 
     useAutoRunOnFeedbackChange({
         clearError: () => { if (feedbackLoopsLeft()) clearError(); },

@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {describe, expect, it} from 'vitest';
-import {clampLimit, hasNoCompanies, searchFields, searchRequest} from './searchFields';
+import {hasNoCompanies, searchFields, searchRequest} from './searchFields';
 
 
 const own = {companies: 'greenhouse:stripe', keywords: 'developer', candidateRegion: 'EU'};
@@ -45,19 +45,5 @@ describe('hasNoCompanies', () => {
         expect(hasNoCompanies([], '  ')).toBe(true);
         expect(hasNoCompanies([], 'stripe')).toBe(false);
         expect(hasNoCompanies(['lever:vercel'], '')).toBe(false);
-    });
-});
-
-describe('clampLimit', () => {
-    it('keeps a typed limit within its range', () => {
-        expect(clampLimit('50', 1, 400, 60)).toBe(50);
-        expect(clampLimit('999', 1, 400, 60)).toBe(400);
-        expect(clampLimit('-5', 1, 400, 60)).toBe(1);
-    });
-
-    it('gives the fallback for text that is not a number, and for 0', () => {
-        expect(clampLimit('', 1, 400, 60)).toBe(60);
-        expect(clampLimit('abc', 1, 400, 60)).toBe(60);
-        expect(clampLimit('0', 1, 400, 60)).toBe(60);
     });
 });

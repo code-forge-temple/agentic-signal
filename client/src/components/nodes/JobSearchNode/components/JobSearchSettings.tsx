@@ -12,7 +12,7 @@ import {CodeEditor} from "../../../CodeEditor";
 import {DebouncedTextField} from "../../../DebouncedTextField";
 import {DATE_POSTED_OPTIONS, DatePosted, EMPLOYMENT_TYPES, EmploymentType, JobSearchNodeData, SENIORITY_OPTIONS, Seniority} from "../types/workflow";
 import {JOB_SEARCH_NODE_INPUT_JSON_SCHEMA} from "../types/input.types";
-import {clampLimit} from "../utils/searchFields";
+import {saveCountWithin} from "../../../../utils/countWithin";
 import {toggle} from "../utils/seedSelection";
 import {CompanyFields} from "./CompanyFields";
 import "ace-builds/src-noconflict/mode-json";
@@ -149,7 +149,7 @@ function LimitSection ({data, change}: SectionProps) {
                 variant="outlined"
                 fullWidth
                 value={data.maxCompanies}
-                onChange={value => change({maxCompanies: clampLimit(value, 1, 400, 60)})}
+                onChange={value => saveCountWithin(value, 1, 400, count => change({maxCompanies: count}))}
                 sx={{mb: 2}}
             />
             <DebouncedTextField
@@ -158,7 +158,7 @@ function LimitSection ({data, change}: SectionProps) {
                 variant="outlined"
                 fullWidth
                 value={data.resultsLimit}
-                onChange={value => change({resultsLimit: clampLimit(value, 1, 500, 100)})}
+                onChange={value => saveCountWithin(value, 1, 500, count => change({resultsLimit: count}))}
             />
         </FieldsetGroup>
     );

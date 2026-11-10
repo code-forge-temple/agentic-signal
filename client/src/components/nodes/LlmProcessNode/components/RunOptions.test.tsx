@@ -56,4 +56,15 @@ describe('RunOptions counts', () => {
         type('Max Tool Retries', '1');
         expect(change).toHaveBeenLastCalledWith({maxToolRetries: 3});
     });
+
+    it('shows the count it saved, also when that is the count already there', () => {
+        render(<RunOptions data={{...defaultLlmProcessNodeData, maxFeedbackLoops: 2}} change={vi.fn()} currentLoop={0} />);
+
+        type('Max Feedback Loops', '25');
+        expect(field('Max Feedback Loops').value).toBe('10');
+
+        // Already 3: typing 1 saves 3 again, so the node's value doesn't change.
+        type('Max Tool Retries', '1');
+        expect(field('Max Tool Retries').value).toBe('3');
+    });
 });

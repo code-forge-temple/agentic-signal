@@ -10,7 +10,11 @@ import {useEffect} from 'react';
 
 type DebouncedTextFieldProps = Omit<TextFieldProps, 'onChange'> & {
     value: string | number;
-    onChange: (value: string) => void;
+    /**
+     * Saves the typed text. It may give back the text of what it saved instead (a number kept within its range, say):
+     * the field then shows that, even when `value` stays the same.
+     */
+    onChange: (value: string) => string | void;
     delay?: number;
 };
 
@@ -22,7 +26,11 @@ export function DebouncedTextField ({
     ...textFieldProps
 }: DebouncedTextFieldProps) {
     const [debouncedValue, setDebouncedValue, replaceValue] = useDebouncedState({
-        callback: onChange,
+        callback: (typed: string) => {
+            const saved = onChange(typed);
+
+            if (typeof saved === 'string' && saved !== typed) replaceValue(saved);
+        },
         delay,
         initialValue: String(value)
     });

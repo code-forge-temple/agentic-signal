@@ -82,4 +82,11 @@ describe('RagSettings numbers', () => {
         type('Top-K Results', '0');
         expect(change).toHaveBeenLastCalledWith({topK: 1});
     });
+
+    it('shows the number it saved', () => {
+        renderSettings(vi.fn());
+        type('Chunk Size (words)', '5000');
+
+        expect(field('Chunk Size (words)').value).toBe('2048');
+    });
 });

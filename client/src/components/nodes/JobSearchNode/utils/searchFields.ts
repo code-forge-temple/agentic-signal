@@ -40,7 +40,3 @@ export const searchRequest = (data: JobSearchNodeData, fields: OwnFields): JobSe
 
 /** Whether a search has no company to look at: none picked from the built-in list, none typed. */
 export const hasNoCompanies = (seedCompanies: string[], companies: string): boolean => seedCompanies.length === 0 && !companies?.trim();
-
-/** A typed limit kept within its range; text that isn't a number, or 0, gives `fallback`. */
-export const clampLimit = (text: unknown, min: number, max: number, fallback: number): number =>
-    Math.max(min, Math.min(max, Number(text) || fallback));

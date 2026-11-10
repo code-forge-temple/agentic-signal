@@ -77,14 +77,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/JobSearchNode/JobSearchNode.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/LlmProcessNode/utils/aiOrchestration/runOrchestration.ts": {
     "complexity": {
       "count": 1

@@ -14,6 +14,7 @@ import {
     messageTimeStamp,
     parseCommandMessage,
     parseCommandSuggestion,
+    resolveCommand,
     toModelMessages,
 } from './chatCommands';
 import {CommandError} from '../../../../../services/commandRouter';
@@ -37,6 +38,22 @@ describe('parseCommandMessage', () => {
         expect(parseCommandMessage('tell me about bees')).toBeNull();
         expect(parseCommandMessage('please /research bees')).toBeNull();
         expect(parseCommandMessage('/ research')).toBeNull();
+    });
+});
+
+describe('resolveCommand', () => {
+    const workflows = [{command: 'weather', description: 'w'}, {command: 'crypto', description: 'c'}];
+
+    it('finds the workflow that answers to the command, with the text after it', () => {
+        expect(resolveCommand('/weather New York', workflows)).toEqual({command: 'weather', text: 'New York', workflow: workflows[0]});
+    });
+
+    it('names a command no workflow answers to, with no workflow', () => {
+        expect(resolveCommand('/nope now', workflows)).toEqual({command: 'nope', text: 'now', workflow: undefined});
+    });
+
+    it('is null for an ordinary message', () => {
+        expect(resolveCommand('what is the weather?', workflows)).toBeNull();
     });
 });
 

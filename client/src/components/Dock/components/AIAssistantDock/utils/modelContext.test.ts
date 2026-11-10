@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {describe, expect, it} from 'vitest';
-import {contextWindowWarning, minimumContextWindow, resolveContextLimit} from './modelContext';
+import {contextWindowWarning, minimumContextWindow, resolveContextLimit, streamOptionsFor} from './modelContext';
 
 
 describe('minimumContextWindow', () => {
@@ -48,5 +48,18 @@ describe('contextWindowWarning', () => {
     it('stays quiet when the window is unknown or no model is picked', () => {
         expect(warningFor('gemma4:31b-cloud', undefined, null)).toBeNull();
         expect(warningFor('', undefined)).toBeNull();
+    });
+});
+
+describe('streamOptionsFor', () => {
+    const settingsMap = {'qwen3': {contextWindow: 32768, temperature: 0.5}, 'gpt-oss:120b-cloud': {contextWindow: 65536, temperature: 0.2}};
+
+    it('streams with the settings saved for the model', () => {
+        expect(streamOptionsFor(settingsMap, 'qwen3')).toEqual({contextWindow: 32768, temperature: 0.5});
+        expect(streamOptionsFor(settingsMap, 'unknown')).toEqual({});
+    });
+
+    it('sends a cloud model no context window', () => {
+        expect(streamOptionsFor(settingsMap, 'gpt-oss:120b-cloud')).toEqual({contextWindow: undefined, temperature: 0.2});
     });
 });

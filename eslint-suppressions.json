@@ -22,17 +22,6 @@
       "count": 1
     }
   },
-  "client/src/components/Dock/components/AIAssistantDock/components/ChatPanel/ChatPanel.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "client/src/components/Dock/components/AIAssistantDock/components/ChatPanel/components/ChatLog/components/ChatLogMessage.tsx": {
     "complexity": {
       "count": 1

@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {readJsonRecord} from "./storage";
-import {DEFAULT_CONTEXT_WINDOW, LlmSettings} from "./llmSettings";
+import {DEFAULT_CONTEXT_WINDOW, getModelSettings, LlmSettings, LlmSettingsMap} from "./llmSettings";
 
 /**
  * Kept out of llmSettings.ts deliberately: that holds preferences the user sets, this caches
@@ -129,3 +129,14 @@ export const contextWindowWarning = (model: string, {limit, source}: ResolvedCon
     // eslint-disable-next-line max-len
     return `Context window may be too small: this model is left on Ollama's default, only ${inK(limit)} tokens unless the Ollama server has 24 GiB of free VRAM or more, but ${need}. ${cut} ${setIt}`;
 };
+
+/**
+ * The model's settings as a reply streams with them. LlmSettings and StreamChatOptions have the same shape (absent
+ * means "don't override" on both sides), so they pass straight through, except that a cloud model gets no context
+ * window: Ollama Cloud ignores num_ctx anyway (ollama/ollama#16598), and sending it would suggest it had taken effect.
+ */
+export function streamOptionsFor (settingsMap: LlmSettingsMap, model: string): LlmSettings {
+    const settings = getModelSettings(settingsMap, model);
+
+    return isCloudModel(model) ? {...settings, contextWindow: undefined} : settings;
+}

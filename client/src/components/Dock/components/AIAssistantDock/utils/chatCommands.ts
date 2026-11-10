@@ -79,6 +79,16 @@ export function parseCommandMessage (message: string): {command: string; text: s
     return match ? {command: match[1].toLowerCase(), text: (match[2] ?? "").trim()} : null;
 }
 
+/**
+ * The command a message starts with, the text after it, and the workflow that answers to it (none when no workflow
+ * does); null for an ordinary message.
+ */
+export function resolveCommand<W extends {command: string}> (message: string, workflows: W[]): {command: string; text: string; workflow: W | undefined} | null {
+    const parsed = parseCommandMessage(message);
+
+    return parsed && {...parsed, workflow: workflows.find(workflow => workflow.command === parsed.command)};
+}
+
 export const commandResultsLabel = (command: string) => `Results of /${command}`;
 
 /**

@@ -17,7 +17,7 @@ import {BaseDialog} from "../../BaseDialog";
 import {formatErrorMessage, getField, parseUrl} from "../../../utils";
 import {DebouncedTextField} from "../../DebouncedTextField";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
-import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
+import {useRunOnInputChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {useLatestValue} from "../../../hooks/useLatestValue";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
 import {Icon} from "./constants";
@@ -111,7 +111,7 @@ export function GetDataNode ({data, id}: NodeProps<AppNode>) {
                 }, setIsRunning);
             }
         }
-    }, [input]);
+    }, input);
 
     const mergedUrl: string = getField(dataProvidedByUpstream ? input?.payload : undefined, "url", url);
     const mergedDataType: FetchDataType = getField(dataProvidedByUpstream ? input?.payload : undefined, "dataType", dataType);

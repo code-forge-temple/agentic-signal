@@ -5,6 +5,8 @@
  ************************************************************************/
 
 import {useEffect} from "react";
+import {NodeEnvelope} from "../types/workflow";
+import {dataInput} from "../utils/dataInput";
 
 type UseRunOnTriggerChangeProps = {
     clearError: () => void;
@@ -22,4 +24,12 @@ export function useRunOnTriggerChange ({clearError, clearOutput, runCallback}: U
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, changeTriggers);
+}
+
+/**
+ * Runs when the node's input changes. A timer trigger alone doesn't count: a node with a timer port runs on it through
+ * useTimerTrigger, once, not a second time as new input.
+ */
+export function useRunOnInputChange (props: UseRunOnTriggerChangeProps, input: NodeEnvelope | undefined) {
+    useRunOnTriggerChange(props, [dataInput(input)]);
 }

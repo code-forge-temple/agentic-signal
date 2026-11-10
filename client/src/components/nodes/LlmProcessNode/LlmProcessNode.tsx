@@ -12,7 +12,7 @@ import {MonitoredNode} from "../MonitoredNode";
 import {useAIProcessor} from "./hooks/useAIProcessor";
 import {runTask} from "../BaseNode/utils";
 import {useRunOnTriggerChange as useAutoRunOnFeedbackChange} from "../../../hooks/useRunOnTriggerChange";
-import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
+import {useRunOnInputChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {isModelGone} from "../../../hooks/useFetchModels";
 import {Message} from "../../../types/ollama.types";
@@ -131,7 +131,7 @@ export function LlmProcessNode ({data, id}: NodeProps<AppNode>) {
 
             await run(startConversation());
         },
-    }, [input]);
+    }, input);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 

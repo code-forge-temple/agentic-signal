@@ -42,7 +42,7 @@ Each `WorkflowLayer` uses `hooks/useWorkflow.ts`, which holds the layer's `nodes
 
 Data moves in **envelopes** (`types/workflow.ts`): `{payload, toolsPayload?, timerTrigger?}`. The framework never looks inside `payload`. The **Async Data Aggregator** is the one exception to "the latest input replaces the last": it collects one input per source node.
 
-A node reacts to new input in its own component, usually with `hooks/useRunOnTriggerChange.ts`. That hook clears the node's error and output, then runs the node when its input or its Timer trigger changes. `BaseNode/utils.ts`'s `runTask` wraps a run: it marks the node as running, which animates its outgoing edges, and always clears the running state afterwards.
+A node reacts to new input in its own component, usually with `useRunOnInputChange` (`hooks/useRunOnTriggerChange.ts`). That hook clears the node's error and output, then runs the node when its input changes. A Timer trigger arrives as an input of its own, which this hook skips: a node with a timer port runs on it through `hooks/useTimerTrigger.ts`, once. `BaseNode/utils.ts`'s `runTask` wraps a run: it marks the node as running, which animates its outgoing edges, and always clears the running state afterwards.
 
 ### Ports and Edges
 

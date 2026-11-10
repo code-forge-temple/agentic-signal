@@ -88,7 +88,7 @@ export function FooNode ({data, id}: NodeProps<AppNode>) {
     };
 
     // Run whenever the input changes.
-    useRunOnTriggerChange({clearError: () => setError(null), clearOutput: () => onResultUpdate(id), runCallback: run}, [input]);
+    useRunOnInputChange({clearError: () => setError(null), clearOutput: () => onResultUpdate(id), runCallback: run}, input);
 
     return (
         <>
@@ -102,6 +102,7 @@ export function FooNode ({data, id}: NodeProps<AppNode>) {
 
 - Use **`MonitoredNode`** when the node can fail. It shows the logs and reports errors to the command its layer serves. Use plain **`BaseNode`** only for nodes with nothing to log (Workflow Output).
 - Pass on the incoming `toolsPayload` unless the node deliberately drops it.
+- A node with a timer port (`TimerTriggerPort` in `extraPorts`) also calls `useTimerTrigger(input?.timerTrigger, run)`. `useRunOnInputChange` skips an input that is only a timer trigger, so each trigger runs the node once.
 - Settings dialogs use `BaseDialog` and the shared fields (`DebouncedTextField`, `PathField`, `CodeEditor`, ...).
 
 ### The Backend Module
@@ -125,7 +126,7 @@ The client subscribes through `GraphQLSocketManager.getInstance().subscribe<{foo
 1. **Create the client folder** `client/src/components/nodes/FooNode/` with `constants.tsx`, `types/workflow.ts`, `descriptor.ts` and `FooNode.tsx`, following the [naming rules](#the-generators-naming-rules). Copy a similar node as a starting point: `DataFlowSpyNode` (minimal), `JsonReformatterNode` (settings + transform), `HttpNode` (backend call), `TimerNode` (subscription).
 2. **Write the data schema** in `types/workflow.ts` with zod. Give every field a `.describe(...)`: the AI Buddy and the docs read these descriptions.
 3. **Fill in the descriptor:** a unique `type`, an `order`, the ports with their schemas, a one-line `metadata.description`, and `defaultData` with `title` and `toSanitize: ["input", ...]`.
-4. **Write the component.** Use `MonitoredNode` if it can fail. Run on input with `useRunOnTriggerChange`, wrap the work in `runTask`, and emit with `onResultUpdate`.
+4. **Write the component.** Use `MonitoredNode` if it can fail. Run on input with `useRunOnInputChange`, wrap the work in `runTask`, and emit with `onResultUpdate`.
 5. **If it needs the backend,** add `server/nodes/FooNode/` with `mod.ts`, `schema.ts`, `resolver.ts`, `service.ts` and `types.ts`. If the type string lives in `types.ts` (`export const FOO_NODE_TYPE = "foo"`), re-export it as `NODE_TYPE` from the client's `constants.tsx`.
 6. **If it has secrets** (tokens, API keys), follow [credentials.md](credentials.md#adding-a-secret-to-a-node): `LOCAL_SECRETS` / `GLOBAL_SECRETS`, `globalSecrets`, and `toSanitize`.
 7. **If the desktop app needs native code,** add `#[tauri::command]` functions under `src-tauri/src/nodes/foo_node/`. The generator registers them.

@@ -11,7 +11,7 @@ import {JobSearchService} from "./services/jobSearchService";
 import {MonitoredNode} from "../MonitoredNode";
 import {runTask} from "../BaseNode/utils";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
-import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
+import {useRunOnInputChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {useLatestValue} from "../../../hooks/useLatestValue";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
 import {Icon} from "./constants";
@@ -67,7 +67,7 @@ export function JobSearchNode ({data, id}: NodeProps<AppNode>) {
                 void runSearch();
             }
         },
-    }, [input]);
+    }, input);
 
     useTimerTrigger(input?.timerTrigger, runSearch);
 

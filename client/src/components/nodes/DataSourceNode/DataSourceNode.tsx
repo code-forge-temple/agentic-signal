@@ -12,7 +12,7 @@ import {FormControl, InputLabel, MenuItem, Select} from "@mui/material";
 import {runTask} from "../BaseNode/utils";
 import {BaseDialog} from "../../BaseDialog";
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
-import {useRunOnTriggerChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
+import {useRunOnInputChange as useAutoRunOnInputChange} from "../../../hooks/useRunOnTriggerChange";
 import {TimerTriggerPort} from "../TimerNode/TimerTriggerPort";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
@@ -57,7 +57,7 @@ export function DataSourceNode ({data, id}: NodeProps<AppNode>) {
         clearError: () => { setError(null); },
         clearOutput: () => { onResultUpdate(id); },
         runCallback: handleRun
-    }, [input]);
+    }, input);
 
     useTimerTrigger(input?.timerTrigger, handleRun);
 

@@ -56,14 +56,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/ChartNode/ChartNode.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/DataSourceNode/components/FilesInput/FilesInput.tsx": {
     "max-lines-per-function": {
       "count": 1

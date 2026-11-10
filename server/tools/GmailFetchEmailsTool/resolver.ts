@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {GraphQLContext} from "../../graphql/types.ts";
+import {bearerToken} from "../../utils/bearerToken.ts";
 import {EmailResult} from "./types.ts";
 import {fetchGmailEmails} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
@@ -21,11 +22,7 @@ export const resolver = {
 
             if (!maxResults || maxResults < 1 || maxResults > 50) throw new Error("maxResults must be between 1 and 50");
 
-            const authHeader = request?.headers?.get('authorization');
-
-            if (!authHeader || !authHeader.startsWith('Bearer ')) throw new Error("Missing or invalid Authorization header");
-
-            const accessToken = authHeader.substring(7);
+            const accessToken = bearerToken(request);
 
             return await fetchGmailEmails({query, maxResults, accessToken});
         }

@@ -72,7 +72,7 @@ In **orchestration mode**, the LLM node plans tasks and runs each as its own age
 2. **Write `toolSchema`**: a clear `name` (camelCase), a `description` saying when to use it and what it returns, and `parameters` with descriptions and `required`.
 3. **Write `userConfigSchema`** with `extendSystemUserConfigSchema({...})`. Mark fields the tool can't work without as `required: true`; the AI Tool node then shows "missing configuration" until they're set.
 4. **Write `handlerFactory`.** Validate the config and the arguments, do the work, and return a result or `{error}`.
-5. **If it needs the backend,** add `server/tools/FooTool/` (`mod.ts`, `schema.ts`, `resolver.ts`, `service.ts`, `types.ts`), and call it from the client with `graphqlRequest<T>(...)`.
+5. **If it needs the backend,** add `server/tools/FooTool/` (`mod.ts`, `schema.ts`, `resolver.ts`, `service.ts`, `types.ts`), and call it from the client with `graphqlRequest<T>(...)`. A credential (an API key, an access token) goes as the request's `Authorization: Bearer <token>` header, not as a query argument. The resolver reads it with `bearerToken(request)` (`server/utils/bearerToken.ts`).
 6. **If it holds secrets,** follow [credentials.md](credentials.md#adding-a-secret-to-a-tool): a `constants.ts` with `TOOL_SUBTYPE`, `LOCAL_SECRETS` and `GLOBAL_SECRETS`; `globalSecrets` and `toSanitize` built from them; settings fields reading the shared value.
 7. **If it opens resources per run,** add `runtimeCleanup`, and key the resources by `sessionId`.
 8. **Regenerate and check:** `bun run precompile`, `cd client && bunx tsc -b`, `bun run lint`, `bun run test`.

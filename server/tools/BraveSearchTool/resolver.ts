@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {GraphQLContext} from "../../graphql/types.ts";
+import {bearerToken} from "../../utils/bearerToken.ts";
 import {BraveResult} from "./types.ts";
 import {fetchBraveSearchResults} from "./service.ts";
 import {graphqlMethodName} from "./schema.ts";
@@ -21,13 +22,7 @@ export const resolver = {
                 throw new Error("Missing query or maxResults parameter");
             }
 
-            const authHeader = request?.headers?.get("authorization");
-
-            if (!authHeader || !authHeader.startsWith("Bearer ")) {
-                throw new Error("Missing or invalid Authorization header");
-            }
-
-            const apiKey = authHeader.substring(7);
+            const apiKey = bearerToken(request);
 
             return await fetchBraveSearchResults(query, apiKey, maxResults);
         }

@@ -8,19 +8,17 @@ import {GraphQLService} from "./services/graphqlService";
 import {ToolDefinition} from "../types";
 import Gmail from "./assets/gmail.svg";
 import {EmailResult} from "@shared/types.gen";
-import {GLOBAL_SECRETS, LOCAL_SECRETS, OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler, TOOL_SUBTYPE} from "./constants";
-import {ACCESS_TOKEN_KEY, ACCESS_TOKEN_TYPE_OAUTH, GOOGLE_CLIENT_ID_KEY} from "../utils/oauth";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
-import {GoogleToolOauthConfigFields} from "../utils/GoogleToolOauthConfigFields";
-import {UserConfigFields} from "../../UserConfigFields";
-import {excludeKeysFromObject} from "../../../../../utils";
+import {googleTool} from "../utils/google/googleTool";
 
 
-export const GmailFetchEmailsToolDescriptor:ToolDefinition = {
-    toolSubtype: TOOL_SUBTYPE,
+export const GmailFetchEmailsToolDescriptor: ToolDefinition = googleTool<{query: string}, EmailResult[]>({
+    toolSubtype: "gmail-fetch-emails",
     title: "Gmail Fetch Emails Tool",
     icon: <Gmail />,
+    service: "Gmail",
+    scope: "gmail.readonly",
+    maxResults: {items: "emails", maximum: 50},
     toolSchema: {
         name: "gmailFetchEmails",
         // eslint-disable-next-line max-len
@@ -37,76 +35,10 @@ export const GmailFetchEmailsToolDescriptor:ToolDefinition = {
             required: ["query"]
         }
     },
-    userConfigSchema: extendSystemUserConfigSchema({
-        [GOOGLE_CLIENT_ID_KEY]: {
-            type: "string",
-            description: "Google OAuth2 Client ID (from Google Cloud Console)"
-        },
-        [ACCESS_TOKEN_KEY]: {
-            type: ACCESS_TOKEN_TYPE_OAUTH, // This will be rendered as a OAuth2 button + an access token input in the UI
-            description: "Gmail Authentication",
-            provider: OAUTH_PROVIDER,
-            scope: OAUTH_PROVIDER_SCOPE,
-            oauthHandler,
-            required: true
-        },
-        maxResults: {
-            type: "integer",
-            description: "Maximum number of emails to fetch",
-            default: 5,
-            minimum: 1,
-            maximum: 50
-        }
-    }),
-    globalSecrets: Object.values(GLOBAL_SECRETS),
-    toSanitize: [ACCESS_TOKEN_KEY, ...Object.values(LOCAL_SECRETS)].map(field => `userConfig.${field}`),
-    renderConfig: function ({userConfig, onConfigChange}){
-        return (
-            <>
-                <GoogleToolOauthConfigFields
-                    toolSubtype={TOOL_SUBTYPE}
-                    scope={OAUTH_PROVIDER_SCOPE}
-                    provider={OAUTH_PROVIDER}
-                    oauthHandler={oauthHandler}
-                    description="Gmail Authentication"
-                    userConfig={userConfig}
-                    onConfigChange={onConfigChange}
-                />
-                <UserConfigFields
-                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, [ACCESS_TOKEN_KEY, GOOGLE_CLIENT_ID_KEY])}
-                    userConfig={userConfig}
-                    onConfigChange={onConfigChange}
-                />
-            </>
-        )},
-    handlerFactory: (
-        userConfig: { accessToken?: string, maxResults?: number }
-    ) => async ({query}: { query: string }): Promise<EmailResult[] | { error: string }> => {
-        try {
-            if (!userConfig.accessToken) {
-                return {error: "Gmail authentication required. Please connect your Gmail account."};
-            }
+    fetch: async ({query}, auth) => {
+        if (!query || String(query).trim() === "") return {error: "`query` tool parameter must be specified"};
 
-            if (!userConfig.maxResults) {
-                return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
-            }
-
-            if(!query || String(query).trim() === ""){
-                return {error: "`query` tool parameter must be specified"};
-            }
-
-            // data received from the LLM needs to be sanitized to avoid issues:
-            const sanitizedQuery = sanitizeStringInput(query);
-
-            return await GraphQLService.gmailFetchEmails(
-                sanitizedQuery,
-                {
-                    accessToken: userConfig.accessToken,
-                    maxResults: userConfig.maxResults || 5
-                }
-            );
-        } catch (error) {
-            return {error: error instanceof Error ? error.message : 'Unknown error'};
-        }
-    }
-};
+        // What the LLM sends is sanitized before use.
+        return GraphQLService.gmailFetchEmails(sanitizeStringInput(query), auth);
+    },
+});

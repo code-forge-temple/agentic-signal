@@ -25,53 +25,36 @@ const DriveFileListSchema = z.object({
 
 type DriveFileResponse = z.infer<typeof DriveFileSchema>;
 
+const FILES_URL = 'https://www.googleapis.com/drive/v3/files';
+
+// A Google Docs editors file (a Doc, Sheet or Slides) has no bytes to download: it's exported, a sheet as CSV and
+// anything else as plain text. Any other file is downloaded as it is.
+const contentUrl = (fileId: string, mimeType: string, isGoogleFile: boolean) => {
+    if (!isGoogleFile) return `${FILES_URL}/${fileId}?alt=media`;
+
+    const exportMimeType = mimeType.includes('spreadsheet') ? 'text/csv' : 'text/plain';
+
+    return `${FILES_URL}/${fileId}/export?mimeType=${encodeURIComponent(exportMimeType)}`;
+};
+
+const isTextFile = (mimeType: string) => ['text', 'json', 'xml'].some(kind => mimeType.includes(kind));
+
 async function readFileContent (fileId: string, mimeType: string, accessToken: string): Promise<string> {
+    const isGoogleFile = mimeType.includes('google-apps');
+
     try {
-        if (mimeType.includes('google-apps')) {
-            let exportMimeType = 'text/plain';
-
-            if (mimeType.includes('document')) {
-                exportMimeType = 'text/plain';
-            } else if (mimeType.includes('spreadsheet')) {
-                exportMimeType = 'text/csv';
-            } else if (mimeType.includes('presentation')) {
-                exportMimeType = 'text/plain';
+        const response = await fetch(contentUrl(fileId, mimeType, isGoogleFile), {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
             }
+        });
 
-            const exportUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${encodeURIComponent(exportMimeType)}`;
-
-            const response = await fetch(exportUrl, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                return `[Could not read content: ${response.statusText}]`;
-            }
-
-            return await response.text();
-        } else {
-            // For regular files (text, PDF, etc.), use download endpoint
-            const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-
-            const response = await fetch(downloadUrl, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                return `[Could not read content: ${response.statusText}]`;
-            }
-
-            // For text-based files, return as text; for others, return info about the file
-            if (mimeType.includes('text') || mimeType.includes('json') || mimeType.includes('xml')) {
-                return await response.text();
-            } else {
-                return `[Binary file content - ${mimeType}]`;
-            }
+        if (!response.ok) {
+            return `[Could not read content: ${response.statusText}]`;
         }
+
+        // A binary file is only named.
+        return isGoogleFile || isTextFile(mimeType) ? await response.text() : `[Binary file content - ${mimeType}]`;
     } catch (error) {
         return `[Error reading content: ${error instanceof Error ? error.message : 'Unknown error'}]`;
     }
@@ -81,8 +64,7 @@ export async function fetchGdriveFiles (args: CloudStorageFileSearchArgs): Promi
     const {query, maxResults, accessToken} = args;
 
     try {
-        // eslint-disable-next-line max-len
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&pageSize=${maxResults}&fields=files(id,name,mimeType,webViewLink,modifiedTime,size,owners)`;
+        const url = `${FILES_URL}?q=${encodeURIComponent(query)}&pageSize=${maxResults}&fields=files(id,name,mimeType,webViewLink,modifiedTime,size,owners)`;
 
         const searchResponse = await fetch(url, {
             headers: {

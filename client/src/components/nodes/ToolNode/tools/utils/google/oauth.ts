@@ -1,4 +1,4 @@
-import {isTauri} from "../../../../../utils";
+import {isTauri} from "../../../../../../utils";
 
 
 export const ACCESS_TOKEN_TYPE_OAUTH = "oauth";

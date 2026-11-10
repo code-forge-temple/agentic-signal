@@ -93,7 +93,7 @@ export const GLOBAL_SECRETS = {
 
 - **ToolNode** builds each handler's config with `configValue`: the shared value if it is set (even to empty), else the node's own `userConfig` value. It uses the same rule for its "missing configuration" check.
 - **A tool's settings fields** show `shared ?? own` and write both.
-- **The Google tools** share one Client ID under `googleClientId` (`GOOGLE_CLIENT_ID_KEY` in `tools/utils/oauth.ts`), which doesn't follow the pattern. ToolNode never passes it on, which is fine: no handler uses it, only the Connect button does. Their access tokens do follow the pattern, and `TOOL_SUBTYPE` keeps the key Connect writes the same as the one ToolNode reads.
+- **The Google tools** share one Client ID under `googleClientId` (`GOOGLE_CLIENT_ID_KEY` in `tools/utils/google/oauth.ts`), which doesn't follow the pattern. ToolNode never passes it on, which is fine: no handler uses it, only the Connect button does. Their access tokens do follow the pattern: `googleTool()` (`tools/utils/google/googleTool.tsx`) gives the Connect button the tool's own `toolSubtype`, so the key Connect writes is the one ToolNode reads. It also sets their `globalSecrets` and `toSanitize`, so the Google tools have no `constants.ts`.
 
 ## Settings → Credentials
 

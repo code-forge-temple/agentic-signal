@@ -8,19 +8,26 @@ import GoogleCalendar from "./assets/google-calendar.svg";
 import {ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
 import {CalendarEventResult} from "@shared/types.gen";
-import {GLOBAL_SECRETS, LOCAL_SECRETS, OAUTH_PROVIDER, OAUTH_PROVIDER_SCOPE, oauthHandler, TOOL_SUBTYPE} from "./constants";
-import {ACCESS_TOKEN_KEY, ACCESS_TOKEN_TYPE_OAUTH, GOOGLE_CLIENT_ID_KEY} from "../utils/oauth";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
-import {GoogleToolOauthConfigFields} from "../utils/GoogleToolOauthConfigFields";
-import {UserConfigFields} from "../../UserConfigFields";
-import {excludeKeysFromObject} from "../../../../../utils";
+import {googleTool} from "../utils/google/googleTool";
 
 
-export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
-    toolSubtype: TOOL_SUBTYPE,
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** `value` as an ISO time when it reads as a date, else `fallback`'s. */
+const isoTimeOr = (value: string | undefined, fallback: Date) => {
+    const time = value ? new Date(value) : fallback;
+
+    return (isNaN(time.getTime()) ? fallback : time).toISOString();
+};
+
+export const GcalendarFetchEventsToolDescriptor: ToolDefinition = googleTool<{query: string; timeMin?: string; timeMax?: string}, CalendarEventResult[]>({
+    toolSubtype: "gcalendar-fetch-events",
     title: "Google Calendar Fetch Events Tool",
     icon: <GoogleCalendar />,
+    service: "Google Calendar",
+    scope: "calendar.readonly",
+    maxResults: {items: "events", maximum: 250},
     toolSchema: {
         name: "gcalendarFetchEvents",
         // eslint-disable-next-line max-len
@@ -47,87 +54,10 @@ export const GcalendarFetchEventsToolDescriptor:ToolDefinition = {
             required: ["query"]
         }
     },
-    userConfigSchema: extendSystemUserConfigSchema({
-        [GOOGLE_CLIENT_ID_KEY]: {
-            type: "string",
-            description: "Google OAuth2 Client ID (from Google Cloud Console)"
-        },
-        [ACCESS_TOKEN_KEY]: {
-            type: ACCESS_TOKEN_TYPE_OAUTH,
-            description: "Google Calendar Authentication",
-            provider: OAUTH_PROVIDER,
-            scope: OAUTH_PROVIDER_SCOPE,
-            oauthHandler,
-            required: true
-        },
-        maxResults: {
-            type: "integer",
-            description: "Maximum number of events to fetch",
-            default: 5,
-            minimum: 1,
-            maximum: 250
-        }
+    // An empty query is a valid input: it fetches every event in the range. What the LLM sends is sanitized before use.
+    fetch: async ({query, timeMin, timeMax}, auth) => GraphQLService.gcalendarFetchEvents(sanitizeStringInput(query || ""), {
+        timeMin: isoTimeOr(timeMin, new Date()),
+        timeMax: isoTimeOr(timeMax, new Date(Date.now() + THIRTY_DAYS_MS)),
+        ...auth,
     }),
-    globalSecrets: Object.values(GLOBAL_SECRETS),
-    toSanitize: [ACCESS_TOKEN_KEY, ...Object.values(LOCAL_SECRETS)].map(field => `userConfig.${field}`),
-    renderConfig: function ({userConfig, onConfigChange}){
-        return (
-            <>
-                <GoogleToolOauthConfigFields
-                    toolSubtype={TOOL_SUBTYPE}
-                    scope={OAUTH_PROVIDER_SCOPE}
-                    provider={OAUTH_PROVIDER}
-                    oauthHandler={oauthHandler}
-                    userConfig={userConfig}
-                    description="Google Calendar Authentication"
-                    onConfigChange={onConfigChange}
-                />
-                <UserConfigFields
-                    userConfigSchema={excludeKeysFromObject(this.userConfigSchema, [ACCESS_TOKEN_KEY, GOOGLE_CLIENT_ID_KEY])}
-                    userConfig={userConfig}
-                    onConfigChange={onConfigChange}
-                />
-            </>
-        )},
-    handlerFactory: (
-        userConfig: { accessToken?: string, maxResults?: number }
-    ) => async ({query, timeMin, timeMax}: {
-            query: string,
-            timeMin?: string,
-            timeMax?: string,
-        }): Promise<CalendarEventResult[] | { error: string }> => {
-        try {
-            if (!userConfig.accessToken) {
-                return {error: "Google Calendar authentication required. Please connect your Google Calendar account."};
-            }
-
-            if (!userConfig.maxResults) {
-                return {error: "Maximum results must be specified. Please set maxResults in the configuration."};
-            }
-
-            //NOTE: an empty query is a valid input. It means fetch all events.
-
-            // data received from the LLM needs to be sanitized to avoid issues:
-            const sanitizedQuery = sanitizeStringInput(query || "");
-            const sanitizedTimeMin = timeMin && !isNaN(new Date(timeMin).getTime()) ?
-                new Date(timeMin).toISOString() :
-                new Date().toISOString();
-            const sanitizedTimeMax = timeMax && !isNaN(new Date(timeMax).getTime()) ?
-                new Date(timeMax).toISOString() :
-                new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days from now
-
-
-            return await GraphQLService.gcalendarFetchEvents(
-                sanitizedQuery,
-                {
-                    timeMin: sanitizedTimeMin,
-                    timeMax: sanitizedTimeMax,
-                    maxResults: userConfig.maxResults,
-                    accessToken: userConfig.accessToken
-                }
-            );
-        } catch (error) {
-            return {error: error instanceof Error ? error.message : 'Unknown error'};
-        }
-    }
-};
+});

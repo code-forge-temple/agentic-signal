@@ -67,7 +67,8 @@ In **orchestration mode**, the LLM node plans tasks and runs each as its own age
 
 ## Adding a Tool
 
-1. **Create the folder** `client/src/components/nodes/ToolNode/tools/FooTool/` with `descriptor.tsx` exporting `FooToolDescriptor: ToolDefinition`. Copy a similar tool: `MaxTool` (pure client), `DuckDuckGoSearchTool` (backend call, no key), `BraveSearchTool` (backend call with an API key), `GcalendarFetchEventsTool` (OAuth).
+1. **Create the folder** `client/src/components/nodes/ToolNode/tools/FooTool/` with `descriptor.tsx` exporting `FooToolDescriptor: ToolDefinition`. Copy a similar tool: `MaxTool` (pure client), `DuckDuckGoSearchTool` (backend call, no key), `BraveSearchTool` (backend call with an API key), `GcalendarFetchEventsTool` (a Google API).
+   - **A Google API tool** is built with `googleTool({...})` from `tools/utils/google/googleTool.tsx`. It adds what the Google tools share: the Client ID, the OAuth sign-in (Connect button and access token), `maxResults`, `globalSecrets`, `toSanitize` and the settings UI. It also checks the sign-in and `maxResults` before the tool's own `fetch(params, {accessToken, maxResults})` runs. The tool gives its `toolSubtype`, `title`, `icon`, `toolSchema`, the `service` name ("Gmail"), the read-only OAuth `scope` ("gmail.readonly"), its `maxResults` limit and `fetch`. Steps 3, 4 and 6 are then done.
 2. **Write `toolSchema`**: a clear `name` (camelCase), a `description` saying when to use it and what it returns, and `parameters` with descriptions and `required`.
 3. **Write `userConfigSchema`** with `extendSystemUserConfigSchema({...})`. Mark fields the tool can't work without as `required: true`; the AI Tool node then shows "missing configuration" until they're set.
 4. **Write `handlerFactory`.** Validate the config and the arguments, do the work, and return a result or `{error}`.

@@ -58,28 +58,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/LlmProcessNode/utils/aiOrchestration/runOrchestration.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/LlmProcessNode/utils/formatUtils.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/RagNode/hooks/useWeaviateCollections.ts": {
     "complexity": {
       "count": 1
@@ -158,19 +136,6 @@
   },
   "client/src/hooks/useWholeItemScroller.ts": {
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "client/src/services/buildSystemPrompt.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/expression-complexity": {
-      "count": 1
-    }
-  },
-  "client/src/services/commandConnections.ts": {
-    "sonarjs/expression-complexity": {
       "count": 1
     }
   },

@@ -89,71 +89,61 @@ function renderPortSchema (title: string, schema: ZodTypeAny, name: string): str
     ];
 }
 
+type NodeDescriptor = (typeof nodeRegistry)[number];
+
+// Just the keys read below; JsonSchema7Type is a union that doesn't expose them all.
+type ConfigJsonSchema = {properties?: object; anyOf?: unknown[]; oneOf?: unknown[]; allOf?: unknown[]};
+
+// The ports besides the flow port, in the order the docs list them: none of them takes data in.
+const CONNECTION_PORTS = [NODE_PORT_IDS.TRIGGER, NODE_PORT_IDS.CONTEXT, NODE_PORT_IDS.TOOL] as const;
+
+function portsLine ({metadata: {ports}}: NodeDescriptor): string {
+    const portList = [
+        ...CONNECTION_PORTS.filter(id => Boolean(ports[id])).map(id => `${id} (${id} — no data input)`),
+        ...(ports[NODE_PORT_IDS.FLOW] ? ['flow'] : []),
+    ];
+
+    return portList.length ? `\r\n**Ports:** ${portList.join(', ')}` : '\r\n**Ports:** none (standalone / terminal node)';
+}
+
+/** The flow port's input and output schemas, those it has. */
+function flowSchemaLines ({type, metadata: {ports}}: NodeDescriptor): string[] {
+    const flowPort = ports[NODE_PORT_IDS.FLOW];
+
+    return [
+        ...(flowPort?.inputSchema ? renderPortSchema('Input port schema', flowPort.inputSchema, `${type}-input`) : []),
+        ...(flowPort?.outputSchema ? renderPortSchema('Output port schema', flowPort.outputSchema, `${type}-output`) : []),
+    ];
+}
+
+/** Whether a config schema has fields to show: properties, or anyOf / oneOf / allOf alternatives. */
+const hasConfigFields = ({properties, anyOf, oneOf, allOf}: ConfigJsonSchema) =>
+    Object.keys(properties ?? {}).length > 0 || [anyOf, oneOf, allOf].some(list => (list?.length ?? 0) > 0);
+
+/** The node's config fields: its config schema as JSON, or a note when there's nothing to show. */
+function configLines ({type, metadata: {configSchema}}: NodeDescriptor): string[] {
+    if (!configSchema) return ['**Config fields:** see platform documentation.'];
+
+    const jsonSchema = zodToJsonSchema(configSchema, {
+        name: type,
+        errorMessages: false,
+        $refStrategy: 'none',
+    });
+    const schema = (jsonSchema.definitions?.[type] ?? jsonSchema) as ConfigJsonSchema;
+
+    if (!hasConfigFields(schema)) return ['**Config fields:** none — no additional configuration required.'];
+
+    return ['**Config fields (in `data`):**', `${TRIPLE_BACKTICK}json`, JSON.stringify(schema, null, 4), `${TRIPLE_BACKTICK}`];
+}
+
 function buildNodeDocs (): string {
-    return nodeRegistry.map((descriptor) => {
-        const lines: string[] = [];
-
-        lines.push(`### ${descriptor.title} (\`type: "${descriptor.type}"\`)`);
-        lines.push(descriptor.metadata.description);
-
-        const portList: string[] = [];
-        const flowPort = descriptor.metadata.ports[NODE_PORT_IDS.FLOW];
-        const hasTriggerPort = Boolean(descriptor.metadata.ports[NODE_PORT_IDS.TRIGGER]);
-        const hasContextPort = Boolean(descriptor.metadata.ports[NODE_PORT_IDS.CONTEXT]);
-        const hasToolPort = Boolean(descriptor.metadata.ports[NODE_PORT_IDS.TOOL]);
-
-        if (hasTriggerPort) portList.push('trigger (trigger — no data input)');
-
-        if (hasContextPort) portList.push('context (context — no data input)');
-
-        if (hasToolPort) portList.push('tool (tool — no data input)');
-
-        if (flowPort) portList.push('flow');
-
-        if (portList.length) {
-            lines.push(`\r\n**Ports:** ${portList.join(', ')}`);
-        } else {
-            lines.push('\r\n**Ports:** none (standalone / terminal node)');
-        }
-
-        if (flowPort?.inputSchema) {
-            lines.push(...renderPortSchema('Input port schema', flowPort.inputSchema, `${descriptor.type}-input`));
-        }
-
-        if (flowPort?.outputSchema) {
-            lines.push(...renderPortSchema('Output port schema', flowPort.outputSchema, `${descriptor.type}-output`));
-        }
-
-        if (descriptor.metadata.configSchema) {
-            const jsonSchema = zodToJsonSchema(descriptor.metadata.configSchema, {
-                name: descriptor.type,
-                errorMessages: false,
-                $refStrategy: 'none',
-            });
-
-            // Just the keys read below; JsonSchema7Type is a union that doesn't expose them all.
-            const configSchema = (jsonSchema.definitions?.[descriptor.type] ?? jsonSchema) as {
-                properties?: object; anyOf?: unknown[]; oneOf?: unknown[]; allOf?: unknown[];
-            };
-
-            const hasConfigSchemaFields =
-                (configSchema.properties && Object.keys(configSchema.properties).length > 0) ||
-                ((configSchema.anyOf?.length ?? 0) + (configSchema.oneOf?.length ?? 0) + (configSchema.allOf?.length ?? 0) > 0);
-
-            if (hasConfigSchemaFields) {
-                lines.push('**Config fields (in `data`):**');
-                lines.push(`${TRIPLE_BACKTICK}json`);
-                lines.push(JSON.stringify(configSchema, null, 4));
-                lines.push(`${TRIPLE_BACKTICK}`);
-            } else {
-                lines.push('**Config fields:** none — no additional configuration required.');
-            }
-        } else {
-            lines.push('**Config fields:** see platform documentation.');
-        }
-
-        return lines.join('\n');
-    }).join('\n\n---\n\n');
+    return nodeRegistry.map(descriptor => [
+        `### ${descriptor.title} (\`type: "${descriptor.type}"\`)`,
+        descriptor.metadata.description,
+        portsLine(descriptor),
+        ...flowSchemaLines(descriptor),
+        ...configLines(descriptor),
+    ].join('\n')).join('\n\n---\n\n');
 }
 
 function buildToolDocs (): string {

@@ -33,19 +33,33 @@ export function getExpectedOutputType (format: unknown): string | undefined {
         // end the oneOf/anyOf/allOf search below, so it comes back as text rather than undefined.
         if (type) return typeof type === "string" ? type : String(type);
 
-        for (const key of ["oneOf", "anyOf", "allOf"]) {
-            const subschemas = (schema as Record<string, unknown>)[key];
-
-            if (Array.isArray(subschemas)) {
-                for (const subschema of subschemas as unknown[]) {
-                    const type = getExpectedOutputType(subschema);
-
-                    if (type !== undefined) return type;
-                }
-            }
-        }
+        return combinedOutputType(schema as Record<string, unknown>);
     } catch {
         return undefined;
+    }
+}
+
+/** The first output type found among `schema`'s oneOf, then anyOf, then allOf subschemas. */
+function combinedOutputType (schema: Record<string, unknown>): string | undefined {
+    for (const key of ["oneOf", "anyOf", "allOf"]) {
+        const subschemas = schema[key];
+
+        if (!Array.isArray(subschemas)) continue;
+
+        const type = firstOutputType(subschemas as unknown[]);
+
+        if (type !== undefined) return type;
+    }
+
+    return undefined;
+}
+
+/** The output type of the first of `subschemas` that has one. */
+function firstOutputType (subschemas: unknown[]): string | undefined {
+    for (const subschema of subschemas) {
+        const type = getExpectedOutputType(subschema);
+
+        if (type !== undefined) return type;
     }
 
     return undefined;

@@ -25,15 +25,18 @@ export type CommandConnection = {
 /** Kept in the global store (persisted, and gone with Clear App Data); the tokens themselves are in the vault. */
 export const COMMAND_CONNECTIONS_KEY = "commandConnections";
 
+const hasIdentity = (item: Record<string, unknown>) => typeof item.id === "string" && typeof item.name === "string" && Array.isArray(item.commands);
+
+// The token's hash, or in a connection saved before there was a vault, the token itself.
+const hasSecret = (item: Record<string, unknown>) => typeof item.tokenHash === "string" || typeof item.token === "string";
+
+const isCommandConnection = (item: unknown): item is CommandConnection => isRecord(item) && hasIdentity(item) && hasSecret(item);
+
 export function parseCommandConnections (raw: string | undefined): CommandConnection[] {
     try {
         const parsed: unknown = JSON.parse(raw ?? "[]");
 
-        return Array.isArray(parsed)
-            ? parsed.filter((item): item is CommandConnection => isRecord(item)
-                && typeof item.id === "string" && typeof item.name === "string" && Array.isArray(item.commands)
-                && (typeof item.tokenHash === "string" || typeof item.token === "string"))
-            : [];
+        return Array.isArray(parsed) ? parsed.filter(isCommandConnection) : [];
     } catch {
         return [];
     }

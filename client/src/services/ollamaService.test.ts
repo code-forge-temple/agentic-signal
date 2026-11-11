@@ -398,13 +398,71 @@ describe('OllamaService.fetchAIResponse', () => {
             maxToolRetries: 3,
         });
 
-        // (ollama, messages, model, format, tools, think, temperature)
-        const [, , model, format, , think, temperature] = receivedArgs[0];
+        // (ollama, messages, {model, format, tools, think, temperature})
+        const {model, format, think, temperature} = receivedArgs[0][2];
 
         expect(model).toBe('m');
         expect(format).toEqual({type: 'object'});
         expect(think).toBe(true);
         expect(temperature).toBe(0.3);
+    });
+
+    it('stops running a required tool once it has used up its retries, even while the rounds last', async () => {
+        const failingCalls: unknown[] = [];
+        const tools = [
+            {
+                schema: {name: 'failing', description: '', parameters: {}},
+                systemUserConfigValues: {requireToolUse: true},
+                handler: async (params: unknown) => {
+                    failingCalls.push(params);
+
+                    return {error: 'bad input'};
+                },
+            },
+            {
+                schema: {name: 'working', description: '', parameters: {}},
+                systemUserConfigValues: {requireToolUse: true},
+                handler: async () => ({success: true}),
+            },
+        ];
+        // Two required tools give two rounds per retry; the model asks for the failing tool again in the second.
+        const {service} = mockService([
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall({}, 'failing')]}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall({}, 'failing'), nativeToolCall({}, 'working')]}},
+            {message: {role: 'assistant', content: 'done'}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools,
+            maxToolRetries: 1,
+        });
+
+        expect(failingCalls).toHaveLength(1);
+        expect(result).toEqual({success: false, error: 'Tool calling failed after 1 attempts for: failing'});
+    });
+
+    it('keeps the text of each later reply in the conversation for the next request', async () => {
+        const {service, receivedArgs} = mockService([
+            {message: {role: 'assistant', content: 'Hello'}},
+            {message: {role: 'assistant', content: 'I will call it'}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: 'Done'}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools: makeTools([]),
+            maxToolRetries: 3,
+        });
+
+        // The conversation is one array, so the last request's shows everything that joined it.
+        const conversation = receivedArgs[3][1] as {role: string; content: string}[];
+
+        expect(conversation).toContainEqual({role: 'assistant', content: 'I will call it', images: []});
+        expect(result).toEqual({success: true, final: true, reply: 'Done'});
     });
 
     describe('leaked tool-call recovery (regression coverage)', () => {
@@ -604,7 +662,7 @@ describe('OllamaService (private) callOllamaChat', () => {
             },
         };
 
-        const result = await service.callOllamaChat(client, [{role: MessageRole.USER, content: 'hello', images: []}], 'm');
+        const result = await service.callOllamaChat(client, [{role: MessageRole.USER, content: 'hello', images: []}], {model: 'm'});
 
         expect(receivedArgs).toMatchObject({
             model: 'm',
@@ -630,7 +688,7 @@ describe('OllamaService (private) callOllamaChat', () => {
         };
 
         await service.callOllamaChat(
-            client, [{role: MessageRole.USER, content: 'hello', images: []}], 'm', {type: 'object'}, undefined, true, 0.7
+            client, [{role: MessageRole.USER, content: 'hello', images: []}], {model: 'm', format: {type: 'object'}, think: true, temperature: 0.7}
         );
 
         expect(receivedArgs.think).toBe(true);

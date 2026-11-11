@@ -175,23 +175,8 @@
     }
   },
   "client/src/services/ollamaService.ts": {
-    "complexity": {
-      "count": 4
-    },
-    "max-depth": {
-      "count": 5
-    },
     "max-lines": {
       "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "max-params": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
     }
   },
   "client/src/services/vault/vault.ts": {

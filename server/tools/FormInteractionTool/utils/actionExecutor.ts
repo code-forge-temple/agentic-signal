@@ -21,14 +21,23 @@ type ActionRun = {
     typingDelay: number;
 };
 
-/** The kind of field: "contenteditable", an input's type, or else its tag name; "text" when it can't be told. */
+/**
+ * The kind of field: "contenteditable", an input's type, or else its tag name; "text" when it can't be told. Bounded
+ * like the actions, and a field that doesn't turn up in that time fails the action here: waiting for it all over again
+ * in the action itself would only double the time before the LLM hears about a wrong selector.
+ */
 const fieldKind = (locator: Locator): Promise<string> => locator
     .evaluate((el: Element) => {
         if (el.getAttribute("contenteditable") === "true") return "contenteditable";
 
         return (el as HTMLInputElement).type || el.tagName.toLowerCase();
-    })
-    .catch(() => "text");
+    }, undefined, {timeout: ACTION_TIMEOUT_MS})
+    // By name: Playwright's TimeoutError class would load Playwright for this module's tests too.
+    .catch((error: unknown) => {
+        if (error instanceof Error && error.name === "TimeoutError") throw error;
+
+        return "text";
+    });
 
 /** `value` with real newlines, returns and tabs where some models send them double-escaped (the two-char literal '\n'). */
 export const unescaped = (value: string) => value
@@ -68,7 +77,7 @@ async function fillField (run: ActionRun): Promise<void> {
     }
 
     await locator.click({timeout: ACTION_TIMEOUT_MS});
-    await locator.fill("");
+    await locator.fill("", {timeout: ACTION_TIMEOUT_MS});
 
     if (action.value) await typeLikeAPerson(run, action.value);
 }

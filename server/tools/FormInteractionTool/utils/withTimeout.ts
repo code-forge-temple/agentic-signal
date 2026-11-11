@@ -14,3 +14,17 @@ export function withTimeout<T> (promise: Promise<T>, ms: number, message: string
 
     return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
 }
+
+/**
+ * `withTimeout` for work that can stop: `run` gets a signal that aborts once the caller stops waiting (the time is up,
+ * or the work settled), so work still going after a timeout can stop instead of acting for a caller that has moved on.
+ */
+export async function withDeadline<T> (run: (signal: AbortSignal) => Promise<T>, ms: number, message: string): Promise<T> {
+    const controller = new AbortController();
+
+    try {
+        return await withTimeout(run(controller.signal), ms, message);
+    } finally {
+        controller.abort();
+    }
+}

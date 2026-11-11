@@ -52,6 +52,21 @@ export async function closeSession (key: string): Promise<void> {
 }
 
 /**
+ * Closes the browser `page` belongs to, and its session under `key` only while that's still this page's: a later call
+ * may have opened its own session under the same key since, and that one stays open.
+ */
+export async function closeSessionOf (key: string, page: Page): Promise<void> {
+    if (sessions.get(key)?.page === page) return closeSession(key);
+
+    const browser = page.context().browser();
+
+    if (browser) {
+        await withTimeout(browser.close(), CLOSE_TIMEOUT_MS, "browser.close timed out")
+            .catch((err) => console.warn(`[FormInteraction] session close: ${errorMessage(err)}`));
+    }
+}
+
+/**
  * Closes every session whose key belongs to `sessionId` (i.e. keyed `${sessionId}:${url}`).
  * A single run can open sessions for several URLs (e.g. one per orchestrated agent task),
  * so this sweeps all of them at once instead of requiring the caller to track each url.

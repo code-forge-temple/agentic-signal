@@ -10,4 +10,7 @@ export function createConditionalLog (condition: boolean) {
     };
 }
 
-export const devLog = createConditionalLog(Deno.env.get("LOGS") === "true");
+/** Whether `devLog` writes anything, so work done only for its messages can be skipped otherwise. */
+export const devLogging = Deno.env.get("LOGS") === "true";
+
+export const devLog = createConditionalLog(devLogging);

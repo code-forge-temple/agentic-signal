@@ -9,17 +9,36 @@ import {FormInteractionArgs, FormInteractionResult} from "./types.ts";
 import {ACTION_TIMEOUT_MS, executeAction} from "./utils/actionExecutor.ts";
 import {checkEmptyRequiredFields, extractActionButtons, extractFormFields} from "./utils/fieldExtractor.ts";
 import {cleanupTempDir, writeTempFiles} from "./utils/fileUtils.ts";
-import {closeSession, getOrCreateSession} from "./utils/sessionManager.ts";
-import {devLog} from "../../utils/logger.ts";
-import {withTimeout} from "./utils/withTimeout.ts";
+import {closeSession, closeSessionOf, getOrCreateSession} from "./utils/sessionManager.ts";
+import {devLog, devLogging} from "../../utils/logger.ts";
+import {withDeadline} from "./utils/withTimeout.ts";
 import {disguisedLaunchOptions, disguisePage} from "../../utils/browserUtils.ts";
 import {errorMessage} from "../../../shared/utils.ts";
 
 const NAV_TIMEOUT_MS = 20_000;
 
-/** The form's page: the session's, still on the step the last call left it on, or a new browser on the form. */
-async function openFormPage (sessionKey: string, url: string, browserPath?: string): Promise<Page> {
+/** One call of the tool as it runs. `signal` aborts when the call has timed out: the work then stops where it is. */
+type FormCall = {
+    args: FormInteractionArgs;
+    sessionKey: string;
+    attachedFilePathMap: Record<string, string>;
+    result: FormInteractionResult;
+    signal: AbortSignal;
+};
+
+/**
+ * The form's page: the session's, still on the step the last call left it on, or a new browser on the form. Null when
+ * the call timed out while the browser was opening: nothing waits for it any more, so it's closed before loading.
+ */
+async function openFormPage ({sessionKey, args: {url, browserPath}, signal}: FormCall): Promise<Page | null> {
     const {page, isNew} = await getOrCreateSession(sessionKey, disguisedLaunchOptions(browserPath));
+
+    if (signal.aborted) {
+        // This page's own browser: a retry may have opened a session under the same key meanwhile.
+        await closeSessionOf(sessionKey, page);
+
+        return null;
+    }
 
     devLog(`[FormInteraction] ${isNew ? "browser launched" : "reusing existing session"}`);
 
@@ -44,10 +63,13 @@ async function pauseAfterAction (typingDelay: number): Promise<void> {
 }
 
 /** Runs the actions in order; a failed one is noted and the rest still run. Returns the failures. */
-async function runActions (page: Page, {actions = [], typingDelay}: FormInteractionArgs, attachedFilePathMap: Record<string, string>): Promise<string[]> {
+async function runActions (page: Page, {args: {actions = [], typingDelay}, attachedFilePathMap, signal}: FormCall): Promise<string[]> {
     const failedActions: string[] = [];
 
     for (let i = 0; i < actions.length; i++) {
+        // Timed out: the LLM has its error already, so no more typing into the form.
+        if (signal.aborted) break;
+
         const action = actions[i];
         const valuePreview = action.value !== undefined ? ` = "${String(action.value).substring(0, 40)}"` : "";
 
@@ -59,6 +81,8 @@ async function runActions (page: Page, {actions = [], typingDelay}: FormInteract
             console.warn(`[FormInteraction] [${i + 1}/${actions.length}] ✗ ${action.actionType} → ${action.selector}: ${msg}`);
             failedActions.push(`${action.actionType} ${action.selector}: ${msg}`);
         });
+
+        if (signal.aborted) break;
 
         await pauseAfterAction(typingDelay);
     }
@@ -84,6 +108,9 @@ async function fillProblems (page: Page, submitSelector: string | undefined, fai
 
     return problems;
 }
+
+/** The selectors of the fields the page shows now, as one string to compare. */
+const fieldSelectors = async (page: Page) => (await extractFormFields(page)).map((f) => f.selector).join(",");
 
 /** The fields and buttons the page shows now. */
 async function readPage (page: Page, result: FormInteractionResult): Promise<void> {
@@ -123,7 +150,8 @@ async function clickSubmit (page: Page, submitSelector: string, result: FormInte
     }
 
     const urlBeforeClick = page.url();
-    const selectorsBeforeClick = (await extractFormFields(page)).map((f) => f.selector).join(",");
+    // Only for the debug log below: reading the fields is a whole pass over the page.
+    const selectorsBeforeClick = devLogging ? await fieldSelectors(page) : "";
 
     await submitLocator.first().click({timeout: ACTION_TIMEOUT_MS});
 
@@ -139,8 +167,10 @@ async function clickSubmit (page: Page, submitSelector: string, result: FormInte
     result.pageTitle = await page.title();
 
     // For an SPA, currentUrl never changes on a real "page" transition — the field
-    // set is the only reliable signal that the click actually did anything.
-    const selectorsAfterClick = (await extractFormFields(page)).map((f) => f.selector).join(",");
+    // set is the only reliable signal that the click actually did anything. Read even
+    // without logging: this pass also gives a page that re-renders after the click a
+    // moment before the checks that follow, and those must time the same either way.
+    const selectorsAfterClick = await fieldSelectors(page);
 
     devLog(
         `[FormInteraction] after click — url ${urlBeforeClick === result.currentUrl ? "unchanged" : "changed"}, ` +
@@ -154,15 +184,22 @@ async function clickSubmit (page: Page, submitSelector: string, result: FormInte
 }
 
 /** One call on the form: open its page, run the actions, submit when asked, and read the page that results. */
-async function fillForm (args: FormInteractionArgs, sessionKey: string, attachedFilePathMap: Record<string, string>, result: FormInteractionResult): Promise<void> {
-    const page = await openFormPage(sessionKey, args.url, args.browserPath);
+async function fillForm (call: FormCall): Promise<void> {
+    const {args, sessionKey, result, signal} = call;
+    const page = await openFormPage(call);
+
+    if (!page) return;
 
     result.currentUrl = page.url();
     result.pageTitle = await page.title();
 
     devLog(`[FormInteraction] on → "${result.currentUrl}" ("${result.pageTitle}")`);
 
-    const failedActions = await runActions(page, args, attachedFilePathMap);
+    const failedActions = await runActions(page, call);
+
+    // Never submit for a call that has timed out: the LLM was told it failed and may well try again.
+    if (signal.aborted) return;
+
     // Guard: refuse to submit if required fields are still empty, and treat any
     // failed fill/select/check action as an error too — both mean the form isn't
     // in the state the LLM asked for, and it should retry with corrected actions.
@@ -224,8 +261,8 @@ export async function interactWithForm (args: FormInteractionArgs): Promise<Form
             ({tempDir, pathMap: attachedFilePathMap} = await writeTempFiles(attachedFiles));
         }
 
-        await withTimeout(
-            fillForm(args, sessionKey, attachedFilePathMap, result),
+        await withDeadline(
+            signal => fillForm({args, sessionKey, attachedFilePathMap, result, signal}),
             interactionTimeoutMs,
             `Form interaction timed out after ${interactionTimeoutMs / 1000}s`
         );

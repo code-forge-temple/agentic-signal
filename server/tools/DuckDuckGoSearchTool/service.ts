@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {DuckDuckGoResult} from "./types.ts";
-import {launchBrowser} from "../../utils/browserUtils.ts";
+import {browserLaunchOptions, launchBrowser} from "../../utils/browserUtils.ts";
 import {errorMessage} from "../../../shared/utils.ts";
 
 const SEARCH_TIMEOUT_MS = 20_000;
@@ -16,7 +16,7 @@ export async function fetchDuckDuckGoResults (query: string, browserPath?: strin
 
     try {
         await launchBrowser(
-            {headless: false, executablePath: browserPath || undefined},
+            browserLaunchOptions(browserPath),
             async (page) => {
                 await page.addInitScript(() => {
                     Object.defineProperty(navigator, 'webdriver', {get: () => undefined});

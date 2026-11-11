@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {launchBrowser} from "../../utils/browserUtils.ts";
+import {browserLaunchOptions, launchBrowser} from "../../utils/browserUtils.ts";
 import {errorMessage} from "../../../shared/utils.ts";
 
 
@@ -13,7 +13,7 @@ export async function fetchRenderedHtml (url: string, browserPath?: string): Pro
 
     try {
         await launchBrowser(
-            {headless: false, executablePath: browserPath || undefined},
+            browserLaunchOptions(browserPath),
             async (page) => {
                 await page.goto(url, {waitUntil: "load"});
                 content = await page.content();

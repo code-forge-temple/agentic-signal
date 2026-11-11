@@ -55,11 +55,10 @@ export type AttachedFile = {
     mimeType: string;
 };
 
+const hasString = (x: object, key: string) => key in x && typeof (x as Record<string, unknown>)[key] === 'string';
+
 export const isAttachedFile = (x: unknown): x is AttachedFile =>
-    typeof x === 'object' && x !== null &&
-    'name' in x && typeof x.name === 'string' &&
-    'base64' in x && typeof x.base64 === 'string' &&
-    'mimeType' in x && typeof x.mimeType === 'string';
+    typeof x === 'object' && x !== null && (['name', 'base64', 'mimeType'] satisfies (keyof AttachedFile)[]).every(key => hasString(x, key));
 
 /**
  * - fill: type text into an input or textarea

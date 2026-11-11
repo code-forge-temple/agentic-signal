@@ -266,41 +266,6 @@
       "count": 1
     }
   },
-  "server/tools/FormInteractionTool/service.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "server/tools/FormInteractionTool/types.ts": {
-    "sonarjs/expression-complexity": {
-      "count": 1
-    }
-  },
-  "server/tools/FormInteractionTool/utils/actionExecutor.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "server/tools/WebPageToMarkdownTool/service.ts": {
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
   "server/utils/keyedLock.test.ts": {
     "sonarjs/no-identical-functions": {
       "count": 1

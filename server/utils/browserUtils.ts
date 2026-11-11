@@ -124,6 +124,34 @@ export async function setPageSize (page: Page, size: {width: number; height: num
     await session.send("Emulation.setDeviceMetricsOverride", {...size, deviceScaleFactor: 0, mobile: false});
 }
 
+/** The browser the tools launch: visible (sites block headless ones more often), the user's own one when it's set. */
+export const browserLaunchOptions = (browserPath?: string): LaunchOptions => ({headless: false, executablePath: browserPath || undefined});
+
+/** The same browser, launched without the flag that tells sites it's automated. Goes with `disguisePage`. */
+export const disguisedLaunchOptions = (browserPath?: string): LaunchOptions => ({
+    ...browserLaunchOptions(browserPath),
+    args: [
+        "--disable-blink-features=AutomationControlled",
+        "--no-sandbox",
+    ],
+});
+
+/** Makes a page look like a person's browser to the sites it opens: no webdriver flag, Chrome's objects, English. */
+export async function disguisePage (page: Page): Promise<void> {
+    await page.addInitScript(() => {
+        Object.defineProperty(navigator, "webdriver", {get: () => undefined});
+
+        // @ts-expect-error — inject chrome API stub present in real browsers
+        window.chrome = {runtime: {}};
+
+        Object.defineProperty(navigator, "plugins", {get: () => [1, 2, 3]});
+        Object.defineProperty(navigator, "languages", {get: () => ["en-US", "en"]});
+    });
+
+    await page.setExtraHTTPHeaders({"Accept-Language": "en-US,en;q=0.9"});
+    await setPageSize(page, {width: 1280, height: 800});
+}
+
 /**
  * Launches a Chromium browser, runs the callback with a new page (in a minimized window, see `newMinimizedPage`), and
  * closes everything after.

@@ -31,9 +31,12 @@ function mockService (mockResponses: CannedResponse[]) {
     const service = OllamaService.getInstance();
     let callIndex = 0;
     const receivedArgs: CallOllamaChatArgs[] = [];
+    // The conversation is one array that keeps growing; this keeps what each request saw.
+    const sentMessages: {role: string; content: string}[][] = [];
 
     (service as any).callOllamaChat = async (...args: CallOllamaChatArgs) => {
         receivedArgs.push(args);
+        sentMessages.push([...args[1]]);
 
         const next = mockResponses[callIndex++];
 
@@ -42,7 +45,7 @@ function mockService (mockResponses: CannedResponse[]) {
         return next;
     };
 
-    return {service, getCallCount: () => callIndex, receivedArgs};
+    return {service, getCallCount: () => callIndex, receivedArgs, sentMessages};
 }
 
 /** Mocks `getOllama` to return a fake client — for the methods that talk to Ollama
@@ -443,7 +446,7 @@ describe('OllamaService.fetchAIResponse', () => {
         expect(result).toEqual({success: false, error: 'Tool calling failed after 1 attempts for: failing'});
     });
 
-    it('keeps the text of each later reply in the conversation for the next request', async () => {
+    it('keeps the text of each reply in the conversation for the next request', async () => {
         const {service, receivedArgs} = mockService([
             {message: {role: 'assistant', content: 'Hello'}},
             {message: {role: 'assistant', content: 'I will call it'}},
@@ -461,8 +464,189 @@ describe('OllamaService.fetchAIResponse', () => {
         // The conversation is one array, so the last request's shows everything that joined it.
         const conversation = receivedArgs[3][1] as {role: string; content: string}[];
 
+        expect(conversation).toContainEqual({role: 'assistant', content: 'Hello', images: []});
         expect(conversation).toContainEqual({role: 'assistant', content: 'I will call it', images: []});
         expect(result).toEqual({success: true, final: true, reply: 'Done'});
+    });
+
+    it('keeps the text of the first reply before the tool calls it came with', async () => {
+        const {service, sentMessages} = mockService([
+            {message: {role: 'assistant', content: 'Let me check the form', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: 'Done'}},
+        ]);
+
+        await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools: makeTools([]),
+            maxToolRetries: 3,
+        });
+
+        expect(sentMessages[1].map(message => message.content).slice(0, 3)).toEqual(['go', 'Let me check the form', JSON.stringify(nativeToolCall())]);
+    });
+
+    it('asks again for a required tool that failed when the model answers instead of retrying it', async () => {
+        const results = [{error: 'bad url'}, {success: true}];
+        const tools = [{
+            schema: {name: 'formInteraction', description: '', parameters: {}},
+            systemUserConfigValues: {requireToolUse: true},
+            handler: async () => results.shift(),
+        }];
+        const {service, sentMessages} = mockService([
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: 'I cannot open that page.'}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall({url: 'http://y'})]}},
+            {message: {role: 'assistant', content: 'Done'}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools,
+            maxToolRetries: 3,
+        });
+
+        const nudge = 'You must call the following tools: formInteraction. Please make the tool calls now.';
+        const nudges = (messages: {content: string}[]) => messages.filter(message => message.content === nudge).length;
+
+        // Not after the failed call itself (its error result already asks for a retry): after the answer that skipped it.
+        expect(nudges(sentMessages[1])).toBe(0);
+        expect(sentMessages[2].slice(-2).map(message => message.content)).toEqual(['I cannot open that page.', nudge]);
+        expect(nudges(sentMessages[2])).toBe(1);
+        expect(result).toEqual({success: true, final: true, reply: 'Done'});
+    });
+
+    it('does not run, in the final summary, a required tool that has used up its retries', async () => {
+        const handlerLog: unknown[] = [];
+        const {service} = mockService([
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: leakedNested()}},
+            {message: {role: 'assistant', content: 'Sorry, the form keeps failing.'}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools: makeTools(handlerLog, true, {error: 'blocked'}),
+            maxToolRetries: 2,
+        });
+
+        expect(handlerLog).toHaveLength(2);
+        expect(result).toEqual({success: false, error: 'Tool calling failed after 2 attempts for: formInteraction'});
+    });
+
+    it('reports the failed required tool, not the missing summary, when both happen', async () => {
+        const {service} = mockService([
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: leakedNested()}},
+            {message: {role: 'assistant', content: leakedNested()}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools: makeTools([], true, {error: 'blocked'}),
+            maxToolRetries: 2,
+        });
+
+        expect(result).toEqual({success: false, error: 'Tool calling failed after 2 attempts for: formInteraction'});
+    });
+
+    it('does not run a tool call leaked on the last summary attempt, whose result nothing would report', async () => {
+        const handlerLog: unknown[] = [];
+        const {service, getCallCount} = mockService([
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: leakedNested()}},
+        ]);
+
+        const result = await service.fetchAIResponse({
+            messages: [{role: MessageRole.USER, content: 'go', images: []}],
+            model: 'm',
+            tools: makeTools(handlerLog, false),
+            maxToolRetries: 1,
+        });
+
+        expect(handlerLog).toHaveLength(1);
+        expect(getCallCount()).toBe(2);
+        expect(result).toEqual({success: false, error: 'Model kept emitting tool-call JSON as plain text instead of a final summary after 1 attempt(s).'});
+    });
+
+    describe('debug log groups', () => {
+        const groupBalance = async (responses: CannedResponse[], tools: ReturnType<typeof makeTools>, maxToolRetries: number) => {
+            const opened = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {});
+            const closed = vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
+
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            try {
+                const {service} = mockService(responses);
+                const result = await service.fetchAIResponse({messages: [{role: MessageRole.USER, content: 'go', images: []}], model: 'm', tools, maxToolRetries});
+
+                return {opened: opened.mock.calls.length, closed: closed.mock.calls.length, success: (result as {success: boolean}).success};
+            } finally {
+                vi.restoreAllMocks();
+            }
+        };
+
+        it('closes its group, and only its own, when Ollama can\'t even be set up', async () => {
+            const opened = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {});
+            const closed = vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
+
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            try {
+                const {service} = mockService([]);
+
+                (service as any).getOllama = async () => { throw new Error('bad host'); };
+
+                expect(await service.fetchAIResponse({messages: [], model: 'm', maxToolRetries: 1})).toEqual({success: false, error: 'bad host'});
+                expect([opened.mock.calls.length, closed.mock.calls.length]).toEqual([1, 1]);
+            } finally {
+                vi.restoreAllMocks();
+            }
+        });
+
+        it('closes every group it opens when a required tool fails', async () => {
+            const balance = await groupBalance([{message: {role: 'assistant', content: 'no tools for me'}}], makeTools([]), 1);
+
+            expect(balance).toEqual({opened: 1, closed: 1, success: false});
+        });
+
+        it('closes every group it opens when the summary never comes', async () => {
+            const balance = await groupBalance([
+                {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+                {message: {role: 'assistant', content: leakedNested()}},
+            ], makeTools([], false), 1);
+
+            expect(balance).toEqual({opened: 2, closed: 2, success: false});
+        });
+
+        it('closes every group it opens when a tool throws during the summary', async () => {
+            let calls = 0;
+            const tools = makeTools([]);
+
+            tools[0].handler = async () => {
+                calls++;
+
+                if (calls > 1) throw new Error('tool crashed');
+
+                return {success: true};
+            };
+
+            // The tool succeeds, an empty reply ends the conversation, and the summary leaks a call to it.
+            const balance = await groupBalance([
+                {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+                {message: {role: 'assistant', content: ''}},
+                {message: {role: 'assistant', content: leakedNested()}},
+                {message: {role: 'assistant', content: 'unreached'}},
+            ], tools, 2);
+
+            expect(balance).toEqual({opened: 2, closed: 2, success: false});
+        });
     });
 
     describe('leaked tool-call recovery (regression coverage)', () => {

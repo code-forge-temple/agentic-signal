@@ -150,26 +150,22 @@ export class OllamaService {
      * `maxToolRetries` times on an error). A required tool that never succeeded fails the call.
      */
     fetchAIResponse = async (params: FetchAiParams): Promise<FetchAiResponse> => {
+        /* #if LOGS */
+        console.groupCollapsed("[OllamaService] fetchAIResponse");
+        console.log("Model:", params.model);
+        console.log("Format:", params.format ?? "(none)");
+        console.log("Tools:", params.tools?.map(t => t.schema.name) ?? "(none)");
+        /* #endif */
+
         try {
             const exchange = await this.startExchange(params);
 
             /* #if LOGS */
-            console.groupCollapsed("[OllamaService] fetchAIResponse");
-            console.log("Model:", params.model);
-            console.log("Format:", params.format ?? "(none)");
-            console.log("Tools:", params.tools?.map(t => t.schema.name) ?? "(none)");
             console.log("Messages:", exchange.messages);
             /* #endif */
 
             const reply = await this.replyAfterTools(exchange, await this.converse(exchange));
-
-            if (!reply) {
-                return {
-                    success: false,
-                    error: `Model kept emitting tool-call JSON as plain text instead of a final summary after ${params.maxToolRetries} attempt(s).`
-                };
-            }
-
+            // A required tool's failure is the cause to report, even when the summary never came either.
             const toolFailure = toolCallingFailure(exchange.toolStatus, params.maxToolRetries);
 
             if (toolFailure) {
@@ -179,9 +175,15 @@ export class OllamaService {
                 };
             }
 
+            if (!reply) {
+                return {
+                    success: false,
+                    error: `Model kept emitting tool-call JSON as plain text instead of a final summary after ${params.maxToolRetries} attempt(s).`
+                };
+            }
+
             /* #if LOGS */
             console.log("Returning reply:", reply.message.content);
-            console.groupEnd();
             /* #endif */
 
             return {
@@ -192,13 +194,17 @@ export class OllamaService {
         } catch (error) {
             /* #if LOGS */
             console.error("fetchAIResponse error:", error);
-            console.groupEnd();
             /* #endif */
 
             return {
                 success: false,
                 error: errorMessage(error)
             };
+        } finally {
+            // Every way out closes the group, so the debug log's groups stay balanced.
+            /* #if LOGS */
+            console.groupEnd();
+            /* #endif */
         }
     };
 
@@ -241,6 +247,8 @@ export class OllamaService {
         console.log("Initial response — content:", ...shownResponse(response));
         /* #endif */
 
+        keepTextReply(exchange.messages, response);
+
         while (true) {
             const toolCallsMade = await this.runRequestedTools(exchange, response);
 
@@ -255,7 +263,7 @@ export class OllamaService {
             // fetch always gets executed instead of being silently discarded.
             if (rounds >= maxRounds) break;
 
-            askForMissingTools(exchange);
+            askForMissingTools(exchange, toolCallsMade);
 
             response = await this.ask(exchange, exchange.toolSchemas);
             rounds++;
@@ -272,19 +280,14 @@ export class OllamaService {
 
     /** Runs the tool calls the response asks for; false when none ran. */
     private async runRequestedTools (exchange: Exchange, response: ChatResponse): Promise<boolean> {
-        const {tools, toolStatus, maxToolRetries} = exchange;
+        const {tools} = exchange;
 
         if (!response.message || !Array.isArray(response.message.tool_calls) || !tools) return false;
 
         let toolCallsMade = false;
 
         for (const toolCall of response.message.tool_calls) {
-            const status = toolStatus[toolCall.function.name];
-
-            // Skipped only when a required tool has used up its error retries. A succeeded tool
-            // may be called again on purpose, so the LLM can perform multi-step workflows with the
-            // same tool (e.g. read-form → fill-form).
-            if (status && status.retryCount >= maxToolRetries) continue;
+            if (!mayRun(exchange, toolCall)) continue;
 
             toolCallsMade = true;
 
@@ -327,11 +330,16 @@ export class OllamaService {
         console.log("Format:", exchange.chat.format ?? "(none)");
         /* #endif */
 
-        const summary = await this.askForSummary(exchange, tools);
+        let summary: ChatResponse | null;
 
-        /* #if LOGS */
-        console.groupEnd();
-        /* #endif */
+        try {
+            summary = await this.askForSummary(exchange, tools);
+        } finally {
+            // Closed even when a tool throws, so the debug log's groups stay balanced.
+            /* #if LOGS */
+            console.groupEnd();
+            /* #endif */
+        }
 
         if (summary) keepTextReply(exchange.messages, summary);
 
@@ -340,9 +348,10 @@ export class OllamaService {
 
     /**
      * Even with no tools offered, a destabilized model can keep leaking a tool-call-shaped JSON blob instead of a
-     * plain-text summary. That's real actionable data, not prose to discard, so it's recovered and executed, and the
-     * summary asked for again — bounded so a model that keeps leaking can't loop forever. Null when it was still
-     * leaking once the attempts ran out: a real error, not leaked JSON returned as if it were a valid answer.
+     * plain-text summary. That's real actionable data, not prose to discard, so it's recovered and executed (a required
+     * tool only while it has retries left, as in the conversation), and the summary asked for again — bounded so a
+     * model that keeps leaking can't loop forever. Null when it was still leaking once the attempts ran out: a real
+     * error, not leaked JSON returned as if it were a valid answer.
      */
     private async askForSummary (exchange: Exchange, tools: ToolEntry[]): Promise<ChatResponse | null> {
         const maxAttempts = exchange.maxToolRetries;
@@ -362,7 +371,11 @@ export class OllamaService {
 
             if (!Array.isArray(toolCalls) || toolCalls.length === 0) return response;
 
-            for (const toolCall of toolCalls) {
+            // On the last attempt no request is left to report a tool's result, so a leaked call isn't run: its action
+            // would happen unreported, behind an error.
+            if (attempt === maxAttempts) break;
+
+            for (const toolCall of toolCalls.filter(call => mayRun(exchange, call))) {
                 const {hasError, toolResultMessage} = await this.runToolCall(exchange, tools, toolCall);
 
                 /* #if LOGS */
@@ -699,9 +712,29 @@ function conversationRounds ({toolStatus, maxToolRetries}: Exchange): number {
     return requiredToolsCount > 0 ? maxToolRetries * requiredToolsCount : maxToolRetries;
 }
 
+/** Whether a required tool still has error retries left. */
+function hasRetriesLeft (status: ToolStatus, maxToolRetries: number): boolean {
+    return status.retryCount < maxToolRetries;
+}
+
 /** Whether a required tool has neither succeeded nor used up its retries. */
+function isPending (status: ToolStatus, maxToolRetries: number): boolean {
+    return !status.succeeded && hasRetriesLeft(status, maxToolRetries);
+}
+
+/** Whether a required tool is still pending. */
 function needsRetry ({toolStatus, maxToolRetries}: Exchange): boolean {
-    return Object.values(toolStatus).some(status => !status.succeeded && status.retryCount < maxToolRetries);
+    return Object.values(toolStatus).some(status => isPending(status, maxToolRetries));
+}
+
+/**
+ * Whether a tool call may run: not when a required tool has used up its error retries. A succeeded tool may be called
+ * again on purpose, so the LLM can perform multi-step workflows with the same tool (e.g. read-form → fill-form).
+ */
+function mayRun ({toolStatus, maxToolRetries}: Exchange, toolCall: ToolCall): boolean {
+    const status = toolStatus[toolCall.function.name];
+
+    return !status || hasRetriesLeft(status, maxToolRetries);
 }
 
 /** Records a call of a required tool; a tool the model may leave alone has no status. */
@@ -717,19 +750,22 @@ function recordToolResult (status: ToolStatus | undefined, hasError: boolean): v
     }
 }
 
-/** Nudges the model to call the required tools it hasn't called at all yet. */
-function askForMissingTools ({toolStatus, messages}: Exchange): void {
-    const neverCalledRequired = toolsWhere(toolStatus, status => !status.called);
+/**
+ * Nudges the model to call the required tools it hasn't called at all yet. After a turn in which it called no tool, also
+ * the ones that failed and may still be retried: it answered instead of trying them again.
+ */
+function askForMissingTools ({toolStatus, maxToolRetries, messages}: Exchange, toolCallsMade: boolean): void {
+    const missing = toolsWhere(toolStatus, status => !status.called || (!toolCallsMade && isPending(status, maxToolRetries)));
 
-    if (neverCalledRequired.length === 0) return;
+    if (missing.length === 0) return;
 
     /* #if LOGS */
-    console.log("Nudging LLM to call missing tools:", neverCalledRequired);
+    console.log("Nudging LLM to call missing tools:", missing);
     /* #endif */
 
     messages.push({
         role: MessageRole.USER,
-        content: `You must call the following tools: ${neverCalledRequired.join(", ")}. Please make the tool calls now.`,
+        content: `You must call the following tools: ${missing.join(", ")}. Please make the tool calls now.`,
         images: []
     });
 }
@@ -751,7 +787,7 @@ function keepTextReply (messages: Message[], response: ChatResponse): void {
 
 /** Why the required tools failed: one used up its retries, or one was never called successfully. Null when none did. */
 function toolCallingFailure (toolStatus: Record<string, ToolStatus>, maxToolRetries: number): string | null {
-    const exceededRetries = toolsWhere(toolStatus, status => status.retryCount >= maxToolRetries && !status.succeeded);
+    const exceededRetries = toolsWhere(toolStatus, status => !status.succeeded && !hasRetriesLeft(status, maxToolRetries));
 
     if (exceededRetries.length > 0) return `Tool calling failed after ${maxToolRetries} attempts for: ${exceededRetries.join(", ")}`;
 

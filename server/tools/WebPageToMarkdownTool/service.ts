@@ -10,6 +10,7 @@ import {WebPageToMarkdownResult} from "./types.ts";
 import {disguisedLaunchOptions, disguisePage, launchBrowser} from "../../utils/browserUtils.ts";
 import TurndownService from "npm:turndown";
 import {errorMessage} from "../../../shared/utils.ts";
+import {consentLabelPattern, nextRedirectWaitMs} from "./utils.ts";
 
 const PAGE_TIMEOUT_MS = 30_000;
 // Budget for the whole operation (browser launch, navigation, consent and redirect
@@ -23,7 +24,11 @@ const CONSENT_SELECTORS = [
     "[aria-label='Accept all']",
     "[aria-label='Agree to all']",
 ];
-const CONSENT_TEXT_LABELS = ["Accept all", "Accept All", "Agree to all", "I agree", "Agree"];
+const CONSENT_TEXT_LABELS = ["Accept all", "Agree to all", "I agree", "Agree"];
+// How long a consent button may take to show up after the page loaded.
+const CONSENT_WAIT_MS = 500;
+// A banner can animate away or get covered after it showed: then the page is read as it is.
+const CONSENT_CLICK_TIMEOUT_MS = 5_000;
 
 type BrowserExtractedContent = {
     title: string;
@@ -43,15 +48,11 @@ async function openPage (page: Page, url: string): Promise<void> {
  * multi-hop chains (e.g. consent.google.com → news.google.com → publisher) without hardcoding any domain names.
  */
 async function followRedirects (page: Page): Promise<void> {
-    const STABLE_MS = 3_000;
     const deadline = Date.now() + 20_000;
     let lastUrl = page.url();
 
-    while (Date.now() < deadline) {
-        const changed = await page.waitForURL(
-            (u: URL) => u.href !== lastUrl,
-            {timeout: Math.min(STABLE_MS, deadline - Date.now())}
-        ).then(() => true).catch(() => false);
+    for (let timeout = nextRedirectWaitMs(deadline, Date.now()); timeout !== null; timeout = nextRedirectWaitMs(deadline, Date.now())) {
+        const changed = await page.waitForURL((u: URL) => u.href !== lastUrl, {timeout}).then(() => true).catch(() => false);
 
         if (!changed) break;
 
@@ -62,25 +63,31 @@ async function followRedirects (page: Page): Promise<void> {
 }
 
 /**
- * The first of `locators` that's visible now, all checked at once. Playwright ignores isVisible's timeout, so a button
- * that only appears later isn't seen.
+ * The first of `locators` that's visible, in their order. All are waited for at once, so a button that shows up a
+ * moment after the page loaded still counts, and the wait is CONSENT_WAIT_MS at most rather than that times N.
  */
 async function firstVisible (locators: Locator[]): Promise<Locator | undefined> {
-    const visible = await Promise.all(locators.map(locator => locator.isVisible({timeout: 500}).catch(() => false)));
+    const visible = await Promise.all(locators.map(locator => locator.waitFor({state: "visible", timeout: CONSENT_WAIT_MS}).then(() => true, () => false)));
 
     return locators[visible.indexOf(true)];
 }
 
-/** Clicks a consent wall's accept button, by its known selectors first, then by its label. False when there's none. */
+/**
+ * Clicks a consent wall's accept button, by its known selectors first, then by its label. False when there's none, or
+ * when the click didn't go through.
+ */
 async function dismissConsent (page: Page): Promise<boolean> {
-    const button = await firstVisible(CONSENT_SELECTORS.map(selector => page.locator(selector).first()))
-        ?? await firstVisible(CONSENT_TEXT_LABELS.map(label => page.getByRole("button", {name: label, exact: false}).first()));
+    // One wait for both kinds; a known selector still wins over a label, being earlier in the list. Only visible
+    // matches count: a hidden one earlier on the page (say in a closed "manage options" panel) must not hide the one
+    // that shows.
+    const button = await firstVisible([
+        ...CONSENT_SELECTORS.map(selector => page.locator(selector).filter({visible: true}).first()),
+        ...CONSENT_TEXT_LABELS.map(label => page.getByRole("button", {name: consentLabelPattern(label)}).filter({visible: true}).first()),
+    ]);
 
     if (!button) return false;
 
-    await button.click();
-
-    return true;
+    return button.click({timeout: CONSENT_CLICK_TIMEOUT_MS}).then(() => true, () => false);
 }
 
 /** Runs in the page: its main content, with the noise taken out first, plus its title and description. */

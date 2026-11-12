@@ -18,6 +18,15 @@ describe('buildDependencyContext', () => {
         expect(buildDependencyContext({content: 'x', dependsOn: []}, 2, priorResults)).toBe('');
     });
 
+    it('ignores an index that is no whole number, such as 0.5, instead of throwing', () => {
+        const task = {content: 'x', dependsOn: [0.5, 0]} as AgentTask;
+        const context = buildDependencyContext(task, 2, priorResults);
+
+        expect(context).toContain('Task 1 response');
+        expect(context).not.toContain('Task 2 response');
+        expect(buildDependencyContext({content: 'x', dependsOn: [1.5]}, 2, priorResults)).toBe('');
+    });
+
     it('injects the output of a single valid backward dependency', () => {
         const task: AgentTask = {content: 'x', dependsOn: [0]};
         const context = buildDependencyContext(task, 2, priorResults);

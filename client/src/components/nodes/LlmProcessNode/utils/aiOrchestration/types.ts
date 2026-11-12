@@ -5,6 +5,7 @@
  ************************************************************************/
 
 import {Message, SystemUserConfigValues, ToolSchema} from "../../../../../types/ollama.types";
+import type {ParsedFormat} from "../formatUtils";
 
 export type AgentTask = {
     /** The content/request the individual agent should process. */
@@ -19,10 +20,6 @@ export type AgentTask = {
      *  Only backward references (index < this task's index) are valid.
      *  The referenced tasks' outputs are injected as context into this agent's prompt. */
     dependsOn?: number[];
-};
-
-export type OrchestratorPlan = {
-    tasks: AgentTask[];
 };
 
 export type AgentTaskResult = {
@@ -51,7 +48,8 @@ export type OrchestrationParams = {
     input: unknown;
     prompt?: string;
     model: string;
-    format?: { onSuccess?: string; onError?: string; };
+    /** The node's format, already parsed (see requestFormat in aiRequest.ts): it shapes the aggregation's output. */
+    format?: ParsedFormat;
     tools?: {
         schema: ToolSchema;
         systemUserConfigValues: SystemUserConfigValues;

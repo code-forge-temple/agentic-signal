@@ -569,6 +569,25 @@ describe('useAIProcessor.processAIRequest', () => {
     });
 
     describe('orchestration mode', () => {
+        it('fails on a malformed format JSON with the same error as a single call, before planning or any agent runs', async () => {
+            const {getCallCount} = mockFetchAIResponse([
+                success(JSON.stringify({tasks: [{content: 'task 1'}]})),
+                success('task 1 done'),
+            ]);
+            const onError = vi.fn();
+            const {result} = renderHook(() => useAIProcessor({onError}));
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload: ['url-1'], prompt: 'p', message: undefined, model: 'm', format: {onSuccess: 'not json {{'},
+                    maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true,
+                });
+            });
+
+            expect(getCallCount()).toBe(0);
+            expect(onError).toHaveBeenCalledWith(expect.stringContaining('Invalid format JSON'));
+        });
+
         it('routes an array input through runOrchestration instead of the normal single-call path', async () => {
             const {getCallCount} = mockFetchAIResponse([
                 success(JSON.stringify({tasks: [{content: 'task 1'}]})), // planning

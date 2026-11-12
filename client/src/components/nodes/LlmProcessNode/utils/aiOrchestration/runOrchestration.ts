@@ -5,12 +5,12 @@
  ************************************************************************/
 
 import {Message, MessageRole} from "../../../../../types/ollama.types";
-import {getExpectedOutputType, llmResponseJsonParse, parseFormat, serializeInput} from "../formatUtils";
-import {AgentTask, AgentTaskResult, OrchestrationParams, OrchestrationResult, OrchestratorPlan} from "./types";
-import {buildAggregationMessage, buildDependencyContext} from "./messageBuilders";
+import {getExpectedOutputType, llmResponseJsonParse, ParsedFormat, serializeInput} from "../formatUtils";
+import {AgentTask, AgentTaskResult, OrchestrationParams, OrchestrationResult} from "./types";
+import {buildAggregationMessage, buildDependencyContext, validDependencies} from "./messageBuilders";
 import {runSingleCall} from "./runSingleCall";
 import {buildToolsDescription, resolveTaskTools} from "./toolResolution";
-import {formatErrorMessage} from "../../../../../utils/utils";
+import {formatErrorMessage, isRecord} from "../../../../../utils/utils";
 import {errorMessage} from "@shared/utils";
 
 /** Fixed JSON Schema used to constrain the orchestrator's planning response. */
@@ -67,33 +67,98 @@ const promptMessages = (systemPrompt: string | undefined, userContent: string): 
     {role: MessageRole.USER, content: userContent},
 ];
 
+type PlannedTask = Record<string, unknown> & {content: string};
+
+const hasContent = (task: unknown): task is PlannedTask => isRecord(task) && typeof task.content === "string" && task.content.trim() !== "";
+
+/**
+ * A planned task as the agents can use it: its content, and its other fields only where they have a task's types, so
+ * a model's malformed JSON (a `dependsOn` of 1, `tools` as one string) can't break the steps that read them.
+ */
+function asAgentTask (task: PlannedTask): AgentTask {
+    return {
+        content: task.content,
+        ...(typeof task.systemPrompt === "string" ? {systemPrompt: task.systemPrompt} : {}),
+        ...(Array.isArray(task.tools) ? {tools: task.tools.filter((tool): tool is string => typeof tool === "string")} : {}),
+        // Its entries are left as they are: buildDependencyContext warns about and ignores those that are no task index.
+        ...(Array.isArray(task.dependsOn) ? {dependsOn: task.dependsOn as number[]} : {}),
+    };
+}
+
+const isPlanIndex = (index: unknown, taskCount: number) => Number.isInteger(index) && (index as number) >= 0 && (index as number) < taskCount;
+
+/**
+ * `dependsOn` pointed at the tasks that are left: a kept task's index becomes its new one, a dropped task's goes (it had
+ * nothing to pass on), and anything else the planner wrote stays for buildDependencyContext to turn down.
+ */
+function renumbered (task: AgentTask, taskIndex: number, {newIndexOf, taskCount}: {newIndexOf: Map<number, number>; taskCount: number}): AgentTask {
+    if (!task.dependsOn) return task;
+
+    const dependsOn = task.dependsOn.flatMap((index) => {
+        const newIndex = newIndexOf.get(index);
+
+        if (newIndex !== undefined) return [newIndex];
+
+        if (!isPlanIndex(index, taskCount)) return [index];
+
+        console.warn(`[AI Orchestration] Task ${taskIndex + 1} depended on task ${index + 1} of the plan, which had no content and was dropped; that dependency is ignored.`);
+
+        return [];
+    });
+
+    return {...task, dependsOn};
+}
+
+/** The tasks that have content, as agent tasks, each dependsOn still pointing at the same tasks as before. */
+function withoutEmptyTasks (tasks: unknown[]): AgentTask[] {
+    const newIndexOf = new Map<number, number>();
+    const kept: AgentTask[] = [];
+
+    tasks.forEach((task, index) => {
+        if (!hasContent(task)) return;
+
+        newIndexOf.set(index, kept.length);
+        kept.push(asAgentTask(task));
+    });
+
+    if (kept.length === tasks.length) return kept;
+
+    return kept.map((task, index) => renumbered(task, index, {newIndexOf, taskCount: tasks.length}));
+}
+
 /** The plan's tasks, empty ones dropped. A failure when the reply isn't a plan, or leaves no task. */
 function parsePlan (reply: string): AgentTask[] | Failure {
-    let plan: OrchestratorPlan;
+    let plan: unknown;
 
     try {
-        plan = llmResponseJsonParse(reply) as OrchestratorPlan;
-
-        const totalTasks = plan.tasks.length;
-
-        plan.tasks = plan.tasks.filter(t => typeof t.content === "string" && t.content.trim() !== "");
-
-        if (plan.tasks.length < totalTasks) {
-            console.warn(`[AI Orchestration] Dropped ${totalTasks - plan.tasks.length} empty task(s) from plan.`);
-        }
-
-        if (!Array.isArray(plan.tasks) || plan.tasks.length === 0) {
-            console.error("Orchestrator returned an empty task list.");
-
-            return failure("Orchestrator returned an empty task list.");
-        }
+        plan = llmResponseJsonParse(reply);
     } catch (e) {
         console.error("Failed to parse plan:", reply);
 
         return failure(`Failed to parse orchestrator plan: ${errorMessage(e)}`);
     }
 
-    return plan.tasks;
+    const tasks = isRecord(plan) ? plan.tasks : undefined;
+
+    if (!Array.isArray(tasks)) {
+        console.error("Failed to parse plan:", reply);
+
+        return failure("Failed to parse orchestrator plan: it has no \"tasks\" list.");
+    }
+
+    const kept = withoutEmptyTasks(tasks);
+
+    if (kept.length < tasks.length) {
+        console.warn(`[AI Orchestration] Dropped ${tasks.length - kept.length} task(s) without content from plan.`);
+    }
+
+    if (kept.length === 0) {
+        console.error("Orchestrator returned an empty task list.");
+
+        return failure("Orchestrator returned an empty task list.");
+    }
+
+    return kept;
 }
 
 /** 1. Planning: the orchestrator, with the node's system prompt, splits the input into tasks for separate agents. */
@@ -142,8 +207,7 @@ async function planTasks (params: OrchestrationParams): Promise<AgentTask[] | Fa
 function logDependencies (task: AgentTask, i: number, taskResults: AgentTaskResult[]) {
     console.log(
         "Depends on task(s):",
-        task.dependsOn
-            ?.filter(idx => idx >= 0 && idx < i)
+        validDependencies(task, i)
             .map(idx => `#${idx + 1} "${taskResults[idx].task.content.substring(0, 60)}${taskResults[idx].task.content.length > 60 ? "…" : ""}"`)
     );
 }
@@ -226,22 +290,13 @@ async function runAgentTasks (params: OrchestrationParams, tasks: AgentTask[]): 
     return taskResults;
 }
 
-/** The node's format for the aggregation, and its onError check; a failure when the format isn't valid. */
-function aggregationFormat (format: OrchestrationParams["format"]): ReturnType<typeof parseFormat> | Failure {
-    try {
-        return parseFormat(format);
-    } catch (e) {
-        console.error("Invalid aggregation format schema:", e);
-
-        return failure(`Invalid aggregation format schema: ${errorMessage(e)}`);
-    }
-}
+const NO_FORMAT: ParsedFormat = {parsedFormat: undefined, onErrorValidator: undefined};
 
 /**
  * The aggregation's result: its JSON when the format expects an object or an array, its text otherwise. A failure when
  * that JSON doesn't parse, or matches the format's onError schema.
  */
-function readAggregation (reply: string, {parsedFormat, onErrorValidator}: ReturnType<typeof parseFormat>): OrchestrationResult {
+function readAggregation (reply: string, {parsedFormat, onErrorValidator}: ParsedFormat): OrchestrationResult {
     let result: unknown = reply;
 
     try {
@@ -275,10 +330,7 @@ async function aggregate (params: OrchestrationParams, taskResults: AgentTaskRes
     /* #endif */
 
     try {
-        const format = aggregationFormat(params.format);
-
-        if (isFailure(format)) return format;
-
+        const format = params.format ?? NO_FORMAT;
         const {parsedFormat} = format;
         // Aggregation has all task results in-context — no tools needed.
         const aggregationResponse = await runSingleCall({

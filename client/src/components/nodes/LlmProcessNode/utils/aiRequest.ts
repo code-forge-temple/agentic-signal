@@ -212,12 +212,12 @@ function parseResult (text: string, format: RequestFormat): unknown {
     }
 }
 
-async function orchestrate (request: AIRequest, signal: AbortSignal): Promise<unknown> {
+async function orchestrate (request: AIRequest, format: RequestFormat, signal: AbortSignal): Promise<unknown> {
     const result = await runOrchestration({
         input: request.payload,
         prompt: request.prompt,
         model: request.model,
-        format: request.format,
+        format: {parsedFormat: format.schema, onErrorValidator: format.onErrorValidator},
         tools: request.tools,
         maxToolRetries: request.maxToolRetries,
         think: request.think,
@@ -237,9 +237,12 @@ async function orchestrate (request: AIRequest, signal: AbortSignal): Promise<un
  * to report as it is, anything else for an unexpected error; after a cancel it throws too, so check the signal first.
  */
 export async function runAIRequest (request: AIRequest, signal: AbortSignal): Promise<unknown> {
-    if (isOrchestrated(request)) return orchestrate(request, signal);
-
+    // Read first, for either path: a broken format fails the run before any call (and in orchestration, before the
+    // agents and their tools, which can act on the world, have all run for nothing).
     const format = requestFormat(request);
+
+    if (isOrchestrated(request)) return orchestrate(request, format, signal);
+
     const messages = await conversation(request, format.twoPhase ? request.prompt : format.systemPrompt, signal);
 
     // A newer run, or an unmount, may have cancelled this one while its messages were put together: nothing is sent.

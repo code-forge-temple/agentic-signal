@@ -6,6 +6,13 @@
 
 import {AgentTask, AgentTaskResult} from "./types";
 
+// A dependency must be an earlier task: a whole number from 0 up to (not including) the task's own index.
+const isValidDependency = (index: unknown, taskIndex: number) => Number.isInteger(index) && (index as number) >= 0 && (index as number) < taskIndex;
+
+/** The task's dependsOn indices that can be used: those of earlier tasks. */
+export const validDependencies = (task: AgentTask, taskIndex: number): number[] =>
+    (task.dependsOn ?? []).filter(index => isValidDependency(index, taskIndex));
+
 /**
  * Builds a context block injected into an agent's prompt when it depends on prior task outputs.
  * Only backward references (index < taskIndex) are accepted; forward/invalid refs are warned and skipped.
@@ -17,15 +24,15 @@ export function buildDependencyContext (
 ): string {
     if (!task.dependsOn || task.dependsOn.length === 0) return "";
 
-    const invalid = task.dependsOn.filter(i => i < 0 || i >= taskIndex);
+    const invalid = task.dependsOn.filter(i => !isValidDependency(i, taskIndex));
 
     if (invalid.length > 0) {
         console.warn(
-            `[AI Orchestration] Task ${taskIndex + 1} has invalid dependsOn indices (must be < ${taskIndex}, ignored): ${invalid.join(", ")}`
+            `[AI Orchestration] Task ${taskIndex + 1} has invalid dependsOn indices (must be whole numbers < ${taskIndex}, ignored): ${invalid.join(", ")}`
         );
     }
 
-    const validIndices = task.dependsOn.filter(i => i >= 0 && i < taskIndex);
+    const validIndices = validDependencies(task, taskIndex);
 
     if (validIndices.length === 0) return "";
 

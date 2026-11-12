@@ -5,6 +5,7 @@
 
 import {beforeEach, describe, expect, it} from 'vitest';
 import {runOrchestration} from './runOrchestration';
+import {parseFormat} from '../formatUtils';
 import {OllamaService} from '../../../../../services/ollamaService';
 import {FetchAiResponse} from '../../../../../types/ollama.types';
 import {OrchestrationParams} from './types';
@@ -84,7 +85,7 @@ describe('runOrchestration', () => {
 
         await runOrchestration(baseParams({
             prompt: undefined,
-            format: {onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}})},
+            format: parseFormat({onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}})}),
         }));
 
         const aggregationSystemMessage = receivedCalls[2].messages.find(m => m.role === 'system');
@@ -287,7 +288,7 @@ describe('runOrchestration', () => {
         ]);
 
         const result = await runOrchestration(baseParams({
-            format: {onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}})},
+            format: parseFormat({onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}})}),
         }));
 
         expect(result).toEqual({success: true, result: {status: 'ok', count: 2}});
@@ -301,7 +302,7 @@ describe('runOrchestration', () => {
         ]);
 
         const result = await runOrchestration(baseParams({
-            format: {onSuccess: JSON.stringify({type: 'object'})},
+            format: parseFormat({onSuccess: JSON.stringify({type: 'object'})}),
         }));
 
         expect(result.success).toBe(false);
@@ -316,26 +317,96 @@ describe('runOrchestration', () => {
         ]);
 
         const result = await runOrchestration(baseParams({
-            format: {
+            format: parseFormat({
                 onSuccess: JSON.stringify({type: 'object', properties: {status: {type: 'string'}}}),
                 onError: JSON.stringify({type: 'object', required: ['error'], properties: {error: {type: 'string'}}}),
-            },
+            }),
         }));
 
         expect(result.success).toBe(false);
         expect((result as any).error).toContain('onError schema');
     });
 
-    it('fails with a clear error when the format schema itself is invalid JSON', async () => {
-        mockFetchAIResponse([
-            success(JSON.stringify({tasks: [{content: 'x'}]})),
-            success('agent response'),
+    it('keeps each dependsOn pointing at the same task when empty tasks are dropped from the plan', async () => {
+        const {receivedCalls} = mockFetchAIResponse([
+            success(JSON.stringify({tasks: [
+                {content: 'a'},
+                {content: ''},
+                {content: 'c'},
+                {content: 'd', dependsOn: [2]},
+                {content: 'e', dependsOn: [1]},
+            ]})),
+            success('a done'),
+            success('c done'),
+            success('d done'),
+            success('e done'),
+            success('Done.'),
         ]);
 
-        const result = await runOrchestration(baseParams({format: {onSuccess: 'not valid json {{'}}));
+        const result = await runOrchestration(baseParams());
+        const userMessage = (call: number) => receivedCalls[call].messages[receivedCalls[call].messages.length - 1].content;
 
-        expect(result.success).toBe(false);
-        expect((result as any).error).toMatch(/Invalid aggregation format schema/);
+        expect(result).toEqual({success: true, result: 'Done.'});
+        // "d" depended on "c", which is now task 2 (it was 3 with the empty one counted).
+        expect(userMessage(3)).toBe('[CONTEXT FROM PRIOR TASKS]\n### Output of Task 2\nc done\n\n[YOUR TASK]\nd');
+        // "e" depended on the empty task, which had nothing to pass on.
+        expect(userMessage(4)).toBe('e');
+    });
+
+    it('ignores a dependsOn that is no task index, such as 0.5, instead of failing the run', async () => {
+        const {receivedCalls} = mockFetchAIResponse([
+            success(JSON.stringify({tasks: [{content: 'a'}, {content: 'b', dependsOn: [0.5]}]})),
+            success('a done'),
+            success('b done'),
+            success('Done.'),
+        ]);
+
+        const result = await runOrchestration(baseParams());
+
+        expect(result).toEqual({success: true, result: 'Done.'});
+        expect(receivedCalls[2].messages[receivedCalls[2].messages.length - 1].content).toBe('b');
+    });
+
+    it('says plainly that a plan has no task list, instead of a JavaScript error', async () => {
+        for (const plan of [{tasks: 'oops'}, {tasks: {content: 'x'}}, {steps: []}, null]) {
+            mockFetchAIResponse([success(JSON.stringify(plan))]);
+
+            expect(await runOrchestration(baseParams())).toEqual({success: false, error: 'Failed to parse orchestrator plan: it has no "tasks" list.'});
+        }
+    });
+
+    it('drops a task that is no object, like an empty one, and goes on with the rest', async () => {
+        mockFetchAIResponse([
+            success(JSON.stringify({tasks: [null, 'text', {content: 'real task'}]})),
+            success('real task done'),
+            success('Done.'),
+        ]);
+
+        expect(await runOrchestration(baseParams())).toEqual({success: true, result: 'Done.'});
+    });
+
+    it('runs a task whose other fields have the wrong type as if they were left out, instead of failing the run', async () => {
+        const {receivedCalls} = mockFetchAIResponse([
+            success(JSON.stringify({tasks: [
+                {content: 'a'},
+                {content: ''},
+                {content: 'b', dependsOn: 1, tools: 'search', systemPrompt: 5},
+                {content: 'c', dependsOn: '0'},
+            ]})),
+            success('a done'),
+            success('b done'),
+            success('c done'),
+            success('Done.'),
+        ]);
+
+        const result = await runOrchestration(baseParams());
+        const call = (index: number) => receivedCalls[index];
+
+        expect(result).toEqual({success: true, result: 'Done.'});
+        // No system prompt from a number, no tools from a string, no context from a dependsOn that isn't a list.
+        expect(call(2).messages).toEqual([{role: 'user', content: 'b'}]);
+        expect(call(2).tools).toBeUndefined();
+        expect(call(3).messages).toEqual([{role: 'user', content: 'c'}]);
     });
 
     it('leaves the aggregation reply as a plain string when no format is configured', async () => {

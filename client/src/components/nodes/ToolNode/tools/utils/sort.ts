@@ -150,7 +150,8 @@ const isBooleanValue = (val: unknown): boolean => {
            (typeof val === "string" && (val.toLowerCase() === "true" || val.toLowerCase() === "false"));
 };
 
-const toBooleanNumber = (val: unknown): number => {
+/** A boolean, or the text "true" / "false" in any case, as 1 or 0 (anything else is 0). */
+export const toBooleanNumber = (val: unknown): number => {
     if (typeof val === "boolean") return val ? 1 : 0;
 
     if (typeof val === "string" && val.toLowerCase() === "true") return 1;
@@ -158,16 +159,19 @@ const toBooleanNumber = (val: unknown): number => {
     return 0;
 };
 
+// Text a date can be read from. A number written as text ("10", "2024") isn't one, although V8 reads it as a date
+// ("10" as 1 October 2001): it compares as a number.
+const isDateString = (value: unknown): boolean =>
+    typeof value === "string" && isNaN(Number(value)) && !isNaN(Date.parse(value));
+
 export const allDates = <T>(array: T[], key?: string): boolean => {
     if (!Array.isArray(array) || array.length === 0) return false;
 
     return array.every(item => {
         if (key && isRecord(item)) {
-            const value = item[key];
-
-            return typeof value === "string" && !isNaN(Date.parse(String(value)));
+            return isDateString(item[key]);
         } else if (!key || typeof item !== "object" || item === null) {
-            return typeof item === "string" && !isNaN(Date.parse(String(item)));
+            return isDateString(item);
         }
 
         return false;

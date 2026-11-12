@@ -16,9 +16,8 @@ import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
 import {FillAction, isAttachedFile} from "@shared/types.gen";
 import {NodeEnvelope} from "../../../../../types/workflow";
-import {z} from "zod";
 import {zodToJsonSchema} from "zod-to-json-schema";
-import {RawLlmFillActionSchema, RawLlmFillAction} from "./types/params";
+import {parseFillActions, RawLlmFillActionSchema, RawLlmFillAction} from "./types/params";
 
 
 export const FormInteractionToolDescriptor: ToolDefinition = {
@@ -96,14 +95,8 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
         );
     },
     toSanitize: [],
-    handlerFactory: (userConfig: {typingDelay?: number; browserPath?: string; interactionTimeoutSeconds?: number}) =>
-        async (params: {
-            url: string;
-            actions?: RawLlmFillAction[];
-            submitSelector?: string;
-            toolsPayload?: NodeEnvelope['toolsPayload'];
-            sessionId: SessionId;
-        }) => {
+    handlerFactory: (userConfig: FormToolConfig) =>
+        async (params: FormToolCall) => {
             if(!userConfig.browserPath && isTauri()){
                 return {error: "Browser executable path must be specified. Please set Browser Executable Path in the app Settings."};
             }
@@ -112,55 +105,20 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
                 return {error: "`url` parameter is required."};
             }
 
-            const actionsResult = z.array(RawLlmFillActionSchema).safeParse(params.actions ?? []);
+            const actions = parseFillActions(params.actions);
 
-            if (!actionsResult.success) {
-                return {error: `Invalid \`actions\`: ${actionsResult.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`};
-            }
+            if (!Array.isArray(actions)) return actions;
 
             try {
-                const normalizedActions: FillAction[] = actionsResult.data.map((rawAction): FillAction => {
-                    const isUpload = rawAction.actionType === "upload";
-
-                    return {
-                        selector: rawAction.selector,
-                        actionType: rawAction.actionType,
-                        value: rawAction.value,
-                        // For upload actions: fall back to value if fileKey is absent (LLMs sometimes
-                        // use value for the filename). For other actions: only include fileKey if
-                        // explicitly provided (prevents "Jane" etc. leaking into fileKey).
-                        ...(isUpload
-                            ? {fileKey: rawAction.fileKey ?? rawAction.value}
-                            : rawAction.fileKey !== undefined ? {fileKey: rawAction.fileKey} : {}),
-                    };
-                });
-
                 /* #if LOGS */
                 console.log(
                     "[FormInteraction] handler — raw actions[0]:", JSON.stringify(params.actions?.[0]),
-                    "| normalized actions[0]:", JSON.stringify(normalizedActions[0]),
-                    "| total:", normalizedActions.length
+                    "| normalized actions[0]:", JSON.stringify(actions[0]),
+                    "| total:", actions.length
                 );
                 /* #endif */
 
-                const attachedFiles = Array.isArray(params.toolsPayload)
-                    ? params.toolsPayload.filter(isAttachedFile)
-                    : [];
-
-                const result = await GraphQLService.formInteraction({
-                    url: params.url,
-                    actions: normalizedActions,
-                    submitSelector: params.submitSelector,
-                    attachedFiles,
-                    typingDelay: userConfig.typingDelay ?? 1,
-                    browserPath: userConfig.browserPath,
-                    interactionTimeoutSeconds: userConfig.interactionTimeoutSeconds ?? 300,
-                    sessionId: params.sessionId,
-                    toolName: FormInteractionToolDescriptor.toolSubtype,
-                });
-
-                // Data Source keeps tools-only files out of the LLM's input, so this is where it learns their names.
-                return attachedFiles.length > 0 ? {...result, availableFiles: attachedFiles.map(file => file.name)} : result;
+                return await runFormActions(params, actions, userConfig);
             } catch (error) {
                 console.error("FormInteraction error:", error);
 
@@ -177,3 +135,33 @@ export const FormInteractionToolDescriptor: ToolDefinition = {
         });
     },
 };
+
+type FormToolConfig = {typingDelay?: number; browserPath?: string; interactionTimeoutSeconds?: number};
+
+type FormToolCall = {
+    url: string;
+    actions?: RawLlmFillAction[];
+    submitSelector?: string;
+    toolsPayload?: NodeEnvelope['toolsPayload'];
+    sessionId: SessionId;
+};
+
+/** Has the server run the actions on the form in a browser, with the files attached for the tools to upload. */
+async function runFormActions (params: FormToolCall, actions: FillAction[], userConfig: FormToolConfig) {
+    const attachedFiles = Array.isArray(params.toolsPayload) ? params.toolsPayload.filter(isAttachedFile) : [];
+
+    const result = await GraphQLService.formInteraction({
+        url: params.url,
+        actions,
+        submitSelector: params.submitSelector,
+        attachedFiles,
+        typingDelay: userConfig.typingDelay ?? 1,
+        browserPath: userConfig.browserPath,
+        interactionTimeoutSeconds: userConfig.interactionTimeoutSeconds ?? 300,
+        sessionId: params.sessionId,
+        toolName: FormInteractionToolDescriptor.toolSubtype,
+    });
+
+    // Data Source keeps tools-only files out of the LLM's input, so this is where it learns their names.
+    return attachedFiles.length > 0 ? {...result, availableFiles: attachedFiles.map(file => file.name)} : result;
+}

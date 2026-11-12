@@ -6,15 +6,8 @@
 
 import {SortUp} from "iconoir-react";
 import {ToolDefinition} from "../types";
-import {
-    sortPrimitives,
-    sortObjects,
-    arrayType,
-    ARRAY_ITEM_TYPES,
-    SORT_ORDER
-} from "../utils/sort";
-import {sanitizeJsonInput} from "../utils/sanitize";
-import {isRecord} from "../../../../../utils";
+import {SORT_ORDER} from "../utils/sort";
+import {extremeRows} from "../utils/rows";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 
 export const MinToolDescriptor: ToolDefinition = {
@@ -43,78 +36,6 @@ export const MinToolDescriptor: ToolDefinition = {
     },
     userConfigSchema: extendSystemUserConfigSchema({}),
     toSanitize: [],
-    handlerFactory: () => async ({rows, key}: {rows: any[]; key?: string}) => {
-        let parsedRows: unknown;
-
-        try {
-            parsedRows = sanitizeJsonInput(rows);
-        } catch {
-            return {error: "`rows` tool parameter must be an array"};
-        }
-
-        if (!Array.isArray(parsedRows)) {
-            return {error: "`rows` tool parameter must be an array"};
-        }
-
-        const sanitizedRows: unknown[] = parsedRows;
-
-        if (sanitizedRows.length === 0) {
-            return [];
-        }
-
-        const {allDates, allNumbers, allBooleans, allObjects} = arrayType(sanitizedRows, key);
-        // When allObjects is set every row is an object, so this keeps them all, typed for sortObjects.
-        const objectRows = sanitizedRows.filter(isRecord);
-        const valueOf = (row: unknown): unknown => (allObjects && isRecord(row) ? row[key!] : row);
-
-        if (allObjects && !key) {
-            return {error: "`key` tool parameter is required when finding min in arrays of objects"};
-        }
-
-        let sorted: unknown[];
-
-        if (allBooleans) {
-            sorted = allObjects ?
-                sortObjects(objectRows, SORT_ORDER.ASC, key!, ARRAY_ITEM_TYPES.BOOLEAN) :
-                sortPrimitives(sanitizedRows, SORT_ORDER.ASC, ARRAY_ITEM_TYPES.BOOLEAN);
-        } else if (allDates) {
-            sorted = allObjects ?
-                sortObjects(objectRows, SORT_ORDER.ASC, key!, ARRAY_ITEM_TYPES.DATE) :
-                sortPrimitives(sanitizedRows, SORT_ORDER.ASC, ARRAY_ITEM_TYPES.DATE);
-        } else if (allNumbers) {
-            sorted = allObjects ?
-                sortObjects(objectRows, SORT_ORDER.ASC, key!, ARRAY_ITEM_TYPES.NUMBER) :
-                sortPrimitives(sanitizedRows, SORT_ORDER.ASC, ARRAY_ITEM_TYPES.NUMBER);
-        } else {
-            sorted = allObjects ?
-                sortObjects(objectRows, SORT_ORDER.ASC, key!) :
-                sortPrimitives(sanitizedRows, SORT_ORDER.ASC);
-        }
-
-        const minVal = (() => {
-            const val = valueOf(sorted[0]);
-
-            if (allBooleans) return val ? 1 : 0;
-
-            if (allDates) return new Date(String(val)).getTime();
-
-            if (allNumbers) return Number(val);
-
-            return val;
-        })();
-
-        const minRows = sorted.filter(row => {
-            let rowVal = valueOf(row);
-
-            if (allBooleans) rowVal = rowVal ? 1 : 0;
-
-            if (allDates) rowVal = new Date(String(rowVal)).getTime();
-
-            if (allNumbers) rowVal = Number(rowVal);
-
-            return rowVal === minVal;
-        });
-
-        return minRows;
-    }
+    handlerFactory: () => async ({rows, key}: {rows: unknown; key?: string}) =>
+        extremeRows(rows, key, {order: SORT_ORDER.ASC, name: "min"}),
 };

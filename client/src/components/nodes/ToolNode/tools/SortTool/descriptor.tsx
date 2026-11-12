@@ -7,15 +7,8 @@
 
 import {Sort} from "iconoir-react";
 import {ToolDefinition} from "../types";
-import {
-    sortPrimitives,
-    sortObjects,
-    arrayType,
-    ARRAY_ITEM_TYPES,
-    SORT_ORDER
-} from "../utils/sort";
-import {sanitizeJsonInput} from "../utils/sanitize";
-import {isRecord} from "../../../../../utils";
+import {SORT_ORDER} from "../utils/sort";
+import {parseRows, rowsShape, sortRows} from "../utils/rows";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 
 export const SortToolDescriptor: ToolDefinition = {
@@ -49,57 +42,23 @@ export const SortToolDescriptor: ToolDefinition = {
     },
     userConfigSchema: extendSystemUserConfigSchema({}),
     toSanitize: [],
-    handlerFactory: () => async ({rows, key, order}: {rows: any[]; key?: string; order: SORT_ORDER}) => {
-        let parsedRows: unknown;
+    handlerFactory: () => async ({rows, key, order}: {rows: unknown; key?: string; order: SORT_ORDER}) => {
+        const parsed = parseRows(rows);
 
-        try {
-            parsedRows = sanitizeJsonInput(rows);
-        } catch{
-            return {error: "`rows` tool parameter must be an array"};
-        }
-
-        if (!Array.isArray(parsedRows)) {
-            return {error: "`rows` tool parameter must be an array"};
-        }
-
-        const sanitizedRows: unknown[] = parsedRows;
+        if (!Array.isArray(parsed)) return parsed;
 
         if (order !== SORT_ORDER.ASC && order !== SORT_ORDER.DESC) {
             return {error: `\`order\` tool parameter must be '\`${SORT_ORDER.ASC}\`' or '\`${SORT_ORDER.DESC}\`'`};
         }
 
-        if (sanitizedRows.length === 0) {
-            return [];
-        }
+        if (parsed.length === 0) return [];
 
-        const {allDates, allNumbers, allBooleans, allObjects} = arrayType(sanitizedRows, key);
-        // When allObjects is set every row is an object, so this keeps them all, typed for sortObjects.
-        const objectRows = sanitizedRows.filter(isRecord);
+        const shape = rowsShape(parsed, key);
 
-        if (allObjects && key == undefined) {
+        if (shape.allObjects && key == undefined) {
             return {error: "`key` tool parameter is required when sorting arrays of objects"};
         }
 
-        if (allBooleans) {
-            return allObjects ?
-                sortObjects(objectRows, order, key!, ARRAY_ITEM_TYPES.BOOLEAN) :
-                sortPrimitives(sanitizedRows, order, ARRAY_ITEM_TYPES.BOOLEAN);
-        }
-
-        if (allDates) {
-            return allObjects ?
-                sortObjects(objectRows, order, key!, ARRAY_ITEM_TYPES.DATE) :
-                sortPrimitives(sanitizedRows, order, ARRAY_ITEM_TYPES.DATE);
-        }
-
-        if (allNumbers) {
-            return allObjects ?
-                sortObjects(objectRows, order, key!, ARRAY_ITEM_TYPES.NUMBER) :
-                sortPrimitives(sanitizedRows, order, ARRAY_ITEM_TYPES.NUMBER);
-        }
-
-        return allObjects ?
-            sortObjects(objectRows, order, key!) :
-            sortPrimitives(sanitizedRows, order);
-    }
+        return sortRows(parsed, order, shape);
+    },
 };

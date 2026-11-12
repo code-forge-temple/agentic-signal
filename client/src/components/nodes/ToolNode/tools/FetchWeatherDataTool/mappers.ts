@@ -57,69 +57,51 @@ export const WeatherApiResponseSchema = z.object({
 
 export type WeatherApiResponse = z.infer<typeof WeatherApiResponseSchema>;
 
+type ForecastDay = NonNullable<NonNullable<WeatherApiResponse["forecast"]>["forecastday"]>[number];
+
+/** The place the answer is for. */
+function placeOf ({location}: WeatherApiResponse) {
+    const {name, region, country}: NonNullable<WeatherApiResponse["location"]> = location ?? {};
+
+    return {name, region, country};
+}
+
+/** The place, with its local time. */
+const locationOf = (data: WeatherApiResponse) => ({...placeOf(data), localtime: data.location?.localtime});
+
+/** The day asked about: the first (and only) day of a forecast or history answer. */
+const forecastDayOf = (data: WeatherApiResponse): ForecastDay | undefined => data.forecast?.forecastday?.[0];
+
+/** The fields of a forecast or history day the LLM gets (a forecast adds the uv index). */
+function dayFields ({date, day}: ForecastDay) {
+    const {maxtemp_c, maxtemp_f, mintemp_c, mintemp_f, condition, avghumidity, maxwind_kph, maxwind_mph}: NonNullable<ForecastDay["day"]> = day ?? {};
+
+    return {date, maxtemp_c, maxtemp_f, mintemp_c, mintemp_f, condition: condition?.text, avghumidity, maxwind_kph, maxwind_mph};
+}
+
 export function mapCurrentWeatherResponse (data: WeatherApiResponse) {
+    const {temp_c, temp_f, condition, wind_kph, wind_mph, wind_dir, humidity, feelslike_c, feelslike_f, uv}: NonNullable<WeatherApiResponse["current"]> = data.current ?? {};
+
     return {
-        location: {
-            name: data.location?.name,
-            region: data.location?.region,
-            country: data.location?.country,
-            localtime: data.location?.localtime
-        },
-        current: {
-            temp_c: data.current?.temp_c,
-            temp_f: data.current?.temp_f,
-            condition: data.current?.condition?.text,
-            wind_kph: data.current?.wind_kph,
-            wind_mph: data.current?.wind_mph,
-            wind_dir: data.current?.wind_dir,
-            humidity: data.current?.humidity,
-            feelslike_c: data.current?.feelslike_c,
-            feelslike_f: data.current?.feelslike_f,
-            uv: data.current?.uv
-        }
+        location: locationOf(data),
+        current: {temp_c, temp_f, condition: condition?.text, wind_kph, wind_mph, wind_dir, humidity, feelslike_c, feelslike_f, uv},
     };
 }
 
 export function mapForecastWeatherResponse (data: WeatherApiResponse) {
+    const forecastDay = forecastDayOf(data);
+
     return {
-        location: {
-            name: data.location?.name,
-            region: data.location?.region,
-            country: data.location?.country,
-            localtime: data.location?.localtime
-        },
-        forecast: data.forecast?.forecastday?.[0] ? {
-            date: data.forecast.forecastday[0].date,
-            maxtemp_c: data.forecast.forecastday[0].day?.maxtemp_c,
-            maxtemp_f: data.forecast.forecastday[0].day?.maxtemp_f,
-            mintemp_c: data.forecast.forecastday[0].day?.mintemp_c,
-            mintemp_f: data.forecast.forecastday[0].day?.mintemp_f,
-            condition: data.forecast.forecastday[0].day?.condition?.text,
-            avghumidity: data.forecast.forecastday[0].day?.avghumidity,
-            maxwind_kph: data.forecast.forecastday[0].day?.maxwind_kph,
-            maxwind_mph: data.forecast.forecastday[0].day?.maxwind_mph,
-            uv: data.forecast.forecastday[0].day?.uv
-        } : null
+        location: locationOf(data),
+        forecast: forecastDay ? {...dayFields(forecastDay), uv: forecastDay.day?.uv} : null,
     };
 }
 
 export function mapHistoryWeatherResponse (data: WeatherApiResponse) {
+    const forecastDay = forecastDayOf(data);
+
     return {
-        location: {
-            name: data.location?.name,
-            region: data.location?.region,
-            country: data.location?.country
-        },
-        history: data.forecast?.forecastday?.[0] ? {
-            date: data.forecast.forecastday[0].date,
-            maxtemp_c: data.forecast.forecastday[0].day?.maxtemp_c,
-            maxtemp_f: data.forecast.forecastday[0].day?.maxtemp_f,
-            mintemp_c: data.forecast.forecastday[0].day?.mintemp_c,
-            mintemp_f: data.forecast.forecastday[0].day?.mintemp_f,
-            condition: data.forecast.forecastday[0].day?.condition?.text,
-            avghumidity: data.forecast.forecastday[0].day?.avghumidity,
-            maxwind_kph: data.forecast.forecastday[0].day?.maxwind_kph,
-            maxwind_mph: data.forecast.forecastday[0].day?.maxwind_mph
-        } : null
+        location: placeOf(data),
+        history: forecastDay ? dayFields(forecastDay) : null,
     };
 }

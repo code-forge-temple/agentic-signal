@@ -6,13 +6,13 @@
 
 import {Thunderstorm} from "iconoir-react";
 import {ToolDefinition} from "../types";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema, ToolError} from "../../../../../types/ollama.types";
 import {sanitizeStringInput} from "../utils/sanitize";
 import {FetchWeatherDataToolConfigFields} from "./components/FetchWeatherDataToolConfigFields";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";
 import {GLOBAL_SECRETS, LOCAL_SECRETS, TOOL_SUBTYPE} from "./constants";
-import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse, WeatherApiResponseSchema} from "./mappers";
+import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse, WeatherApiResponse, WeatherApiResponseSchema} from "./mappers";
 
 
 export const FetchWeatherDataToolDescriptor:ToolDefinition = {
@@ -70,68 +70,7 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
         const sanitizedCity = sanitizeStringInput(city);
 
         try {
-            // Determine which endpoint to use based on date
-            let endpoint = "current.json";
-            let dateParam = "";
-
-            if (date) {
-                const requestDate = new Date(date);
-                const today = new Date();
-
-                today.setHours(0, 0, 0, 0);
-                requestDate.setHours(0, 0, 0, 0);
-
-                const diffTime = requestDate.getTime() - today.getTime();
-                const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-                if (diffDays < 0) {
-                    // Past date - use history endpoint
-                    endpoint = "history.json";
-                    dateParam = `&dt=${date}`;
-                } else if (diffDays > 0) {
-                    // Future date - use forecast endpoint
-                    endpoint = "forecast.json";
-                    dateParam = `&dt=${date}`;
-                }
-                // If diffDays === 0 (today), use current endpoint
-            }
-
-            const response = await fetch(
-                `https://api.weatherapi.com/v1/${endpoint}?key=${userConfig.apiKey}&q=${encodeURIComponent(sanitizedCity)}${dateParam}`
-            );
-
-            if (!response.ok) {
-                if (response.status === 400) {
-                    return {error: `Invalid request. Check city name "${sanitizedCity}" or date format "${date}".`};
-                }
-
-                if (response.status === 401) {
-                    return {error: "Invalid API key. Please check your WeatherAPI.com API key in the configuration."};
-                }
-
-                return {error: `Weather API error: ${response.status} ${response.statusText}`};
-            }
-
-            const parsed = WeatherApiResponseSchema.safeParse(await response.json());
-
-            if (!parsed.success) {
-                const issues = parsed.error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; ");
-
-                return {error: `Unexpected response from WeatherAPI.com (${issues})`};
-            }
-
-            const data = parsed.data;
-
-            // Return appropriate data structure based on endpoint
-            if (endpoint === "current.json") {
-                return mapCurrentWeatherResponse(data);
-            } else if (endpoint === "forecast.json") {
-                return mapForecastWeatherResponse(data);
-            } else if (endpoint === "history.json") {
-                return mapHistoryWeatherResponse(data);
-            }
-
-            return data;
+            return await fetchWeather(userConfig.apiKey, sanitizedCity, date);
         } catch (error) {
             console.error("Weather fetch error:", error);
 
@@ -139,3 +78,80 @@ export const FetchWeatherDataToolDescriptor:ToolDefinition = {
         }
     }
 };
+
+type WeatherEndpoint = "current.json" | "forecast.json" | "history.json";
+
+/** What each endpoint's answer is trimmed to for the LLM. */
+const WEATHER_MAPPERS: Record<WeatherEndpoint, (data: WeatherApiResponse) => unknown> = {
+    "current.json": mapCurrentWeatherResponse,
+    "forecast.json": mapForecastWeatherResponse,
+    "history.json": mapHistoryWeatherResponse,
+};
+
+/**
+ * The day `date` names, here. JavaScript reads a bare YYYY-MM-DD as midnight UTC, which west of UTC is the evening
+ * before: tomorrow would count as today, and today as yesterday. Anything else (an impossible day such as 2026-13-45
+ * included) is read as JavaScript reads it.
+ */
+function localDay (date: string): Date {
+    const [, year, month, day] = (/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date).trim()) ?? []).map(Number);
+    const local = new Date(year, month - 1, day);
+
+    return local.getMonth() === month - 1 && local.getDate() === day ? local : new Date(date);
+}
+
+/**
+ * The endpoint that answers for `date`: history for a day before today, forecast for a day after it, and current
+ * weather for today, for no date, and for a date that can't be read.
+ */
+function weatherEndpoint (date: string | undefined): {endpoint: WeatherEndpoint; dateParam: string} {
+    const current = {endpoint: "current.json", dateParam: ""} as const;
+
+    if (!date) return current;
+
+    const requestDate = localDay(date);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    requestDate.setHours(0, 0, 0, 0);
+
+    const fromToday = requestDate.getTime() - today.getTime();
+
+    if (fromToday < 0) return {endpoint: "history.json", dateParam: `&dt=${date}`};
+
+    if (fromToday > 0) return {endpoint: "forecast.json", dateParam: `&dt=${date}`};
+
+    return current;
+}
+
+/** The error for a request WeatherAPI.com turned down. */
+function weatherApiError (response: Response, city: string, date: string | undefined): ToolError {
+    if (response.status === 400) return {error: `Invalid request. Check city name "${city}" or date format "${date}".`};
+
+    if (response.status === 401) return {error: "Invalid API key. Please check your WeatherAPI.com API key in the configuration."};
+
+    return {error: `Weather API error: ${response.status} ${response.statusText}`};
+}
+
+/** The answer trimmed for the LLM, or an error when it isn't shaped as expected. */
+async function readWeather (response: Response, endpoint: WeatherEndpoint) {
+    const parsed = WeatherApiResponseSchema.safeParse(await response.json());
+
+    if (!parsed.success) {
+        const issues = parsed.error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; ");
+
+        return {error: `Unexpected response from WeatherAPI.com (${issues})`};
+    }
+
+    return WEATHER_MAPPERS[endpoint](parsed.data);
+}
+
+/** The weather in `city` for `date` (today when there's none), from WeatherAPI.com. */
+async function fetchWeather (apiKey: string, city: string, date: string | undefined) {
+    const {endpoint, dateParam} = weatherEndpoint(date);
+    const response = await fetch(`https://api.weatherapi.com/v1/${endpoint}?key=${apiKey}&q=${encodeURIComponent(city)}${dateParam}`);
+
+    if (!response.ok) return weatherApiError(response, city, date);
+
+    return readWeather(response, endpoint);
+}

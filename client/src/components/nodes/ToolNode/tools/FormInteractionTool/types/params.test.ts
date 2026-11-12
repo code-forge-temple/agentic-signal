@@ -6,7 +6,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {zodToJsonSchema} from 'zod-to-json-schema';
-import {RawLlmFillActionSchema} from './params';
+import {parseFillActions, RawLlmFillActionSchema, toFillAction} from './params';
 
 describe('RawLlmFillActionSchema', () => {
     it('takes a null value or fileKey as omitted', () => {
@@ -25,6 +25,31 @@ describe('RawLlmFillActionSchema', () => {
         expect(schema).toMatchObject({
             properties: {value: {type: 'string'}, fileKey: {type: 'string'}},
             required: ['selector', 'actionType'],
+        });
+    });
+});
+
+describe('toFillAction', () => {
+    it('takes the value as the file of an upload that names none', () => {
+        expect(toFillAction({selector: '#cv', actionType: 'upload', value: 'cv.pdf'})).toEqual({selector: '#cv', actionType: 'upload', value: 'cv.pdf', fileKey: 'cv.pdf'});
+        expect(toFillAction({selector: '#cv', actionType: 'upload', value: 'x', fileKey: 'cv.pdf'})).toMatchObject({fileKey: 'cv.pdf'});
+    });
+
+    it('keeps a fileKey on other actions only when one was sent', () => {
+        expect(toFillAction({selector: '#name', actionType: 'fill', value: 'Jane'})).not.toHaveProperty('fileKey');
+        expect(toFillAction({selector: '#name', actionType: 'fill', value: 'Jane', fileKey: 'f'})).toMatchObject({fileKey: 'f'});
+    });
+});
+
+describe('parseFillActions', () => {
+    it('gives no actions for none, and converts the ones sent', () => {
+        expect(parseFillActions(undefined)).toEqual([]);
+        expect(parseFillActions([{selector: '#cv', actionType: 'upload', value: 'cv.pdf'}])).toEqual([{selector: '#cv', actionType: 'upload', value: 'cv.pdf', fileKey: 'cv.pdf'}]);
+    });
+
+    it('names each wrong field', () => {
+        expect(parseFillActions([{selector: '#a', actionType: 'fill'}, {actionType: 'tap'}])).toEqual({
+            error: expect.stringMatching(/^Invalid `actions`: 1\.selector: .+; 1\.actionType: /) as string,
         });
     });
 });

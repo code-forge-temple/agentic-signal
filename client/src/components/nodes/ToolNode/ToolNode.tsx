@@ -4,11 +4,10 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useEffect, useCallback} from "react";
+import {useEffect, useCallback, useRef, useState} from "react";
 import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
-import {assertIsToolNodeData} from "./types/workflow";
+import {assertIsToolNodeData, ToolNodeData} from "./types/workflow";
 import {MonitoredNode} from "../MonitoredNode";
-import {useState} from "react";
 import {BaseDialog} from "../../BaseDialog";
 import {CodeEditor} from "../../CodeEditor";
 import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
@@ -18,143 +17,160 @@ import {FieldsetGroup} from "../../FieldsetGroup";
 import {useSettings} from "../../../hooks/useSettings";
 import {AppNode} from "../workflow.gen";
 import {Icon} from "./constants";
-import {assertIsEnhancedNodeData} from "../../../types/workflow";
+import {assertIsEnhancedNodeData, EnhancedNodeData} from "../../../types/workflow";
 import {toolRegistry} from "./tools/toolRegistry.gen";
 import {getDefaultUserConfigValues} from "../../../types/ollama.types";
 import {useGlobalConfig} from "../../../stores/globalConfig";
-import {globalToolProp} from "./tools/utils/utils";
 import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
+import {RenderConfigProps, ToolDefinition} from "./tools/types";
+import {hasSettings, missingConfigError, missingConfigKeys, pickedTool, toolRuntime} from "./toolConfig";
 
 
-// A config field's value: the one shared under `<toolSubtype>.<field>` (saved in Settings → Credentials, or typed
-// into any node of the tool this session) first, as the tools' settings fields show it; the node's own copy only
-// when nothing is shared. An empty shared value counts too: it was cleared, for every node.
-function configValue (globalData: Record<string, string | undefined>, toolSubtype: string, config: Record<string, unknown> | undefined, key: string): unknown {
-    return globalData[globalToolProp(toolSubtype, key)] ?? config?.[key];
+type ToolRuntimeOptions = {
+    id: string;
+    selectedTool: ToolDefinition | undefined;
+    data: Pick<ToolNodeData, "toolSubtype" | "userConfig" | "handler" | "cleanup"> & Pick<EnhancedNodeData, "onConfigChange">;
+};
+
+/**
+ * Keeps the node's handler and cleanup in step with its settings and the shared ones: built again after every change
+ * once each required setting has a value, dropped (with an error naming the missing settings) while one hasn't.
+ */
+function useToolRuntime ({id, selectedTool, data}: ToolRuntimeOptions) {
+    const {toolSubtype, userConfig, handler, cleanup, onConfigChange} = data;
+    const [error, setError] = useState<string | null>(null);
+    const {settings} = useSettings();
+    const {globalData} = useGlobalConfig();
+    // The handler and cleanup as last rendered: the effect below reads them here rather than depending on them, as
+    // it would otherwise run again each time it sets them.
+    const runtimeRef = useRef({handler, cleanup});
+
+    useEffect(() => {
+        runtimeRef.current = {handler, cleanup};
+    });
+
+    useEffect(() => {
+        if (!selectedTool) return;
+
+        const missingKeys = missingConfigKeys(selectedTool, globalData, userConfig);
+
+        if (missingKeys.length > 0) {
+            setError(missingConfigError(selectedTool, missingKeys));
+
+            if (runtimeRef.current.handler || runtimeRef.current.cleanup) onConfigChange(id, {handler: undefined, cleanup: undefined});
+
+            return;
+        }
+
+        onConfigChange(id, toolRuntime(selectedTool, globalData, userConfig, settings.browserPath));
+        setError(null);
+    }, [selectedTool, userConfig, onConfigChange, id, globalData, settings.browserPath, toolSubtype]);
+
+    // Only saves the setting: the effect above then checks the new settings and builds (or drops) the handler.
+    const handleUserConfigChange = useCallback((key: string, value: string | number | boolean) => {
+        onConfigChange(id, {userConfig: {...(userConfig || {}), [key]: value}});
+    }, [id, onConfigChange, userConfig]);
+
+    const hasMissingConfig = !toolSubtype || (!!selectedTool && missingConfigKeys(selectedTool, globalData, userConfig).length > 0);
+
+    return {error, hasMissingConfig, handleUserConfigChange};
 }
 
+/** The node's port: it connects only to an LLM Process node's tool port. */
+function ToolPort () {
+    const {getNode} = useReactFlow();
+
+    return (
+        <Handle
+            type="source"
+            id={NODE_PORT_IDS.TOOL}
+            position={Position.Right}
+            style={{backgroundColor: NODE_PORT_COLORS.TOOL}}
+            isValidConnection={({target, targetHandle}) => getNode(target)?.type === LLM_NODE_TYPE && targetHandle === NODE_PORT_IDS.TOOL}
+        />
+    );
+}
+
+type ToolSettingsProps = {
+    tool: ToolDefinition;
+    userConfig: ToolNodeData["userConfig"];
+    onConfigChange: RenderConfigProps["onConfigChange"];
+};
+
+/** The tool's settings, defaults filled in: in its own fields when it has them, else a field per setting. */
+function ToolSettings ({tool, userConfig, onConfigChange}: ToolSettingsProps) {
+    const shownConfig = {...getDefaultUserConfigValues(tool.userConfigSchema), ...(userConfig || {})};
+
+    return (
+        <FieldsetGroup title="Tool Configuration" style={{paddingBottom: 0}}>
+            {tool.renderConfig
+                ? tool.renderConfig({userConfig: shownConfig, onConfigChange})
+                : <UserConfigFields userConfigSchema={tool.userConfigSchema} userConfig={shownConfig} onConfigChange={onConfigChange} />
+            }
+        </FieldsetGroup>
+    );
+}
+
+type ToolSettingsBodyProps = {
+    toolSubtype: string;
+    selectedTool: ToolDefinition | undefined;
+    userConfig: ToolNodeData["userConfig"];
+    onToolPick: (toolSubtype: string) => void;
+    onUserConfigChange: RenderConfigProps["onConfigChange"];
+};
+
+/** The settings dialog's content: the tool to use, its settings, and its schema. */
+function ToolSettingsBody ({toolSubtype, selectedTool, userConfig, onToolPick, onUserConfigChange}: ToolSettingsBodyProps) {
+    return (
+        <div style={{display: 'flex', flexDirection: 'column', height: '60vh', minHeight: 0, flex: 1}}>
+            <FormControl fullWidth sx={{mb: 2}}>
+                <InputLabel id="tool-select-label">Tool</InputLabel>
+                <Select
+                    labelId="tool-select-label"
+                    value={toolSubtype}
+                    label="Tool"
+                    onChange={e => onToolPick(e.target.value)}
+                >
+                    {toolRegistry.map(tool => (
+                        <MenuItem key={tool.toolSubtype} value={tool.toolSubtype}>
+                            {tool.title}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+            {selectedTool && hasSettings(selectedTool) && (
+                <ToolSettings tool={selectedTool} userConfig={userConfig} onConfigChange={onUserConfigChange} />
+            )}
+            {selectedTool && (
+                <FieldsetGroup title="Tool Schema" collapsible defaultCollapsed fillAvailableSpace>
+                    <CodeEditor
+                        mode="json"
+                        value={JSON.stringify(selectedTool.toolSchema, null, 4)}
+                        readOnly={true}
+                        showLineNumbers={true}
+                    />
+                </FieldsetGroup>
+            )}
+        </div>
+    );
+}
 
 export function ToolNode ({data, id}: NodeProps<AppNode>) {
     assertIsEnhancedNodeData(data);
     assertIsToolNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const {title, toolSubtype, userConfig, handler, cleanup, onConfigChange, toSanitize} = data;
+    const {title, toolSubtype, userConfig, onConfigChange, toSanitize} = data;
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
-    const {settings} = useSettings();
-    const {globalData} = useGlobalConfig();
+    const {error, hasMissingConfig, handleUserConfigChange} = useToolRuntime({id, selectedTool, data});
+    const shownTitle = selectedTool?.title || title;
 
-    useEffect(() => {
-        if (selectedTool) {
-            const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
-            const missingKeys = requiredKeys.filter(key => {
-                const schema = selectedTool.userConfigSchema?.[key];
+    const handleToolPick = (pickedSubtype: string) => {
+        const tool = toolRegistry.find(t => t.toolSubtype === pickedSubtype);
 
-                return schema?.required && !configValue(globalData, toolSubtype, userConfig, key);
-            });
-
-            if (missingKeys.length > 0) {
-                const missingLabels = missingKeys.map(key => {
-                    const configSchema = selectedTool.userConfigSchema || {};
-                    const schema = configSchema[key];
-
-                    return schema?.description || key;
-                });
-                const errorMessage = `⚠️Missing required configuration:\n- "${missingLabels.join('"\n- "')}"`;
-
-                setError(errorMessage);
-
-                if (handler || cleanup) {
-                    onConfigChange(id, {handler: undefined, cleanup: undefined});
-                }
-            } else {
-                if (selectedTool.handlerFactory && (!handler || missingKeys.length === 0)) {
-                    const effectiveUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                        configWithFallbacks[configKey] = configValue(globalData, toolSubtype, userConfig, configKey);
-
-                        return configWithFallbacks;
-                    }, {...(userConfig || {})} as Record<string, any>);
-
-                    const newHandler = selectedTool.handlerFactory({
-                        ...effectiveUserConfig,
-                        browserPath: settings.browserPath
-                    });
-                    const newCleanup = selectedTool.runtimeCleanup?.({
-                        ...effectiveUserConfig,
-                        browserPath: settings.browserPath
-                    });
-
-                    onConfigChange(id, {handler: newHandler, cleanup: newCleanup});
-                }
-
-                setError(null);
-            }
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedTool, userConfig, onConfigChange, id, globalData, settings.browserPath, toolSubtype]);
-
-    const hasMissingConfig = !toolSubtype ||
-        (selectedTool?.userConfigSchema && Object.entries(selectedTool.userConfigSchema).some(
-            ([key, schema]) => schema.required && !configValue(globalData, toolSubtype, userConfig, key)
-        ));
-
-    const handleUserConfigChange = useCallback((key: string, value: string | number | boolean) => {
-        const newUserConfig = {
-            ...(userConfig || {}),
-            [key]: value,
-        };
-
-        let handler: ((params: any) => Promise<any>) | undefined = undefined;
-        let cleanup: ((sessionId: string) => Promise<void>) | undefined = undefined;
-
-        if (selectedTool?.handlerFactory) {
-            const requiredKeys = Object.keys(selectedTool.userConfigSchema || {});
-            const missingKeys = requiredKeys.filter(key => {
-                const schema = selectedTool.userConfigSchema?.[key];
-
-                return schema?.required && !configValue(globalData, toolSubtype, userConfig, key);
-            });
-
-            if (missingKeys.length > 0) {
-                const missingLabels = missingKeys.map(key => {
-                    const configSchema = selectedTool.userConfigSchema || {};
-                    const schema = configSchema[key];
-
-                    return schema?.description || key;
-                });
-                const errorMessage = `⚠️Missing required configuration:\n- "${missingLabels.join('"\n- "')}"`;
-
-                setError(errorMessage);
-            } else {
-                const effectiveNewUserConfig = Object.keys(selectedTool.userConfigSchema || {}).reduce((configWithFallbacks, configKey) => {
-                    configWithFallbacks[configKey] = configValue(globalData, toolSubtype, newUserConfig, configKey);
-
-                    return configWithFallbacks;
-                }, {...newUserConfig} as Record<string, any>);
-
-                handler = selectedTool.handlerFactory({
-                    ...effectiveNewUserConfig,
-                    browserPath: settings.browserPath
-                });
-                cleanup = selectedTool.runtimeCleanup?.({
-                    ...effectiveNewUserConfig,
-                    browserPath: settings.browserPath
-                });
-
-                setError(null);
-            }
-        }
-
-        onConfigChange(id, {
-            userConfig: newUserConfig,
-            handler,
-            cleanup
-        });
-    }, [globalData, id, onConfigChange, selectedTool, settings.browserPath, toolSubtype, userConfig]);
-
-    const {getNode} = useReactFlow();
-
+        // The generic node's own fields removed on save are merged with the tool's (pickedTool does it).
+        if (tool) onConfigChange(id, pickedTool(tool, toSanitize));
+    };
 
     return (
         <>
@@ -162,101 +178,24 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
                 id={id}
                 nodeIcon={selectedTool?.icon || Icon}
                 ports={{}}
-                extraPorts={
-                    <Handle
-                        type="source"
-                        id={NODE_PORT_IDS.TOOL}
-                        position={Position.Right}
-                        style={{backgroundColor: NODE_PORT_COLORS.TOOL}}
-                        isValidConnection={({target, targetHandle}) => {
-                            const targetNode = getNode(target);
-
-                            if (!targetNode || targetNode.type !== LLM_NODE_TYPE) return false;
-
-                            if (targetHandle !== NODE_PORT_IDS.TOOL) return false;
-
-                            return true;
-                        }}
-                    />
-                }
-                title={selectedTool?.title || title}
-                settings={{callback: () => setOpenSettings(true), highlight: !!hasMissingConfig}}
+                extraPorts={<ToolPort />}
+                title={shownTitle}
+                settings={{callback: () => setOpenSettings(true), highlight: hasMissingConfig}}
                 error={error}
             />
 
             <BaseDialog
                 open={openSettings}
                 onClose={() => setOpenSettings(false)}
-                title={selectedTool?.title || title}
+                title={shownTitle}
             >
-                <div style={{display: 'flex', flexDirection: 'column', height: '60vh', minHeight: 0, flex: 1}}>
-                    <FormControl fullWidth sx={{mb: 2}}>
-                        <InputLabel id="tool-select-label">Tool</InputLabel>
-                        <Select
-                            labelId="tool-select-label"
-                            value={toolSubtype}
-                            label="Tool"
-                            onChange={e => {
-                                const tool = toolRegistry.find(t => t.toolSubtype === e.target.value);
-
-                                if (tool) {
-                                    let handler: ((params: any) => Promise<any>) | undefined = undefined;
-                                    let cleanup: ((sessionId: string) => Promise<void>) | undefined = undefined;
-
-                                    if (!tool.userConfigSchema || Object.keys(tool.userConfigSchema).length === 0) {
-                                        handler = tool.handlerFactory({});
-                                        cleanup = tool.runtimeCleanup?.({});
-                                    }
-
-                                    const defaultUserConfig = getDefaultUserConfigValues(tool.userConfigSchema || {});
-
-                                    onConfigChange(id, {
-                                        toolSubtype: tool.toolSubtype,
-                                        toolSchema: tool.toolSchema,
-                                        title: tool.title,
-                                        userConfig: defaultUserConfig,
-                                        handler,
-                                        cleanup,
-                                        toSanitize: [...toSanitize, ...tool.toSanitize] // important to merge the the generic ToolNode toSanitize with the tool specific ones
-                                    });
-                                }
-                            }}
-                        >
-                            {toolRegistry.map(tool => (
-                                <MenuItem key={tool.toolSubtype} value={tool.toolSubtype}>
-                                    {tool.title}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    {selectedTool?.userConfigSchema && Object.keys(selectedTool.userConfigSchema).length > 0 && (
-                        <FieldsetGroup title="Tool Configuration" style={{paddingBottom: 0}}>
-                            {selectedTool.renderConfig
-                                ? selectedTool.renderConfig({
-                                    userConfig: {...getDefaultUserConfigValues(selectedTool.userConfigSchema), ...(userConfig || {})},
-                                    onConfigChange: handleUserConfigChange,
-                                })
-                                : (
-                                    <UserConfigFields
-                                        userConfigSchema={selectedTool.userConfigSchema}
-                                        userConfig={{...getDefaultUserConfigValues(selectedTool.userConfigSchema), ...(userConfig || {})}}
-                                        onConfigChange={handleUserConfigChange}
-                                    />
-                                )
-                            }
-                        </FieldsetGroup>
-                    )}
-                    {selectedTool && (
-                        <FieldsetGroup title="Tool Schema" collapsible defaultCollapsed fillAvailableSpace>
-                            <CodeEditor
-                                mode="json"
-                                value={JSON.stringify(selectedTool.toolSchema, null, 4)}
-                                readOnly={true}
-                                showLineNumbers={true}
-                            />
-                        </FieldsetGroup>
-                    )}
-                </div>
+                <ToolSettingsBody
+                    toolSubtype={toolSubtype}
+                    selectedTool={selectedTool}
+                    userConfig={userConfig}
+                    onToolPick={handleToolPick}
+                    onUserConfigChange={handleUserConfigChange}
+                />
             </BaseDialog>
         </>
     );

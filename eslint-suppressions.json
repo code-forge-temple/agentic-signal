@@ -74,61 +74,6 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/ToolNode/ToolNode.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/ToolNode/UserConfigFields.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/ToolNode/tools/FetchWeatherDataTool/descriptor.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/ToolNode/tools/FetchWeatherDataTool/mappers.ts": {
-    "complexity": {
-      "count": 3
-    }
-  },
-  "client/src/components/nodes/ToolNode/tools/FormInteractionTool/descriptor.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/ToolNode/tools/MaxTool/descriptor.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/ToolNode/tools/MinTool/descriptor.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "client/src/components/nodes/ToolNode/tools/SortTool/descriptor.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "client/src/hooks/useOutsideCommands.ts": {
     "complexity": {
       "count": 1

@@ -7,7 +7,8 @@
 /* eslint-disable max-len */
 
 import {z} from "zod";
-import {FILL_ACTION_TYPES} from "@shared/types.gen";
+import {FILL_ACTION_TYPES, FillAction} from "@shared/types.gen";
+import {ToolError} from "../../../../../../types/ollama.types";
 
 // LLMs send null for "no value" (e.g. `value: null` on a check action); taking it as omitted saves a rejected
 // call and a retry. A preprocess, unlike .nullish(), keeps the JSON schema the LLM sees a plain string.
@@ -23,3 +24,25 @@ export const RawLlmFillActionSchema = z.object({
 });
 
 export type RawLlmFillAction = z.infer<typeof RawLlmFillActionSchema>;
+
+/**
+ * The LLM's action as the server takes it. An upload falls back to `value` for its file when there's no `fileKey`
+ * (LLMs sometimes put the file name there); any other action keeps a `fileKey` only when one was sent, so a typed
+ * value such as "Jane" never turns into one.
+ */
+export function toFillAction ({selector, actionType, value, fileKey}: RawLlmFillAction): FillAction {
+    if (actionType === "upload") return {selector, actionType, value, fileKey: fileKey ?? value};
+
+    return fileKey !== undefined ? {selector, actionType, value, fileKey} : {selector, actionType, value};
+}
+
+/** The LLM's `actions` (none when it sent none) checked and as the server takes them; else an error naming each wrong field. */
+export function parseFillActions (actions: unknown): FillAction[] | ToolError {
+    const parsed = z.array(RawLlmFillActionSchema).safeParse(actions ?? []);
+
+    if (!parsed.success) {
+        return {error: `Invalid \`actions\`: ${parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`};
+    }
+
+    return parsed.data.map(toFillAction);
+}

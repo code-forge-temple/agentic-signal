@@ -38,6 +38,49 @@ const WkJobSchema = z.object({
 
 const WkResponseSchema = z.object({name: z.string().nullish(), jobs: z.array(WkJobSchema).nullish()});
 
+type WkJob = z.infer<typeof WkJobSchema>;
+
+/** The application form: the posting's application link, else its short link or page; "" when it has none. */
+const workableApplyUrl = (job: WkJob): string => job.application_url || job.shortlink || job.url || "";
+
+/** The posting's id: Workable's, else its shortcode, else its title. */
+const workableId = (job: WkJob): string => String(job.id ?? job.shortcode ?? job.title);
+
+/** Where it is: its location, else Remote for a remote posting, else not specified. */
+const workableLocation = (location: string, job: WkJob): string => location || (job.telecommuting ? "Remote" : "Not specified");
+
+/** When it was published, else created. */
+const workablePostedAt = (job: WkJob): string | undefined => job.published_on || job.created_at || undefined;
+
+function workableJob (job: WkJob, company: string, token: string): NormalizedJob {
+    const locations = [job.city, job.region, job.country].filter((l): l is string => Boolean(l));
+    const location = locations.join(", ");
+    const apply = workableApplyUrl(job);
+
+    return {
+        source: "workable",
+        ats: "workable",
+        id: workableId(job),
+        title: job.title,
+        company,
+        companyToken: token,
+        department: job.department ?? undefined,
+        url: job.url || job.shortlink || apply,
+        applyUrl: apply,
+        location: workableLocation(location, job),
+        isRemote: job.telecommuting === true || /\bremote\b/i.test(location),
+        candidateLocations: locations.flatMap(parseRegionList),
+        eligibleFromTarget: null,
+        eligibilityConfidence: "low",
+        employmentType: job.employment_type || undefined,
+        tags: [job.department, job.function, job.industry].filter((t): t is string => Boolean(t)),
+        postedAt: workablePostedAt(job),
+        descriptionHtml: job.description || undefined,
+        descriptionText: stripHtml(job.description),
+        raw: job,
+    };
+}
+
 export async function fetchWorkable (token: string): Promise<NormalizedJob[]> {
     const data = await fetchJson(
         `https://apply.workable.com/api/v1/widget/accounts/${encodeURIComponent(token)}?details=true`,
@@ -47,32 +90,5 @@ export async function fetchWorkable (token: string): Promise<NormalizedJob[]> {
 
     const company = data.name || token;
 
-    return (data.jobs ?? []).map((job): NormalizedJob => {
-        const locations = [job.city, job.region, job.country].filter((l): l is string => Boolean(l));
-        const location = locations.join(", ");
-        const apply = job.application_url || job.shortlink || job.url || "";
-
-        return {
-            source: "workable",
-            ats: "workable",
-            id: String(job.id ?? job.shortcode ?? job.title),
-            title: job.title,
-            company,
-            companyToken: token,
-            department: job.department ?? undefined,
-            url: job.url || job.shortlink || apply,
-            applyUrl: apply,
-            location: location || (job.telecommuting ? "Remote" : "Not specified"),
-            isRemote: job.telecommuting === true || /\bremote\b/i.test(location),
-            candidateLocations: locations.flatMap(parseRegionList),
-            eligibleFromTarget: null,
-            eligibilityConfidence: "low",
-            employmentType: job.employment_type || undefined,
-            tags: [job.department, job.function, job.industry].filter((t): t is string => Boolean(t)),
-            postedAt: job.published_on || job.created_at || undefined,
-            descriptionHtml: job.description || undefined,
-            descriptionText: stripHtml(job.description),
-            raw: job,
-        };
-    });
+    return (data.jobs ?? []).map(job => workableJob(job, company, token));
 }

@@ -73,12 +73,14 @@ export const TimerTriggerEventFields = {
     type: "String"
 };
 
-export const isTimerTriggerEvent = (obj: any): obj is TimerTriggerEvent => {
-    return (
-        typeof obj === 'object' && obj !== null &&
-        typeof obj.nodeId === 'string' &&
-        typeof obj.timestamp === 'number' &&
-        typeof obj.type === 'string' &&
-        Object.values(TIMER_NODE_MODES).includes(obj.type)
-    );
+// shared/utils has isObject, but the client compiles this file too (through types.gen), and the two import shared/utils
+// differently ("@shared/utils" there, "../../../shared/utils.ts" here): so a copy.
+const isObjectLike = (obj: unknown): obj is Record<string, unknown> => typeof obj === 'object' && obj !== null;
+
+const isTimerMode = (type: unknown): boolean => typeof type === 'string' && (Object.values(TIMER_NODE_MODES) as string[]).includes(type);
+
+export const isTimerTriggerEvent = (obj: unknown): obj is TimerTriggerEvent => {
+    if (!isObjectLike(obj)) return false;
+
+    return typeof obj.nodeId === 'string' && typeof obj.timestamp === 'number' && isTimerMode(obj.type);
 }

@@ -10,6 +10,9 @@ import {WeaviateMetaObjectsResponseSchema} from "../types.ts";
 
 export type WHeaders = Record<string, string>;
 
+/** A Weaviate class to work on: the server's base URL (no trailing slash), the request headers, and the class name. */
+export type WeaviateClass = {base: string; h: WHeaders; className: string};
+
 const BatchInsertResultSchema = z.array(z.object({
     result: z.object({
         status: z.string().nullish(),
@@ -47,13 +50,13 @@ export function weaviateHeaders (apiKey?: string): WHeaders {
     return h;
 }
 
-export async function classExists (base: string, h: WHeaders, className: string): Promise<boolean> {
+export async function classExists ({base, h, className}: WeaviateClass): Promise<boolean> {
     const res = await fetch(`${base}/v1/schema/${className}`, {headers: h});
 
     return res.ok;
 }
 
-export async function createChunksClass (base: string, h: WHeaders, className: string): Promise<void> {
+export async function createChunksClass ({base, h, className}: WeaviateClass): Promise<void> {
     const res = await fetch(`${base}/v1/schema`, {
         method: "POST",
         headers: h,
@@ -71,7 +74,7 @@ export async function createChunksClass (base: string, h: WHeaders, className: s
     if (!res.ok) throw new Error(`Failed to create Weaviate class "${className}": ${await res.text()}`);
 }
 
-export async function createMetaClass (base: string, h: WHeaders, className: string): Promise<void> {
+export async function createMetaClass ({base, h, className}: WeaviateClass): Promise<void> {
     const res = await fetch(`${base}/v1/schema`, {
         method: "POST",
         headers: h,
@@ -89,11 +92,11 @@ export async function createMetaClass (base: string, h: WHeaders, className: str
     if (!res.ok) throw new Error(`Failed to create Weaviate meta class "${className}": ${await res.text()}`);
 }
 
-export async function deleteClass (base: string, h: WHeaders, className: string): Promise<void> {
+export async function deleteClass ({base, h, className}: WeaviateClass): Promise<void> {
     await fetch(`${base}/v1/schema/${className}`, {method: "DELETE", headers: h});
 }
 
-export async function deleteChunksBySourceFile (base: string, h: WHeaders, className: string, sourceFile: string): Promise<void> {
+export async function deleteChunksBySourceFile ({base, h, className}: WeaviateClass, sourceFile: string): Promise<void> {
     const res = await fetch(`${base}/v1/batch/objects`, {
         method: "DELETE",
         headers: h,
@@ -109,9 +112,7 @@ export async function deleteChunksBySourceFile (base: string, h: WHeaders, class
 }
 
 export async function batchInsert (
-    base: string,
-    h: WHeaders,
-    className: string,
+    {base, h, className}: WeaviateClass,
     objects: Array<{content: string; sourceFile: string; chunkIndex: number; embedding: number[]}>,
 ): Promise<void> {
     const res = await fetch(`${base}/v1/batch/objects`, {
@@ -140,11 +141,10 @@ export async function batchInsert (
     }
 }
 
-export async function getStoredMeta (
-    base: string,
-    h: WHeaders,
-    metaClassName: string,
-): Promise<{id: string; fileHashes: Record<string, string>; embeddingModel?: string} | undefined> {
+/** A RAG collection's meta object: the files ingested (name → content hash) and the embedding model they were embedded with. */
+export type StoredMeta = {id: string; fileHashes: Record<string, string>; embeddingModel?: string};
+
+export async function getStoredMeta ({base, h, className: metaClassName}: WeaviateClass): Promise<StoredMeta | undefined> {
     const res = await fetch(`${base}/v1/objects?class=${metaClassName}&limit=1`, {headers: h});
 
     if (!res.ok) return undefined;
@@ -169,13 +169,13 @@ export async function getStoredMeta (
     };
 }
 
+/** What a collection's meta object holds: its files' hashes, the embedding model, and the collection's name as typed. */
+export type MetaProperties = {fileHashes: Record<string, string>; embeddingModel: string; originalName: string};
+
+/** Writes the collection's meta object: updates the one with `existingId`, or adds it when there's none. */
 export async function upsertMeta (
-    base: string,
-    h: WHeaders,
-    metaClassName: string,
-    fileHashes: Record<string, string>,
-    embeddingModel: string,
-    originalName: string,
+    {base, h, className: metaClassName}: WeaviateClass,
+    {fileHashes, embeddingModel, originalName}: MetaProperties,
     existingId?: string,
 ): Promise<void> {
     const documentHash = JSON.stringify(fileHashes);
@@ -200,9 +200,7 @@ export async function upsertMeta (
 }
 
 export async function nearVectorSearch (
-    base: string,
-    h: WHeaders,
-    className: string,
+    {base, h, className}: WeaviateClass,
     vector: number[],
     limit: number,
 ): Promise<Array<{content: string | null; sourceFile: string | null}>> {

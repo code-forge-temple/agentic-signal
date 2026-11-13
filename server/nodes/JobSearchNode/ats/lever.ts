@@ -51,6 +51,51 @@ function salaryOf (job: LeverJob): NormalizedSalary | undefined {
     return {min: s.min || undefined, max: s.max || undefined, currency: s.currency || undefined, period: s.interval || undefined};
 }
 
+type LeverCategories = NonNullable<LeverJob["categories"]>;
+
+/** Where the posting is: every location Lever lists for it, else its one location (if any). */
+const leverLocations = (cat: LeverCategories): string[] => (cat.allLocations?.length ? cat.allLocations : [cat.location ?? ""].filter(Boolean));
+
+/** The description with the posting's lists (requirements, benefits, ...) after it, as HTML; undefined when both are empty. */
+function leverDescriptionHtml (job: LeverJob): string | undefined {
+    const listsHtml = (job.lists ?? []).map(list => `<h3>${list.text ?? ""}</h3>${list.content ?? ""}`).join("");
+
+    return (job.description ?? "") + listsHtml || undefined;
+}
+
+/** The application form: Lever's own link, else the posting's page with /apply. */
+const leverApplyUrl = (job: LeverJob): string => job.applyUrl || `${job.hostedUrl.replace(/\/$/, "")}/apply`;
+
+function leverJob (job: LeverJob, token: string): NormalizedJob {
+    const cat = job.categories ?? {};
+    const allLocations = leverLocations(cat);
+    const location = allLocations.join(", ");
+
+    return {
+        source: "lever",
+        ats: "lever",
+        id: job.id,
+        title: job.text,
+        company: token,
+        companyToken: token,
+        department: cat.department ?? undefined,
+        url: job.hostedUrl,
+        applyUrl: leverApplyUrl(job),
+        location: location || "Not specified",
+        isRemote: job.workplaceType === "remote" || /\bremote\b/i.test(location),
+        candidateLocations: allLocations.flatMap(parseRegionList),
+        eligibleFromTarget: null,
+        eligibilityConfidence: "low",
+        employmentType: cat.commitment || undefined,
+        salary: salaryOf(job),
+        tags: [cat.department, cat.team].filter((t): t is string => Boolean(t)),
+        postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : undefined,
+        descriptionHtml: leverDescriptionHtml(job),
+        descriptionText: job.descriptionPlain || stripHtml(job.description),
+        raw: job,
+    };
+}
+
 export async function fetchLever (token: string): Promise<NormalizedJob[]> {
     const data = await fetchJson(
         `https://api.lever.co/v0/postings/${encodeURIComponent(token)}?mode=json`,
@@ -58,34 +103,5 @@ export async function fetchLever (token: string): Promise<NormalizedJob[]> {
         z.array(LeverJobSchema)
     );
 
-    return data.map((job): NormalizedJob => {
-        const cat = job.categories ?? {};
-        const allLocations = cat.allLocations?.length ? cat.allLocations : [cat.location ?? ""].filter(Boolean);
-        const location = allLocations.join(", ");
-        const listsHtml = (job.lists ?? []).map(l => `<h3>${l.text ?? ""}</h3>${l.content ?? ""}`).join("");
-
-        return {
-            source: "lever",
-            ats: "lever",
-            id: job.id,
-            title: job.text,
-            company: token,
-            companyToken: token,
-            department: cat.department ?? undefined,
-            url: job.hostedUrl,
-            applyUrl: job.applyUrl || `${job.hostedUrl.replace(/\/$/, "")}/apply`,
-            location: location || "Not specified",
-            isRemote: job.workplaceType === "remote" || /\bremote\b/i.test(location),
-            candidateLocations: allLocations.flatMap(parseRegionList),
-            eligibleFromTarget: null,
-            eligibilityConfidence: "low",
-            employmentType: cat.commitment || undefined,
-            salary: salaryOf(job),
-            tags: [cat.department, cat.team].filter((t): t is string => Boolean(t)),
-            postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : undefined,
-            descriptionHtml: (job.description ?? "") + listsHtml || undefined,
-            descriptionText: job.descriptionPlain || stripHtml(job.description),
-            raw: job,
-        };
-    });
+    return data.map(job => leverJob(job, token));
 }

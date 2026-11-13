@@ -26,6 +26,57 @@ async function readWeaviateJson<T> (res: Response, schema: z.ZodType<T>, endpoin
     return parsed.data;
 }
 
+/** The Weaviate server to ask: its URL (no trailing slash) and the headers (its API key, when there is one). */
+type WeaviateTarget = {url: string; headers: Record<string, string> | undefined};
+
+/** The collections' Weaviate classes (meta classes left out), or the status Weaviate turned the request down with. */
+type ClassesAnswer = {classes: string[]} | {refused: number};
+
+/** Asks for the collections' classes; throws when Weaviate can't be asked or answers in another shape. */
+async function collectionClasses ({url, headers}: WeaviateTarget): Promise<ClassesAnswer> {
+    const res = await fetch(`${url}/v1/schema`, {headers});
+
+    if (!res.ok) return {refused: res.status};
+
+    const schema = await readWeaviateJson(res, WeaviateSchemaResponseSchema, "/v1/schema");
+
+    return {classes: (schema.classes ?? []).map(c => c.class).filter(name => !name.endsWith("Meta"))};
+}
+
+type CollectionMeta = NonNullable<z.infer<typeof WeaviateMetaObjectsResponseSchema>["objects"]>[number]["properties"];
+
+/** A collection's meta properties (its original name, its embedding model); undefined when they can't be read. */
+async function collectionMeta ({url, headers}: WeaviateTarget, weaviateClass: string): Promise<CollectionMeta | undefined> {
+    try {
+        const res = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
+
+        if (!res.ok) return undefined;
+
+        const meta = await readWeaviateJson(res, WeaviateMetaObjectsResponseSchema, "/v1/objects");
+
+        return meta.objects?.[0]?.properties;
+    } catch {
+        return undefined;
+    }
+}
+
+/** The class whose collection has the original name `name`, asking one class at a time; undefined when none has. */
+async function classOfCollection (target: WeaviateTarget, classes: string[], name: string): Promise<string | undefined> {
+    for (const weaviateClass of classes) {
+        if ((await collectionMeta(target, weaviateClass))?.originalName === name) return weaviateClass;
+    }
+
+    return undefined;
+}
+
+// item.id = Weaviate class name (e.g. "Ragcollection"), item.value = original name (e.g. "rag_collection"; the class
+// name when it has none).
+async function collectionItem (target: WeaviateTarget, weaviateClass: string): Promise<DropdownMenuItem> {
+    const originalName = (await collectionMeta(target, weaviateClass))?.originalName;
+
+    return {id: weaviateClass, value: originalName || weaviateClass};
+}
+
 interface UseWeaviateCollectionsOptions {
     id: string;
     weaviateUrl: string | undefined;
@@ -42,74 +93,32 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
 
     isEmbeddingModelLockedRef.current = isEmbeddingModelLocked;
 
-    const headers = useMemo(
-        () => weaviateApiKey ? {"X-Weaviate-Api-Key": weaviateApiKey} : undefined,
-        [weaviateApiKey]
-    );
+    const target = useMemo<WeaviateTarget>(() => ({
+        url: (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, ""),
+        headers: weaviateApiKey ? {"X-Weaviate-Api-Key": weaviateApiKey} : undefined,
+    }), [weaviateUrl, weaviateApiKey]);
 
+    // Locks the embedding model to the one the collection was embedded with, when it has one.
     const checkAndApplyCollectionLock = useCallback(async (weaviateClass: string) => {
-        const url = (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, "");
+        const storedModel = (await collectionMeta(target, weaviateClass))?.embeddingModel;
 
-        try {
-            const res = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
+        if (storedModel) onConfigChange(id, {embeddingModel: storedModel});
 
-            if (res.ok) {
-                const result = await readWeaviateJson(res, WeaviateMetaObjectsResponseSchema, "/v1/objects");
-                const storedModel = result.objects?.[0]?.properties?.embeddingModel;
+        setIsEmbeddingModelLocked(!!storedModel);
+    }, [id, onConfigChange, target]);
 
-                if (storedModel) {
-                    onConfigChange(id, {embeddingModel: storedModel});
-                    setIsEmbeddingModelLocked(true);
-
-                    return;
-                }
-            }
-        } catch { /* ignore — not critical */ }
-
-        setIsEmbeddingModelLocked(false);
-    }, [id, headers, onConfigChange, weaviateUrl]);
-
+    // A schema Weaviate turns down leaves the lock as it is; one it can't answer unlocks.
     const checkCollectionLockByName = useCallback(async (name: string) => {
-        if (!name) {
-            setIsEmbeddingModelLocked(false);
+        const answer = name ? await collectionClasses(target).catch(() => undefined) : undefined;
 
-            return;
-        }
+        if (answer && "refused" in answer) return;
 
-        const url = (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, "");
+        const weaviateClass = answer ? await classOfCollection(target, answer.classes, name) : undefined;
 
-        try {
-            const res = await fetch(`${url}/v1/schema`, {headers});
+        if (weaviateClass) await checkAndApplyCollectionLock(weaviateClass);
+        else setIsEmbeddingModelLocked(false);
+    }, [checkAndApplyCollectionLock, target]);
 
-            if (!res.ok) return;
-
-            const schema = await readWeaviateJson(res, WeaviateSchemaResponseSchema, "/v1/schema");
-            const weaviateClasses = (schema.classes ?? [])
-                .map(c => c.class)
-                .filter(cls => !cls.endsWith("Meta"));
-
-            for (const weaviateClass of weaviateClasses) {
-                try {
-                    const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
-
-                    if (metaRes.ok) {
-                        const meta = await readWeaviateJson(metaRes, WeaviateMetaObjectsResponseSchema, "/v1/objects");
-                        const originalName = meta.objects?.[0]?.properties?.originalName;
-
-                        if (originalName === name) {
-                            await checkAndApplyCollectionLock(weaviateClass);
-
-                            return;
-                        }
-                    }
-                } catch { /* ignore */ }
-            }
-        } catch { /* ignore */ }
-
-        setIsEmbeddingModelLocked(false);
-    }, [checkAndApplyCollectionLock, headers, weaviateUrl]);
-
-    // item.id = Weaviate class name (e.g. "Ragcollection"), item.value = original name (e.g. "rag_collection")
     const selectCollection = useCallback(async (item: DropdownMenuItem) => {
         onConfigChange(id, {collectionName: item.value});
 
@@ -117,37 +126,15 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
     }, [id, onConfigChange, checkAndApplyCollectionLock]);
 
     const fetchCollections = useCallback(async () => {
-        const url = (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, "");
-
         setLoadingCollections(true);
 
         try {
-            const res = await fetch(`${url}/v1/schema`, {headers});
+            const answer = await collectionClasses(target);
 
-            if (!res.ok) throw new Error(`Weaviate returned ${res.status}`);
+            if ("refused" in answer) throw new Error(`Weaviate returned ${answer.refused}`);
 
-            const schema = await readWeaviateJson(res, WeaviateSchemaResponseSchema, "/v1/schema");
-            const weaviateClasses = (schema.classes ?? [])
-                .map(c => c.class)
-                .filter(name => !name.endsWith("Meta"));
-
-            // Fetch original names from each meta class in parallel
-            const items = await Promise.all(weaviateClasses.map(async (weaviateClass) => {
-                try {
-                    const metaRes = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
-
-                    if (metaRes.ok) {
-                        const meta = await readWeaviateJson(metaRes, WeaviateMetaObjectsResponseSchema, "/v1/objects");
-                        const originalName = meta.objects?.[0]?.properties?.originalName;
-
-                        if (originalName) return {id: weaviateClass, value: originalName};
-                    }
-                } catch { /* fall back to Weaviate class name */ }
-
-                return {id: weaviateClass, value: weaviateClass};
-            }));
-
-            setAvailableCollections(items);
+            // Each collection's original name, from its meta class, asked in parallel.
+            setAvailableCollections(await Promise.all(answer.classes.map(weaviateClass => collectionItem(target, weaviateClass))));
         } catch (err) {
             onError(`${FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX}: ${errorMessage(err)}`);
 
@@ -155,7 +142,7 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
         } finally {
             setLoadingCollections(false);
         }
-    }, [headers, weaviateUrl, onError]);
+    }, [onError, target]);
 
     return {
         availableCollections,

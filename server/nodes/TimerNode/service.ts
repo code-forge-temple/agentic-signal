@@ -10,6 +10,41 @@ import {TimerConfig, TimerTriggerEvent, ScheduledTimerConfig, TIMER_NODE_MODES, 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const ONE_WEEK_MS = 7 * ONE_DAY_MS;
 
+/** A month later, on the same day and time; on the next month's last day when it's shorter (31 January → 28 February). */
+function aMonthLater (date: Date): Date {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = Math.min(date.getDate(), new Date(year, month + 2, 0).getDate()); // Last day of next month
+
+    return new Date(year, month + 1, day, date.getHours(), date.getMinutes(), date.getSeconds());
+}
+
+// The step from one trigger of a repeating scheduled timer to the next. A Map, not an object: the repeat comes from the
+// client unchecked, and an object would answer "constructor" or "toString" with a function of its prototype.
+const REPEAT_STEPS = new Map<string, (date: Date) => Date>([
+    [SCHEDULED_TIMER_REPEATS.DAILY, date => new Date(date.getTime() + ONE_DAY_MS)],
+    [SCHEDULED_TIMER_REPEATS.WEEKLY, date => new Date(date.getTime() + ONE_WEEK_MS)],
+    [SCHEDULED_TIMER_REPEATS.MONTHLY, aMonthLater],
+]);
+
+/**
+ * When a scheduled timer fires next: at its time when that's still ahead; once it has passed, at the first repeat after
+ * `now` (null for one that doesn't repeat).
+ */
+export function nextScheduledTrigger (scheduled: Date, repeat: SCHEDULED_TIMER_REPEATS, now: Date): Date | null {
+    if (!(scheduled <= now)) return scheduled;
+
+    const step = REPEAT_STEPS.get(repeat);
+
+    if (!step) return null;
+
+    let next = scheduled;
+
+    while (next <= now) next = step(next);
+
+    return next;
+}
+
 type TimerInstance = {
     id: string;
     config: TimerConfig;
@@ -88,50 +123,8 @@ class TimerService {
 
             const config = instance.config as ScheduledTimerConfig;
             const now = new Date();
-            const scheduled = new Date(config.scheduledDateTime);
-            let nextTrigger = scheduled;
-
-            if (scheduled <= now) {
-                switch (config.repeat) {
-                    case SCHEDULED_TIMER_REPEATS.ONCE:
-
-                        return;
-                    case SCHEDULED_TIMER_REPEATS.DAILY:
-                        while (nextTrigger <= now) {
-                            nextTrigger = new Date(nextTrigger.getTime() + ONE_DAY_MS);
-                        }
-
-                        break;
-                    case SCHEDULED_TIMER_REPEATS.WEEKLY:
-                        while (nextTrigger <= now) {
-                            nextTrigger = new Date(nextTrigger.getTime() + ONE_WEEK_MS);
-                        }
-
-                        break;
-                    case SCHEDULED_TIMER_REPEATS.MONTHLY:
-                        while (nextTrigger <= now) {
-                            const year = nextTrigger.getFullYear();
-                            const month = nextTrigger.getMonth();
-                            const day = Math.min(
-                                nextTrigger.getDate(),
-                                new Date(year, month + 2, 0).getDate() // Last day of next month
-                            );
-
-                            nextTrigger = new Date(
-                                year,
-                                month + 1,
-                                day,
-                                nextTrigger.getHours(),
-                                nextTrigger.getMinutes(),
-                                nextTrigger.getSeconds()
-                            );
-                        }
-
-                        break;
-                }
-            }
-
-            const delay = nextTrigger.getTime() - now.getTime();
+            const nextTrigger = nextScheduledTrigger(new Date(config.scheduledDateTime), config.repeat, now);
+            const delay = nextTrigger ? nextTrigger.getTime() - now.getTime() : 0;
 
             if (delay > 0) {
                 instance.timer = setTimeout(() => {

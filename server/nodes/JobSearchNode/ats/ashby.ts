@@ -44,6 +44,49 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
     Temporary: "Temporary",
 };
 
+type AshbyJob = z.infer<typeof AshbyJobSchema>;
+
+/** Where the posting is: its location, then its secondary ones. */
+const ashbyLocations = (job: AshbyJob): string[] =>
+    [job.location, ...(job.secondaryLocations ?? []).map(s => s.location)].filter((l): l is string => Boolean(l));
+
+/** Ashby says so, or its location does. */
+const isAshbyRemote = (job: AshbyJob, location: string): boolean =>
+    job.isRemote === true || job.workplaceType === "Remote" || /\bremote\b/i.test(location);
+
+/** The employment type in words ("Full-time" for FullTime); a type it has no words for, as it is. */
+const ashbyEmploymentType = (type: string | null | undefined): string | undefined => (type ? EMPLOYMENT_LABEL[type] ?? type : undefined);
+
+function ashbyJob (job: AshbyJob, token: string): NormalizedJob {
+    const locations = ashbyLocations(job);
+    const location = locations.join(", ");
+    const summary = job.compensation?.compensationTierSummary?.trim();
+
+    return {
+        source: "ashby",
+        ats: "ashby",
+        id: job.id,
+        title: job.title,
+        company: token,
+        companyToken: token,
+        department: job.department ?? undefined,
+        url: job.jobUrl,
+        applyUrl: job.applyUrl,
+        location: location || "Not specified",
+        isRemote: isAshbyRemote(job, location),
+        candidateLocations: locations.flatMap(parseRegionList),
+        eligibleFromTarget: null,
+        eligibilityConfidence: "low",
+        employmentType: ashbyEmploymentType(job.employmentType),
+        salary: summary ? {raw: summary} : undefined,
+        tags: [job.department, job.team].filter((t): t is string => Boolean(t)),
+        postedAt: job.publishedAt || undefined,
+        descriptionHtml: job.descriptionHtml || undefined,
+        descriptionText: job.descriptionPlain || stripHtml(job.descriptionHtml),
+        raw: job,
+    };
+}
+
 export async function fetchAshby (token: string): Promise<NormalizedJob[]> {
     const data = await fetchJson(
         `https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(token)}?includeCompensation=true`,
@@ -53,34 +96,5 @@ export async function fetchAshby (token: string): Promise<NormalizedJob[]> {
 
     return (data.jobs ?? [])
         .filter(job => job.isListed !== false)
-        .map((job): NormalizedJob => {
-            const locations = [job.location, ...(job.secondaryLocations ?? []).map(s => s.location)]
-                .filter((l): l is string => Boolean(l));
-            const location = locations.join(", ");
-            const summary = job.compensation?.compensationTierSummary?.trim();
-
-            return {
-                source: "ashby",
-                ats: "ashby",
-                id: job.id,
-                title: job.title,
-                company: token,
-                companyToken: token,
-                department: job.department ?? undefined,
-                url: job.jobUrl,
-                applyUrl: job.applyUrl,
-                location: location || "Not specified",
-                isRemote: job.isRemote === true || job.workplaceType === "Remote" || /\bremote\b/i.test(location),
-                candidateLocations: locations.flatMap(parseRegionList),
-                eligibleFromTarget: null,
-                eligibilityConfidence: "low",
-                employmentType: job.employmentType ? EMPLOYMENT_LABEL[job.employmentType] ?? job.employmentType : undefined,
-                salary: summary ? {raw: summary} : undefined,
-                tags: [job.department, job.team].filter((t): t is string => Boolean(t)),
-                postedAt: job.publishedAt || undefined,
-                descriptionHtml: job.descriptionHtml || undefined,
-                descriptionText: job.descriptionPlain || stripHtml(job.descriptionHtml),
-                raw: job,
-            };
-        });
+        .map(job => ashbyJob(job, token));
 }

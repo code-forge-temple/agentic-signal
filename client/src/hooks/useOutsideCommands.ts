@@ -6,8 +6,8 @@
 
 import {useEffect} from "react";
 import {GraphQLSocketManager} from "../services/graphQLSocketManager";
-import {CommandError, CommandRouter} from "../services/commandRouter";
-import {respondToCommand} from "../services/outsideCommandsService";
+import {CommandRouter} from "../services/commandRouter";
+import {outsideCommandFailure, respondToCommand} from "../services/outsideCommandsService";
 import {sha256Hex} from "../services/commandConnections";
 import {commandInputEnvelope} from "../services/commandInput";
 import {NodeEnvelope} from "../types/workflow";
@@ -29,6 +29,20 @@ const COMMAND_REQUESTS = /* GraphQL */ `
         commandRequests(connections: $connections) { type id command input }
     }
 `;
+
+/**
+ * The envelope Workflow Input passes on for the caller's body (a Data Source): what a Data Source with that content
+ * would put out. A body that isn't one is refused with bad_request before any layer is taken; undefined then.
+ */
+async function refusedOrEnvelope (id: string, input: string): Promise<NodeEnvelope | undefined> {
+    try {
+        return commandInputEnvelope(JSON.parse(input));
+    } catch (error) {
+        await respondToCommand(id, {error: {code: "bad_request", message: errorMessage(error)}}).catch(() => {});
+
+        return undefined;
+    }
+}
 
 /*
  * Serves outside apps' calls (POST /workflows/<command> on the backend) while the app is open: each
@@ -53,17 +67,9 @@ export function useOutsideCommands (): void {
             running.set(id, controller);
 
             try {
-                // The caller sends a Data Source; Workflow Input passes on what a Data Source with that
-                // content would put out. A body that isn't one is refused before any layer is taken.
-                let envelope: NodeEnvelope;
+                const envelope = await refusedOrEnvelope(id, input);
 
-                try {
-                    envelope = commandInputEnvelope(JSON.parse(input));
-                } catch (error) {
-                    await respondToCommand(id, {error: {code: "bad_request", message: errorMessage(error)}}).catch(() => {});
-
-                    return;
-                }
+                if (!envelope) return;
 
                 const result = await CommandRouter.getInstance().request({
                     command,
@@ -77,16 +83,7 @@ export function useOutsideCommands (): void {
                 // The caller hung up: nobody is left to tell.
                 if (controller.signal.aborted) return;
 
-                const commandError = error instanceof CommandError ? error : null;
-                const unknown = commandError?.code === "no_listener" && !knownCommandsRef.current.has(command);
-
-                await respondToCommand(id, {error: unknown
-                    ? {code: "unknown_command", message: `No workflow answers to /${command}.`}
-                    : {
-                        code: commandError?.code ?? "node_failed",
-                        message: errorMessage(error),
-                        node: commandError?.node?.nodeTitle ?? null,
-                    }}).catch(() => {});
+                await respondToCommand(id, {error: outsideCommandFailure(error, command, knownCommandsRef.current)}).catch(() => {});
             } finally {
                 running.delete(id);
             }

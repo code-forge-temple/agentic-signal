@@ -43,6 +43,17 @@ type Pending = {
     finish: (response: CommandResponse | null) => void;
 };
 
+/** Who asked: the open app the request goes to, and the caller's connection in it. */
+type Caller = {app: AppListener; connection: CommandConnection};
+
+type ForwardOptions = {
+    /** Aborts when the caller hangs up. */
+    signal: AbortSignal;
+    timeoutMs: number;
+    /** The timeout error's message. */
+    timeoutMessage: string;
+};
+
 /** A call started with `Prefer: respond-async`, for a caller that can't wait on one request (a browser extension). */
 type Job = {
     /** The connection that started it: only its token can check on it or cancel it. */
@@ -122,6 +133,35 @@ function callResponse (response: CommandResponse | null): Response {
     return json(200, {result: response.result ? JSON.parse(response.result) as unknown : null});
 }
 
+/** A request to the gateway: list the commands, or call one. */
+type Route = {kind: "list"} | {kind: "command"; command: string};
+
+/** What the request asks for; undefined for anything but GET /workflows and POST /workflows/<command>. */
+function routeOf (method: string, pathname: string): Route | undefined {
+    if (method === "GET" && LIST_PATH.test(pathname)) return {kind: "list"};
+
+    const command = COMMAND_PATH.exec(pathname)?.[1];
+
+    return method === "POST" && command ? {kind: "command", command} : undefined;
+}
+
+/** The input of a call: its body, a Data Source as JSON and nothing else (the app checks its shape); an error response when it isn't JSON. */
+async function callInput (request: Request): Promise<string | Response> {
+    const input = await request.text();
+
+    if (!(request.headers.get("content-type") ?? "").includes("application/json")) {
+        return errorResponse("bad_request", `Send the input as JSON (Content-Type: application/json). ${EXPECTED_BODY}`);
+    }
+
+    try {
+        JSON.parse(input);
+    } catch {
+        return errorResponse("bad_request", `The body isn't valid JSON. ${EXPECTED_BODY}`);
+    }
+
+    return input;
+}
+
 /** The SHA-256 of the request's bearer token, or "" without one. */
 async function bearerTokenHash (request: Request): Promise<string> {
     const token = /^Bearer\s+(\S+)$/i.exec(request.headers.get("authorization") ?? "")?.[1];
@@ -187,14 +227,24 @@ export class CommandGateway {
         // A job answers without the app: its outcome may already be here, and its token is known.
         if (jobId && (request.method === "GET" || request.method === "DELETE")) return this.handleJob(request, jobId);
 
-        const command = COMMAND_PATH.exec(pathname)?.[1];
-        const isList = request.method === "GET" && LIST_PATH.test(pathname);
+        const route = routeOf(request.method, pathname);
 
-        if (!isList && (request.method !== "POST" || !command)) {
+        if (!route) {
             // eslint-disable-next-line max-len
             return errorResponse("not_found", "List the commands with GET /workflows, call one with POST /workflows/<command>, and check on one started with Prefer: respond-async with GET /workflows/jobs/<id>.");
         }
 
+        const caller = await this.caller(request);
+
+        if (caller instanceof Response) return caller;
+
+        if (route.kind === "list") return this.list(caller, request.signal);
+
+        return this.call(request, caller, route.command);
+    };
+
+    /** The open app to hand the request to, and the caller's connection in it; an error response when either is missing. */
+    private async caller (request: Request): Promise<Caller | Response> {
         const app = this.apps.at(-1);
 
         if (!app) return errorResponse("app_not_open", "Agentic Signal isn't open, so nothing can answer.");
@@ -206,35 +256,26 @@ export class CommandGateway {
             return errorResponse("unauthorized", "Missing or unknown token. Add a connection in Agentic Signal's Settings and send its token as: Authorization: Bearer <token>.");
         }
 
-        if (isList) return this.list(app, connection, request.signal);
+        return {app, connection};
+    }
 
-        // Already ruled out above; this tells TypeScript.
-        if (!command) return errorResponse("not_found", "Call a command with POST /workflows/<command>.");
-
+    /** Runs the command for the caller: at once, or as a job to check on when the caller prefers respond-async. */
+    private async call (request: Request, {app, connection}: Caller, command: string): Promise<Response> {
         if (connection.commands.length > 0 && !connection.commands.includes(command)) {
             return errorResponse("forbidden", `The "${connection.name}" connection may not call /${command}.`);
         }
 
-        // A Data Source as JSON, nothing else; the app checks its shape, as Data Source's own code reads it.
-        const input = await request.text();
+        const input = await callInput(request);
 
-        if (!(request.headers.get("content-type") ?? "").includes("application/json")) {
-            return errorResponse("bad_request", `Send the input as JSON (Content-Type: application/json). ${EXPECTED_BODY}`);
-        }
-
-        try {
-            JSON.parse(input);
-        } catch {
-            return errorResponse("bad_request", `The body isn't valid JSON. ${EXPECTED_BODY}`);
-        }
+        if (input instanceof Response) return input;
 
         if (/\brespond-async\b/i.test(request.headers.get("prefer") ?? "")) return this.startJob(app, connection, command, input);
 
         return callResponse(await this.run(app, request.signal, command, input));
-    };
+    }
 
     private run (app: AppListener, signal: AbortSignal, command: string, input: string): Promise<CommandResponse | null> {
-        return this.forward(app, signal, {type: "request", command, input}, SAFETY_TIMEOUT_MS, `/${command} took too long and was given up.`);
+        return this.forward(app, {type: "request", command, input}, {signal, timeoutMs: SAFETY_TIMEOUT_MS, timeoutMessage: `/${command} took too long and was given up.`});
     }
 
     /** Hands the call to the app, and answers 202 with the job to check on, at once. */
@@ -304,8 +345,8 @@ export class CommandGateway {
     }
 
     /** The commands this connection may call that a layer is listening for now. */
-    private async list (app: AppListener, connection: CommandConnection, signal: AbortSignal): Promise<Response> {
-        const response = await this.forward(app, signal, {type: "list"}, LIST_TIMEOUT_MS, "Agentic Signal took too long to list its commands.");
+    private async list ({app, connection}: Caller, signal: AbortSignal): Promise<Response> {
+        const response = await this.forward(app, {type: "list"}, {signal, timeoutMs: LIST_TIMEOUT_MS, timeoutMessage: "Agentic Signal took too long to list its commands."});
 
         if (!response) return new Response(null, {status: 499, headers: CORS_HEADERS});
 
@@ -318,13 +359,11 @@ export class CommandGateway {
         return json(200, {commands: allowed});
     }
 
-    private forward (
-        app: AppListener,
-        signal: AbortSignal,
-        event: Omit<CommandRequestEvent, "id">,
-        timeoutMs: number,
-        timeoutMessage: string
-    ): Promise<CommandResponse | null> {
+    /**
+     * Hands the event to the app and waits for its answer: null when the caller hangs up (the app is told to cancel),
+     * a timeout error when the app takes longer than `timeoutMs` (told to cancel too).
+     */
+    private forward (app: AppListener, event: Omit<CommandRequestEvent, "id">, {signal, timeoutMs, timeoutMessage}: ForwardOptions): Promise<CommandResponse | null> {
         const id = crypto.randomUUID();
 
         return new Promise((resolve) => {

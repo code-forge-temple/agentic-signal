@@ -5,6 +5,8 @@
  ************************************************************************/
 
 import {graphqlRequest} from "../utils";
+import {CommandError} from "./commandRouter";
+import {errorMessage} from "@shared/utils";
 
 
 export type OutsideCommandError = {
@@ -12,6 +14,25 @@ export type OutsideCommandError = {
     message: string;
     node?: string | null;
 };
+
+/**
+ * What an outside caller is told about a command that failed: the router's error code and the node that failed (any
+ * other error is node_failed), or unknown_command when nothing listens for it and no saved or built-in workflow has it
+ * (with a workflow, it's just not running now).
+ */
+export function outsideCommandFailure (error: unknown, command: string, knownCommands: Set<string>): OutsideCommandError {
+    const commandError = error instanceof CommandError ? error : null;
+
+    if (commandError?.code === "no_listener" && !knownCommands.has(command)) {
+        return {code: "unknown_command", message: `No workflow answers to /${command}.`};
+    }
+
+    return {
+        code: commandError?.code ?? "node_failed",
+        message: errorMessage(error),
+        node: commandError?.node?.nodeTitle ?? null,
+    };
+}
 
 /** Where outside apps call commands, e.g. "http://127.0.0.1:8001/workflows/". */
 export async function fetchCommandsEndpoint (): Promise<string> {

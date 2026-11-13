@@ -156,58 +156,17 @@ export class WebSocketManager {
 
     private handleSubscribe (socket: WebSocket, message: any): void {
         const {id, payload} = message;
-        const subscriptionMatch = payload.query.match(/subscription[^{]*\{\s*(\w+)\s*\(/);
-        const subscriptionType = subscriptionMatch?.[1];
-        const nodeIdMatch = payload.variables?.nodeId || payload.query.match(/nodeId:\s*"([^"]+)"/)?.[1];
+        const subscription = this.readSubscription(payload);
 
-        if (!subscriptionType) {
-            socket.send(JSON.stringify({
-                id,
-                type: 'error',
-                payload: [{message: 'Invalid subscription query'}]
-            }));
+        if (typeof subscription === "string") {
+            socket.send(JSON.stringify({id, type: 'error', payload: [{message: subscription}]}));
 
             return;
         }
 
-        const registered = this.subscriptionFactories.get(subscriptionType);
+        const {type, nodeId, factory} = subscription;
 
-        if (!registered) {
-            socket.send(JSON.stringify({
-                id,
-                type: 'error',
-                payload: [{message: `Unknown subscription type: ${subscriptionType}`}]
-            }));
-
-            return;
-        }
-
-        if (!nodeIdMatch && registered.nodeScoped) {
-            socket.send(JSON.stringify({
-                id,
-                type: 'error',
-                payload: [{message: 'Missing nodeId in subscription'}]
-            }));
-
-            return;
-        }
-
-        const nodeId = nodeIdMatch ?? "";
-        const factory = registered.factory;
-
-        const subscriptionKey = `${subscriptionType}:${nodeId}`;
-
-        if (!this.activeSubscriptions.has(subscriptionKey)) {
-            this.activeSubscriptions.set(subscriptionKey, new Set());
-        }
-
-        this.activeSubscriptions.get(subscriptionKey)!.add(socket);
-
-        const socketSubs = this.socketSubscriptions.get(socket);
-
-        if (socketSubs) {
-            socketSubs.set(subscriptionKey, id);
-        }
+        this.trackSubscription(socket, `${type}:${nodeId}`, id);
 
         const unsubscribe = factory(nodeId, (event) => {
             if (socket.readyState !== WebSocket.OPEN) {
@@ -219,12 +178,46 @@ export class WebSocketManager {
                 type: 'next',
                 payload: {
                     data: {
-                        [subscriptionType]: event
+                        [type]: event
                     }
                 }
             }));
         }, payload.variables ?? {});
 
+        this.endWithSocketOrClient(socket, id, unsubscribe);
+    }
+
+    /**
+     * The subscription a subscribe message asks for: its type (the field the query subscribes to), its node (from the
+     * variables, else the query) and the factory that starts it; why it can't be served, otherwise.
+     */
+    private readSubscription (payload: any): {type: string; nodeId: string; factory: SubscriptionFactory} | string {
+        const type = payload.query.match(/subscription[^{]*\{\s*(\w+)\s*\(/)?.[1];
+        const nodeIdMatch = payload.variables?.nodeId || payload.query.match(/nodeId:\s*"([^"]+)"/)?.[1];
+
+        if (!type) return 'Invalid subscription query';
+
+        const registered = this.subscriptionFactories.get(type);
+
+        if (!registered) return `Unknown subscription type: ${type}`;
+
+        if (!nodeIdMatch && registered.nodeScoped) return 'Missing nodeId in subscription';
+
+        return {type, nodeId: nodeIdMatch ?? "", factory: registered.factory};
+    }
+
+    /** Notes the socket as a subscriber of `key`, under the client's subscription id. */
+    private trackSubscription (socket: WebSocket, key: string, id: string): void {
+        if (!this.activeSubscriptions.has(key)) {
+            this.activeSubscriptions.set(key, new Set());
+        }
+
+        this.activeSubscriptions.get(key)!.add(socket);
+        this.socketSubscriptions.get(socket)?.set(key, id);
+    }
+
+    /** Unsubscribes when the socket closes (telling the client, if it still can, that it's complete), or on the client's own "complete". */
+    private endWithSocketOrClient (socket: WebSocket, id: string, unsubscribe: UnsubscribeFunction): void {
         const closeHandler = () => {
             unsubscribe();
 

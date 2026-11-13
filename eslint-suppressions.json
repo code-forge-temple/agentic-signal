@@ -58,24 +58,8 @@
       "count": 1
     }
   },
-  "client/src/components/nodes/RagNode/hooks/useWeaviateCollections.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "client/src/components/nodes/StockAnalysisNode/types/workflow.ts": {
     "sonarjs/expression-complexity": {
-      "count": 1
-    }
-  },
-  "client/src/hooks/useOutsideCommands.ts": {
-    "complexity": {
       "count": 1
     }
   },
@@ -114,78 +98,8 @@
       "count": 1
     }
   },
-  "server/commands/service.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-params": {
-      "count": 1
-    }
-  },
-  "server/nodes/JobSearchNode/ats/ashby.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/JobSearchNode/ats/index.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/JobSearchNode/ats/lever.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/JobSearchNode/ats/workable.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/JobSearchNode/service.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/expression-complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/RagNode/service.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/RagNode/utils/weaviateClient.ts": {
-    "max-params": {
-      "count": 2
-    }
-  },
-  "server/nodes/TimerNode/service.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "server/nodes/TimerNode/types.ts": {
-    "sonarjs/expression-complexity": {
-      "count": 1
-    }
-  },
   "server/utils/keyedLock.test.ts": {
     "sonarjs/no-identical-functions": {
-      "count": 1
-    }
-  },
-  "server/ws/webSocketManager.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   }

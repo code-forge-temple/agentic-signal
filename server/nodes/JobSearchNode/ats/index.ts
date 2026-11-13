@@ -42,26 +42,36 @@ export function parseCompanyLine (line: string): CompanyRef | UnresolvedCompany 
 
     if (!raw || raw.startsWith("#") || raw.startsWith("//")) return null;
 
+    const known = companyFromUrl(raw) ?? companyFromPrefix(raw);
+
+    if (known) return known;
+
+    const token = slug(raw);
+
+    return token ? {ats: "auto", token} : null;
+}
+
+/** A company from a job board's URL (its host names the board, the path the company). */
+function companyFromUrl (raw: string): CompanyRef | undefined {
     for (const [re, ats] of URL_HOST_ATS) {
         const m = raw.match(re);
 
         if (m) return {ats, token: m[1].toLowerCase()};
     }
 
+    return undefined;
+}
+
+/** A company written as "<board>:<token>" ("lever:vercel"); undefined for a board the app doesn't know or no token. */
+function companyFromPrefix (raw: string): CompanyRef | undefined {
     const colon = raw.indexOf(":");
 
-    if (colon > 0 && !raw.startsWith("http")) {
-        const ats = raw.slice(0, colon).trim().toLowerCase();
-        const token = raw.slice(colon + 1).trim().toLowerCase();
+    if (colon <= 0 || raw.startsWith("http")) return undefined;
 
-        if ((ATS_PROVIDERS as readonly string[]).includes(ats) && token) {
-            return {ats: ats as AtsProvider, token};
-        }
-    }
+    const ats = raw.slice(0, colon).trim().toLowerCase();
+    const token = raw.slice(colon + 1).trim().toLowerCase();
 
-    const token = slug(raw);
-
-    return token ? {ats: "auto", token} : null;
+    return (ATS_PROVIDERS as readonly string[]).includes(ats) && token ? {ats: ats as AtsProvider, token} : undefined;
 }
 
 /** Fetch a company's jobs; for `auto`, probe each ATS until one yields postings. */

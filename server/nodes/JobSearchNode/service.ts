@@ -67,72 +67,99 @@ function dedupeKey (job: NormalizedJob): string {
     return `${company}::${title}`;
 }
 
+/** What fetching the companies' jobs gave: the jobs, the companies that failed, and how many answered. */
+type FetchedJobs = {collected: NormalizedJob[]; errors: CompanyError[]; reachable: number};
+
+/** Every company's jobs: from the cache when they're there, else fetched (CONCURRENCY at a time) and cached. */
+async function fetchCompanyJobs (companies: (CompanyRef | UnresolvedCompany)[]): Promise<FetchedJobs> {
+    const fetched: FetchedJobs = {collected: [], errors: [], reachable: 0};
+
+    await pool(companies, CONCURRENCY, async (entry) => {
+        const cacheKey = entry.ats === "auto" ? null : keyOf(entry);
+        const cached = cacheKey ? getCachedJobs(cacheKey) : undefined;
+
+        if (cached) {
+            fetched.reachable++;
+            fetched.collected.push(...cached);
+
+            return;
+        }
+
+        try {
+            const {ats, jobs} = await resolveAndFetch(entry);
+
+            fetched.reachable++;
+            setCachedJobs(`${ats}:${entry.token}`, jobs);
+            fetched.collected.push(...jobs);
+        } catch (err) {
+            fetched.errors.push({
+                company: entry.token,
+                ats: entry.ats,
+                message: errorMessage(err),
+            });
+        }
+    });
+
+    return fetched;
+}
+
+const matchesEmploymentType = (job: NormalizedJob, types: EmploymentType[]): boolean =>
+    types.length === 0 || types.some(t => EMPLOYMENT_MATCH[t].test(job.employmentType ?? ""));
+
+/** Whether the job passes the filters: keywords, remote, date posted, seniority and employment type. */
+function matchesFilters (job: NormalizedJob, filters: JobSearchFilters, cutoff: number | null): boolean {
+    if (!matchesKeywords(filters.keywords, job.title, [...job.tags, job.department ?? ""])) return false;
+
+    if (filters.remoteOnly && !job.isRemote) return false;
+
+    if (!withinDateWindow(job.postedAt, cutoff)) return false;
+
+    if (!matchesSeniority(filters.seniority, job.seniority, job.title)) return false;
+
+    return matchesEmploymentType(job, filters.employmentTypes);
+}
+
+/** Tags each job with whether its free-text location lets a candidate from `region` apply, and how sure that is. */
+function tagEligibility (jobs: NormalizedJob[], region: string): void {
+    for (const job of jobs) {
+        const {eligible, confidence} = evaluateEligibility(job.candidateLocations, region);
+
+        job.eligibleFromTarget = eligible;
+        job.eligibilityConfidence = confidence;
+    }
+}
+
+/** The jobs without repeats: the first of each company and title. */
+function withoutDuplicates (jobs: NormalizedJob[]): NormalizedJob[] {
+    const seen = new Set<string>();
+
+    return jobs.filter((job) => {
+        const k = dedupeKey(job);
+
+        if (seen.has(k)) return false;
+
+        seen.add(k);
+
+        return true;
+    });
+}
+
+const postedTime = (job: NormalizedJob): number => (job.postedAt ? Date.parse(job.postedAt) : 0);
+
 class JobSearchService {
     async search (filters: JobSearchFilters): Promise<JobSearchResult> {
         const companies = resolveCompanyList(filters);
-        const errors: CompanyError[] = [];
-        const collected: NormalizedJob[] = [];
-        let reachable = 0;
-
-        await pool(companies, CONCURRENCY, async (entry) => {
-            const cacheKey = entry.ats === "auto" ? null : keyOf(entry);
-            const cached = cacheKey ? getCachedJobs(cacheKey) : undefined;
-
-            if (cached) {
-                reachable++;
-                collected.push(...cached);
-
-                return;
-            }
-
-            try {
-                const {ats, jobs} = await resolveAndFetch(entry);
-
-                reachable++;
-                setCachedJobs(`${ats}:${entry.token}`, jobs);
-                collected.push(...jobs);
-            } catch (err) {
-                errors.push({
-                    company: entry.token,
-                    ats: entry.ats,
-                    message: errorMessage(err),
-                });
-            }
-        });
-
+        const {collected, errors, reachable} = await fetchCompanyJobs(companies);
         const jobsFetched = collected.length;
         const cutoff = datePostedCutoff(filters.datePosted);
 
-        let jobs = collected.filter(job =>
-            matchesKeywords(filters.keywords, job.title, [...job.tags, job.department ?? ""])
-            && (!filters.remoteOnly || job.isRemote)
-            && withinDateWindow(job.postedAt, cutoff)
-            && matchesSeniority(filters.seniority, job.seniority, job.title)
-            && (filters.employmentTypes.length === 0
-                || filters.employmentTypes.some(t => EMPLOYMENT_MATCH[t].test(job.employmentType ?? "")))
-        );
+        let jobs = collected.filter(job => matchesFilters(job, filters, cutoff));
 
-        // Tag eligibility against the free-text location.
-        for (const job of jobs) {
-            const {eligible, confidence} = evaluateEligibility(job.candidateLocations, filters.candidateRegion);
-
-            job.eligibleFromTarget = eligible;
-            job.eligibilityConfidence = confidence;
-        }
+        tagEligibility(jobs, filters.candidateRegion);
 
         const afterFilter = jobs.length;
 
-        const seen = new Set<string>();
-
-        jobs = jobs.filter(job => {
-            const k = dedupeKey(job);
-
-            if (seen.has(k)) return false;
-
-            seen.add(k);
-
-            return true;
-        });
+        jobs = withoutDuplicates(jobs);
 
         const afterDedupe = jobs.length;
 
@@ -140,12 +167,7 @@ class JobSearchService {
             jobs = jobs.filter(job => !(job.eligibleFromTarget === false && job.eligibilityConfidence === "high"));
         }
 
-        jobs.sort((a, b) => {
-            const ta = a.postedAt ? Date.parse(a.postedAt) : 0;
-            const tb = b.postedAt ? Date.parse(b.postedAt) : 0;
-
-            return tb - ta;
-        });
+        jobs.sort((a, b) => postedTime(b) - postedTime(a));
 
         jobs = jobs.slice(0, filters.resultsLimit);
 

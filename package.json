@@ -53,7 +53,7 @@
         "build:windows": "bun run sync:tauri-version && bun run sync:license && bun run client:build && deno task compile:windows && bun run copy:backend:windows && bunx tauri build",
         "build:linux": "bun run sync:tauri-version && bun run sync:license && bun run client:build && deno task compile:linux && bun run copy:backend:linux && bunx tauri build --bundles deb,appimage",
         "build:macos": "bun run sync:tauri-version && bun run sync:license && bun run client:build && deno task compile:macos && bun run copy:backend:macos && bunx tauri build",
-        "test": "deno task test && bun test ./scripts/ && cd client && bun run test",
+        "test": "bun run scripts/test-server.ts && bun test ./scripts/ && cd client && bun run test",
         "lint": "bun run scripts/lint.ts",
         "lint:fix": "bun run scripts/lint.ts --fix",
         "lint:prune": "bun run scripts/lint.ts --prune-suppressions",

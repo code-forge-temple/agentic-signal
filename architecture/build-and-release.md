@@ -33,7 +33,7 @@ bun run dev          # backend (deno task dev, with --watch) + client (vite) tog
 | `bun run lint` | ESLint over the repo, with type-aware rules (floating and misused promises, unsafe `any` assignments, ...) and the code-health limits (below). `scripts/lint.ts` runs it twice: on the repo, then on the linked PRO folders, which `eslint .` never enters because it doesn't follow symlinks. |
 | `bun run lint:prune` | Shrinks the record of tolerated code-health violations after some were fixed. Lint fails until it's run. |
 | `bun run health` | The code-health score of each file (below). |
-| `bun run test` | `deno task test` (the backend), the scripts' tests (`bun test ./scripts/`), then the client's Vitest suite. |
+| `bun run test` | The backend's tests (`scripts/test-server.ts`: `deno task test`, plus the linked PRO server folders, which `deno test server/` doesn't enter because it doesn't follow symlinks), the scripts' tests (`bun test ./scripts/`), then the client's Vitest suite (which does follow them). |
 | `bun run circular` | Circular imports in `client/src` (madge). |
 
 ## Code Health

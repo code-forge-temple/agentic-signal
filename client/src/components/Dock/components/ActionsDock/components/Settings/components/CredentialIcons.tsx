@@ -4,7 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, Tooltip} from "@mui/material";
+import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
 import {Key} from "iconoir-react";
 import {CredentialOwner} from "../../../../../../../services/credentials";
 

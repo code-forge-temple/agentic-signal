@@ -5,7 +5,8 @@
  ************************************************************************/
 
 import {CSSProperties, useEffect, useRef, useState} from "react";
-import {ThemeProvider, Tooltip} from "@mui/material";
+import {ThemeProvider} from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import {AppleShortcuts, Minus, Plus, Sparks} from "iconoir-react";
 import LayerIcon from "./assets/layer.svg";
 import "./LayerSwitcher.scss";

@@ -3,6 +3,8 @@
  *    This file is part of agentic-signal project                       *
  ************************************************************************/
 
+// @vitest-environment jsdom
+
 import {act, cleanup, render, screen} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {useWholeItemScroller} from './useWholeItemScroller';

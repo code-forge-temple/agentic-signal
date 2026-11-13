@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+// @vitest-environment jsdom
+
 import {cleanup, render, screen} from '@testing-library/react';
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {PayloadView} from './PayloadView';

@@ -6,7 +6,8 @@
 
 import React, {useEffect, useRef, useState} from "react";
 import "./ActionsDock.scss";
-import {Button, ThemeProvider} from "@mui/material";
+import Button from "@mui/material/Button";
+import {ThemeProvider} from "@mui/material/styles";
 import {darkTheme} from "../../../../utils";
 import {BinFull, FloppyDisk, FolderPlus, Import, Settings as SettingsIcon, HelpCircle as Docs, OffTag} from "iconoir-react";
 import {BaseDialog} from "../../../BaseDialog";

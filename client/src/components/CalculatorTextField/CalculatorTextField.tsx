@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useEffect, useState} from 'react';
-import {TextField, TextFieldProps} from '@mui/material';
+import TextField, {TextFieldProps} from '@mui/material/TextField';
 import jsonata from 'jsonata';
 
 type CalculatorTextFieldProps = Omit<TextFieldProps, 'onChange' | 'value' | 'type' | 'error'> & {

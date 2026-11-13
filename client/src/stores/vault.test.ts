@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+// @vitest-environment jsdom
+
 import {beforeEach, describe, expect, it} from "vitest";
 import {
     changeVaultPassword,

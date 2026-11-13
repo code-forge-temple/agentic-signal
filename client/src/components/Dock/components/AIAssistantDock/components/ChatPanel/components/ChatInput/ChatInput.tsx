@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useState, useEffect, useRef, useLayoutEffect, useCallback} from 'react';
-import {IconButton} from '@mui/material';
+import IconButton from '@mui/material/IconButton';
 import {SendDiagonal} from 'iconoir-react';
 import './ChatInput.scss';
 import {ChatInputSuggestions, Suggestion} from './components/ChatInputSuggestions';

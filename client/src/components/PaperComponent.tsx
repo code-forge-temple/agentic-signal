@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Paper, PaperProps} from "@mui/material";
+import Paper, {PaperProps} from "@mui/material/Paper";
 import {useRef} from "react";
 import Draggable from "react-draggable";
 

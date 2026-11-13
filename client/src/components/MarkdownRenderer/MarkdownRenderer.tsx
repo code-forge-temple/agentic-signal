@@ -7,7 +7,8 @@
 import React, {useMemo, useState, useEffect, Suspense, ReactNode, lazy, ComponentProps, ComponentPropsWithoutRef, createContext, useContext, useDeferredValue} from "react";
 import ReactMarkdown, {ExtraProps} from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {CircularProgress, Box} from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
 import "./MarkdownRenderer.scss";
 import "./prismOneDark.scss";
 

@@ -7,7 +7,12 @@
 import {CodeEditor, getEditorMode} from '../../../../CodeEditor';
 import {MarkdownRenderer} from '../../../../MarkdownRenderer';
 import {csvToMarkdownTable} from '../../../../../utils';
-import {Box, IconButton, Switch, Tabs, Tab, Tooltip} from '@mui/material';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Switch from '@mui/material/Switch';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Tooltip from '@mui/material/Tooltip';
 import {Attachment, Lock, Xmark} from 'iconoir-react';
 import './FilesInput.scss';
 import {useRef, useEffect, useState} from 'react';

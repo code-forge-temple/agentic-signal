@@ -7,7 +7,9 @@
 /* eslint-disable max-len */
 
 import FormIcon from "./assets/form.svg";
-import {Box, Slider, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import Slider from "@mui/material/Slider";
+import Typography from "@mui/material/Typography";
 import {SessionId, ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";

@@ -5,7 +5,11 @@
  ************************************************************************/
 
 import {useState} from "react";
-import {Box, IconButton, InputAdornment, LinearProgress, TextField} from "@mui/material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import LinearProgress from "@mui/material/LinearProgress";
+import TextField from "@mui/material/TextField";
 import {Plus} from "iconoir-react";
 import {OllamaService} from "../../../../../../../services/ollamaService";
 

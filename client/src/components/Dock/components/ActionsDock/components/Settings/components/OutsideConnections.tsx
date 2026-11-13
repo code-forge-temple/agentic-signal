@@ -5,7 +5,12 @@
  ************************************************************************/
 
 import {useEffect, useState} from "react";
-import {IconButton, List, ListItem, ListItemText, Tooltip, Typography} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import {Copy, Trash} from "iconoir-react";
 import {useSnackbar} from "notistack";
 import {FieldsetGroup} from "../../../../../../FieldsetGroup";

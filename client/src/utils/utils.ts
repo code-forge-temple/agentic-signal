@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {createTheme} from "@mui/material";
+import {createTheme} from "@mui/material/styles";
 import {BACKEND_PORT, TRIPLE_BACKTICK} from "@shared/constants";
 
 export const darkTheme = createTheme({

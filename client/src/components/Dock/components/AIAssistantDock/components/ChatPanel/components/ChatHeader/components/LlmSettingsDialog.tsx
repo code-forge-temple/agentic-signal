@@ -5,7 +5,14 @@
  ************************************************************************/
 
 import {useEffect, useState} from 'react';
-import {Box, Button, FormControlLabel, MenuItem, Select, Slider, Switch, Typography} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Slider from '@mui/material/Slider';
+import Switch from '@mui/material/Switch';
+import Typography from '@mui/material/Typography';
 import {BaseDialog} from '../../../../../../../../BaseDialog';
 import {OllamaService} from '../../../../../../../../../services/ollamaService';
 import {useLlmSettings} from '../../../../../hooks/useLlmSettings';

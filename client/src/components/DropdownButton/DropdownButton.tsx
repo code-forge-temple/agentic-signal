@@ -8,7 +8,7 @@ import * as React from 'react';
 import Button, {ButtonProps} from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import {CircularProgress} from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
 
 
 export interface DropdownMenuItem {

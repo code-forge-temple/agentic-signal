@@ -5,7 +5,11 @@
  ************************************************************************/
 
 import {FormEvent, useState} from "react";
-import {Box, Button, CircularProgress, TextField, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import {useSnackbar} from "notistack";
 import {BaseDialog} from "../../../../../../BaseDialog";
 import {ConfirmDialog} from "../../../../../../ConfirmDialog";

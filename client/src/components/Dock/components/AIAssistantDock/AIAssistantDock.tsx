@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useState} from 'react';
-import {ThemeProvider} from '@mui/material';
+import {ThemeProvider} from '@mui/material/styles';
 import {Sparks} from 'iconoir-react';
 import {darkTheme} from '../../../../utils';
 import {DockItem} from '../DockItem';

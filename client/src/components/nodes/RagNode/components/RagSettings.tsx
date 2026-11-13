@@ -4,7 +4,11 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, FormControl, InputLabel, MenuItem, Select} from "@mui/material";
+import Box from "@mui/material/Box";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import {DocMagnifyingGlass} from "iconoir-react";
 import {BaseDialog} from "../../../BaseDialog";
 import {DebouncedTextField} from "../../../DebouncedTextField";

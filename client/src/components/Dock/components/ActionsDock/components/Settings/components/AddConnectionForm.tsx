@@ -5,7 +5,9 @@
  ************************************************************************/
 
 import {useState} from "react";
-import {Box, Button, TextField} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 import {parseCommandList} from "../../../../../../../services/commandConnections";
 
 

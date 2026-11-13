@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {TextField, TextFieldProps} from '@mui/material';
+import TextField, {TextFieldProps} from '@mui/material/TextField';
 import {useDebouncedState} from '../../hooks/useDebouncedState';
 import {useEffect} from 'react';
 

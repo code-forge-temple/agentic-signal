@@ -4,7 +4,10 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, Button, Chip, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
 import {useGlobalConfig} from "../../../../../../stores/globalConfig";
 import {globalToolProp} from "../utils";
 import {ACCESS_TOKEN_KEY, GOOGLE_CLIENT_ID_KEY} from "./oauth";

@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useCallback, useEffect, useMemo, useRef} from 'react';
-import {CircularProgress} from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 import './ChatLog.scss';
 import {AI_ASSISTANT_KEYWORDS} from '../../../../../../../../constants';
 import {useAutoScroll} from '../../../../../../../../hooks/useAutoScroll';

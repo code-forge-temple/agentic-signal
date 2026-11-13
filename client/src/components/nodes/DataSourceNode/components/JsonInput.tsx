@@ -6,7 +6,7 @@
 
 import {CodeEditor} from '../../../CodeEditor';
 import {useDebouncedState} from '../../../../hooks/useDebouncedState';
-import {Box} from '@mui/material';
+import Box from '@mui/material/Box';
 
 
 type JsonInputProps = {

@@ -5,7 +5,12 @@
  ************************************************************************/
 
 import {useMemo} from "react";
-import {Autocomplete, Box, Checkbox, Chip, FormHelperText, TextField} from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
+import FormHelperText from "@mui/material/FormHelperText";
+import TextField from "@mui/material/TextField";
 import {FieldsetGroup} from "../../../FieldsetGroup";
 import {DebouncedTextField} from "../../../DebouncedTextField";
 import {ALL_SEED_KEYS, SEED_COMPANIES, seedKeyOf} from "../seedCompanies";

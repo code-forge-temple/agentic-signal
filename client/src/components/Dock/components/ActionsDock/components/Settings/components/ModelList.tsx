@@ -4,7 +4,13 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, CircularProgress, IconButton, List, ListItem, ListItemText, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
 import {Trash} from "iconoir-react";
 
 

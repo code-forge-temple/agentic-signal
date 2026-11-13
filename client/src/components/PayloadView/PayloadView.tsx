@@ -9,7 +9,8 @@ import {formatContentForDisplay} from "../../utils";
 import {copyText} from "../../utils/clipboard";
 import {MarkdownRenderer} from "../MarkdownRenderer";
 import {reformatContent} from "./utils/contentParser";
-import {IconButton, Tooltip} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import {Copy} from "iconoir-react";
 import {NodeEnvelope} from "../../types/workflow";
 

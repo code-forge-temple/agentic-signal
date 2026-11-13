@@ -5,7 +5,10 @@
  ************************************************************************/
 
 import {ReactNode, useState} from 'react';
-import {Box, FormControl, FormLabel, IconButton} from "@mui/material";
+import Box from "@mui/material/Box";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
+import IconButton from "@mui/material/IconButton";
 import {ArrowDownCircleSolid, ArrowUpCircleSolid, ExpandLines} from "iconoir-react";
 
 

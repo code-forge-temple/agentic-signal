@@ -13,9 +13,18 @@ export default defineConfig({
         preserveSymlinks: true,
     },
     test: {
-        // jsdom globally (not per-file) — this is a React project, and jsdom also gives
-        // pure-logic tests a working `localStorage`/`document` for free, no manual stubs.
-        environment: 'jsdom',
+        // Node by default: setting up jsdom takes seconds per file. A file that renders, or uses
+        // document, window or localStorage, says `// @vitest-environment jsdom` under its header.
+        environment: 'node',
+        // Worker threads start faster than a process per test file (on Windows, about half the run).
+        pool: 'threads',
         setupFiles: ['./vitest.setup.ts'],
+        // iconoir-react can only be imported whole (1,385 icons, a file each): bundled once instead of loaded file by file.
+        deps: {
+            optimizer: {
+                ssr: {enabled: true, include: ['iconoir-react']},
+                client: {enabled: true, include: ['iconoir-react']},
+            },
+        },
     }
 })

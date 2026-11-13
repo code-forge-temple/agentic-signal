@@ -5,7 +5,10 @@
  ************************************************************************/
 
 import {useEffect, useState} from "react";
-import {Box, FormControlLabel, Switch, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
 import {useSnackbar} from "notistack";
 import {CommandsNetworkAccess, fetchCommandsNetworkAccess, setCommandsNetworkAccess} from "../../../../../../../services/outsideCommandsService";
 import {errorMessage} from "@shared/utils";

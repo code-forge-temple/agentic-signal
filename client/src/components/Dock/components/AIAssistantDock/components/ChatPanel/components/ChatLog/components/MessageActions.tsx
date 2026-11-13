@@ -4,7 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {IconButton, Tooltip} from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import {Trash, Undo} from 'iconoir-react';
 
 

@@ -3,6 +3,8 @@
  *    This file is part of agentic-signal project                       *
  ************************************************************************/
 
+// @vitest-environment jsdom
+
 import {render} from '@testing-library/react';
 import {describe, expect, it} from 'vitest';
 import {ContextGauge} from './ContextGauge';

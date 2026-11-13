@@ -42,6 +42,13 @@ export default defineConfig(
                 'warn',
                 { allowConstantExport: true },
             ],
+            // Each MUI component from its own path: the package's index loads all of it, seconds for every test file.
+            'no-restricted-imports': ['error', {
+                paths: ['@mui/material', '@mui/lab', '@mui/icons-material'].map(name => ({
+                    name,
+                    message: `Import each component from its own path, as '${name}/Box' (theme helpers from '@mui/material/styles'): '${name}' loads the whole package.`,
+                })),
+            }],
             "@typescript-eslint/no-floating-promises": "error", // a promise is awaited, caught, or marked `void`
             "@typescript-eslint/no-misused-promises": "error", // no async function where a void callback is expected
             "@typescript-eslint/unbound-method": "error", // methods handed around keep their `this`

@@ -5,7 +5,10 @@
  ************************************************************************/
 
 import {ReactNode, useEffect, useRef, useState} from "react";
-import {IconButton, InputAdornment, TextField, Tooltip} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import {Folder, Undo} from "iconoir-react";
 import {useSnackbar} from "notistack";
 import {isTauri} from "../../utils";

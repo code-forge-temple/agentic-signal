@@ -5,7 +5,9 @@
  ************************************************************************/
 
 import {useEffect} from "react";
-import {Button, Chip, Tooltip} from "@mui/material";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 import {useSnackbar} from "notistack";
 import {useUpdateCheck} from "../../../../hooks/useUpdateCheck";
 import {openExternalUrl} from "../../../../utils";

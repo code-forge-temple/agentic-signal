@@ -11,7 +11,8 @@ import {nodeTypes} from '../../../nodes';
 import {DEFAULT_EDGE_TYPE, edgeTypes} from '../../../edges';
 import {RefObject, useCallback, useMemo} from 'react';
 import {useSnackbar} from 'notistack'
-import {Backdrop, CircularProgress} from '@mui/material';
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 import {LAYER_KIND, Layer} from '../../../../context/LayersContextBase';
 import {WorkflowLayerContext} from '../../../../context/WorkflowLayerContext';
 import {findWorkflowCommand} from '../../../../workflows';

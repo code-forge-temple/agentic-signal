@@ -4,7 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Button, Typography} from "@mui/material";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import {BaseDialog} from "../BaseDialog";
 
 export interface ConfirmDialogProps {

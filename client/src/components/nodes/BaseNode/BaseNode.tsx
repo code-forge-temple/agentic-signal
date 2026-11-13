@@ -8,7 +8,8 @@ import {Handle, IsValidConnection, Position, useReactFlow, useStore} from "@xyfl
 import "./BaseNode.scss";
 import {AppWindow, Play, Settings, EyeSolid, PlaySolid} from "iconoir-react";
 import React, {useEffect} from "react";
-import {ThemeProvider, Tooltip} from "@mui/material";
+import {ThemeProvider} from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import {darkTheme} from "../../../utils";
 import {NODE_TYPE as ASYNC_DATA_AGGREGATOR_NODE_TYPE} from "../AsyncDataAggregatorNode/constants";
 import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";

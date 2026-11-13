@@ -4,7 +4,13 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Select, MenuItem, FormControl, InputLabel, IconButton, CircularProgress, Tooltip} from '@mui/material';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
+import Tooltip from '@mui/material/Tooltip';
 import {Xmark, Minus, Plus, Settings, WarningTriangle} from 'iconoir-react';
 import './ChatHeader.scss';
 import {AI_ASSISTANT_TITLE} from '../../../../constants';

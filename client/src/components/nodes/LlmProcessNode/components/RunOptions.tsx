@@ -4,7 +4,11 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, FormControlLabel, Slider, Switch, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Slider from "@mui/material/Slider";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
 import {DebouncedTextField} from "../../../DebouncedTextField";
 import {ChangeLlmProcessNodeData, LlmProcessNodeData} from "../types/workflow";
 import {runSettings} from "../utils/runSettings";

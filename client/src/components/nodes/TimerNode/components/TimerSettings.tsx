@@ -4,7 +4,14 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {FormControl, FormControlLabel, InputLabel, MenuItem, Select, Stack, Switch, TextField} from "@mui/material";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
 import {BaseDialog} from "../../../BaseDialog";
 import {CalculatorTextField} from "../../../CalculatorTextField/CalculatorTextField";
 import {isoToLocalDatetime, localDatetimeToIso} from "../../../../utils";

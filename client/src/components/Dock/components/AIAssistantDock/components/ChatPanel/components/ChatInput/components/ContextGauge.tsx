@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Tooltip} from '@mui/material';
+import Tooltip from '@mui/material/Tooltip';
 import './ContextGauge.scss';
 import {ContextGaugeProps, buildContextTooltip} from './contextTooltip';
 

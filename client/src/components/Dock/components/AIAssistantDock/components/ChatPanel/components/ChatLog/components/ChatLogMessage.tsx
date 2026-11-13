@@ -5,7 +5,8 @@
  ************************************************************************/
 
 import {memo, ReactNode, useCallback} from 'react';
-import {Button, CircularProgress} from '@mui/material';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import {Import} from 'iconoir-react';
 import {MarkdownRenderer} from '../../../../../../../../MarkdownRenderer';
 import {sanitizeJsonInput} from '../../../../../../../../nodes/ToolNode/tools/utils/sanitize';

@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+// @vitest-environment jsdom
+
 import {cleanup, fireEvent, render, screen} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {GoogleToolOauthConfigFields} from './GoogleToolOauthConfigFields';

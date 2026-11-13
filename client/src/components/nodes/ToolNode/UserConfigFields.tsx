@@ -4,7 +4,9 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, FormControlLabel, Switch} from "@mui/material";
+import Box from "@mui/material/Box";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import {DebouncedTextField} from "../../DebouncedTextField";
 
 type UserConfigSchema = {

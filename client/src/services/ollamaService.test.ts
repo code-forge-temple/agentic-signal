@@ -4,6 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+// @vitest-environment jsdom
+
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {OllamaService} from './ollamaService';
 import {MessageRole, StreamAiResponse} from '../types/ollama.types';

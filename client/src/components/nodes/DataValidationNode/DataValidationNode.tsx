@@ -18,7 +18,9 @@ import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {BasicTabs} from "../../Tabs/Tabs";
-import {Box, Switch, Tooltip} from "@mui/material";
+import Box from "@mui/material/Box";
+import Switch from "@mui/material/Switch";
+import Tooltip from "@mui/material/Tooltip";
 import {errorMessage} from "@shared/utils";
 
 

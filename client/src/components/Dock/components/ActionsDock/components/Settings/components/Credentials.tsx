@@ -4,7 +4,13 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Box, IconButton, List, ListItem, ListItemText, Tooltip, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import {Copy, Trash} from "iconoir-react";
 import {useSnackbar} from "notistack";
 import {useCredentials} from "../../../../../../../hooks/useCredentials";

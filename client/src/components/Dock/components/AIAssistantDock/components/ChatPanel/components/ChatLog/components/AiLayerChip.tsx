@@ -4,7 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Chip, Tooltip} from '@mui/material';
+import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
 import {Sparks} from 'iconoir-react';
 import {useLayers} from '../../../../../../../../../hooks/useLayers';
 import {AI_LAYER} from '../../../../../../../../../context/LayersContextBase';

@@ -5,7 +5,15 @@
  ************************************************************************/
 
 import {SxProps} from "@mui/material/styles";
-import {Checkbox, FormControl, FormControlLabel, FormGroup, FormHelperText, InputLabel, MenuItem, Select, Switch} from "@mui/material";
+import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
+import FormHelperText from "@mui/material/FormHelperText";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Switch from "@mui/material/Switch";
 import {BaseDialog} from "../../../BaseDialog";
 import {FieldsetGroup} from "../../../FieldsetGroup";
 import {CodeEditor} from "../../../CodeEditor";

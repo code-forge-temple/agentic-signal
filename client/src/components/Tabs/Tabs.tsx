@@ -4,8 +4,10 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {TabContext, TabList} from '@mui/lab';
-import {Tab, Box} from '@mui/material';
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
 import {useState, useEffect} from 'react';
 import './Tabs.scss';
 

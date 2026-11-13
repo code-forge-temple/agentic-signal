@@ -4,7 +4,14 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ThemeProvider, Tooltip} from "@mui/material";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import {ThemeProvider} from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import {Xmark, Expand, Collapse} from "iconoir-react";
 import {darkTheme} from "../../utils";
 import {PaperComponent, PaperComponentProps} from "../PaperComponent";

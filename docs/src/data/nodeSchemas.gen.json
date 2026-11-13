@@ -520,44 +520,26 @@
   "slack-input": {
     "type": "object",
     "properties": {
-      "nodeId": {
-        "type": "string"
+      "commandFilter": {
+        "type": "string",
+        "description": "Slack slash command to listen for (e.g. /agentic-signal) - this needs to be in sync with the command configured in your Slack bot app"
       },
-      "source": {
-        "type": "string"
+      "routingId": {
+        "type": "string",
+        "description": "Internal routing identifier assigned to this node instance"
       },
-      "teamId": {
-        "type": "string"
+      "botToken": {
+        "type": "string",
+        "description": "Slack bot token (xoxb-...)"
       },
-      "channelId": {
-        "type": "string"
-      },
-      "userId": {
-        "type": "string"
-      },
-      "message": {
-        "type": "string"
-      },
-      "responseUrl": {
-        "type": "string"
-      },
-      "triggerId": {
-        "type": "string"
-      },
-      "timestamp": {
-        "type": "string"
+      "appToken": {
+        "type": "string",
+        "description": "Slack app-level token (xapp-...)"
       }
     },
     "required": [
-      "nodeId",
-      "source",
-      "teamId",
-      "channelId",
-      "userId",
-      "message",
-      "responseUrl",
-      "triggerId",
-      "timestamp"
+      "commandFilter",
+      "routingId"
     ],
     "additionalProperties": false
   },

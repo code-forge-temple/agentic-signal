@@ -9,7 +9,7 @@ This feature is available in the <span className="pro-badge">PRO</span> subscrip
 
 # Slack Input Node
 
-The **Slack Input Node** listens for incoming Slack slash commands and uses them to trigger your workflow. It connects to your Slack workspace using Socket Mode, enabling real-time message handling without exposing a public HTTP endpoint.
+The **Slack Input Node** listens for Slack slash commands and for direct messages to your bot, and uses them to trigger your workflow. A direct message can carry files: text, images, PDFs and more (see [Direct Messages](#direct-messages)). It connects to your Slack workspace using Socket Mode, enabling real-time message handling without exposing a public HTTP endpoint.
 
 ![Slack Input Node](/img/nodes/slack-input-node-preview.webp)
 
@@ -45,20 +45,22 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
     <TabItem value="command-filter" label="Command Filter">
         The slash command to listen for (e.g., `/agentic-signal`).
 
-        Only messages sent with this command will be processed by the node. This must match the command registered in your Slack app manifest.
+        Only slash commands with this command will be processed by the node. This must match the command registered in your Slack app manifest. Direct messages don't use it.
 
         ![Slack Input Node Configuration](/img/nodes/slack-input-node-params.webp)
     </TabItem>
     <TabItem value="routing-id" label="Routing ID">
         An optional identifier to distinguish this node from other Slack Input nodes sharing the same bot.
 
-        When set, only slash commands that include the matching routing ID will trigger this node. Users must type:
+        When set, only slash commands and direct messages that start with the matching routing ID will trigger this node. Users must type:
 
         ```
         /agentic-signal [routing-id] your message
         ```
 
-        If left empty, all messages matching the Command Filter are accepted regardless of routing ID. Use the **shuffle button** to auto-generate a random ID.
+        or, in a direct message to the bot, `[routing-id] your message`. Several IDs can be given at once (`[id1, id2]`), and case doesn't matter.
+
+        If left empty, every slash command matching the Command Filter, and every direct message, is accepted regardless of routing ID. Use the **shuffle button** to auto-generate a random ID.
 
         ![Slack Input Node Configuration](/img/nodes/slack-input-node-params.webp)
     </TabItem>
@@ -69,20 +71,37 @@ import { NodeSchemaTab } from '@site/src/components/NodeSchemaTab';
 
 ---
 
+## Direct Messages
+
+Besides the slash command, people can message the bot directly, from its **Messages** tab in Slack (the [Slack Bot Setup guide](../../getting-started/slack-bot-setup)'s manifest turns it on). A direct message triggers every running Slack Input node on the bot whose routing ID it names, or every one without a routing ID. Messages from bots and edits of earlier messages are ignored.
+
+Files sent with a direct message reach the workflow too:
+
+- **Text and code files** are added to the `message` in code blocks, each under its file name.
+- **Images** are added to the `message` as data URLs, numbered in order (Image 1, Image 2, ...).
+- **Other files** (PDF, Office documents, zip archives, videos, ...) are passed on as attachments in the node's `toolsPayload`, for tools such as the [Form Interaction Tool](/docs/nodes/ai/tools/form-interaction) to upload. The `message` names each one: `[Binary attachment: report.pdf]`.
+- Each file can be up to **10 MB**, and a message's files up to **25 MB** together. A file past either limit is named in the `message` (`[Not included: ...]`) but left out. A file that can't be downloaded is left out too.
+
+Downloading files needs the bot's `files:read` scope, which the setup guide's manifest includes. Files are downloaded from Slack only: a file shared from another service (a link to a Google Drive document, for example) is left out, so the bot token is never sent anywhere else.
+
+---
+
 ## Output
 
-When a matching slash command is received, the node passes the following data to connected downstream nodes:
+When a matching slash command or direct message is received, the node passes the following data to connected downstream nodes:
 
 <div className="fullWidthTable">
 
-    | Field        | Type   | Description                                         |
-    |--------------|--------|-----------------------------------------------------|
-    | `channelId`  | string | The Slack channel ID where the command was sent     |
-    | `responseUrl`| string | URL to send a delayed response to the slash command |
-    | `userId`     | string | The Slack user ID who sent the command              |
-    | `message`    | string | The text following the command (and routing ID)     |
+    | Field         | Type   | Description |
+    |---------------|--------|-------------|
+    | `channelId`   | string | The Slack channel (or direct message) the message came from |
+    | `responseUrl` | string | URL to send a delayed response to the slash command (empty for a direct message) |
+    | `userId`      | string | The Slack user ID who sent it |
+    | `message`     | string | The text following the command (and routing ID); a direct message's files follow it |
 
 </div>
+
+The node's `toolsPayload` holds a direct message's other files, each as `{name, base64, mimeType}`; it is absent when there are none.
 
 ---
 
@@ -111,7 +130,9 @@ For example usage, see the [Slack AI Web Search Bot Workflow](/docs/workflows/da
 - **Node not receiving commands**: Verify the Bot Token, App Token, and Command Filter are all correctly configured. Ensure the Slack app is installed to your workspace and Socket Mode is enabled.
 - **Routing ID mismatch**: Double-check that users include the correct routing ID in their command.
 - **Token errors**: Confirm the Bot Token starts with `xoxb-` and the App Token starts with `xapp-`.
-- **App disconnects**: Socket Mode connections may drop; stop and restart the node to reconnect.
+- **No direct messages arrive**: Check that the app's **Messages** tab is on and that it subscribes to the `message.im` event with the `im:history` scope (all in the setup guide's manifest); reinstall the app after changing scopes.
+- **Files missing from a direct message**: The bot needs the `files:read` scope. Files over 10 MB, or past 25 MB for the whole message, are only named; files shared from other services are left out.
+- **App disconnects**: Socket Mode connections may drop; the node reconnects by itself after 5 seconds.
 
 ### Performance Tips
 

@@ -7,6 +7,7 @@
 import {GraphQLContext} from "../../graphql/types.ts";
 import {timerService} from "./service.ts";
 import {TimerConfig, TimerTriggerEvent} from "./types.ts";
+import {eventStream} from "../../utils/eventStream.ts";
 
 export const resolver = {
     Query: {
@@ -43,39 +44,13 @@ export const resolver = {
 
     Subscription: {
         timerTrigger: {
-            subscribe: async function* (
+            subscribe: (
                 _parent: unknown,
                 {nodeId}: {nodeId: string},
                 _context: GraphQLContext
-            ) {
-                const eventQueue: TimerTriggerEvent[] = [];
-                let resolveNext: ((value: IteratorResult<{timerTrigger: TimerTriggerEvent}>) => void) | null = null;
-
-                const unsubscribe = timerService.subscribe(nodeId, (event: TimerTriggerEvent) => {
-                    if (resolveNext) {
-                        resolveNext({value: {timerTrigger: event}, done: false});
-                        resolveNext = null;
-                    } else {
-                        eventQueue.push(event);
-                    }
-                });
-
-                try {
-                    while (true) {
-                        if (eventQueue.length > 0) {
-                            const event = eventQueue.shift()!;
-
-                            yield {timerTrigger: event};
-                        } else {
-                            await new Promise<IteratorResult<{timerTrigger: TimerTriggerEvent}>>((resolve) => {
-                                resolveNext = resolve;
-                            });
-                        }
-                    }
-                } finally {
-                    unsubscribe();
-                }
-            }
+            ) => eventStream<TimerTriggerEvent>(onEvent => timerService.subscribe(nodeId, onEvent)),
+            // Each payload is the event itself.
+            resolve: (event: TimerTriggerEvent): TimerTriggerEvent => event,
         }
     }
 };

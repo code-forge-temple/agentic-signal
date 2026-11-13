@@ -86,9 +86,10 @@ try {
     process.exit(2);
 }
 
-const schemaExport = Object.entries(mod).find(
-    ([key, val]) => key.endsWith("Schema") && typeof (val as any)?.parse === "function"
-);
+// The node's configuration: its *NodeDataSchema export, else the first *Schema one (the namespace lists them
+// alphabetically, so an output schema such as SlackAttachmentsSchema would otherwise come before the config).
+const schemaExports = Object.entries(mod).filter(([key, val]) => key.endsWith("Schema") && typeof (val as any)?.parse === "function");
+const schemaExport = schemaExports.find(([key]) => key.endsWith("NodeDataSchema")) ?? schemaExports[0];
 
 if (!schemaExport) {
     console.error(`[extract-node-schema] no *Schema export found in ${workflowPath}`);

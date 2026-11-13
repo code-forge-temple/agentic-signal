@@ -17,16 +17,11 @@ import {assertValidWorkflowEdges} from '../../../utils/workflowUtils';
 import {getDefaultUserConfigValues} from '../../../../../types/ollama.types';
 import {Workflow} from '../types';
 import {isRecord} from '../../../../../utils';
+import {zodIssues} from '../../../../../utils/zodIssues';
 
 
+// Zod problems in load errors name their path with arrows: data→title.
 const ZOD_PATH_SEPARATOR = '→';
-
-// Each zod problem as "path: message" (the message alone when there's no path), its path after `prefix`.
-const zodProblems = (error: z.ZodError, prefix: (string | number)[] = []) => error.errors.map((problem) => {
-    const path = [...prefix, ...problem.path].join(ZOD_PATH_SEPARATOR);
-
-    return path ? `${path}: ${problem.message}` : problem.message;
-}).join('; ');
 
 function remapNodeAndEdgeIds<
     N extends { id: string },
@@ -142,7 +137,7 @@ function assertNodeData (descriptor: LoadableNodeDescriptor, data: NodeData, whe
     } catch (error) {
         if (!(error instanceof z.ZodError)) throw error;
 
-        throw new Error(`${where}: ${zodProblems(error, ['data'])}`);
+        throw new Error(`${where}: ${zodIssues(error, {separator: ZOD_PATH_SEPARATOR, prefix: ['data']})}`);
     }
 }
 
@@ -170,5 +165,5 @@ export function parseWorkflowJson (jsonString: string): Workflow {
 }
 
 export function describeLoadError (error: unknown): string {
-    return error instanceof z.ZodError ? zodProblems(error) : errorMessage(error);
+    return error instanceof z.ZodError ? zodIssues(error, {separator: ZOD_PATH_SEPARATOR}) : errorMessage(error);
 }

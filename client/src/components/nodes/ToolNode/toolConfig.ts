@@ -9,6 +9,12 @@ import {ToolDefinition} from "./tools/types";
 import {globalToolProp} from "./tools/utils/utils";
 
 
+/**
+ * The node's own data removed when a workflow is saved: runtime values, not settings. A picked tool adds its secrets
+ * (ToolDefinition.toSanitize) to this list.
+ */
+export const TOOL_NODE_TO_SANITIZE: readonly string[] = Object.freeze(["input", "handler", "toolSchema", "cleanup"]);
+
 type GlobalData = Record<string, string | undefined>;
 type ToolConfig = Record<string, unknown> | undefined;
 
@@ -17,6 +23,16 @@ type ToolConfig = Record<string, unknown> | undefined;
 // when nothing is shared. An empty shared value counts too: it was cleared, for every node.
 function configValue (globalData: GlobalData, toolSubtype: string, config: ToolConfig, key: string): unknown {
     return globalData[globalToolProp(toolSubtype, key)] ?? config?.[key];
+}
+
+/**
+ * The shared values of the tool's own settings, under their `<toolSubtype>.<field>` keys (undefined where none is
+ * shared). A node depends on these, not on the whole store, so another tool's key or token changing leaves it be.
+ */
+export function sharedToolValues (tool: ToolDefinition | undefined, globalData: GlobalData): GlobalData {
+    const keys = Object.keys(tool?.userConfigSchema || {}).map(key => globalToolProp(tool!.toolSubtype, key));
+
+    return Object.fromEntries(keys.map(key => [key, globalData[key]]));
 }
 
 /** The tool's required settings that have no value: neither a shared one nor the node's own. */
@@ -52,10 +68,11 @@ export function toolRuntime (tool: ToolDefinition, globalData: GlobalData, confi
 export const hasSettings = (tool: ToolDefinition) => !!tool.userConfigSchema && Object.keys(tool.userConfigSchema).length > 0;
 
 /**
- * The node's new data when `tool` is picked: the tool's defaults, its secrets added to the node's own list of fields
- * removed on save, and a handler right away when the tool has no settings (one with settings gets it once they're set).
+ * The node's new data when `tool` is picked: the tool's defaults, the fields removed on save (the generic node's and
+ * this tool's secrets, as a loaded workflow has them; none left from a tool picked before), and a handler right away
+ * when the tool has no settings (one with settings gets it once they're set).
  */
-export function pickedTool (tool: ToolDefinition, toSanitize: string[]) {
+export function pickedTool (tool: ToolDefinition) {
     const withSettings = hasSettings(tool);
 
     return {
@@ -65,6 +82,6 @@ export function pickedTool (tool: ToolDefinition, toSanitize: string[]) {
         userConfig: getDefaultUserConfigValues(tool.userConfigSchema || {}),
         handler: withSettings ? undefined : tool.handlerFactory({}),
         cleanup: withSettings ? undefined : tool.runtimeCleanup?.({}),
-        toSanitize: [...toSanitize, ...tool.toSanitize],
+        toSanitize: [...TOOL_NODE_TO_SANITIZE, ...tool.toSanitize],
     };
 }

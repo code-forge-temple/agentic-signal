@@ -18,22 +18,21 @@ export const MaxToolDescriptor: ToolDefinition = {
     toolSchema: {
         name: "max",
         // eslint-disable-next-line max-len
-        description: "Finds the row(s) or value(s) with the maximum value. Supports both arrays of objects (optionally specify 'key' to compare a property) and arrays of primitives like numbers, dates, strings, or booleans (no 'key' needed). Returns all items that share the maximum value. Handles dates (ISO 8601 strings), numbers, text, and boolean comparisons (true > false).",
+        description: "Finds the row(s) or value(s) with the maximum value. Supports both arrays of objects (requires 'key' parameter to specify which property to compare) and arrays of primitives like numbers, dates, strings, or booleans (no 'key' needed). Returns all items that share the maximum value. Handles dates (ISO 8601 strings), numbers, text, and boolean comparisons (true > false).",
         parameters: {
             type: "object",
             properties: {
                 rows: {
                     type: "array",
-                    description: "Array of objects or primitive values (numbers, dates, strings, booleans) to search",
-                    items: {}
+                    description: "Array of row objects to search or array of primitive values like numbers, dates, strings, or booleans",
+                    items: {type: ["object", "string", "number", "boolean"]}
                 },
                 key: {
                     type: "string",
-                    description: "Key to find max by (required, but ignored for arrays of primitives)"
+                    description: "Key to find max by (required only for arrays of objects)"
                 }
             },
-            required: ["rows", "key"],
-            additionalProperties: false
+            required: ["rows"]
         }
     },
     userConfigSchema: extendSystemUserConfigSchema({}),

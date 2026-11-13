@@ -8,7 +8,7 @@
 import {Sort} from "iconoir-react";
 import {ToolDefinition} from "../types";
 import {SORT_ORDER} from "../utils/sort";
-import {parseRows, rowsShape, sortRows} from "../utils/rows";
+import {keyProblem, parseRows, sortRows} from "../utils/rows";
 import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
 
 export const SortToolDescriptor: ToolDefinition = {
@@ -51,14 +51,10 @@ export const SortToolDescriptor: ToolDefinition = {
             return {error: `\`order\` tool parameter must be '\`${SORT_ORDER.ASC}\`' or '\`${SORT_ORDER.DESC}\`'`};
         }
 
-        if (parsed.length === 0) return [];
+        const problem = keyProblem(parsed, key, "`key` tool parameter is required when sorting arrays of objects");
 
-        const shape = rowsShape(parsed, key);
+        if (problem) return {error: problem};
 
-        if (shape.allObjects && key == undefined) {
-            return {error: "`key` tool parameter is required when sorting arrays of objects"};
-        }
-
-        return sortRows(parsed, order, shape);
+        return sortRows(parsed, order, key);
     },
 };

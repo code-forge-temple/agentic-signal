@@ -8,6 +8,7 @@ import {z} from "zod";
 import {NodeEnvelope} from "../types/workflow";
 import {DATA_SOURCE_TYPES} from "../components/nodes/DataSourceNode/types/workflow";
 import {buildDataSourceEnvelope, fileDataFromBytes} from "../components/nodes/DataSourceNode/utils";
+import {zodIssues} from "../utils/zodIssues";
 
 
 // eslint-disable-next-line max-len
@@ -46,11 +47,7 @@ export type CommandInput = z.infer<typeof CommandInputSchema>;
 export function commandInputEnvelope (body: unknown): NodeEnvelope {
     const parsed = CommandInputSchema.safeParse(body);
 
-    if (!parsed.success) {
-        const problems = parsed.error.issues.map(issue => `${issue.path.length > 0 ? issue.path.join(".") : "body"}: ${issue.message}`);
-
-        throw new Error(`The body isn't a Data Source (${problems.join("; ")}). ${EXPECTED_BODY}`);
-    }
+    if (!parsed.success) throw new Error(`The body isn't a Data Source (${zodIssues(parsed.error, {rootName: "body"})}). ${EXPECTED_BODY}`);
 
     const input = parsed.data;
 

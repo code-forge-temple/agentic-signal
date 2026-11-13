@@ -7,10 +7,12 @@
 import {Thunderstorm} from "iconoir-react";
 import {ToolDefinition} from "../types";
 import {extendSystemUserConfigSchema, ToolError} from "../../../../../types/ollama.types";
+import {zodIssues} from "../../../../../utils/zodIssues";
+import {dayAsWritten} from "../utils/dates";
 import {sanitizeStringInput} from "../utils/sanitize";
 import {FetchWeatherDataToolConfigFields} from "./components/FetchWeatherDataToolConfigFields";
 import {UserConfigFields} from "../../UserConfigFields";
-import {excludeKeysFromObject} from "../../../../../utils";
+import {excludeKeysFromObject, localIsoDay} from "../../../../../utils";
 import {GLOBAL_SECRETS, LOCAL_SECRETS, TOOL_SUBTYPE} from "./constants";
 import {mapCurrentWeatherResponse, mapForecastWeatherResponse, mapHistoryWeatherResponse, WeatherApiResponse, WeatherApiResponseSchema} from "./mappers";
 
@@ -88,45 +90,41 @@ const WEATHER_MAPPERS: Record<WeatherEndpoint, (data: WeatherApiResponse) => unk
     "history.json": mapHistoryWeatherResponse,
 };
 
-/**
- * The day `date` names, here. JavaScript reads a bare YYYY-MM-DD as midnight UTC, which west of UTC is the evening
- * before: tomorrow would count as today, and today as yesterday. Anything else (an impossible day such as 2026-13-45
- * included) is read as JavaScript reads it.
- */
-function localDay (date: string): Date {
-    const [, year, month, day] = (/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date).trim()) ?? []).map(Number);
-    const local = new Date(year, month - 1, day);
+// What small models put in an optional date when they mean none (blank too): the current weather.
+const NO_DATE = /^(?:|today|now|current|none|null|undefined)$/i;
 
-    return local.getMonth() === month - 1 && local.getDate() === day ? local : new Date(date);
-}
+/** The endpoint to ask, and the day to send it as YYYY-MM-DD (none for the current weather). */
+type WeatherRequest = {endpoint: WeatherEndpoint; day?: string};
 
 /**
- * The endpoint that answers for `date`: history for a day before today, forecast for a day after it, and current
- * weather for today, for no date, and for a date that can't be read.
+ * What to ask for `date`: the history of a day before today, the forecast for a day after it, the current weather for
+ * today and for no date (or a word for none: today, now, none). The day sent is the one the date names as written (see
+ * dayAsWritten). An error for text that isn't a date, so the LLM can send another, not today's weather as if it were
+ * an answer.
  */
-function weatherEndpoint (date: string | undefined): {endpoint: WeatherEndpoint; dateParam: string} {
-    const current = {endpoint: "current.json", dateParam: ""} as const;
+function weatherRequest (date: string | undefined): WeatherRequest | ToolError {
+    if (date === undefined || NO_DATE.test(String(date).trim())) return {endpoint: "current.json"};
 
-    if (!date) return current;
+    const requestDate = dayAsWritten(String(date));
 
-    const requestDate = localDay(date);
+    if (!requestDate) return {error: `\`date\` tool parameter "${date}" is not a date: send it as YYYY-MM-DD`};
+
     const today = new Date();
 
     today.setHours(0, 0, 0, 0);
-    requestDate.setHours(0, 0, 0, 0);
 
     const fromToday = requestDate.getTime() - today.getTime();
 
-    if (fromToday < 0) return {endpoint: "history.json", dateParam: `&dt=${date}`};
+    if (fromToday === 0) return {endpoint: "current.json"};
 
-    if (fromToday > 0) return {endpoint: "forecast.json", dateParam: `&dt=${date}`};
-
-    return current;
+    return {endpoint: fromToday < 0 ? "history.json" : "forecast.json", day: localIsoDay(requestDate)};
 }
 
-/** The error for a request WeatherAPI.com turned down. */
-function weatherApiError (response: Response, city: string, date: string | undefined): ToolError {
-    if (response.status === 400) return {error: `Invalid request. Check city name "${city}" or date format "${date}".`};
+/** The error for a request WeatherAPI.com turned down; it names the day only when one was sent. */
+function weatherApiError (response: Response, city: string, day: string | undefined): ToolError {
+    if (response.status === 400 && !day) return {error: `Invalid request. Check city name "${city}".`};
+
+    if (response.status === 400) return {error: `Invalid request. Check city name "${city}" or date "${day}".`};
 
     if (response.status === 401) return {error: "Invalid API key. Please check your WeatherAPI.com API key in the configuration."};
 
@@ -137,21 +135,22 @@ function weatherApiError (response: Response, city: string, date: string | undef
 async function readWeather (response: Response, endpoint: WeatherEndpoint) {
     const parsed = WeatherApiResponseSchema.safeParse(await response.json());
 
-    if (!parsed.success) {
-        const issues = parsed.error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; ");
-
-        return {error: `Unexpected response from WeatherAPI.com (${issues})`};
-    }
+    if (!parsed.success) return {error: `Unexpected response from WeatherAPI.com (${zodIssues(parsed.error)})`};
 
     return WEATHER_MAPPERS[endpoint](parsed.data);
 }
 
 /** The weather in `city` for `date` (today when there's none), from WeatherAPI.com. */
 async function fetchWeather (apiKey: string, city: string, date: string | undefined) {
-    const {endpoint, dateParam} = weatherEndpoint(date);
-    const response = await fetch(`https://api.weatherapi.com/v1/${endpoint}?key=${apiKey}&q=${encodeURIComponent(city)}${dateParam}`);
+    const request = weatherRequest(date);
 
-    if (!response.ok) return weatherApiError(response, city, date);
+    if ("error" in request) return request;
+
+    const {endpoint, day} = request;
+    const dayParam = day ? `&dt=${day}` : "";
+    const response = await fetch(`https://api.weatherapi.com/v1/${endpoint}?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(city)}${dayParam}`);
+
+    if (!response.ok) return weatherApiError(response, city, day);
 
     return readWeather(response, endpoint);
 }

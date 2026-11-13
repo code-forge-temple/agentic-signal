@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {describe, expect, it, vi} from 'vitest';
-import {missingConfigError, missingConfigKeys, pickedTool, toolRuntime} from './toolConfig';
+import {missingConfigError, missingConfigKeys, pickedTool, sharedToolValues, TOOL_NODE_TO_SANITIZE, toolRuntime} from './toolConfig';
 import {ToolDefinition} from './tools/types';
 
 
@@ -65,16 +65,25 @@ describe('toolRuntime', () => {
     });
 });
 
+describe('sharedToolValues', () => {
+    it('picks the shared values of the tool\'s own settings, undefined where none is shared', () => {
+        const globalData = {'weather.apiKey': 'shared', 'brave-search.apiKey': 'other', 'weather.city': ''};
+
+        expect(sharedToolValues(tool(), globalData)).toEqual({'weather.apiKey': 'shared', 'weather.city': '', 'weather.units': undefined});
+        expect(sharedToolValues(undefined, globalData)).toEqual({});
+    });
+});
+
 describe('pickedTool', () => {
-    it('sets the tool with its defaults and adds its secrets to the fields removed on save', () => {
-        expect(pickedTool(tool(), ['title'])).toEqual({
+    it('sets the tool with its defaults, the fields removed on save being the generic node\'s and the tool\'s secrets', () => {
+        expect(pickedTool(tool())).toEqual({
             toolSubtype: 'weather',
             toolSchema: tool().toolSchema,
             title: 'Weather',
             userConfig: {units: 'metric'},
             handler: undefined,
             cleanup: undefined,
-            toSanitize: ['title', 'userConfig.apiKey'],
+            toSanitize: [...TOOL_NODE_TO_SANITIZE, 'userConfig.apiKey'],
         });
     });
 
@@ -82,7 +91,7 @@ describe('pickedTool', () => {
         const runtimeCleanup = vi.fn(() => cleanup);
         const clock = tool({userConfigSchema: {}, runtimeCleanup, toSanitize: []});
 
-        expect(pickedTool(clock, [])).toMatchObject({userConfig: {}, handler, cleanup, toSanitize: []});
+        expect(pickedTool(clock)).toMatchObject({userConfig: {}, handler, cleanup, toSanitize: TOOL_NODE_TO_SANITIZE});
         expect(clock.handlerFactory).toHaveBeenCalledWith({});
         expect(runtimeCleanup).toHaveBeenCalledWith({});
     });

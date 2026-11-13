@@ -46,8 +46,8 @@ describe('Fetch Weather Data tool', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('asks for the current weather with no date, for today and for a date it cannot read (an impossible day too)', async () => {
-        for (const date of [undefined, '2026-11-12', 'soon', '2026-13-45']) {
+    it('asks for the current weather with no date, a word for none, and for today', async () => {
+        for (const date of [undefined, '', '  ', 'today', 'Now', 'none', 'null', '2026-11-12', 'Nov 12, 2026']) {
             fetchMock.mockClear();
 
             const result: unknown = await handler({city: ' New York ', date});
@@ -57,6 +57,29 @@ describe('Fetch Weather Data tool', () => {
                 location: LOCATION,
                 current: {...CURRENT, condition: 'Sunny'},
             });
+        }
+    });
+
+    it('turns down a date it cannot read (an impossible day too), so the LLM can send another', async () => {
+        // V8 would read "day 3", "week 2" and "+1" as days in 2001.
+        for (const date of ['soon', '2026-13-45', '2026-11-31', '2026-11-131', 'tomorrow', 'day 3', 'week 2', '+1']) {
+            expect(await handler({city: 'Tokyo', date})).toEqual({error: `\`date\` tool parameter "${date}" is not a date: send it as YYYY-MM-DD`});
+        }
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('sends the day it read, as YYYY-MM-DD, whatever form the date came in', async () => {
+        await handler({city: 'Tokyo', date: 'Nov 13, 2026'});
+        expect(requestedUrl()).toBe('https://api.weatherapi.com/v1/forecast.json?key=k3y&q=Tokyo&dt=2026-11-13');
+    });
+
+    it('sends the day a YYYY-MM-DD names as written, a time and zone after it notwithstanding', async () => {
+        // Midnight UTC is still the 14th west of UTC, and 23:00 UTC already the 16th east of it: the 15th is sent either way.
+        for (const date of ['2026-11-15T00:00:00Z', '2026-11-15T23:00:00Z', '11/15/2026 23:30 UTC', 'Nov 15, 2026 23:00 GMT']) {
+            fetchMock.mockClear();
+            await handler({city: 'Tokyo', date});
+            expect(requestedUrl()).toBe('https://api.weatherapi.com/v1/forecast.json?key=k3y&q=Tokyo&dt=2026-11-15');
         }
     });
 
@@ -83,8 +106,10 @@ describe('Fetch Weather Data tool', () => {
 
     it('explains a request WeatherAPI.com turned down', async () => {
         answerWith(400);
-        expect(await handler({city: 'Nowhere', date: '2026-13-45'}))
-            .toEqual({error: 'Invalid request. Check city name "Nowhere" or date format "2026-13-45".'});
+        expect(await handler({city: 'Nowhere', date: '2027-03-01'})).toEqual({error: 'Invalid request. Check city name "Nowhere" or date "2027-03-01".'});
+        // No day sent (today's weather): the city is all there is to check.
+        expect(await handler({city: 'Tokio'})).toEqual({error: 'Invalid request. Check city name "Tokio".'});
+        expect(await handler({city: 'Tokio', date: '2026-11-12'})).toEqual({error: 'Invalid request. Check city name "Tokio".'});
 
         answerWith(401);
         expect(await handler({city: 'Tokyo'}))
@@ -92,6 +117,17 @@ describe('Fetch Weather Data tool', () => {
 
         answerWith(503, ANSWER, 'Service Unavailable');
         expect(await handler({city: 'Tokyo'})).toEqual({error: 'Weather API error: 503 Service Unavailable'});
+    });
+
+    it('keeps the request to its own parameters: the key encoded, the day the one it read', async () => {
+        await FetchWeatherDataToolDescriptor.handlerFactory({apiKey: 'a&b#c'})({city: 'Tokyo', date: '2026-11-13'});
+        expect(requestedUrl()).toBe('https://api.weatherapi.com/v1/forecast.json?key=a%26b%23c&q=Tokyo&dt=2026-11-13');
+
+        // V8 reads this as 13 November (it skips the part in brackets); the tool takes only a date, nothing after it.
+        fetchMock.mockClear();
+        expect(await handler({city: 'Tokyo', date: '2026-11-13 (&q=London)'}))
+            .toEqual({error: '`date` tool parameter "2026-11-13 (&q=London)" is not a date: send it as YYYY-MM-DD'});
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('turns down an answer of the wrong shape, naming the field', async () => {

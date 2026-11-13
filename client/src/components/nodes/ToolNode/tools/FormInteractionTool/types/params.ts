@@ -9,6 +9,7 @@
 import {z} from "zod";
 import {FILL_ACTION_TYPES, FillAction} from "@shared/types.gen";
 import {ToolError} from "../../../../../../types/ollama.types";
+import {zodIssues} from "../../../../../../utils/zodIssues";
 
 // LLMs send null for "no value" (e.g. `value: null` on a check action); taking it as omitted saves a rejected
 // call and a retry. A preprocess, unlike .nullish(), keeps the JSON schema the LLM sees a plain string.
@@ -40,9 +41,7 @@ export function toFillAction ({selector, actionType, value, fileKey}: RawLlmFill
 export function parseFillActions (actions: unknown): FillAction[] | ToolError {
     const parsed = z.array(RawLlmFillActionSchema).safeParse(actions ?? []);
 
-    if (!parsed.success) {
-        return {error: `Invalid \`actions\`: ${parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`};
-    }
+    if (!parsed.success) return {error: `Invalid \`actions\`: ${zodIssues(parsed.error)}`};
 
     return parsed.data.map(toFillAction);
 }

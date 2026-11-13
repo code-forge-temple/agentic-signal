@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useEffect, useCallback, useRef, useState} from "react";
+import {useState} from "react";
 import {Handle, Position, useReactFlow, type NodeProps} from "@xyflow/react";
 import {assertIsToolNodeData, ToolNodeData} from "./types/workflow";
 import {MonitoredNode} from "../MonitoredNode";
@@ -14,67 +14,16 @@ import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
 import {MenuItem, Select, FormControl, InputLabel} from "@mui/material";
 import {UserConfigFields} from "./UserConfigFields";
 import {FieldsetGroup} from "../../FieldsetGroup";
-import {useSettings} from "../../../hooks/useSettings";
 import {AppNode} from "../workflow.gen";
 import {Icon} from "./constants";
-import {assertIsEnhancedNodeData, EnhancedNodeData} from "../../../types/workflow";
+import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {toolRegistry} from "./tools/toolRegistry.gen";
 import {getDefaultUserConfigValues} from "../../../types/ollama.types";
-import {useGlobalConfig} from "../../../stores/globalConfig";
 import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
 import {RenderConfigProps, ToolDefinition} from "./tools/types";
-import {hasSettings, missingConfigError, missingConfigKeys, pickedTool, toolRuntime} from "./toolConfig";
+import {hasSettings} from "./toolConfig";
+import {useToolRuntime} from "./useToolRuntime";
 
-
-type ToolRuntimeOptions = {
-    id: string;
-    selectedTool: ToolDefinition | undefined;
-    data: Pick<ToolNodeData, "toolSubtype" | "userConfig" | "handler" | "cleanup"> & Pick<EnhancedNodeData, "onConfigChange">;
-};
-
-/**
- * Keeps the node's handler and cleanup in step with its settings and the shared ones: built again after every change
- * once each required setting has a value, dropped (with an error naming the missing settings) while one hasn't.
- */
-function useToolRuntime ({id, selectedTool, data}: ToolRuntimeOptions) {
-    const {toolSubtype, userConfig, handler, cleanup, onConfigChange} = data;
-    const [error, setError] = useState<string | null>(null);
-    const {settings} = useSettings();
-    const {globalData} = useGlobalConfig();
-    // The handler and cleanup as last rendered: the effect below reads them here rather than depending on them, as
-    // it would otherwise run again each time it sets them.
-    const runtimeRef = useRef({handler, cleanup});
-
-    useEffect(() => {
-        runtimeRef.current = {handler, cleanup};
-    });
-
-    useEffect(() => {
-        if (!selectedTool) return;
-
-        const missingKeys = missingConfigKeys(selectedTool, globalData, userConfig);
-
-        if (missingKeys.length > 0) {
-            setError(missingConfigError(selectedTool, missingKeys));
-
-            if (runtimeRef.current.handler || runtimeRef.current.cleanup) onConfigChange(id, {handler: undefined, cleanup: undefined});
-
-            return;
-        }
-
-        onConfigChange(id, toolRuntime(selectedTool, globalData, userConfig, settings.browserPath));
-        setError(null);
-    }, [selectedTool, userConfig, onConfigChange, id, globalData, settings.browserPath, toolSubtype]);
-
-    // Only saves the setting: the effect above then checks the new settings and builds (or drops) the handler.
-    const handleUserConfigChange = useCallback((key: string, value: string | number | boolean) => {
-        onConfigChange(id, {userConfig: {...(userConfig || {}), [key]: value}});
-    }, [id, onConfigChange, userConfig]);
-
-    const hasMissingConfig = !toolSubtype || (!!selectedTool && missingConfigKeys(selectedTool, globalData, userConfig).length > 0);
-
-    return {error, hasMissingConfig, handleUserConfigChange};
-}
 
 /** The node's port: it connects only to an LLM Process node's tool port. */
 function ToolPort () {
@@ -160,16 +109,15 @@ export function ToolNode ({data, id}: NodeProps<AppNode>) {
     assertIsToolNodeData(data);
 
     const [openSettings, setOpenSettings] = useState(false);
-    const {title, toolSubtype, userConfig, onConfigChange, toSanitize} = data;
+    const {title, toolSubtype, userConfig} = data;
     const selectedTool = toolRegistry.find(t => t.toolSubtype === toolSubtype);
-    const {error, hasMissingConfig, handleUserConfigChange} = useToolRuntime({id, selectedTool, data});
+    const {error, hasMissingConfig, handleUserConfigChange, pickTool} = useToolRuntime({id, selectedTool, data});
     const shownTitle = selectedTool?.title || title;
 
     const handleToolPick = (pickedSubtype: string) => {
         const tool = toolRegistry.find(t => t.toolSubtype === pickedSubtype);
 
-        // The generic node's own fields removed on save are merged with the tool's (pickedTool does it).
-        if (tool) onConfigChange(id, pickedTool(tool, toSanitize));
+        if (tool) pickTool(tool);
     };
 
     return (

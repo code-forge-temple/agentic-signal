@@ -119,15 +119,15 @@ function matchesFilters (job: NormalizedJob, filters: JobSearchFilters, cutoff: 
     return matchesEmploymentType(job, filters.employmentTypes);
 }
 
-/** Tags each job with whether its free-text location lets a candidate from `region` apply, and how sure that is. */
-function tagEligibility (jobs: NormalizedJob[], region: string): void {
-    for (const job of jobs) {
-        const {eligible, confidence} = evaluateEligibility(job.candidateLocations, region);
+/**
+ * The jobs, each tagged with whether its free-text location lets a candidate from `region` apply, and how sure that is.
+ * Copies: the jobs are the cache's, shared by every search, and another search's region would retag them.
+ */
+const withEligibility = (jobs: NormalizedJob[], region: string): NormalizedJob[] => jobs.map((job) => {
+    const {eligible, confidence} = evaluateEligibility(job.candidateLocations, region);
 
-        job.eligibleFromTarget = eligible;
-        job.eligibilityConfidence = confidence;
-    }
-}
+    return {...job, eligibleFromTarget: eligible, eligibilityConfidence: confidence};
+});
 
 /** The jobs without repeats: the first of each company and title. */
 function withoutDuplicates (jobs: NormalizedJob[]): NormalizedJob[] {
@@ -154,12 +154,10 @@ class JobSearchService {
         const cutoff = datePostedCutoff(filters.datePosted);
 
         let jobs = collected.filter(job => matchesFilters(job, filters, cutoff));
-
-        tagEligibility(jobs, filters.candidateRegion);
-
         const afterFilter = jobs.length;
 
-        jobs = withoutDuplicates(jobs);
+        // Tagged after the repeats are dropped: no work on jobs that won't be returned.
+        jobs = withEligibility(withoutDuplicates(jobs), filters.candidateRegion);
 
         const afterDedupe = jobs.length;
 

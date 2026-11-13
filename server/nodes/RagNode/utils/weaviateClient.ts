@@ -33,15 +33,6 @@ const NearVectorResponseSchema = z.object({
     }).nullish(),
 });
 
-/** Weaviate class names must start with uppercase and contain only [a-zA-Z0-9]. */
-export function toWeaviateClassName (name: string): string {
-    const safe = name.replace(/[^a-zA-Z0-9]/g, "");
-
-    if (!safe) return "RagCollection";
-
-    return safe.charAt(0).toUpperCase() + safe.slice(1);
-}
-
 export function weaviateHeaders (apiKey?: string): WHeaders {
     const h: WHeaders = {"Content-Type": "application/json"};
 
@@ -50,10 +41,15 @@ export function weaviateHeaders (apiKey?: string): WHeaders {
     return h;
 }
 
+/** Whether Weaviate has the class (it answers 404 for one it hasn't); throws when it can't tell (an API key it turns down, an error). */
 export async function classExists ({base, h, className}: WeaviateClass): Promise<boolean> {
     const res = await fetch(`${base}/v1/schema/${className}`, {headers: h});
 
-    return res.ok;
+    if (res.status === 404) return false;
+
+    if (!res.ok) throw new Error(`Weaviate couldn't say whether "${className}" exists: ${res.status} ${await res.text()}`);
+
+    return true;
 }
 
 export async function createChunksClass ({base, h, className}: WeaviateClass): Promise<void> {
@@ -147,7 +143,8 @@ export type StoredMeta = {id: string; fileHashes: Record<string, string>; embedd
 export async function getStoredMeta ({base, h, className: metaClassName}: WeaviateClass): Promise<StoredMeta | undefined> {
     const res = await fetch(`${base}/v1/objects?class=${metaClassName}&limit=1`, {headers: h});
 
-    if (!res.ok) return undefined;
+    // Read only where the meta class exists: a failure isn't "no meta yet" (taken as one, a run would add a second).
+    if (!res.ok) throw new Error(`Weaviate couldn't read "${metaClassName}": ${res.status} ${await res.text()}`);
 
     const result = parseApiResponse(await res.json(), WeaviateMetaObjectsResponseSchema, "Weaviate (meta object)");
     const obj = result.objects?.[0];

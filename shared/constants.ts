@@ -3,6 +3,9 @@ export const BACKEND_PORT = 8000;
 /** Where outside apps call workflow commands: POST /workflows/<command>. */
 export const COMMANDS_PORT = 8001;
 
+// A RAG collection's name when none is typed: the RAG node's default, and the server's for a request without one.
+export const DEFAULT_RAG_COLLECTION = "rag_collection";
+
 export const TRIPLE_BACKTICK = "```";
 
 export const IMAGE_FILE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg"]);

@@ -5,7 +5,8 @@
  ************************************************************************/
 
 import {Ollama} from "npm:ollama";
-import {extractFileBlocksFromMarkdown, extractQueryFromMarkdown, errorMessage} from "../../../shared/utils.ts";
+import {extractFileBlocksFromMarkdown, extractQueryFromMarkdown, errorMessage, isRagMetaClass, ragClassName} from "../../../shared/utils.ts";
+import {DEFAULT_RAG_COLLECTION} from "../../../shared/constants.ts";
 import {RagIngestAndRetrieveArgs, RagRetrieveResult} from "./types.ts";
 import {chunkText, hashString} from "./utils/textUtils.ts";
 import {
@@ -18,15 +19,12 @@ import {
     getStoredMeta,
     nearVectorSearch,
     StoredMeta,
-    toWeaviateClassName,
     upsertMeta,
     WeaviateClass,
     weaviateHeaders,
 } from "./utils/weaviateClient.ts";
 import {withKeyedLock} from "../../utils/keyedLock.ts";
 
-
-const DEFAULT_COLLECTION = "ragDefault";
 
 type FileBlock = {name: string; content: string};
 
@@ -41,7 +39,7 @@ type RagCollection = {
 function ragCollection (args: RagIngestAndRetrieveArgs): RagCollection {
     const base = args.weaviateUrl.replace(/\/$/, "");
     const h = weaviateHeaders(args.weaviateApiKey);
-    const className = toWeaviateClassName(args.collectionName || DEFAULT_COLLECTION);
+    const className = ragClassName(args.collectionName);
 
     return {
         ollama: new Ollama({host: args.ollamaHost || ""}),
@@ -115,11 +113,14 @@ const ingestedHashes = (current: Record<string, string>, stored: StoredMeta | un
 async function ingestFiles (collection: RagCollection, files: FileBlock[]): Promise<boolean> {
     const {chunks, meta, args} = collection;
 
+    // A query alone: nothing to write (no meta class made for a name nothing was ingested under), just whether to query.
+    if (files.length === 0) return classExists(chunks);
+
     if (!(await classExists(meta))) await createMetaClass(meta);
 
     const currentHashes = await hashFiles(files);
     const storedMeta = await getStoredMeta(meta);
-    const modelChanged = files.length > 0 && storedMeta !== undefined && storedMeta.embeddingModel !== args.embeddingModel;
+    const modelChanged = storedMeta !== undefined && storedMeta.embeddingModel !== args.embeddingModel;
     const filesToIngest = modelChanged ? files : files.filter(file => currentHashes[file.name] !== storedMeta?.fileHashes[file.name]);
 
     // Nothing to ingest: there's something to query only if an earlier run ingested files.
@@ -131,12 +132,27 @@ async function ingestFiles (collection: RagCollection, files: FileBlock[]): Prom
     const metaProperties = {
         fileHashes: ingestedHashes(currentHashes, storedMeta, modelChanged),
         embeddingModel: args.embeddingModel,
-        originalName: args.collectionName || DEFAULT_COLLECTION,
+        originalName: args.collectionName || DEFAULT_RAG_COLLECTION,
     };
 
     await upsertMeta(meta, metaProperties, storedMeta?.id);
 
     return true;
+}
+
+/**
+ * Throws when the collection was embedded with another model than the query's: its vectors are of another length, so
+ * the search would fail or match nothing that means anything. A class made outside the app has no meta to tell.
+ */
+async function checkQueryModel ({meta, args}: RagCollection): Promise<void> {
+    if (!(await classExists(meta))) return;
+
+    const storedModel = (await getStoredMeta(meta))?.embeddingModel;
+
+    if (storedModel && storedModel !== args.embeddingModel) {
+        // eslint-disable-next-line max-len
+        throw new Error(`Collection "${args.collectionName || DEFAULT_RAG_COLLECTION}" was embedded with ${storedModel}, not ${args.embeddingModel}: query it with ${storedModel}.`);
+    }
 }
 
 /** The chunks closest to the query, numbered with their files, as context for the LLM; null when there are none. */
@@ -159,6 +175,14 @@ export async function ragIngestAndRetrieve (args: RagIngestAndRetrieveArgs): Pro
         }
 
         const collection = ragCollection(args);
+        const {className} = collection.chunks;
+
+        // Classes ending in Meta hold the collections' file lists ("project"'s is ProjectMeta): a collection named
+        // "projectMeta" would write its chunks into it.
+        if (isRagMetaClass(className)) {
+            // eslint-disable-next-line max-len
+            return {success: false, context: null, error: `A collection's name can't end in "Meta" ("${args.collectionName}" would be the Weaviate class ${className}, where file lists are kept). Rename it.`};
+        }
 
         /*
          * The ingest is one read-modify-write over the meta object, whose documentHash property is a JSON map of every
@@ -166,12 +190,16 @@ export async function ragIngestAndRetrieve (args: RagIngestAndRetrieveArgs): Pro
          * each PATCH back a map missing the other's files, and on a fresh collection would both POST a meta object
          * instead of one PATCHing the other's. The embed in the middle makes that window minutes wide.
          *
-         * Keyed on the class name so only same-collection ingests wait; the query below stays outside, since it only
-         * reads.
+         * Keyed on the class name so only same-collection ingests wait; the query below stays outside, so queries on a
+         * collection don't wait for each other. A query whose model isn't the collection's (another run changed it)
+         * says so (checkQueryModel).
          */
-        const hasQueryableClass = await withKeyedLock(collection.chunks.className, () => ingestFiles(collection, files));
+        const hasQueryableClass = await withKeyedLock(className, () => ingestFiles(collection, files));
 
         if (!hasQueryableClass || !query) return {success: true, context: null, error: null};
+
+        // With files, the ingest left the collection on this run's model; a query alone may meet another one.
+        if (files.length === 0) await checkQueryModel(collection);
 
         return {success: true, context: await retrieveContext(collection, query), error: null};
     } catch (error) {

@@ -147,7 +147,14 @@ function routeOf (method: string, pathname: string): Route | undefined {
 
 /** The input of a call: its body, a Data Source as JSON and nothing else (the app checks its shape); an error response when it isn't JSON. */
 async function callInput (request: Request): Promise<string | Response> {
-    const input = await request.text();
+    let input: string;
+
+    try {
+        input = await request.text();
+    } catch {
+        // The caller hung up while sending its body: nobody to answer.
+        return new Response(null, {status: 499, headers: CORS_HEADERS});
+    }
 
     if (!(request.headers.get("content-type") ?? "").includes("application/json")) {
         return errorResponse("bad_request", `Send the input as JSON (Content-Type: application/json). ${EXPECTED_BODY}`);
@@ -269,6 +276,9 @@ export class CommandGateway {
 
         if (input instanceof Response) return input;
 
+        // The caller hung up while its body was read: nobody would read the answer, or check on a job.
+        if (request.signal.aborted) return new Response(null, {status: 499, headers: CORS_HEADERS});
+
         if (/\brespond-async\b/i.test(request.headers.get("prefer") ?? "")) return this.startJob(app, connection, command, input);
 
         return callResponse(await this.run(app, request.signal, command, input));
@@ -364,6 +374,9 @@ export class CommandGateway {
      * a timeout error when the app takes longer than `timeoutMs` (told to cancel too).
      */
     private forward (app: AppListener, event: Omit<CommandRequestEvent, "id">, {signal, timeoutMs, timeoutMessage}: ForwardOptions): Promise<CommandResponse | null> {
+        // The caller hung up already (while its body or token was read): its "abort" has fired, and nobody waits.
+        if (signal.aborted) return Promise.resolve(null);
+
         const id = crypto.randomUUID();
 
         return new Promise((resolve) => {

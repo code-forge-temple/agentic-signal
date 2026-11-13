@@ -31,6 +31,8 @@ export type RagNode = Node<BaseNodeData & RagNodeData> & {type: typeof NODE_TYPE
 
 export const defaultRagNodeData: RagNodeData = {
     embeddingModel: "",
+    // DEFAULT_RAG_COLLECTION, written out: the docs schema generator can only stub "@shared/types.gen" imports here
+    // (a test keeps the two the same).
     collectionName: "rag_collection",
     chunkSize: 512,
     chunkOverlap: 64,

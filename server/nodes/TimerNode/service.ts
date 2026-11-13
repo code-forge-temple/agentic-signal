@@ -7,24 +7,35 @@
 import {TimerConfig, TimerTriggerEvent, ScheduledTimerConfig, TIMER_NODE_MODES, SCHEDULED_TIMER_REPEATS} from "./types.ts";
 
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const ONE_WEEK_MS = 7 * ONE_DAY_MS;
+// Deno, like browsers, fires a setTimeout longer than 2^31 - 1 ms (about 24.8 days) almost at once.
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
-/** A month later, on the same day and time; on the next month's last day when it's shorter (31 January → 28 February). */
-function aMonthLater (date: Date): Date {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = Math.min(date.getDate(), new Date(year, month + 2, 0).getDate()); // Last day of next month
+/** `days` days after `date`, at the same time of day here, across a daylight-saving change too. */
+function daysAfter (date: Date, days: number): Date {
+    const later = new Date(date);
 
-    return new Date(year, month + 1, day, date.getHours(), date.getMinutes(), date.getSeconds());
+    later.setDate(later.getDate() + days);
+
+    return later;
 }
 
-// The step from one trigger of a repeating scheduled timer to the next. A Map, not an object: the repeat comes from the
-// client unchecked, and an object would answer "constructor" or "toString" with a function of its prototype.
-const REPEAT_STEPS = new Map<string, (date: Date) => Date>([
-    [SCHEDULED_TIMER_REPEATS.DAILY, date => new Date(date.getTime() + ONE_DAY_MS)],
-    [SCHEDULED_TIMER_REPEATS.WEEKLY, date => new Date(date.getTime() + ONE_WEEK_MS)],
-    [SCHEDULED_TIMER_REPEATS.MONTHLY, aMonthLater],
+/** `months` months after `date`, on its day and time; on that month's last day when it's shorter (31 January → 28 February). */
+function monthsAfter (date: Date, months: number): Date {
+    const later = new Date(date.getFullYear(), date.getMonth() + months, 1, date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
+    const lastDay = new Date(later.getFullYear(), later.getMonth() + 1, 0).getDate();
+
+    later.setDate(Math.min(date.getDate(), lastDay));
+
+    return later;
+}
+
+// A repeating scheduled timer's nth repeat, counted from its first time: a monthly one set for the 31st is back on the
+// 31st after a shorter month. A Map, not an object: the repeat comes from the client unchecked, and an object would
+// answer "constructor" or "toString" with a function of its prototype.
+const REPEATS = new Map<string, (first: Date, n: number) => Date>([
+    [SCHEDULED_TIMER_REPEATS.DAILY, (first, n) => daysAfter(first, n)],
+    [SCHEDULED_TIMER_REPEATS.WEEKLY, (first, n) => daysAfter(first, 7 * n)],
+    [SCHEDULED_TIMER_REPEATS.MONTHLY, monthsAfter],
 ]);
 
 /**
@@ -34,13 +45,14 @@ const REPEAT_STEPS = new Map<string, (date: Date) => Date>([
 export function nextScheduledTrigger (scheduled: Date, repeat: SCHEDULED_TIMER_REPEATS, now: Date): Date | null {
     if (!(scheduled <= now)) return scheduled;
 
-    const step = REPEAT_STEPS.get(repeat);
+    const nthRepeat = REPEATS.get(repeat);
 
-    if (!step) return null;
+    if (!nthRepeat) return null;
 
-    let next = scheduled;
+    let n = 1;
+    let next = nthRepeat(scheduled, n);
 
-    while (next <= now) next = step(next);
+    while (next <= now) next = nthRepeat(scheduled, ++n);
 
     return next;
 }
@@ -58,13 +70,22 @@ class TimerService {
     private timers: Map<string, TimerInstance> = new Map();
 
     startTimer (nodeId: string, config: TimerConfig): void {
+        if (config.mode === TIMER_NODE_MODES.INTERVAL && !config.runOnce && !(config.interval > 0)) {
+            // It would fire in a tight loop, every trigger running the workflow again.
+            throw new Error(`A repeating interval timer needs an interval above 0 seconds (it was ${config.interval}).`);
+        }
+
+        // A restarted timer keeps who listens to it: a client subscribed to the timer before (a Delayed Snapshot given new
+        // input while it waits) hears the new one, and unsubscribing still works on the same set.
+        const subscribers = this.timers.get(nodeId)?.subscribers ?? new Set();
+
         this.stopTimer(nodeId);
 
         const instance: TimerInstance = {
             id: nodeId,
             config,
             timer: null,
-            subscribers: new Set()
+            subscribers,
         };
 
         this.timers.set(nodeId, instance);
@@ -99,17 +120,26 @@ class TimerService {
             if (!this.timers.has(instance.id)) return;
 
             const now = Date.now();
-            const drift = now - instance.expectedTime!;
-            const nextDelay = Math.max(0, config.interval * 1000 - drift);
+            const intervalMs = config.interval * 1000;
 
-            instance.timer = setTimeout(() => {
+            // Triggers missed while the process was held up (a laptop asleep, a late fire) are skipped, not fired in a
+            // burst: the next one is the first slot after now.
+            if (intervalMs > 0 && instance.expectedTime! <= now) {
+                instance.expectedTime! += (Math.floor((now - instance.expectedTime!) / intervalMs) + 1) * intervalMs;
+            }
+
+            // Until the trigger due next (a late one makes the next wait shorter, so they don't drift); a clock set back
+            // waits one interval, not as long as it went back.
+            const nextDelay = Math.min(intervalMs, Math.max(0, instance.expectedTime! - now));
+
+            this.waitThen(instance, nextDelay, () => {
                 trigger();
                 instance.expectedTime! += config.interval * 1000;
 
                 if (!config.runOnce) {
                     scheduleNext();
                 }
-            }, nextDelay);
+            });
         };
 
         scheduleNext();
@@ -118,16 +148,20 @@ class TimerService {
     private startScheduledTimer (instance: TimerInstance): void {
         if (instance.config.mode !== TIMER_NODE_MODES.SCHEDULED) return;
 
+        // The trigger last fired: a wake-up a moment early by the clock can't fire it again.
+        let lastTrigger = -Infinity;
+
         const scheduleNextTrigger = () => {
             if (!this.timers.has(instance.id)) return;
 
             const config = instance.config as ScheduledTimerConfig;
-            const now = new Date();
-            const nextTrigger = nextScheduledTrigger(new Date(config.scheduledDateTime), config.repeat, now);
-            const delay = nextTrigger ? nextTrigger.getTime() - now.getTime() : 0;
+            const now = Date.now();
+            const nextTrigger = nextScheduledTrigger(new Date(config.scheduledDateTime), config.repeat, new Date(Math.max(now, lastTrigger)));
+            const delay = nextTrigger ? nextTrigger.getTime() - now : 0;
 
-            if (delay > 0) {
-                instance.timer = setTimeout(() => {
+            if (nextTrigger && delay > 0) {
+                this.waitThen(instance, delay, () => {
+                    lastTrigger = nextTrigger.getTime();
                     this.notifySubscribers(instance.id, {
                         nodeId: instance.id,
                         timestamp: Date.now(),
@@ -137,11 +171,27 @@ class TimerService {
                     if (config.repeat !== SCHEDULED_TIMER_REPEATS.ONCE) {
                         scheduleNextTrigger();
                     }
-                }, delay);
+                });
             }
         };
 
         scheduleNextTrigger();
+    }
+
+    /**
+     * Runs `fire` after `delay` ms, waiting in steps of at most MAX_TIMEOUT_MS (a monthly timer's month is longer). The
+     * instance's timer is always the step waiting now, so stopping the timer cancels the rest.
+     */
+    private waitThen (instance: TimerInstance, delay: number, fire: () => void): void {
+        if (delay <= MAX_TIMEOUT_MS) {
+            instance.timer = setTimeout(fire, delay);
+
+            return;
+        }
+
+        const until = Date.now() + delay;
+
+        instance.timer = setTimeout(() => this.waitThen(instance, until - Date.now(), fire), MAX_TIMEOUT_MS);
     }
 
     stopTimer (nodeId: string): void {

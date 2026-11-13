@@ -4,11 +4,27 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
+import {errorMessage} from "../../shared/utils.ts";
+
+
 type SubscriptionHandler = (event: any) => void;
 
 type UnsubscribeFunction = () => void;
 
 type SubscriptionFactory = (nodeId: string, handler: SubscriptionHandler, variables: Record<string, unknown>) => UnsubscribeFunction;
+
+/**
+ * What a subscribe message's payload names: the subscription type (the field its query subscribes to, with arguments)
+ * and the node (from the variables, else the query). A payload without a query names neither.
+ */
+function subscriptionFields (payload: any): {type?: string; nodeId?: string} {
+    const query: string = typeof payload?.query === "string" ? payload.query : "";
+
+    return {
+        type: query.match(/subscription[^{]*\{\s*(\w+)\s*\(/)?.[1],
+        nodeId: payload?.variables?.nodeId || query.match(/nodeId:\s*"([^"]+)"/)?.[1],
+    };
+}
 
 type SubscriptionTypeOptions = {
     /** False for an app-wide subscription, which needs no nodeId (e.g. outside workflow commands). */
@@ -18,8 +34,6 @@ type SubscriptionTypeOptions = {
 export class WebSocketManager {
     private static instance: WebSocketManager | null = null;
 
-    private activeSubscriptions = new Map<string, Set<WebSocket>>();
-
     private subscriptionFactories = new Map<string, {factory: SubscriptionFactory; nodeScoped: boolean}>();
 
     // Per socket, each subscription id's teardown, so a client's "complete" really unsubscribes.
@@ -28,8 +42,6 @@ export class WebSocketManager {
     private pingIntervals = new Map<WebSocket, ReturnType<typeof setInterval>>();
 
     private yogaHandler: ((request: Request) => Promise<Response>) | null = null;
-
-    private socketSubscriptions = new Map<WebSocket, Map<string, string>>();
 
     private constructor () {
         this.handleRequest = this.handleRequest.bind(this);
@@ -91,7 +103,6 @@ export class WebSocketManager {
     }
 
     private setupSocketHandlers (socket: WebSocket): void {
-        this.socketSubscriptions.set(socket, new Map());
         this.subscriptionCleanups.set(socket, new Map());
 
         const pingInterval = setInterval(() => {
@@ -122,25 +133,19 @@ export class WebSocketManager {
 
                         break;
 
-                    case 'complete':{
-                        const subscriptions = this.socketSubscriptions.get(socket);
-
-                        if (subscriptions) {
-                            subscriptions.delete(message.id);
-                        }
-
+                    case 'complete':
                         this.subscriptionCleanups.get(socket)?.get(message.id)?.();
 
                         break;
-                    }
 
                     case 'ping':
                         socket.send(JSON.stringify({type: 'pong'}));
 
                         break;
                 }
-            } catch {
-                console.error('[WebSocketManager] ⚠️ Cannot send error - no subscription ID available');
+            } catch (error) {
+                // A message that isn't JSON, or a reply that couldn't be sent (the socket closing): nothing to answer under.
+                console.error('[WebSocketManager] ⚠️ Could not handle a message:', error);
             }
         };
 
@@ -165,24 +170,30 @@ export class WebSocketManager {
         }
 
         const {type, nodeId, factory} = subscription;
+        let unsubscribe: UnsubscribeFunction;
 
-        this.trackSubscription(socket, `${type}:${nodeId}`, id);
-
-        const unsubscribe = factory(nodeId, (event) => {
-            if (socket.readyState !== WebSocket.OPEN) {
-                return;
-            }
-
-            socket.send(JSON.stringify({
-                id,
-                type: 'next',
-                payload: {
-                    data: {
-                        [type]: event
-                    }
+        try {
+            unsubscribe = factory(nodeId, (event) => {
+                if (socket.readyState !== WebSocket.OPEN) {
+                    return;
                 }
-            }));
-        }, payload.variables ?? {});
+
+                socket.send(JSON.stringify({
+                    id,
+                    type: 'next',
+                    payload: {
+                        data: {
+                            [type]: event
+                        }
+                    }
+                }));
+            }, payload.variables ?? {});
+        } catch (error) {
+            // It couldn't start (a timer not started yet, say): the client hears why, under its id, instead of waiting.
+            socket.send(JSON.stringify({id, type: 'error', payload: [{message: errorMessage(error)}]}));
+
+            return;
+        }
 
         this.endWithSocketOrClient(socket, id, unsubscribe);
     }
@@ -192,8 +203,7 @@ export class WebSocketManager {
      * variables, else the query) and the factory that starts it; why it can't be served, otherwise.
      */
     private readSubscription (payload: any): {type: string; nodeId: string; factory: SubscriptionFactory} | string {
-        const type = payload.query.match(/subscription[^{]*\{\s*(\w+)\s*\(/)?.[1];
-        const nodeIdMatch = payload.variables?.nodeId || payload.query.match(/nodeId:\s*"([^"]+)"/)?.[1];
+        const {type, nodeId: nodeIdMatch} = subscriptionFields(payload);
 
         if (!type) return 'Invalid subscription query';
 
@@ -204,16 +214,6 @@ export class WebSocketManager {
         if (!nodeIdMatch && registered.nodeScoped) return 'Missing nodeId in subscription';
 
         return {type, nodeId: nodeIdMatch ?? "", factory: registered.factory};
-    }
-
-    /** Notes the socket as a subscriber of `key`, under the client's subscription id. */
-    private trackSubscription (socket: WebSocket, key: string, id: string): void {
-        if (!this.activeSubscriptions.has(key)) {
-            this.activeSubscriptions.set(key, new Set());
-        }
-
-        this.activeSubscriptions.get(key)!.add(socket);
-        this.socketSubscriptions.get(socket)?.set(key, id);
     }
 
     /** Unsubscribes when the socket closes (telling the client, if it still can, that it's complete), or on the client's own "complete". */
@@ -250,21 +250,7 @@ export class WebSocketManager {
 
     private cleanupSocket (socket: WebSocket): void {
         this.clearPingInterval(socket);
-
-        for (const [key, sockets] of this.activeSubscriptions.entries()) {
-            sockets.delete(socket);
-
-            if (sockets.size === 0) {
-                this.activeSubscriptions.delete(key);
-            }
-        }
-
-        this.socketSubscriptions.delete(socket);
         this.subscriptionCleanups.delete(socket);
-    }
-
-    getActiveSubscriptions (): Map<string, Set<WebSocket>> {
-        return this.activeSubscriptions;
     }
 }
 

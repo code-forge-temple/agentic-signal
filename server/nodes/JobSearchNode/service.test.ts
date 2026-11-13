@@ -99,6 +99,17 @@ Deno.test("Job Search: leaves out jobs a candidate clearly can't apply to, when 
     });
 });
 
+Deno.test("Job Search: a search's eligibility tags stay its own when another search asks for another region", async () => {
+    await withBoards(async () => {
+        const usa = await jobSearchService.search({...FILTERS, candidateRegion: "USA"});
+        const before = JSON.stringify(usa.jobs);
+
+        await jobSearchService.search({...FILTERS, candidateRegion: "Europe"});
+
+        assertEquals(JSON.stringify(usa.jobs), before);
+    });
+});
+
 Deno.test("Job Search: reads a company line as a board URL, a board:token, a name to look up, or nothing", () => {
     assertEquals(parseCompanyLine("https://boards.greenhouse.io/Stripe/jobs/1"), {ats: "greenhouse", token: "stripe"});
     assertEquals(parseCompanyLine("jobs.lever.co/Vercel/abc"), {ats: "lever", token: "vercel"});

@@ -25,14 +25,14 @@ It connects exclusively to the **AI Data Processing Node** via a dedicated RAG p
 
 <UrlDefaultTabs defaultTab="embedding-model">
     <TabItem value="embedding-model" label="Embedding Model" default>
-        Ollama model used to generate embeddings. Must be a dedicated embedding model (e.g. `nomic-embed-text:latest`). Locked to the collection's model when an existing collection is selected.
+        Ollama model used to generate embeddings. Must be a dedicated embedding model (e.g. `nomic-embed-text:latest`). Locked to the model of the collection a run would write into, whether you pick it or type its name (`my-docs` and `my_docs` are the same collection; see [Weaviate Schema](#weaviate-schema)). If Weaviate can't be reached, the lock stays as it was.
 
         > **Embedding model tip:** Use a dedicated embedding model like `nomic-embed-text:latest` rather than a general LLM. General LLMs produce lower-quality embeddings and may have dimension mismatches.
         
         ![RAG Node Parameters](/img/nodes/rag-node-params.webp)
     </TabItem>
     <TabItem value="collection-name" label="Collection Name">
-        Namespace for the knowledge base in Weaviate (e.g. `rag_collection`). Use the browse button (🔍) to pick from existing collections.
+        Namespace for the knowledge base in Weaviate (e.g. `rag_collection`, the default when it's left empty). Use the browse button (🔍) to pick from existing collections. A name whose Weaviate class would end in `Meta` (e.g. `projectMeta`) is refused, since classes ending in `Meta` hold the collections' file lists.
 
         ![RAG Node Parameters](/img/nodes/rag-node-params.webp)
     </TabItem>
@@ -114,6 +114,7 @@ The node uses **per-file content hashing** to avoid redundant re-embedding:
     | File removed from workflow input | Chunks remain in DB — preserved for other workflows |
     | Embedding model changed | Entire chunks class dropped and all current files re-ingested |
     | Query only (no files in input) | Queries whatever is already in the collection |
+    | Query with another embedding model than the collection's | Fails, naming the collection's model |
 
 </div>
 
@@ -121,7 +122,7 @@ This makes the node safe to use in a **shared knowledge base** scenario: multipl
 
 ## Weaviate Schema
 
-Each collection is stored as two Weaviate classes. The class name is derived from the collection name by stripping non-alphanumeric characters and uppercasing the first letter (e.g. `rag_collection` → `Ragcollection`).
+Each collection is stored as two Weaviate classes. The class name is derived from the collection name by stripping non-alphanumeric characters and uppercasing the first letter (e.g. `rag_collection` → `Ragcollection`; `Rag` goes before a leading digit, as in `2024 notes` → `Rag2024notes`). So names that differ only in punctuation (`my-docs`, `my_docs`) are one collection.
 
 **Chunks class** (`{ClassName}`, e.g. `Ragcollection`):
 

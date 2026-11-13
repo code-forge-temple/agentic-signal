@@ -1,4 +1,4 @@
-import {CODE_BLOCK_LANG_BY_EXTENSION, IMAGE_FILE_EXTENSIONS} from "./constants.ts";
+import {CODE_BLOCK_LANG_BY_EXTENSION, DEFAULT_RAG_COLLECTION, IMAGE_FILE_EXTENSIONS} from "./constants.ts";
 
 
 export const EXTRACTION_TYPE = {
@@ -112,3 +112,24 @@ export const markdownFilePrefix = (fileName: string): string => `### File name "
 
 /** An error's message, or the thrown value as text when it isn't an Error. */
 export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+/**
+ * The Weaviate class a RAG collection's chunks are kept in: its name (rag_collection when none is typed) with only
+ * letters and digits kept and the first one uppercase, as Weaviate requires (Rag before a leading digit, since a class
+ * starts with a letter); RagCollection when nothing is left. So "my_docs", "my-docs" and "my docs" are all the class
+ * Mydocs: one collection. Its meta class is that name with "Meta" after it. The server writes by this rule and the RAG
+ * node reads by it, so they always mean the same collection.
+ */
+export const ragClassName = (collectionName: string): string => {
+    const safe = (collectionName || DEFAULT_RAG_COLLECTION).replace(/[^a-zA-Z0-9]/g, "");
+
+    if (!safe) return "RagCollection";
+
+    return /^[0-9]/.test(safe) ? `Rag${safe}` : safe.charAt(0).toUpperCase() + safe.slice(1);
+};
+
+/**
+ * Whether a Weaviate class holds a RAG collection's file list (its meta class: the collection's class with "Meta" after
+ * it), not chunks. "Meta" alone is no collection's meta class: it's the class of a collection named "meta".
+ */
+export const isRagMetaClass = (className: string): boolean => className !== "Meta" && className.endsWith("Meta");

@@ -21,7 +21,7 @@ export const DelayedSnapshotNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Del
     assertion: assertIsDelayedSnapshotNodeData,
     metadata: {
         // eslint-disable-next-line max-len
-        description: "Captures whatever it receives on input and persists it (payload and toolsPayload) into its own saved data, surviving workflow save/reload. Forwards downstream immediately by default, or after a configured delay (seconds, using reliable server-side scheduling — survives page reloads) when a delay is set. Manual Run always replays the last persisted snapshot immediately, bypassing any pending delay.",
+        description: "Captures whatever it receives on input and persists it (payload and toolsPayload) into its own saved data, surviving workflow save/reload. Forwards downstream immediately by default, or after a configured delay (seconds, using server-side scheduling) when a delay is set; a delay still waiting isn't saved with the workflow. Manual Run always replays the last persisted snapshot immediately, bypassing any pending delay.",
         ports: {
             [NODE_PORT_IDS.FLOW]: {
                 inputSchema: NodeEnvelopeSchema.describe("Incoming data to persist and forward."),
@@ -34,6 +34,7 @@ export const DelayedSnapshotNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, Del
         title: TITLE,
         delaySeconds: 0,
         isDelayPending: false,
-        toSanitize: ["input"],
+        // isDelayPending too: the delay's timer lives in the server's memory, so a saved workflow has none to wait for.
+        toSanitize: ["input", "isDelayPending"],
     }
 };

@@ -19,6 +19,7 @@ import {PayloadView} from "../../PayloadView/PayloadView";
 import {CalculatorTextField} from "../../CalculatorTextField/CalculatorTextField";
 import {graphQLService} from "../TimerNode/services/timerService";
 import {TIMER_NODE_MODES} from "@shared/types.gen";
+import {errorMessage} from "@shared/utils";
 
 
 export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
@@ -59,13 +60,22 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
             return;
         }
 
+        // The timer first, then pending: pending subscribes to the timer, and the server turns away a subscription to a
+        // timer it hasn't started.
+        try {
+            await graphQLService.startTimer(id, {
+                mode: TIMER_NODE_MODES.INTERVAL,
+                interval: delaySeconds,
+                immediate: false,
+                runOnce: true,
+            });
+        } catch (startError) {
+            setError(`The delay couldn't start, so nothing was forwarded: ${errorMessage(startError)}`);
+
+            return;
+        }
+
         onConfigChange(id, {isDelayPending: true});
-        await graphQLService.startTimer(id, {
-            mode: TIMER_NODE_MODES.INTERVAL,
-            interval: delaySeconds,
-            immediate: false,
-            runOnce: true,
-        });
     }, [id, delaySeconds, onConfigChange, onResultUpdate]);
 
     useEffect(() => {
@@ -77,9 +87,11 @@ export function DelayedSnapshotNode ({id, data}: NodeProps<AppNode>) {
                 onConfigChange(id, {isDelayPending: false});
                 emitSnapshot();
             },
-            () => {
+            // No timer to wait on (the backend restarted, or a workflow saved while waiting was loaded): the delay is
+            // gone. Forwarding now would skip it and run the nodes after this one unasked, so it says so instead.
+            (subscriptionError: unknown) => {
                 onConfigChange(id, {isDelayPending: false});
-                emitSnapshot();
+                setError(`The delay's timer is gone, so nothing was forwarded; run the node to wait again (${errorMessage(subscriptionError)}).`);
             }
         );
 

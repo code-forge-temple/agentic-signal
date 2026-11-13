@@ -1,5 +1,15 @@
 import {createClient, Client, SubscribePayload} from "graphql-ws";
-import {graphqlBaseUrl} from "../utils/utils";
+import {graphqlBaseUrl, isRecord} from "../utils/utils";
+
+/**
+ * A subscription's failure as an Error with a readable message: graphql-ws hands the server's errors over as an array
+ * of {message}, which a node showing `error.message` would print as "[object Object]". Anything else, as it is.
+ */
+export function subscriptionError (err: unknown): unknown {
+    if (!Array.isArray(err)) return err;
+
+    return new Error(err.map(item => (isRecord(item) && typeof item.message === "string" ? item.message : String(item))).join("; "));
+}
 
 export class GraphQLSocketManager {
     private static instance: GraphQLSocketManager | null = null;
@@ -51,10 +61,10 @@ export class GraphQLSocketManager {
                 }
 
                 if (result.errors) {
-                    error?.(result.errors);
+                    error?.(subscriptionError(result.errors));
                 }
             },
-            error: (err) => error?.(err),
+            error: (err) => error?.(subscriptionError(err)),
             complete: () => complete?.(),
         });
 

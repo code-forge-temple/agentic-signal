@@ -52,6 +52,10 @@ webSocketManager.registerSubscriptionType("ticks", (nodeId, handler, variables) 
         subscriber.unsubscribed = true;
     };
 });
+// A subscription that can't start, as a timer's can't before the timer does.
+webSocketManager.registerSubscriptionType("stopped", (nodeId) => {
+    throw new Error(`Timer ${nodeId} not found. Start the timer before subscribing.`);
+});
 webSocketManager.registerSubscriptionType("news", (nodeId, handler, variables) => {
     const subscriber = {nodeId, handler, variables, unsubscribed: false};
 
@@ -107,7 +111,6 @@ Deno.test("WebSocket: passes a subscription's events on while open, and ends it 
     const subscriber = subscribers[before];
 
     assertEquals([subscriber.nodeId, subscriber.variables], ["n1", {nodeId: "n1"}]);
-    assertEquals(webSocketManager.getActiveSubscriptions().get("ticks:n1")?.has(socket as unknown as WebSocket), true);
 
     subscriber.handler({at: 1});
     assertEquals(socket.sent, [{id: "7", type: "next", payload: {data: {ticks: {at: 1}}}}]);
@@ -117,7 +120,6 @@ Deno.test("WebSocket: passes a subscription's events on while open, and ends it 
 
     assertEquals(subscriber.unsubscribed, true);
     assertEquals(socket.sent.length, 1);
-    assertEquals(webSocketManager.getActiveSubscriptions().has("ticks:n1"), false);
 });
 
 Deno.test("WebSocket: reads the node from the query when there's no variable; an app-wide one needs none", async () => {
@@ -128,7 +130,6 @@ Deno.test("WebSocket: reads the node from the query when there's no variable; an
     await subscribe(socket, "9", "subscription { news(topic: \"x\") { text } }");
 
     assertEquals(subscribers.slice(before).map(s => s.nodeId), ["n2", ""]);
-    assertEquals(webSocketManager.getActiveSubscriptions().has("news:"), true);
     socket.close();
 });
 
@@ -160,5 +161,18 @@ Deno.test("WebSocket: a message that isn't JSON is logged, not thrown", async ()
     }
 
     assertEquals(errors.length, 1);
+    socket.close();
+});
+
+Deno.test("WebSocket: a subscription that can't start tells the client why, under its id", async () => {
+    const socket = connect();
+
+    await subscribe(socket, "11", "subscription { stopped(nodeId: \"t9\") { at } }");
+    await socket.receive({type: "subscribe", id: "12", payload: {}});
+
+    assertEquals(socket.sent, [
+        {id: "11", type: "error", payload: [{message: "Timer t9 not found. Start the timer before subscribing."}]},
+        {id: "12", type: "error", payload: [{message: "Invalid subscription query"}]},
+    ]);
     socket.close();
 });

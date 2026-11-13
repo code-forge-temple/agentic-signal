@@ -15,7 +15,7 @@ It forwards downstream immediately by default, or after a configured delay using
 1. **Capture**: On new input, the node persists the received `payload`/`toolsPayload` into its own config, replacing any previous snapshot.
 2. **Forward**: If no delay is set (or it's `0`), the snapshot forwards immediately.
 3. **Delay** (optional): If a delay is set, forwarding is scheduled server-side instead of firing right away.
-4. **Retained across save/load**: The snapshot and delay state live in the node's own saved config, not in its live `input` — save the workflow to a file and load that same file back in later, and the node picks up exactly where it left off, including a still-pending delay (as long as the server process wasn't restarted). A plain browser refresh does **not** do this on its own — reloading the page clears the whole open canvas; you need to explicitly load the saved workflow file back in.
+4. **Retained across save/load**: The snapshot lives in the node's own saved config, not in its live `input` — save the workflow to a file and load that same file back in later, and the node still holds it, ready to forward with **Run**. A delay still waiting is **not** saved: its timer lives in the server's memory, so after loading, run the node to wait again. If the timer is gone while the node waits (the backend restarted), the node shows an error and forwards nothing, rather than skipping the delay.
 5. **Manual trigger**: The **Run** button re-runs the same forward-or-delay logic using the last persisted snapshot — forwarding immediately if no delay is set, or starting the same countdown otherwise. It mirrors the [Timer Node](/docs/nodes/input/timer)'s own Run button, which starts its schedule rather than skipping it.
 
 ## Configuration
@@ -57,7 +57,7 @@ This differs from a [Timer Node](/docs/nodes/input/timer): a Timer Node fires on
 1. **Pace a circular/self-looping workflow**: wire a downstream node's output back into an earlier node's input to form a repeating cycle, and insert this node in the loop to control how long each cycle waits before the next one starts — from seconds up to hours or days.
 2. **Debounce/throttle a noisy upstream source**: buffer rapid updates and only forward the latest one after a quiet period.
 3. **Stage data for a scheduled step**: capture data as soon as it's available, but delay acting on it until a later point in a longer-running workflow.
-4. **Retain data across a save/load cycle**: unlike a node's live `input`, a captured snapshot (and any pending delay) is saved as part of the workflow file — load that file back in later and the node picks up right where it left off, without needing the upstream chain to run again.
+4. **Retain data across a save/load cycle**: unlike a node's live `input`, a captured snapshot is saved as part of the workflow file — load that file back in later and forward it with **Run**, without needing the upstream chain to run again.
 
 ## Best Practices
 

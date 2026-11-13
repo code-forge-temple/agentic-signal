@@ -160,6 +160,41 @@ Deno.test("answers 404 for anything but GET /workflows and POST /workflows/<comm
     assertEquals((await gateway.handle(new Request("http://localhost:8001/workflows/echo", {method: "OPTIONS"}))).status, 204);
 });
 
+Deno.test("hands nothing to the app when the caller hung up before the call got to it", async () => {
+    const {gateway, events} = await connectedGateway();
+    const hangUp = new AbortController();
+
+    hangUp.abort();
+
+    const response = await gateway.handle(call("echo", {signal: hangUp.signal}));
+
+    assertEquals(response.status, 499);
+    assertEquals(events, []);
+
+    // Asked as a job too: no job is started for a caller who can't check on it.
+    const job = new Request("http://localhost:8001/workflows/echo", {
+        method: "POST",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}`, "Prefer": "respond-async"},
+        body: "\"hi\"",
+        signal: hangUp.signal,
+    });
+
+    assertEquals((await gateway.handle(job)).status, 499);
+    assertEquals(events, []);
+});
+
+Deno.test("answers 499 to a caller who drops while sending the body, and hands the app nothing", async () => {
+    const {gateway, events} = await connectedGateway();
+    const dropped = new Request("http://localhost:8001/workflows/echo", {
+        method: "POST",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}`},
+        body: new ReadableStream({start: controller => controller.error(new Error("connection reset"))}),
+    });
+
+    assertEquals((await gateway.handle(dropped)).status, 499);
+    assertEquals(events, []);
+});
+
 Deno.test("tells the app to cancel when the caller hangs up", async () => {
     const {gateway, events} = await connectedGateway();
     const hangUp = new AbortController();

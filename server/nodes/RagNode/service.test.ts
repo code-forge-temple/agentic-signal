@@ -105,6 +105,68 @@ Deno.test("RAG: files without a query are stored, and a query with nothing store
     });
 });
 
+Deno.test("RAG: a query alone, on a name nothing was ingested under, creates nothing", async () => {
+    await withFakeServices(async (services) => {
+        await run("anything?", {collectionName: "brand new"});
+
+        assertEquals([...services.classes], []);
+        assertEquals(routesSince(services, 0), ["GET /v1/schema/Brandnew"]);
+    });
+});
+
+Deno.test("RAG: a query alone that Weaviate turns away is the run's error, not an empty collection", async () => {
+    await withFakeServices(async (services) => {
+        services.failNext("GET /v1/schema/Docs", 401, {error: "bad key"});
+
+        const result = await run("anything?");
+
+        assertEquals([result.success, result.error], [false, "Weaviate couldn't say whether \"Docs\" exists: 401 {\"error\":\"bad key\"}"]);
+    });
+});
+
+Deno.test("RAG: turns down a name whose class would end in Meta, where collections keep their file lists", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}), {collectionName: "project"});
+
+        const result = await run(withFiles("q", {"b.txt": "Beta."}), {collectionName: "projectMeta"});
+
+        assertEquals(result.success, false);
+        assertEquals(result.error, "A collection's name can't end in \"Meta\" (\"projectMeta\" would be the Weaviate class ProjectMeta, where file lists are kept). Rename it.");
+        // ProjectMeta still holds only "project"'s file list.
+        assertEquals(services.objects.filter(object => object.class === "ProjectMeta").map(object => object.properties.originalName), ["project"]);
+    });
+});
+
+Deno.test("RAG: a query with another model than the collection's says which model to use", async () => {
+    await withFakeServices(async () => {
+        await run(withFiles("q", {"a.txt": "Alpha."}));
+
+        const result = await run("what is alpha?", {embeddingModel: "mxbai"});
+
+        assertEquals(result, {success: false, context: null, error: "Collection \"docs\" was embedded with nomic, not mxbai: query it with nomic."});
+    });
+});
+
+Deno.test("RAG: a meta object that can't be read fails the run, not taken for none (a second one would be written)", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}));
+        services.failNext("GET /v1/objects", 503, {error: "busy"});
+
+        const result = await run(withFiles("q", {"b.txt": "Beta."}));
+
+        assertEquals(result.success, false);
+        assertEquals(services.objects.filter(object => object.class === "DocsMeta").length, 1);
+    });
+});
+
+Deno.test("RAG: a name starting with a digit gets a class Weaviate takes (it starts with a letter)", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}), {collectionName: "2024 notes"});
+
+        assertEquals([...services.classes], ["Rag2024notesMeta", "Rag2024notes"]);
+    });
+});
+
 Deno.test("RAG: a failing Weaviate call is the run's error", async () => {
     await withFakeServices(async (services) => {
         services.failNext("POST /v1/schema", 500, {error: "disk full"});

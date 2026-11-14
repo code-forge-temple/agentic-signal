@@ -33,11 +33,12 @@ export type EnhancedNodeData = {
     onFeedbackSend: (id: string, feedback: string) => void;
 };
 
+const ENHANCED_CALLBACKS = ['onConfigChange', 'onResultUpdate', 'onFeedbackSend'] as const;
+
 export function assertIsEnhancedNodeData (data: unknown): asserts data is EnhancedNodeData {
-    if (typeof data !== 'object' || data === null ||
-        !('onConfigChange' in data) || typeof (data as any).onConfigChange !== 'function' ||
-        !('onResultUpdate' in data) || typeof (data as any).onResultUpdate !== 'function' ||
-        !('onFeedbackSend' in data) || typeof (data as any).onFeedbackSend !== 'function') {
+    const isObject = typeof data === 'object' && data !== null;
+
+    if (!isObject || !ENHANCED_CALLBACKS.every(key => typeof (data as Record<string, unknown>)[key] === 'function')) {
         throw new Error('Node data is not EnhancedNodeData');
     }
 }

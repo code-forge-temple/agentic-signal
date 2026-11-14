@@ -6,6 +6,7 @@
 
 import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, TRIPLE_BACKTICK} from "@shared/constants";
 import {arrayBufferToBase64,
+    fileExtension,
     extractFromMarkdown,
     EXTRACTION_TYPE,
     fileExtensionToCodeBlockLang,
@@ -13,7 +14,7 @@ import {arrayBufferToBase64,
     markdownImageFilePrefix, errorMessage} from "@shared/utils";
 import {AttachedFile} from "@shared/types.gen";
 import {NodeEnvelope} from "../../../types/workflow";
-import {DATA_SOURCE_TYPES, DataSourceNodeData, FileData} from "./types/workflow";
+import {DATA_SOURCE_TYPES, DataSourceNodeData, FileData, MarkdownAndFilesDataSource} from "./types/workflow";
 
 
 const IMAGE_MIME_SUBTYPES: Partial<Record<string, string>> = {jpg: "jpeg", svg: "svg+xml"};
@@ -50,8 +51,6 @@ export const fileBase64 = (file: FileData, ext: string): string | undefined => {
     return arrayBufferToBase64(new TextEncoder().encode(fileText(file.content) ?? file.content).buffer);
 };
 
-const extensionOf = (name: string): string => name.split('.').pop()?.toLowerCase() || "";
-
 const toArray = (x: unknown): unknown[] => x === undefined ? [] : (Array.isArray(x) ? x : [x]);
 
 /** Throws on text that isn't base64. */
@@ -65,7 +64,7 @@ const base64ToBytes = (base64: string): Uint8Array => Uint8Array.from(atob(base6
 export const fileDataFromBytes = (
     {name, base64, mimeType, isToolsPayload}: {name: string; base64: string; mimeType?: string; isToolsPayload?: boolean}
 ): FileData => {
-    const ext = extensionOf(name);
+    const ext = fileExtension(name);
     const type = mimeType || mimeTypeFromExtension(ext);
     const isBinary = BINARY_FILE_EXTENSIONS.has(ext);
     // Decoded even when only the bytes are kept, so bad base64 is caught here rather than by a tool later.
@@ -85,70 +84,82 @@ export const fileDataFromBytes = (
  * parse or a tools-only file has no data to send.
  */
 export function buildDataSourceEnvelope (dataSource: DataSourceNodeData["dataSource"], upstream?: NodeEnvelope): NodeEnvelope {
+    return dataSource.type === DATA_SOURCE_TYPES.JSON ? jsonEnvelope(dataSource.value, upstream) : markdownEnvelope(dataSource.value, upstream);
+}
+
+/** The envelope, with its tools files when there are any. */
+const envelopeWith = (payload: unknown, toolsPayload: unknown[]): NodeEnvelope => ({payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})});
+
+function jsonEnvelope (value: string | undefined, upstream?: NodeEnvelope): NodeEnvelope {
     const up = upstream?.payload;
-    const upTools = upstream?.toolsPayload;
-    const upIsString = typeof up === 'string';
+    let own: unknown;
 
-    if (dataSource.type === DATA_SOURCE_TYPES.JSON) {
-        let own: unknown;
-
-        try {
-            own = JSON.parse(dataSource.value || "{}");
-        } catch (e) {
-            throw new Error("Invalid JSON data: " + (errorMessage(e)));
-        }
-
-        // Upstream and own are kept as distinct array elements rather than merged —
-        // an object-spread merge would silently drop upstream keys on collision.
-        // JSON mode never contributes its own new tools attachments.
-        const payload = up === undefined
-            ? own
-            : upIsString
-                ? [own, ...toArray(up)]
-                : [...toArray(up), own];
-        const toolsPayload = toArray(upTools);
-
-        return {payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})};
+    try {
+        own = JSON.parse(value || "{}");
+    } catch (e) {
+        throw new Error("Invalid JSON data: " + (errorMessage(e)));
     }
 
-    let own = dataSource.value?.text || "";
+    // Upstream and own are kept as distinct array elements rather than merged —
+    // an object-spread merge would silently drop upstream keys on collision.
+    // JSON mode never contributes its own new tools attachments.
+    const payload = up === undefined
+        ? own
+        : typeof up === 'string'
+            ? [own, ...toArray(up)]
+            : [...toArray(up), own];
+
+    return envelopeWith(payload, toArray(upstream?.toolsPayload));
+}
+
+/**
+ * The attached files: images and text files added to the text (images numbered), tools-only files as attachments.
+ * Throws when a tools-only file was saved without its data.
+ */
+function markdownFiles (files: FileData[]): {text: string; tools: AttachedFile[]} {
+    let text = "";
     let imageCounter = 1;
-    const ownTools: AttachedFile[] = [];
+    const tools: AttachedFile[] = [];
     const filesWithoutData: string[] = [];
 
-    for (const file of dataSource.value?.files || []) {
-        const ext = extensionOf(file.name);
-        // isToolsPayload=undefined means infer from extension (backward compat with saved workflows)
-        const isToolsPayload = file.isToolsPayload ?? BINARY_FILE_EXTENSIONS.has(ext);
+    for (const file of files) {
+        const ext = fileExtension(file.name);
 
-        if (isToolsPayload) {
+        // isToolsPayload=undefined means infer from extension (backward compat with saved workflows)
+        if (file.isToolsPayload ?? BINARY_FILE_EXTENSIONS.has(ext)) {
             const base64 = fileBase64(file, ext);
 
-            if (base64 === undefined) {
-                filesWithoutData.push(file.name);
-            } else {
-                ownTools.push({name: file.name, base64, mimeType: file.mimeType || mimeTypeFromExtension(ext)});
-            }
-        } else if (IMAGE_FILE_EXTENSIONS.has(ext)) {
-            own += `\n\n${markdownImageFilePrefix(imageCounter++, file.name)}${file.content}\n\n`;
-        } else {
-            own += `\n\n${markdownFilePrefix(file.name)}${file.content}\n\n`;
+            if (base64 === undefined) filesWithoutData.push(file.name);
+            else tools.push({name: file.name, base64, mimeType: file.mimeType || mimeTypeFromExtension(ext)});
+
+            continue;
         }
+
+        const prefix = IMAGE_FILE_EXTENSIONS.has(ext) ? markdownImageFilePrefix(imageCounter++, file.name) : markdownFilePrefix(file.name);
+
+        text += `\n\n${prefix}${file.content}\n\n`;
     }
 
     if (filesWithoutData.length > 0) {
         throw new Error(`No file data saved for ${filesWithoutData.map(name => `"${name}"`).join(", ")} — remove the file and attach it again.`);
     }
 
+    return {text, tools};
+}
+
+function markdownEnvelope (value: MarkdownAndFilesDataSource["value"] | undefined, upstream?: NodeEnvelope): NodeEnvelope {
+    const up = upstream?.payload;
+    const files = markdownFiles(value?.files || []);
+    const own = (value?.text || "") + files.text;
+
     // Both naturally textual — join into one document rather than keeping separate
     // array elements. Otherwise, upstream is kept distinct (spread if already an
     // array, wrapped as one element otherwise) with own appended last.
     const payload = up === undefined
         ? own
-        : upIsString
+        : typeof up === 'string'
             ? up + own
             : [...toArray(up), own];
-    const toolsPayload = [...toArray(upTools), ...ownTools];
 
-    return {payload, ...(toolsPayload.length > 0 ? {toolsPayload} : {})};
+    return envelopeWith(payload, [...toArray(upstream?.toolsPayload), ...files.tools]);
 }

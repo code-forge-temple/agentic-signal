@@ -43,25 +43,43 @@ function getNodeType (folder: string): string | null {
         const reExportMatch = /export\s*\{\s*(\w+)\s+as\s+NODE_TYPE\s*\}/.exec(content);
 
         if (reExportMatch) {
-            const constName = reExportMatch[1];
-            const sharedContent = fs.readFileSync(SHARED_TYPES_GEN, "utf8");
-            const reExportRegex = /export \* from ['"]([^'"]+)['"]/g;
-            let entry: RegExpExecArray | null;
+            const value = sharedConstantValue(reExportMatch[1]);
 
-            while ((entry = reExportRegex.exec(sharedContent)) !== null) {
-                const absPath = path.resolve(path.dirname(SHARED_TYPES_GEN), `${entry[1]}.ts`);
-
-                if (!fs.existsSync(absPath)) continue;
-
-                const fileContent = fs.readFileSync(absPath, "utf8");
-                const valueMatch = new RegExp(`${constName}\\s*=\\s*["'\`]([^"'\`]+)["'\`]`).exec(fileContent);
-
-                if (valueMatch) return valueMatch[1];
-            }
+            if (value) return value;
         }
     }
 
     return null;
+}
+
+/** A string constant's value, looked up in the server files that @shared/types.gen re-exports; null when none has it. */
+function sharedConstantValue (constName: string): string | null {
+    // The whole name only: SLACK_NODE_TYPE isn't PRO_SLACK_NODE_TYPE.
+    const valueRegex = new RegExp(`\\b${constName}\\s*=\\s*["'\`]([^"'\`]+)["'\`]`);
+
+    for (const fileContent of sharedSources()) {
+        const valueMatch = valueRegex.exec(fileContent);
+
+        if (valueMatch) return valueMatch[1];
+    }
+
+    return null;
+}
+
+let sharedSourcesRead: string[] | null = null;
+
+/** The server files @shared/types.gen re-exports, read once for all the nodes. */
+function sharedSources (): string[] {
+    if (sharedSourcesRead) return sharedSourcesRead;
+
+    const sharedContent = fs.readFileSync(SHARED_TYPES_GEN, "utf8");
+    const files = [...sharedContent.matchAll(/export \* from ['"]([^'"]+)['"]/g)]
+        .map(entry => path.resolve(path.dirname(SHARED_TYPES_GEN), `${entry[1]}.ts`))
+        .filter(file => fs.existsSync(file));
+
+    sharedSourcesRead = files.map(file => fs.readFileSync(file, "utf8"));
+
+    return sharedSourcesRead;
 }
 
 export function generateDocsSchemas () {

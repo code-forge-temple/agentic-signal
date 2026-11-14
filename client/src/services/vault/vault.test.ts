@@ -64,5 +64,14 @@ describe("vault", () => {
         expect(parseVaultFile("not json")).toBeNull();
         expect(parseVaultFile(JSON.stringify({...file, version: 2}))).toBeNull();
         expect(parseVaultFile(JSON.stringify({...file, credentialKeys: [1]}))).toBeNull();
+
+        // Each field of the wrong type, or missing, makes it no vault.
+        for (const [key, wrong] of [["salt", 1], ["iterations", "1"], ["iv", null], ["ciphertext", []], ["credentialKeys", "k"]] as const) {
+            expect(parseVaultFile(JSON.stringify({...file, [key]: wrong})), key).toBeNull();
+            expect(parseVaultFile(JSON.stringify({...file, [key]: undefined})), key).toBeNull();
+        }
+
+        expect(parseVaultFile(JSON.stringify([file]))).toBeNull();
+        expect(parseVaultFile(JSON.stringify({...file, extra: 1}))).toEqual(file);
     });
 });

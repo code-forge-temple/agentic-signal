@@ -39,27 +39,20 @@ function parseCsvLine (line: string): string[] {
     for (let i = 0; i < line.length; i++) {
         const char = line[i];
 
-        if (inQuotes) {
-            if (char === '"') {
-                if (line[i + 1] === '"') {
-                    current += '"';
-                    i += 1;
-                } else {
-                    inQuotes = false;
-                }
-            } else {
-                current += char;
-            }
-
+        // Inside quotes, "" is one quote.
+        if (inQuotes && char === '"' && line[i + 1] === '"') {
+            current += '"';
+            i += 1;
             continue;
         }
 
+        // A quote opens a quoted part, or closes it.
         if (char === '"') {
-            inQuotes = true;
+            inQuotes = !inQuotes;
             continue;
         }
 
-        if (char === ',') {
+        if (char === ',' && !inQuotes) {
             values.push(current.trim());
             current = '';
             continue;

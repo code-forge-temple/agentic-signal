@@ -68,7 +68,11 @@ const NodeSchema = z.object({
 const EdgeSchema = z.object({
     source: z.string().min(1, '"source" must be a non-empty string'),
     target: z.string().min(1, '"target" must be a non-empty string'),
-}).passthrough();
+}).passthrough().refine(edge => edge.source !== edge.target, {
+    // As the editor refuses to draw one: whatever the port, a node fed its own output.
+    message: "an edge can't connect a node to itself",
+    path: ['target'],
+});
 
 const WorkflowSchema = z.object({
     nodes: z.array(NodeSchema),

@@ -31,15 +31,18 @@ async function assertRejects (fn: () => Promise<unknown>, message: string): Prom
 
 const tick = (ms = 0) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
+/** A task that logs entering, holds for 10 ms, and logs leaving. */
+const loggedTask = (events: string[], name: string) => async () => {
+    events.push(`enter ${name}`);
+
+    await tick(10);
+
+    events.push(`exit ${name}`);
+};
+
 Deno.test("withKeyedLock - two tasks on one key never overlap", async () => {
     const events: string[] = [];
-    const task = (name: string) => async () => {
-        events.push(`enter ${name}`);
-
-        await tick(10);
-
-        events.push(`exit ${name}`);
-    };
+    const task = (name: string) => loggedTask(events, name);
 
     await Promise.all([
         withKeyedLock("c", task("a")),
@@ -51,13 +54,7 @@ Deno.test("withKeyedLock - two tasks on one key never overlap", async () => {
 
 Deno.test("withKeyedLock - different keys run concurrently", async () => {
     const events: string[] = [];
-    const task = (name: string) => async () => {
-        events.push(`enter ${name}`);
-
-        await tick(10);
-
-        events.push(`exit ${name}`);
-    };
+    const task = (name: string) => loggedTask(events, name);
 
     await Promise.all([
         withKeyedLock("one", task("a")),

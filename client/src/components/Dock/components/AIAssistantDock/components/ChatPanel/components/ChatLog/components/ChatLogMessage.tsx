@@ -8,15 +8,13 @@ import {memo, ReactNode, useCallback} from 'react';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import {Import} from 'iconoir-react';
-import {MarkdownRenderer} from '../../../../../../../../MarkdownRenderer';
 import {sanitizeJsonInput} from '../../../../../../../../nodes/ToolNode/tools/utils/sanitize';
 import {ROLE} from '../../../../../../../../../constants';
 import {ChatMessage} from '../../../../../constants';
 import {parseCommandSuggestion} from '../../../../../utils/chatCommands';
 import {findWorkflowJson} from '../../../../../utils/workflowJson';
-import {ThinkingAccordion} from './ThinkingAccordion';
 import {MessageActions} from './MessageActions';
-import {AiLayerChip} from './AiLayerChip';
+import {MessageBody} from './MessageBody';
 
 
 type ChatLogMessageProps = {
@@ -130,28 +128,13 @@ export const ChatLogMessage = memo(({
                 onResend={isAssistant ? undefined : handleResend}
                 resendDisabled={resendDisabled}
             />
-            <div className={`chat-log-message ${message.role}`}>
-                {message.commandResults && (
-                    <ThinkingAccordion thinking={message.commandResults.content} isStreaming={false} label={message.commandResults.label} defaultOpen={false} />
-                )}
-                {message.thinking && <ThinkingAccordion thinking={message.thinking} isStreaming={isStreaming && !message.content} />}
-                {isAssistant && message.runningCommand ? (
-                    // Drawn here, not from its Markdown text, so the layer can be a chip; the
-                    // spinner is the one a reply shows while it loads.
-                    <p className="chat-log-running">
-                        Running <b>/{message.runningCommand}</b> on the <AiLayerChip />
-                        <CircularProgress size={14} className="chat-log-running-spinner" />
-                    </p>
-                ) : message.content && (
-                    <MarkdownRenderer
-                        content={message.content}
-                        disableLoadingDelay
-                        codeBlockSuffix={isAssistant ? renderImportButton : undefined}
-                        codeBlockRenderer={isAssistant ? renderSuggestion : undefined}
-                    />
-                )}
-                {isStreaming && !message.content && !message.thinking && <CircularProgress size={14} />}
-            </div>
+            <MessageBody
+                message={message}
+                isAssistant={isAssistant}
+                isStreaming={isStreaming}
+                renderImportButton={renderImportButton}
+                renderSuggestion={renderSuggestion}
+            />
         </div>
     );
 });

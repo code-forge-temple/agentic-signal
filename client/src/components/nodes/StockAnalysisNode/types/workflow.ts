@@ -18,18 +18,12 @@ export type StockDataPoint = {
     volume: number
 };
 
-export const isStockDataPointArray = (data: unknown): data is StockDataPoint[] => {
-    return Array.isArray(data) && data.every(item =>
-        typeof item === "object" &&
-        item !== null &&
-        "timestamp" in item &&
-        "open" in item &&
-        "high" in item &&
-        "low" in item &&
-        "close" in item &&
-        "volume" in item
-    );
-};
+const STOCK_DATA_POINT_KEYS = ["timestamp", "open", "high", "low", "close", "volume"] as const;
+
+const isStockDataPoint = (item: unknown): boolean =>
+    typeof item === "object" && item !== null && STOCK_DATA_POINT_KEYS.every(key => key in item);
+
+export const isStockDataPointArray = (data: unknown): data is StockDataPoint[] => Array.isArray(data) && data.every(isStockDataPoint);
 
 import {z} from 'zod';
 

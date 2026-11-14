@@ -109,9 +109,22 @@ export const isTauri = (): boolean => {
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === "object" && value !== null;
 
+/** The props, each one that has a default now always set, with the type the props declare (not the default's). */
+export type WithDefaults<P, D> = Omit<P, keyof D> & {[K in keyof D & keyof P]-?: Exclude<P[K], undefined>};
+
+/** The props with a default for each one missing or undefined, as destructuring defaults give. */
+export function withDefaults<P extends object, D extends Partial<P>> (props: P, defaults: D): WithDefaults<P, D> {
+    const given = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined));
+
+    return {...defaults, ...given} as WithDefaults<P, D>;
+}
+
+const hasValue = (value: unknown): boolean => value !== undefined && value !== null && value !== "";
+
+/** The source's value for the key, or the fallback when it has none (missing, undefined, null or empty). */
 export const getField = <T, >(source: any, key: string, fallback: T): T => {
-    if (source && typeof source === "object" && key in source && source[key] !== undefined && source[key] !== null && source[key] !== "") {
-        return source[key];
+    if (isRecord(source) && key in source && hasValue(source[key])) {
+        return source[key] as T;
     }
 
     return fallback;

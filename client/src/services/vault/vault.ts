@@ -46,20 +46,25 @@ const fromBase64 = (text: string): Uint8Array<ArrayBuffer> => Uint8Array.from(at
 
 const isStringRecord = (value: unknown): value is Record<string, string> => isRecord(value) && Object.values(value).every(item => typeof item === "string");
 
+const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string");
+
+/** A vault file's fields, each of its type; the version is checked apart. */
+function hasVaultFields (parsed: Record<string, unknown>): parsed is Record<string, unknown> & Omit<VaultFile, "version"> {
+    const strings = [parsed.salt, parsed.iv, parsed.ciphertext].every(value => typeof value === "string");
+
+    return strings && typeof parsed.iterations === "number" && isStringArray(parsed.credentialKeys);
+}
+
 /** The stored vault, or null when there is none or it isn't one. */
 export function parseVaultFile (raw: string | null | undefined): VaultFile | null {
     try {
         const parsed: unknown = JSON.parse(raw ?? "null");
 
-        if (!isRecord(parsed) || parsed.version !== 1) return null;
+        if (!isRecord(parsed) || parsed.version !== 1 || !hasVaultFields(parsed)) return null;
 
         const {salt, iterations, iv, ciphertext, credentialKeys} = parsed;
 
-        if (typeof salt !== "string" || typeof iterations !== "number" || typeof iv !== "string" || typeof ciphertext !== "string") return null;
-
-        if (!Array.isArray(credentialKeys) || !credentialKeys.every(key => typeof key === "string")) return null;
-
-        return {version: 1, salt, iterations, iv, ciphertext, credentialKeys: credentialKeys as string[]};
+        return {version: 1, salt, iterations, iv, ciphertext, credentialKeys};
     } catch {
         return null;
     }

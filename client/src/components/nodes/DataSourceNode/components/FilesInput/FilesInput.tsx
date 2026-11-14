@@ -4,23 +4,21 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {CodeEditor, getEditorMode} from '../../../../CodeEditor';
-import {MarkdownRenderer} from '../../../../MarkdownRenderer';
-import {csvToMarkdownTable} from '../../../../../utils';
+import {CodeEditor} from '../../../../CodeEditor';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import Switch from '@mui/material/Switch';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Tooltip from '@mui/material/Tooltip';
-import {Attachment, Lock, Xmark} from 'iconoir-react';
+import {Attachment} from 'iconoir-react';
 import './FilesInput.scss';
-import {useRef, useEffect, useState} from 'react';
+import {useRef, useState} from 'react';
 import {FileData, MarkdownAndFilesDataSource} from '../../types/workflow';
-import {extractFromMarkdown, EXTRACTION_TYPE} from '@shared/utils';
-import {BINARY_FILE_EXTENSIONS, IMAGE_FILE_EXTENSIONS, SUPPORTED_FILE_EXTENSIONS} from '@shared/constants';
+import {SUPPORTED_FILE_EXTENSIONS} from '@shared/constants';
 import {arrayBufferToBase64} from '@shared/utils';
-import {fileDataFromBytes, fileText} from '../../utils';
+import {fileDataFromBytes} from '../../utils';
+import {useDebouncedReport, useWheelScrollsTabs} from './hooks';
+import {tabAfterRemoval} from './utils';
+import {FilePreview, FileTabLabel} from './parts';
 
 
 type FilesInputProps = {
@@ -34,49 +32,9 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
     const tabsRef = useRef<HTMLDivElement>(null);
     const [attachedFiles, setAttachedFiles] = useState<FileData[]>(value?.files || []);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const debouncedTimeoutRef = useRef<number | null>(null);
 
-    useEffect(() => {
-        if (debouncedTimeoutRef.current) {
-            clearTimeout(debouncedTimeoutRef.current);
-        }
-
-        debouncedTimeoutRef.current = window.setTimeout(() => {
-            onChange({
-                text: userInput,
-                files: attachedFiles
-            });
-        }, 300);
-
-        return () => {
-            if (debouncedTimeoutRef.current) {
-                clearTimeout(debouncedTimeoutRef.current);
-            }
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userInput, attachedFiles]);
-
-    useEffect(() => {
-        const tabsNode = tabsRef.current;
-
-        if (!tabsNode) return;
-
-        const scroller = tabsNode.querySelector('.MuiTabs-scroller') as HTMLDivElement | null;
-
-        if (!scroller) return;
-
-        const onWheel = (e: WheelEvent) => {
-            if (e.deltaY !== 0) {
-                e.preventDefault();
-
-                scroller.scrollLeft += e.deltaY;
-            }
-        };
-
-        scroller.addEventListener('wheel', onWheel, {passive: false});
-
-        return () => scroller.removeEventListener('wheel', onWheel);
-    }, []);
+    useDebouncedReport(userInput, attachedFiles, onChange);
+    useWheelScrollsTabs(tabsRef);
 
     const toggleIsToolsPayload = (idx: number) => {
         setAttachedFiles(prev =>
@@ -85,18 +43,10 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
     };
 
     const removeFile = (idx: number) => {
-        setAttachedFiles(prev => {
-            const newFiles = prev.filter((_, i) => i !== idx);
-
-            if (tab > 0 && tab - 1 === idx) {
-                setTab(0);
-            } else if (tab > 0 && tab - 1 > idx) {
-                setTab(tab - 1);
-            }
-
-            return newFiles;
-        });
+        setTab(tabAfterRemoval(tab, idx));
+        setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
     };
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
 
@@ -136,51 +86,12 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                         scrollButtons="auto"
                     >
                         <Tab label="User Input" />
-                        {attachedFiles.map((file, idx) => {
-                            const fileExt = file.name.split('.').pop()?.toLowerCase() || "";
-                            const isBinaryExt = BINARY_FILE_EXTENSIONS.has(fileExt);
-                            const isToolsPayload = file.isToolsPayload ?? isBinaryExt;
-
-                            return (
-                                <Tab
-                                    key={file.name + idx}
-                                    label={
-                                        <Box sx={{display: 'flex', alignItems: 'center'}}>
-                                            <Tooltip
-                                                title={
-                                                    isToolsPayload
-                                                        ? "Passed to tools only (bypasses LLM context)"
-                                                        : "Included in LLM context"
-                                                }
-                                            >
-                                                {/* span wrapper required for Tooltip to work on a disabled Switch */}
-                                                <span style={{display: 'inline-flex'}}>
-                                                    <Switch
-                                                        size="small"
-                                                        checked={isToolsPayload}
-                                                        disabled={isBinaryExt}
-                                                        onChange={() => toggleIsToolsPayload(idx)}
-                                                        onClick={e => e.stopPropagation()}
-                                                        sx={{mr: 0.5}}
-                                                    />
-                                                </span>
-                                            </Tooltip>
-                                            {isBinaryExt && (
-                                                <Lock style={{fontSize: 12, marginRight: 4, opacity: 0.5}} />
-                                            )}
-                                            <span style={{marginRight: 4}}>{file.name}</span>
-                                            <Xmark
-                                                style={{fontSize: 16, cursor: 'pointer'}}
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    removeFile(idx);
-                                                }}
-                                            />
-                                        </Box>
-                                    }
-                                />
-                            );
-                        })}
+                        {attachedFiles.map((file, idx) => (
+                            <Tab
+                                key={file.name + idx}
+                                label={<FileTabLabel file={file} onToggleToolsPayload={() => toggleIsToolsPayload(idx)} onRemove={() => removeFile(idx)} />}
+                            />
+                        ))}
                     </Tabs>
                 </div>
                 <IconButton sx={{ml: 1}} size="small" onClick={()=> {
@@ -206,42 +117,9 @@ export const FilesInput = ({value, onChange}: FilesInputProps) => {
                     showLineNumbers={true}
                 />
             ) : (
-                attachedFiles[tab - 1] && (() => {
-                    const file = attachedFiles[tab - 1];
-                    const ext = file.name.split('.').pop()?.toLowerCase() || "";
-
-                    if (BINARY_FILE_EXTENSIONS.has(ext)) {
-                        return (
-                            <Box sx={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, color: 'text.secondary', fontStyle: 'italic'}}>
-                                No preview available
-                            </Box>
-                        );
-                    }
-
-                    if (IMAGE_FILE_EXTENSIONS.has(ext)) {
-                        return (
-                            <img
-                                src={extractFromMarkdown(file.content, EXTRACTION_TYPE.IMAGE)[0]}
-                                alt={file.name}
-                            />
-                        );
-                    }
-
-                    const text = fileText(file.content);
-                    const rendered = ext === "csv" ? csvToMarkdownTable(text ?? "") : ext === "md" ? text : null;
-
-                    if (rendered) return <MarkdownRenderer content={rendered} disableLoadingDelay />;
-
-                    return (
-                        <CodeEditor
-                            mode={getEditorMode(file.name)}
-                            value={text}
-                            showLineNumbers={true}
-                            readOnly={true}
-                        />
-                    );
-                })()
+                attachedFiles[tab - 1] && <FilePreview file={attachedFiles[tab - 1]} />
             )}
         </Box>
     );
+
 };

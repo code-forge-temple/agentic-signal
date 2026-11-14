@@ -29,6 +29,36 @@ export function getExpectedEdgeHandle (sourceType: string, targetType: string) {
 
 type ImportedEdge = { id?: unknown; source: string; target: string; sourceHandle?: unknown; targetHandle?: unknown };
 
+// Nodes that may only be connected to an LLM process node, checked in this order.
+const LLM_ONLY_NODES = [[RAG_NODE_TYPE, "a RAG node"], [TOOL_NODE_TYPE, "a tool node"]] as const;
+
+/** Throws when an edge connects a RAG or tool node to anything but an LLM process node. */
+function assertLlmOnlyEdge (sourceType: string, targetType: string): void {
+    const touchesLlm = sourceType === LLM_NODE_TYPE || targetType === LLM_NODE_TYPE;
+
+    for (const [type, name] of LLM_ONLY_NODES) {
+        if ((sourceType === type || targetType === type) && !touchesLlm) {
+            throw new Error(`Invalid workflow import: edges involving ${name} must connect only to an LLM process node.`);
+        }
+    }
+}
+
+/** Throws when the edge isn't on the port its two nodes call for; returns that port. */
+function assertEdgeHandle (edge: ImportedEdge, sourceType: string, targetType: string): string {
+    const expectedHandle = getExpectedEdgeHandle(sourceType, targetType);
+    const sourceHandle = edge.sourceHandle ?? NODE_PORT_IDS.FLOW;
+    const targetHandle = edge.targetHandle ?? NODE_PORT_IDS.FLOW;
+
+    if (sourceHandle !== expectedHandle || targetHandle !== expectedHandle) {
+        throw new Error(
+            `Invalid workflow import: edge "${edge.id ?? `${edge.source}-${edge.target}`}" ` +
+            `between "${sourceType}" and "${targetType}" must use handle "${expectedHandle}".`
+        );
+    }
+
+    return expectedHandle;
+}
+
 export function assertValidWorkflowEdges (nodes: { id: string; type: string }[], edges: ImportedEdge[]) {
     const nodeById = new Map(nodes.map(node => [node.id, node]));
     const flowTargetCounts = new Map<string, number>();
@@ -41,38 +71,12 @@ export function assertValidWorkflowEdges (nodes: { id: string; type: string }[],
             continue;
         }
 
-        if (sourceNode.type === RAG_NODE_TYPE || targetNode.type === RAG_NODE_TYPE) {
-            if (sourceNode.type !== LLM_NODE_TYPE && targetNode.type !== LLM_NODE_TYPE) {
-                throw new Error(
-                    `Invalid workflow import: edges involving a RAG node must connect only to an LLM process node.`
-                );
-            }
-        }
+        assertLlmOnlyEdge(sourceNode.type, targetNode.type);
 
-        if (sourceNode.type === TOOL_NODE_TYPE || targetNode.type === TOOL_NODE_TYPE) {
-            if (sourceNode.type !== LLM_NODE_TYPE && targetNode.type !== LLM_NODE_TYPE) {
-                throw new Error(
-                    `Invalid workflow import: edges involving a tool node must connect only to an LLM process node.`
-                );
-            }
-        }
+        const expectedHandle = assertEdgeHandle(edge, sourceNode.type, targetNode.type);
 
-        const expectedHandle = getExpectedEdgeHandle(sourceNode.type, targetNode.type);
-        const sourceHandle = edge.sourceHandle ?? NODE_PORT_IDS.FLOW;
-        const targetHandle = edge.targetHandle ?? NODE_PORT_IDS.FLOW;
-
-        if (sourceHandle !== expectedHandle || targetHandle !== expectedHandle) {
-            throw new Error(
-                `Invalid workflow import: edge "${edge.id ?? `${edge.source}-${edge.target}`}" ` +
-                `between "${sourceNode.type}" and "${targetNode.type}" must use handle "${expectedHandle}".`
-            );
-        }
-
-        if (expectedHandle !== NODE_PORT_IDS.FLOW) {
-            continue;
-        }
-
-        if (targetNode.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
+        // Only flow inputs are counted, and an aggregator takes any number.
+        if (expectedHandle !== NODE_PORT_IDS.FLOW || targetNode.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) {
             continue;
         }
 

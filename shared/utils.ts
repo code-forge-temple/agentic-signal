@@ -1,4 +1,4 @@
-import {CODE_BLOCK_LANG_BY_EXTENSION, DEFAULT_RAG_COLLECTION, IMAGE_FILE_EXTENSIONS} from "./constants.ts";
+import {CODE_BLOCK_LANG_BY_EXTENSION, DEFAULT_RAG_COLLECTION} from "./constants.ts";
 
 
 export const EXTRACTION_TYPE = {
@@ -83,28 +83,8 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
     return globalThis.btoa(binary);
 };
 
-export const isSupportedFileExtension = (extension: string | null): extension is string => {
-    return (
-        extension !== null &&
-        (IMAGE_FILE_EXTENSIONS.has(extension) || extension in CODE_BLOCK_LANG_BY_EXTENSION)
-    );
-};
-
-export const getFileExtension = (fileName: string | undefined, fileType?: string): string => {
-    const extension = fileName?.split('.').pop()?.toLowerCase();
-
-    if (extension && isSupportedFileExtension(extension)) {
-        return extension;
-    }
-
-    const fallback = fileType?.toLowerCase() ?? "";
-
-    if (fallback && isSupportedFileExtension(fallback)) {
-        return fallback;
-    }
-
-    return "txt";
-};
+/** A file name's own extension, lower-cased; empty when it has none ("Makefile", "pdf"). */
+export const fileExtension = (name: string): string => (name.includes('.') ? name.split('.').pop()!.toLowerCase() : "");
 
 export const markdownImageFilePrefix = (index: number, fileName: string): string => `### Image ${index} (file name ${fileName}) attached\n`;
 

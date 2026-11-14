@@ -4,22 +4,14 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Handle, IsValidConnection, Position, useReactFlow, useStore} from "@xyflow/react";
+import {Handle, Position, useReactFlow, useStore} from "@xyflow/react";
 import "./BaseNode.scss";
-import {AppWindow, Play, Settings, EyeSolid, PlaySolid} from "iconoir-react";
-import React, {useEffect} from "react";
-import {ThemeProvider} from "@mui/material/styles";
-import Tooltip from "@mui/material/Tooltip";
-import {darkTheme} from "../../../utils";
-import {NODE_TYPE as ASYNC_DATA_AGGREGATOR_NODE_TYPE} from "../AsyncDataAggregatorNode/constants";
-import {NODE_PORT_COLORS, NODE_PORT_IDS} from "../../../constants";
+import React from "react";
+import {NODE_PORT_IDS} from "../../../constants";
+import {inputConnects, outputConnects, portColor, PortSetting} from "./connections";
+import {NodeToolbar, OnClick} from "./NodeToolbar";
+import {useAnimatedOutgoingEdges} from "./useAnimatedOutgoingEdges";
 
-
-const ISVALID_CONNECTION_FUNCTION_NAME = "isValidConnection";
-
-type ClickCallback = () => void | Promise<void>;
-
-type OnClick = ClickCallback | {callback: ClickCallback; highlight: boolean};
 
 export type BaseNodeProps = {
     id: string;
@@ -29,8 +21,8 @@ export type BaseNodeProps = {
     running?: boolean;
     stoppable?: boolean;
     ports: {
-        input?: boolean | {isValidConnection?: IsValidConnection, color?: string};
-        output?: boolean | {isValidConnection?: IsValidConnection, color?: string};
+        input?: PortSetting;
+        output?: PortSetting;
     };
     settings?: OnClick;
     logs?: OnClick;
@@ -38,94 +30,13 @@ export type BaseNodeProps = {
     extraPorts?: React.ReactNode;
 };
 
-function buttonsPropsFactory (buttonProp: OnClick): React.SVGProps<SVGSVGElement>{
-    const callback = "callback" in buttonProp ? buttonProp.callback : buttonProp;
-
-    return {
-        width: 20,
-        height: 20,
-        onClick: () => { void callback(); },
-        className: "highlight" in buttonProp && buttonProp.highlight ? "highlight" : "",
-        pointerEvents: "all",
-    }
-}
 
 export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, stoppable, logs, output, extraPorts}: BaseNodeProps) => {
     const selected = useStore((state) => state.nodes.find((n) => n.id === id)?.selected ?? false);
-    const {setEdges, getEdges, getNode} = useReactFlow();
+    const {getEdges, getNode} = useReactFlow();
+    const graph = {getEdges, getNode};
 
-    useEffect(() => {
-        const updateSourceEdges = (running: boolean) => {
-            setEdges((edges) =>
-                edges.map((edge) => {
-                    if (edge.source === id) {
-                        return {
-                            ...edge,
-                            animated: running,
-                        };
-                    }
-
-                    return edge;
-                })
-            );
-        };
-
-        if (running !== undefined) {
-            updateSourceEdges(running);
-        }
-    }, [id, running, setEdges]);
-
-    const handleStyleInput = {
-        backgroundColor: typeof ports.input === "object" && "color" in ports.input
-            ? ports.input.color
-            : NODE_PORT_COLORS.FLOW
-    };
-
-    const handleStyleOutput = {
-        backgroundColor: typeof ports.output === "object" && "color" in ports.output
-            ? ports.output.color
-            : NODE_PORT_COLORS.FLOW
-    };
-
-    const inputIsValidConnection = (params: Parameters<IsValidConnection>[0]) => {
-        if (typeof ports.input === "object" && ISVALID_CONNECTION_FUNCTION_NAME in ports.input && ports.input.isValidConnection) {
-            return ports.input.isValidConnection(params);
-        }
-
-        if (params.sourceHandle !== NODE_PORT_IDS.FLOW || params.targetHandle !== NODE_PORT_IDS.FLOW) return false;
-
-        if (params.source === params.target) return false;
-
-        const node = getNode(id);
-
-        if (node && node.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) return true;
-
-        const edges = getEdges();
-        const incoming = edges.filter(e => e.target === id && e.targetHandle === NODE_PORT_IDS.FLOW);
-
-        return incoming.length < 1;
-    };
-
-    const outputIsValidConnection = (params: Parameters<IsValidConnection>[0]) => {
-        if (typeof ports.output === "object" && ISVALID_CONNECTION_FUNCTION_NAME in ports.output && ports.output.isValidConnection) {
-            return ports.output.isValidConnection(params);
-        }
-
-        if (params.sourceHandle !== NODE_PORT_IDS.FLOW || params.targetHandle !== NODE_PORT_IDS.FLOW) return false;
-
-        if (params.source === params.target) return false;
-
-        const targetNode = getNode(params.target);
-
-        if (targetNode && targetNode.type === ASYNC_DATA_AGGREGATOR_NODE_TYPE) return true;
-
-        if (!targetNode) return true;
-
-        const edges = getEdges();
-        const incoming = edges.filter(e => e.target === params.target && e.targetHandle === NODE_PORT_IDS.FLOW);
-
-        return incoming.length < 1;
-    };
+    useAnimatedOutgoingEdges(id, running);
 
     return (
         <div className="base-node">
@@ -135,37 +46,14 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
                 })}
                 <div className="node-title-label">{title}</div>
             </div>
-            <ThemeProvider theme={darkTheme}>
-                {settings ? (
-                    <Tooltip title={"settings"} placement="bottom" arrow enterDelay={1000}>
-                        <Settings {...buttonsPropsFactory(settings)} />
-                    </Tooltip>
-                ) : null}
-                {logs ? (
-                    <Tooltip title={"logs"} placement="bottom" arrow enterDelay={1000}>
-                        <AppWindow {...buttonsPropsFactory(logs)} />
-                    </Tooltip>
-                ) : null}
-                {output ? (
-                    <Tooltip title={"output"} placement="bottom" arrow enterDelay={1000}>
-                        <EyeSolid {...buttonsPropsFactory(output)} />
-                    </Tooltip>
-                ) : null}
-                {run && running && !stoppable ? <PlaySolid width={20} height={20} className="highlight" /> : null}
-                {run && running && stoppable ? <PlaySolid {...buttonsPropsFactory(run)} className="highlight" /> : null}
-                {run && !running ? (
-                    <Tooltip title={"run"} placement="bottom" arrow enterDelay={1000}>
-                        <Play {...buttonsPropsFactory(run)} />
-                    </Tooltip>
-                ) : null}
-            </ThemeProvider>
+            <NodeToolbar settings={settings} logs={logs} output={output} run={run} running={running} stoppable={stoppable} />
             {ports.input ? (
                 <Handle
                     type="target"
                     id={NODE_PORT_IDS.FLOW}
                     position={Position.Left}
-                    style={handleStyleInput}
-                    isValidConnection={inputIsValidConnection}
+                    style={{backgroundColor: portColor(ports.input)}}
+                    isValidConnection={params => inputConnects(ports.input, id, params, graph)}
                 />
             ) : null}
             {ports.output ? (
@@ -173,8 +61,8 @@ export const BaseNode = ({id, nodeIcon, title, running, ports, settings, run, st
                     type="source"
                     id={NODE_PORT_IDS.FLOW}
                     position={Position.Right}
-                    style={handleStyleOutput}
-                    isValidConnection={outputIsValidConnection}
+                    style={{backgroundColor: portColor(ports.output)}}
+                    isValidConnection={params => outputConnects(ports.output, params, graph)}
                 />
             ) : null}
             {extraPorts}

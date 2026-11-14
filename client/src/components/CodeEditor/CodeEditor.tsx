@@ -25,6 +25,7 @@ import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/mode-batchfile";
 import "ace-builds/src-noconflict/theme-terminal";
 import {AceEditorMode} from "./types";
+import {withDefaults} from "../../utils";
 import './CodeEditor.scss';
 
 
@@ -41,18 +42,21 @@ type CodeEditorProps = {
     showLineNumbers?: boolean;
 };
 
-export function CodeEditor ({
-    value = "",
-    onChange,
-    placeholder = "",
-    readOnly = false,
-    disabled = false,
-    mode = "json",
-    height = "100%",
-    width = "100%",
-    minHeight = "400px",
-    showLineNumbers = false
-}: CodeEditorProps) {
+const CODE_EDITOR_DEFAULTS = {
+    value: "",
+    placeholder: "",
+    readOnly: false,
+    disabled: false,
+    mode: "json",
+    height: "100%",
+    width: "100%",
+    minHeight: "400px",
+    showLineNumbers: false,
+} satisfies Required<Omit<CodeEditorProps, "onChange">>;
+
+export function CodeEditor (props: CodeEditorProps) {
+    const {value, onChange, placeholder, readOnly, disabled, mode, height, width, minHeight, showLineNumbers} = withDefaults(props, CODE_EDITOR_DEFAULTS);
+
     return (
         <div className={`code-editor-container${disabled ? " disabled" : ""}`}>
             <AceEditor

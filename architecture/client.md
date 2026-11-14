@@ -55,7 +55,7 @@ A descriptor's `metadata.ports` declares which connectors a node has (`NodePorts
 | `context` | A RAG node's handler, plugged into an LLM node. |
 | `tool` | An AI Tool node's handler and schema, plugged into an LLM node. |
 
-`BaseNode` draws the handles and checks connections while dragging. `components/App/utils/workflowUtils.ts` checks a loaded file's edges against the same rules (`getExpectedEdgeHandle`, `assertValidWorkflowEdges`).
+`BaseNode` draws the handles and checks connections while dragging (`nodes/BaseNode/connections.ts`). `components/App/utils/workflowUtils.ts` checks a loaded file's edges against the same rules (`getExpectedEdgeHandle`, `assertValidWorkflowEdges`).
 
 ### Node Components
 

@@ -142,6 +142,15 @@ describe('parseWorkflowJson', () => {
         expect(parse({nodes: [dataSource('a')], edges: [{source: 'a', target: 'missing'}]}).edges).toEqual([expect.objectContaining({target: 'missing'})]);
     });
 
+    it('refuses an edge from a node to itself, on any port, naming the edge', () => {
+        for (const handle of [undefined, 'flow', 'trigger']) {
+            const edges = [{source: 'a', target: 'b'}, {source: 'b', target: 'b', ...(handle ? {sourceHandle: handle, targetHandle: handle} : {})}];
+
+            expect(describeLoadError(errorOf(() => parse({nodes: [dataSource('a'), dataSource('b')], edges}))))
+                .toBe("edges→1→target: an edge can't connect a node to itself");
+        }
+    });
+
     it('lets the schema name a node entry that is not an object, and a file that is not one', () => {
         expect(describeLoadError(errorOf(() => parse({nodes: [null]})))).toBe('nodes→0: Expected object, received null');
         expect(describeLoadError(errorOf(() => parse({nodes: [dataSource('a'), 'abc']})))).toBe('nodes→1: Expected object, received string');

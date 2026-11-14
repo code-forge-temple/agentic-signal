@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 /** Sub-pixel slack, so fractional layout widths do not report a permanent 1px-worth of hidden content. */
 const SCROLL_EPSILON = 1;
@@ -17,6 +17,83 @@ type ScrollState = {
 };
 
 const INITIAL_SCROLL_STATE: ScrollState = {canScrollLeft: false, canScrollRight: false};
+
+type Fit = {stride: number; visibleCount: number};
+
+/**
+ * Trims the viewport to the whole items that fit, and returns the items' stride and how many fit; null when there's
+ * nothing to measure yet.
+ */
+function fitToWholeItems (viewport: HTMLElement): Fit | null {
+    const row = viewport.firstElementChild as HTMLElement | null;
+    const items = row?.children;
+
+    if (!row || !items?.length) {
+        return null;
+    }
+
+    /* Rects rather than offsetWidth/offsetLeft: those round to whole pixels, which stops
+     * matching real layout as soon as a dock dimension is set in anything but px. */
+    const first = items[0].getBoundingClientRect();
+    const itemWidth = first.width;
+    /* Measured rather than assumed, so the gap stays a style decision. */
+    const stride = items.length > 1 ? items[1].getBoundingClientRect().left - first.left : itemWidth;
+
+    if (stride <= 0) {
+        return null;
+    }
+
+    const gap = stride - itemWidth;
+
+    /* Drop the width we imposed last time, so the flex layout reports the room actually
+     * on offer, then take back only a whole number of items of it. */
+    viewport.style.width = "";
+
+    const available = viewport.getBoundingClientRect().width;
+    const visibleCount = Math.max(1, Math.floor((available + gap) / stride + FIT_EPSILON));
+    const width = Math.min(row.getBoundingClientRect().width, visibleCount * stride - gap);
+
+    viewport.style.width = `${width}px`;
+
+    return {stride, visibleCount};
+}
+
+/** Keeps the scroll state and the fit up to date: on scroll, on window resize, and when the items change size. */
+function useScrollerListeners<T extends HTMLElement> (
+    viewportRef: RefObject<T | null>,
+    frameRef: RefObject<number | null>,
+    {scheduleFit, syncScrollState}: {scheduleFit: () => void; syncScrollState: () => void}
+) {
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        const row = viewport?.firstElementChild;
+
+        if (!viewport || !row) {
+            return;
+        }
+
+        viewport.addEventListener("scroll", syncScrollState, {passive: true});
+        window.addEventListener("resize", scheduleFit);
+
+        /* The row is sized to its own content, so this reports a change in the items
+         * themselves - never an echo of the width this hook just set on the viewport. */
+        const observer = new ResizeObserver(scheduleFit);
+
+        observer.observe(row);
+
+        return () => {
+            viewport.removeEventListener("scroll", syncScrollState);
+            window.removeEventListener("resize", scheduleFit);
+            observer.disconnect();
+
+            if (frameRef.current !== null) {
+                cancelAnimationFrame(frameRef.current);
+
+                frameRef.current = null;
+            }
+        };
+    }, [viewportRef, frameRef, scheduleFit, syncScrollState]);
+}
 
 /**
  * Horizontal scroller for a strip of equally sized items that never shows a partial one:
@@ -55,38 +132,14 @@ export function useWholeItemScroller<T extends HTMLElement> () {
 
     const fitWholeItems = useCallback(() => {
         const viewport = viewportRef.current;
-        const row = viewport?.firstElementChild as HTMLElement | null;
-        const items = row?.children;
+        const fit = viewport && fitToWholeItems(viewport);
 
-        if (!viewport || !row || !items?.length) {
+        if (!fit) {
             return;
         }
 
-        /* Rects rather than offsetWidth/offsetLeft: those round to whole pixels, which stops
-         * matching real layout as soon as a dock dimension is set in anything but px. */
-        const first = items[0].getBoundingClientRect();
-        const itemWidth = first.width;
-        /* Measured rather than assumed, so the gap stays a style decision. */
-        const stride = items.length > 1 ? items[1].getBoundingClientRect().left - first.left : itemWidth;
-
-        if (stride <= 0) {
-            return;
-        }
-
-        const gap = stride - itemWidth;
-
-        /* Drop the width we imposed last time, so the flex layout reports the room actually
-         * on offer, then take back only a whole number of items of it. */
-        viewport.style.width = "";
-
-        const available = viewport.getBoundingClientRect().width;
-        const visibleCount = Math.max(1, Math.floor((available + gap) / stride + FIT_EPSILON));
-        const width = Math.min(row.getBoundingClientRect().width, visibleCount * stride - gap);
-
-        viewport.style.width = `${width}px`;
-
-        strideRef.current = stride;
-        visibleCountRef.current = visibleCount;
+        strideRef.current = fit.stride;
+        visibleCountRef.current = fit.visibleCount;
 
         syncScrollState();
     }, [syncScrollState]);
@@ -103,35 +156,7 @@ export function useWholeItemScroller<T extends HTMLElement> () {
         });
     }, [fitWholeItems]);
 
-    useEffect(() => {
-        const viewport = viewportRef.current;
-        const row = viewport?.firstElementChild;
-
-        if (!viewport || !row) {
-            return;
-        }
-
-        viewport.addEventListener("scroll", syncScrollState, {passive: true});
-        window.addEventListener("resize", scheduleFit);
-
-        /* The row is sized to its own content, so this reports a change in the items
-         * themselves - never an echo of the width this hook just set on the viewport. */
-        const observer = new ResizeObserver(scheduleFit);
-
-        observer.observe(row);
-
-        return () => {
-            viewport.removeEventListener("scroll", syncScrollState);
-            window.removeEventListener("resize", scheduleFit);
-            observer.disconnect();
-
-            if (frameRef.current !== null) {
-                cancelAnimationFrame(frameRef.current);
-
-                frameRef.current = null;
-            }
-        };
-    }, [scheduleFit, syncScrollState]);
+    useScrollerListeners(viewportRef, frameRef, {scheduleFit, syncScrollState});
 
     /* Re-fit once the pagers come or go: they take room from the same row, so the count
      * of items that fit changes with them. Settles in one extra pass - dropping the pagers

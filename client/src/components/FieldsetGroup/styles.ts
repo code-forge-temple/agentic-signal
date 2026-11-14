@@ -1,0 +1,39 @@
+/************************************************************************
+ *    Copyright (C) 2026 Code Forge Temple                              *
+ *    This file is part of agentic-signal project                       *
+ *    See the LICENSE file in the project root for license details.     *
+ ************************************************************************/
+
+import type {SxProps, Theme} from "@mui/material/styles";
+
+type FieldsetLook = {isCollapsed: boolean; fillAvailableSpace: boolean; height?: string; style?: React.CSSProperties};
+
+/** The fieldset's frame: it fills the space left when asked (not while collapsed), and is only as tall as its title collapsed. */
+export const fieldsetSx = ({isCollapsed, fillAvailableSpace, height, style}: FieldsetLook): SxProps<Theme> => ({
+    position: 'relative',
+    width: '100%',
+    boxSizing: 'border-box',
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 2,
+    pt: 2, pb: 2, pl: 2, pr: 2,
+    mb: 2,
+    ...(fillAvailableSpace && !isCollapsed
+        ? {display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}
+        : {}),
+    ...style,
+    height: isCollapsed ? 'auto' : (height || 'auto'),
+});
+
+/** The title in the frame's border, clickable when the group collapses. */
+export const legendSx = ({collapsible, isCollapsed}: {collapsible: boolean; isCollapsed: boolean}): SxProps<Theme> => ({
+    color: 'text.secondary',
+    fontSize: 'small',
+    padding: '0 7px 0 7px',
+    margin: '0 -7px 0 -7px !important',
+    fontWeight: 400,
+    lineHeight: 1.4375,
+    mb: isCollapsed ? 0 : 1,
+    cursor: collapsible ? 'pointer' : 'default',
+    userSelect: collapsible ? 'none' : 'auto',
+});

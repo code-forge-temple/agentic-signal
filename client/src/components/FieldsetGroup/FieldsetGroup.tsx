@@ -5,11 +5,10 @@
  ************************************************************************/
 
 import {ReactNode, useState} from 'react';
-import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-import IconButton from "@mui/material/IconButton";
-import {ArrowDownCircleSolid, ArrowUpCircleSolid, ExpandLines} from "iconoir-react";
+import {CollapsedPlaceholder, CollapseToggle} from "./parts";
+import {fieldsetSx, legendSx} from "./styles";
 
 
 type FieldsetGroupProps = {
@@ -29,63 +28,12 @@ export const FieldsetGroup = ({children, title, height, style, collapsible = fal
     const toggle = () => setCollapsed(prev => !prev);
 
     return (
-        <FormControl component="fieldset"
-            sx={{
-                position: 'relative',
-                width: '100%',
-                boxSizing: 'border-box',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                pt: 2, pb: 2, pl: 2, pr: 2,
-                mb: 2,
-                ...(fillAvailableSpace && !isCollapsed
-                    ? {display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}
-                    : {}),
-                ...style,
-                height: isCollapsed ? 'auto' : (height || 'auto'),
-            }}
-        >
-            <FormLabel
-                component="legend"
-                onClick={collapsible ? toggle : undefined}
-                sx={{
-                    color: 'text.secondary',
-                    fontSize: 'small',
-                    padding: '0 7px 0 7px',
-                    margin: '0 -7px 0 -7px !important',
-                    fontWeight: 400,
-                    lineHeight: 1.4375,
-                    mb: isCollapsed ? 0 : 1,
-                    cursor: collapsible ? 'pointer' : 'default',
-                    userSelect: collapsible ? 'none' : 'auto',
-                }}
-            >
+        <FormControl component="fieldset" sx={fieldsetSx({isCollapsed, fillAvailableSpace, height, style})}>
+            <FormLabel component="legend" onClick={collapsible ? toggle : undefined} sx={legendSx({collapsible, isCollapsed})}>
                 {title}
             </FormLabel>
-            {collapsible && (
-                <IconButton
-                    size="small"
-                    onClick={e => { e.stopPropagation(); toggle(); }}
-                    aria-label={isCollapsed ? "Expand" : "Collapse"}
-                    sx={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 8,
-                        marginTop: '-22px',
-                        p: 0.25,
-                    }}
-                >
-                    {isCollapsed ? <ArrowDownCircleSolid width={24} height={24} /> : <ArrowUpCircleSolid width={24} height={24} />}
-                </IconButton>
-            )}
-            {isCollapsed ? (
-                <Box sx={{display: 'flex', justifyContent: 'center', py: 0.5, marginTop: '-25px', marginBottom: '-13px'}}>
-                    <IconButton size="small" onClick={toggle} aria-label="Expand">
-                        <ExpandLines width={20} height={20} />
-                    </IconButton>
-                </Box>
-            ) : children}
+            {collapsible && <CollapseToggle isCollapsed={isCollapsed} onToggle={toggle} />}
+            {isCollapsed ? <CollapsedPlaceholder onExpand={toggle} /> : children}
         </FormControl>
     );
 };

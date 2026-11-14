@@ -17,6 +17,8 @@ The layer button on the right edge of the canvas opens the list of layers:
 - **Double-click a layer's name** to rename it. Two layers may share a name.
 - **Delete** (the minus button) removes a layer and its workflow. When the layer holds a workflow, it asks first.
 
+The list stays open or closed as you left it, after a restart too. **Clear App Data** in Settings closes it again.
+
 A coloured dot next to a layer shows what it's doing for a [command](./ai-buddy#commands): blue while it runs one, red when the last one failed.
 
 ## Loading a Workflow

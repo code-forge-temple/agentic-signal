@@ -14,6 +14,7 @@ import {darkTheme} from "../../../../utils";
 import {useLayers} from "../../../../hooks/useLayers";
 import {useLayerCommandState} from "../../../../hooks/useLayerCommandState";
 import {LAYER_KIND, Layer} from "../../../../context/LayersContextBase";
+import {useGlobalConfig} from "../../../../stores/globalConfig";
 import {ConfirmDialog} from "../../../ConfirmDialog";
 
 
@@ -30,6 +31,15 @@ function LayerStatusDot ({layerId}: {layerId: string}) {
 // The toggle tooltip's fade in (MUI's default) and out; the layers start opening once the fade out ends.
 const TOOLTIP_ENTER_MS = 200;
 const TOOLTIP_EXIT_MS = 150;
+
+// Whether the layers are shown, kept across restarts: "true" while shown, no entry while hidden.
+const LAYERS_EXPANDED_KEY = "layerSwitcherExpanded";
+
+function toggleLayersExpanded () {
+    const {globalData, setGlobalData} = useGlobalConfig.getState();
+
+    setGlobalData(LAYERS_EXPANDED_KEY, globalData[LAYERS_EXPANDED_KEY] === "true" ? "" : "true", true);
+}
 
 type LayerNameEditorProps = {
     name: string;
@@ -72,7 +82,7 @@ function LayerNameEditor ({name, onCommit, onCancel}: LayerNameEditorProps) {
  */
 export function LayerSwitcher () {
     const {layers, activeLayer, setActiveLayer, addLayer, deleteLayer, renameLayer, getLayerApi} = useLayers();
-    const [isExpanded, setIsExpanded] = useState(false);
+    const isExpanded = useGlobalConfig(state => state.globalData[LAYERS_EXPANDED_KEY] === "true");
     const [isTooltipOpen, setIsTooltipOpen] = useState(false);
     const pendingToggleRef = useRef<number | null>(null);
     const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
@@ -92,7 +102,7 @@ export function LayerSwitcher () {
         if (pendingToggleRef.current !== null) return;
 
         if (!isTooltipOpen) {
-            setIsExpanded(prev => !prev);
+            toggleLayersExpanded();
 
             return;
         }
@@ -100,7 +110,7 @@ export function LayerSwitcher () {
         setIsTooltipOpen(false);
         pendingToggleRef.current = window.setTimeout(() => {
             pendingToggleRef.current = null;
-            setIsExpanded(prev => !prev);
+            toggleLayersExpanded();
         }, TOOLTIP_EXIT_MS);
     };
 

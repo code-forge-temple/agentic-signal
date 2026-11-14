@@ -6,6 +6,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {buildDataSourceEnvelope, fileBase64, fileDataFromBytes, fileText, mimeTypeFromExtension} from './utils';
+import {extractFileBlocksFromMarkdown, extractQueryFromMarkdown, withoutFileBlocks} from '@shared/utils';
 import {FileData} from './types/workflow';
 
 const decode = (base64: string) => new TextDecoder().decode(Uint8Array.from(atob(base64), c => c.charCodeAt(0)));
@@ -138,5 +139,30 @@ describe('buildDataSourceEnvelope', () => {
     it('refuses a tools-only file saved without its data', () => {
         expect(() => buildDataSourceEnvelope(markdown('', [{name: 'cv.pdf', content: '[Binary attachment: cv.pdf]'}])))
             .toThrow('No file data saved for "cv.pdf" — remove the file and attach it again.');
+    });
+});
+
+describe('a Data Source message, as the RAG node and its LLM read it', () => {
+    it('gives the RAG node each text file whole and the question, and leaves the LLM the question and the image', () => {
+        const files = [
+            fileDataFromBytes({name: 'guide.md', base64: encode(markdownWithCodeBlock)}),
+            fileDataFromBytes({name: 'shot.png', base64: 'AAAA', mimeType: 'image/png'}),
+            fileDataFromBytes({name: 'notes.txt', base64: encode('Plain notes.')}),
+        ];
+        const {payload} = buildDataSourceEnvelope({type: 'markdown-and-files', value: {text: 'What do the files say?', files}});
+        const message = String(payload);
+
+        expect(extractQueryFromMarkdown(message)).toBe('What do the files say?');
+        expect(extractFileBlocksFromMarkdown(message).map(file => [file.name, fileText(file.content)])).toEqual([
+            ['guide.md', markdownWithCodeBlock],
+            ['notes.txt', 'Plain notes.'],
+        ]);
+
+        const forLlm = withoutFileBlocks(message);
+
+        expect(forLlm).toContain('What do the files say?');
+        expect(forLlm).toContain('![shot.png](data:image/png;base64,AAAA)');
+        expect(forLlm).not.toContain('npm install');
+        expect(forLlm).not.toContain('Plain notes.');
     });
 });

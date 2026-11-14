@@ -8,7 +8,7 @@ import Ajv from 'ajv';
 import {Message, MessageRole} from '../../../../types/ollama.types';
 import {NodeEnvelope} from '../../../../types/workflow';
 import {formatErrorMessage} from '../../../../utils/utils';
-import {errorMessage} from '@shared/utils';
+import {errorMessage, withoutFileBlocks} from '@shared/utils';
 import {LlmProcessNodeData} from '../types/workflow';
 import {JSON_SCHEMA_PROMPT_PREFIX, RunSingleCallParams, runOrchestration, runSingleCall} from './aiOrchestration';
 import {assertIsSerializedInput, getExpectedOutputType, llmResponseJsonParse, parseFormat, serializeInput} from './formatUtils';
@@ -89,30 +89,43 @@ function requestFormat (request: AIRequest): RequestFormat {
     };
 }
 
-// The input as the user message, between the node's prefix and suffix; null with neither input nor message.
-function userContent (request: AIRequest): string | null {
-    if (!hasInput(request) && !request.message) return null;
-
+// The input as text ("" for none).
+function inputText (request: AIRequest): string {
     const input = hasInput(request) ? serializeInput(request.payload) : "";
 
     assertIsSerializedInput(input);
 
-    return request.message ? `${request.message.prefix || ''}${input}${request.message.suffix || ''}` : input;
+    return input;
 }
 
-async function withRagContext (content: string, ragHandler: (input: string) => Promise<string>, signal: AbortSignal): Promise<string> {
+// The text between the node's prefix and suffix.
+const withMessage = (request: AIRequest, text: string) => (request.message ? `${request.message.prefix || ''}${text}${request.message.suffix || ''}` : text);
+
+// The input as the user message, between the node's prefix and suffix; null with neither input nor message.
+function userContent (request: AIRequest): string | null {
+    if (!hasInput(request) && !request.message) return null;
+
+    return withMessage(request, inputText(request));
+}
+
+// What the RAG node finds for `content`, which it gets whole: it ingests the text files and queries with the rest.
+async function ragContext (content: string, ragHandler: (input: string) => Promise<string>, signal: AbortSignal): Promise<string> {
     try {
         const context = await ragHandler(content);
 
         stopIfCancelled(signal);
 
-        return context ? `## CONTEXT\n${context}\n\n${content}` : content;
+        return context;
     } catch (error) {
         stopIfCancelled(signal);
 
         throw new RequestFailure(`RAG retrieval failed: ${errorMessage(error)}`);
     }
 }
+
+// What the LLM reads with a RAG node: `text` without its text files (the RAG node took them; whole, they'd fill its
+// context window), after what the RAG node found in them.
+const withRagFindings = (context: string, text: string) => (context ? `## CONTEXT\n${context}\n\n${text}` : text);
 
 // eslint-disable-next-line max-len
 const feedbackRequest = (feedback: string) => `The previous response caused an error in downstream processing. Here's the feedback: ${feedback}\n\nPlease provide a corrected response that addresses this issue.`;
@@ -141,7 +154,10 @@ async function conversation (request: AIRequest, systemPrompt: string | undefine
 
     if (content === null || !request.ragHandler) return firstMessages(systemPrompt, content);
 
-    return firstMessages(systemPrompt, await withRagContext(content, request.ragHandler, signal));
+    const context = await ragContext(content, request.ragHandler, signal);
+
+    // The files go from the input; the prefix and suffix stay as they are.
+    return firstMessages(systemPrompt, withRagFindings(context, withMessage(request, withoutFileBlocks(inputText(request)))));
 }
 
 const callSettings = (request: AIRequest, signal: AbortSignal) => ({
@@ -212,9 +228,19 @@ function parseResult (text: string, format: RequestFormat): unknown {
     }
 }
 
+// The agents' input: with a RAG node, the input without its text files after what the RAG node found in them, as in a
+// single call; else the input as it came.
+async function orchestrationInput (request: AIRequest, signal: AbortSignal): Promise<unknown> {
+    if (!request.ragHandler) return request.payload;
+
+    const input = inputText(request);
+
+    return withRagFindings(await ragContext(input, request.ragHandler, signal), withoutFileBlocks(input));
+}
+
 async function orchestrate (request: AIRequest, format: RequestFormat, signal: AbortSignal): Promise<unknown> {
     const result = await runOrchestration({
-        input: request.payload,
+        input: await orchestrationInput(request, signal),
         prompt: request.prompt,
         model: request.model,
         format: {parsedFormat: format.schema, onErrorValidator: format.onErrorValidator},

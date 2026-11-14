@@ -369,6 +369,55 @@ describe('useAIProcessor.processAIRequest', () => {
             expect(receivedCalls[0].messages[1].content).toBe('question');
         });
 
+        // A question with a Markdown file whose own "###" heading the RAG node must not cut it at.
+        const RAG_INPUT = 'What does the guide say?\n\n### File name "guide.md"\n```markdown\n# Guide\n\n### Usage\n\nUse it daily.\n```\n\n';
+
+        it('with a RAG node, gives the RAG node the whole message and the LLM what it found and the question, not the files', async () => {
+            const {receivedCalls} = mockFetchAIResponse([success('ok')]);
+            const ragHandler = vi.fn(async () => '[1] (guide.md)\nUse it daily.');
+            const {result} = renderHook(() => useAIProcessor());
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload: RAG_INPUT, prompt: 'p', message: {prefix: 'Q: ', suffix: 'Answer briefly.'}, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(), ragHandler,
+                });
+            });
+
+            expect(ragHandler).toHaveBeenCalledWith(`Q: ${RAG_INPUT}Answer briefly.`);
+            expect(receivedCalls[0].messages[1].content).toBe('## CONTEXT\n[1] (guide.md)\nUse it daily.\n\nQ: What does the guide say?\n\nAnswer briefly.');
+        });
+
+        it('without a RAG node, sends the files to the LLM as they are', async () => {
+            const {receivedCalls} = mockFetchAIResponse([success('ok')]);
+            const {result} = renderHook(() => useAIProcessor());
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload: RAG_INPUT, prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(),
+                });
+            });
+
+            expect(receivedCalls[0].messages[1].content).toBe(RAG_INPUT);
+        });
+
+        it('with a RAG node and files but no question, still asks the LLM, with what is left of the message', async () => {
+            const {receivedCalls} = mockFetchAIResponse([success('ok')]);
+            const ragHandler = vi.fn(async () => '');
+            const {result} = renderHook(() => useAIProcessor());
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload: '\n\n### File name "notes.txt"\n```\nNotes.\n```\n\n', prompt: 'p', message: {prefix: 'Summarize. ', suffix: ''}, model: 'm',
+                    format: undefined, maxToolRetries: 3, conversationHistory: makeHistory(), ragHandler,
+                });
+            });
+
+            expect(receivedCalls).toHaveLength(1);
+            expect(receivedCalls[0].messages[1].content).toBe('Summarize. \n\n');
+        });
+
         it('uses a plain format-only system prompt when no node-level prompt is configured', async () => {
             const {receivedCalls} = mockFetchAIResponse([success(JSON.stringify({greeting: 'hi'}))]);
             const {result} = renderHook(() => useAIProcessor());
@@ -612,6 +661,32 @@ describe('useAIProcessor.processAIRequest', () => {
             expect(getCallCount()).toBe(3);
             expect(returned).toBe('Aggregated summary.');
             expect(onSuccess).toHaveBeenCalledWith('Aggregated summary.');
+        });
+
+        it('with a RAG node, asks it once and plans from what it found and the question, not from the files', async () => {
+            const {receivedCalls} = mockFetchAIResponse([
+                success(JSON.stringify({tasks: [{content: 'task 1'}]})), // planning
+                success('task 1 done'), // agent
+                success('Aggregated summary.'), // aggregation
+            ]);
+            const ragHandler = vi.fn(async () => 'FOUND-IN-RAG');
+            const payload = 'Compare the plans.\n\n### File name "plan.md"\n```markdown\n# Plan\n\nSECRET-FILE-TEXT\n```\n\n';
+            const {result} = renderHook(() => useAIProcessor());
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload, prompt: 'p', message: undefined, model: 'm', format: undefined,
+                    maxToolRetries: 3, conversationHistory: makeHistory(), orchestrationMode: true, ragHandler,
+                });
+            });
+
+            const everythingSent = JSON.stringify(receivedCalls.map(call => call.messages));
+
+            expect(ragHandler).toHaveBeenCalledTimes(1);
+            expect(ragHandler).toHaveBeenCalledWith(payload);
+            expect(everythingSent).toContain('FOUND-IN-RAG');
+            expect(everythingSent).toContain('Compare the plans.');
+            expect(everythingSent).not.toContain('SECRET-FILE-TEXT');
         });
 
         it('routes a string input through orchestration too', async () => {

@@ -52,7 +52,7 @@ A descriptor's `metadata.ports` declares which connectors a node has (`NodePorts
 |------|---------|
 | `flow` | Envelopes between nodes. Its `inputSchema` / `outputSchema` describe them (used by the AI Buddy prompt and the docs). |
 | `trigger` | A Timer node's tick, which starts the node's run. |
-| `context` | A RAG node's handler, plugged into an LLM node. |
+| `context` | A RAG node's handler, plugged into an LLM node. The LLM node gives it the whole user message and sends the model its findings and the message without the text files (`withoutFileBlocks` in `@shared/utils`, the same rule the RAG server ingests by), in single calls and orchestration alike. |
 | `tool` | An AI Tool node's handler and schema, plugged into an LLM node. |
 
 `BaseNode` draws the handles and checks connections while dragging (`nodes/BaseNode/connections.ts`). `components/App/utils/workflowUtils.ts` checks a loaded file's edges against the same rules (`getExpectedEdgeHandle`, `assertValidWorkflowEdges`).

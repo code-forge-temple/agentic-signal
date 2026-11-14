@@ -32,36 +32,71 @@ export const extractFromMarkdown = (markdown: string, type: EXTRACTION_TYPE): st
     return results;
 };
 
+// The headings a message's attachments are written under (markdownFilePrefix, markdownImageFilePrefix), after a blank
+// line; group 1 is a file's name, none for an image. A name runs to the end of its heading line, so quotes and
+// parentheses in it ('my "draft".md', 'photo (1).png') are part of it. Only these split a message: a document's own
+// "### " headings, and any heading in the text, are text.
+const ATTACHMENT_HEADING = /\n\n### (?:File name "([^\n]+)"|Image \d+ \(file name [^\n]*\) attached)\n/g;
+const CLOSING_FENCE = /\n```[ \t]*(?=\n|$)/g;
+
 /**
- * Extracts named file blocks from a markdown string built by DataSourceNode.
- * Parses `### File "name"\ncontent` sections produced by markdownFilePrefix().
- * Returns an array of {name, content} pairs for use in RAG ingestion.
+ * How much of `rest` (the text after an attachment's heading, up to the next one) is the attachment: a text file is in
+ * a code block (a document's own code blocks inside it), so it ends at the last closing fence; anything else (an image,
+ * a placeholder line) at the first blank line. What follows, a message's suffix say, isn't the attachment's.
  */
-export const extractFileBlocksFromMarkdown = (markdown: string): Array<{name: string; content: string}> => {
-    const parts = markdown.split(/\n\n### /);
-    const results: Array<{name: string; content: string}> = [];
+function attachmentLength (rest: string): number {
+    if (rest.startsWith("```")) {
+        const fences = [...rest.matchAll(CLOSING_FENCE)];
+        const lastFence = fences[fences.length - 1];
 
-    for (let i = 1; i < parts.length; i++) {
-        const fileMatch = parts[i].match(/^File name "([^"]+)"\n([\s\S]*?)(\n\n)?$/);
-
-        if (fileMatch) {
-            results.push({name: fileMatch[1], content: fileMatch[2].trim()});
-        }
+        return lastFence ? lastFence.index + lastFence[0].length : rest.length;
     }
 
-    return results;
-};
+    const blankLine = rest.indexOf("\n\n");
+
+    return blankLine === -1 ? rest.length : blankLine;
+}
+
+/** A message's attachments, in order: where each starts (its heading) and ends, its content, and a file's name. */
+function attachmentSections (markdown: string): Array<{fileName?: string; start: number; end: number; content: string}> {
+    const headings = [...markdown.matchAll(ATTACHMENT_HEADING)];
+
+    return headings.map((heading, i) => {
+        const contentStart = heading.index + heading[0].length;
+        const rest = markdown.slice(contentStart, headings[i + 1]?.index ?? markdown.length);
+        const content = rest.slice(0, attachmentLength(rest));
+
+        return {fileName: heading[1], start: heading.index, end: contentStart + content.length, content: content.trim()};
+    });
+}
 
 /**
- * Extracts the query text from a markdown string built by DataSourceNode.
- * Returns the text that precedes the first file/image block section.
- * If no file blocks are present, the entire string is the query.
+ * The text files in a message built by DataSourceNode (markdownFilePrefix sections), as {name, content}: what the RAG
+ * node ingests. Images aren't files here.
  */
-export const extractQueryFromMarkdown = (markdown: string): string => {
-    const parts = markdown.split(/\n\n### /);
+export const extractFileBlocksFromMarkdown = (markdown: string): Array<{name: string; content: string}> =>
+    attachmentSections(markdown).flatMap(({fileName, content}) => (fileName === undefined ? [] : [{name: fileName, content}]));
 
-    return parts[0].trim();
-};
+/** The text before a message's first attachment (all of it when there's none): the RAG node's query. */
+export const extractQueryFromMarkdown = (markdown: string): string => markdown.slice(0, attachmentSections(markdown)[0]?.start).trim();
+
+/**
+ * The message without its text files, everything else kept (the text, images, what follows the files): what an LLM
+ * gets when a RAG node took the files, so they don't fill its context window.
+ */
+export function withoutFileBlocks (markdown: string): string {
+    let kept = "";
+    let from = 0;
+
+    for (const {fileName, start, end} of attachmentSections(markdown)) {
+        if (fileName === undefined) continue;
+
+        kept += markdown.slice(from, start);
+        from = end;
+    }
+
+    return kept + markdown.slice(from);
+}
 
 export const isObject = (value: unknown): value is Record<string, unknown> => {
     return typeof value === "object" && value !== null;

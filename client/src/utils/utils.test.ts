@@ -6,7 +6,16 @@
 
 import {describe, expect, expectTypeOf, it} from 'vitest';
 import {getField, withDefaults} from './utils';
-import {fileExtension, mayChangeRagCollection, ragOwnerKeyHash} from '@shared/utils';
+import {
+    extractFileBlocksFromMarkdown,
+    extractQueryFromMarkdown,
+    fileExtension,
+    markdownFilePrefix,
+    markdownImageFilePrefix,
+    mayChangeRagCollection,
+    ragOwnerKeyHash,
+    withoutFileBlocks,
+} from '@shared/utils';
 
 
 describe('getField', () => {
@@ -82,5 +91,51 @@ describe('mayChangeRagCollection', () => {
         expect(await mayChangeRagCollection(stored, 'someone else')).toBe(false);
         expect(await mayChangeRagCollection(stored, '')).toBe(false);
         expect(await mayChangeRagCollection(stored, undefined)).toBe(false);
+    });
+});
+
+describe('attachments in a message (Data Source\'s file and image sections)', () => {
+    const FENCE = '```';
+    const guide = `# Guide\n\nIntro.\n\n### Setup\n\nRun it:\n\n${FENCE}bash\nnpm start\n${FENCE}\n\n### Usage\n\nUse it.`;
+    const file = (name: string, text: string, lang = '') => `\n\n${markdownFilePrefix(name)}${FENCE}${lang}\n${text}\n${FENCE}\n\n`;
+    const image = (index: number, name: string) => `\n\n${markdownImageFilePrefix(index, name)}![${name}](data:image/png;base64,AAAA)\n\n`;
+    // The question with its own heading, two files around an image, and a message suffix after them.
+    // eslint-disable-next-line max-len
+    const message = `What does the guide say?\n\n### Context\n\nWe use it daily.${file('guide.md', guide, 'markdown')}${image(1, 'shot.png')}${file('notes.txt', 'Plain notes.')}Answer in French.`;
+
+    it('takes a document whole, its own headings and code blocks included, and leaves images and later text out', () => {
+        expect(extractFileBlocksFromMarkdown(message)).toEqual([
+            {name: 'guide.md', content: `${FENCE}markdown\n${guide}\n${FENCE}`},
+            {name: 'notes.txt', content: `${FENCE}\nPlain notes.\n${FENCE}`},
+        ]);
+    });
+
+    it('takes the text before the first attachment as the query, its own headings included', () => {
+        expect(extractQueryFromMarkdown(message)).toBe('What does the guide say?\n\n### Context\n\nWe use it daily.');
+        expect(extractQueryFromMarkdown('Just a question.')).toBe('Just a question.');
+    });
+
+    it('knows an attachment whose name has quotes or parentheses in it', () => {
+        const named = `Q?${image(1, 'photo (1).png')}${file('my "draft".md', 'Draft.')}`;
+
+        expect(extractQueryFromMarkdown(named)).toBe('Q?');
+        expect(extractFileBlocksFromMarkdown(named)).toEqual([{name: 'my "draft".md', content: `${FENCE}\nDraft.\n${FENCE}`}]);
+        expect(withoutFileBlocks(named)).not.toContain('Draft.');
+    });
+
+    it('takes a placeholder line as the whole file, not what follows it', () => {
+        expect(extractFileBlocksFromMarkdown(`q\n\n${markdownFilePrefix('doc.pdf')}[Binary attachment: doc.pdf]\n\nAnswer briefly.`))
+            .toEqual([{name: 'doc.pdf', content: '[Binary attachment: doc.pdf]'}]);
+    });
+
+    it('leaves the text files out of the message, keeping the question, the images and what follows', () => {
+        const kept = withoutFileBlocks(message);
+
+        expect(kept).not.toContain('Intro.');
+        expect(kept).not.toContain('Plain notes.');
+        expect(kept).toContain('What does the guide say?\n\n### Context\n\nWe use it daily.');
+        expect(kept).toContain('![shot.png](data:image/png;base64,AAAA)');
+        expect(kept).toContain('Answer in French.');
+        expect(withoutFileBlocks('No files here.')).toBe('No files here.');
     });
 });

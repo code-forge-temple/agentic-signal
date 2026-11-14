@@ -79,17 +79,21 @@ It connects exclusively to the **AI Data Processing Node** via a dedicated RAG p
 
 The node receives its input from the connected [AI Data Processing Node](/docs/nodes/ai/llm-process). That node forwards the text it receives from a [Data Source Node](/docs/nodes/input/data-source) or any other upstream node, formatted as markdown with optional file blocks and a query:
 
-```
+````
 Using the attached document, answer:
 
 What are the main topics covered?
 
 ### File name "my-document.txt"
+```
 <file content here>
 ```
+````
 
-- **File blocks** (optional): One or more `### File name "..."` sections — each is chunked, embedded, and stored in the collection.
-- **Query** (required for retrieval): The text preceding the first file block. Used to perform a vector similarity search against the stored chunks.
+- **File blocks** (optional): One or more `### File name "..."` sections, each with the file in a code block, as the Data Source writes them — each is chunked, embedded, and stored in the collection. A document is taken whole, its own headings and code blocks included.
+- **Query** (required for retrieval): The text preceding the first file or image block. Used to perform a vector similarity search against the stored chunks.
+
+Only text files reach the node: in the Data Source, a file set to **Included in LLM context**. Files set to **Passed to tools only** (PDF, DOCX and other binary files by default) go to tool nodes, not to the RAG node, and images aren't stored either.
 
 If no files are provided, the node performs a query-only retrieval against the existing collection — useful for interrogating a database populated by other workflows or external tools.
 
@@ -106,6 +110,8 @@ The node outputs the most relevant text chunks as a formatted context string, in
 ```
 
 If no relevant chunks are found, the output is empty (`null` context) and the AI node proceeds without RAG context.
+
+**The AI node doesn't get the files themselves.** With a RAG node connected, it reads the chunks, then the message without its text files: the question, any images, and the User Message prefix and suffix. So a document doesn't fill the model's context window, however long it is; the model sees only the parts that answer the question. This holds in orchestration mode too: the RAG node is asked once, and the agents plan from what it found and the question. A run that sends files without a question still asks the model, with whatever is left of the message: write the request in the Data Source along with the files.
 
 ## Ingestion Lifecycle
 

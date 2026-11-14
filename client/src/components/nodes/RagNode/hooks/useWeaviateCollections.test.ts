@@ -158,6 +158,10 @@ describe('useWeaviateCollections', () => {
     it('reports a schema Weaviate turns down, or can\'t answer, and lists nothing', async () => {
         const cases = [
             [{status: 401}, 'Weaviate returned 401'],
+            // Weaviate's reason, in either of its forms: a key sent to a Weaviate without authentication, say.
+            // eslint-disable-next-line max-len
+            [{status: 401, body: {code: 401, message: 'no authentication scheme is configured (API Key or OIDC), but an \'Authorization\' header was provided'}}, 'Weaviate returned 401: no authentication scheme is configured (API Key or OIDC), but an \'Authorization\' header was provided'],
+            [{status: 422, body: {error: [{message: 'first'}, {message: 'second'}]}}, 'Weaviate returned 422: first; second'],
             [new Error('offline'), 'offline'],
             [{body: {classes: 'x'}}, 'Unexpected response from Weaviate\'s /v1/schema'],
         ] as const;

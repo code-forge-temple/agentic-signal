@@ -19,6 +19,20 @@ const WeaviateSchemaResponseSchema = z.object({
     classes: z.array(z.object({class: z.string()})).nullish(),
 });
 
+// How Weaviate says why it refused: {"message": …} (a 401, say) or {"error": [{"message": …}]}.
+const WeaviateRefusalSchema = z.object({
+    message: z.string().optional(),
+    error: z.array(z.object({message: z.string()})).optional(),
+});
+
+/** Weaviate's refusal as an error: its status, and its reason when it gives one (a key it has no way to check, say). */
+async function weaviateRefusal (res: Response): Promise<Error> {
+    const body = WeaviateRefusalSchema.safeParse(await res.json().catch(() => undefined));
+    const reason = body.success ? (body.data.message ?? body.data.error?.map(entry => entry.message).join("; ")) : undefined;
+
+    return new Error(`Weaviate returned ${res.status}${reason ? `: ${reason}` : ""}`);
+}
+
 async function readWeaviateJson<T> (res: Response, schema: z.ZodType<T>, endpoint: string): Promise<T> {
     const parsed = schema.safeParse(await res.json());
 
@@ -34,7 +48,7 @@ type WeaviateTarget = {url: string; headers: Record<string, string>};
 async function collectionClasses ({url, headers}: WeaviateTarget): Promise<string[]> {
     const res = await fetch(`${url}/v1/schema`, {headers});
 
-    if (!res.ok) throw new Error(`Weaviate returned ${res.status}`);
+    if (!res.ok) throw await weaviateRefusal(res);
 
     const schema = await readWeaviateJson(res, WeaviateSchemaResponseSchema, "/v1/schema");
 
@@ -47,7 +61,7 @@ type CollectionMeta = NonNullable<z.infer<typeof WeaviateMetaObjectsResponseSche
 async function collectionMeta ({url, headers}: WeaviateTarget, weaviateClass: string): Promise<CollectionMeta | undefined> {
     const res = await fetch(`${url}/v1/objects?class=${weaviateClass}Meta&limit=1`, {headers});
 
-    if (!res.ok) throw new Error(`Weaviate returned ${res.status}`);
+    if (!res.ok) throw await weaviateRefusal(res);
 
     const meta = await readWeaviateJson(res, WeaviateMetaObjectsResponseSchema, "/v1/objects");
 
@@ -84,7 +98,7 @@ async function classFound ({url, headers}: WeaviateTarget, weaviateClass: string
 
     if (res.status === 404) return false;
 
-    if (!res.ok) throw new Error(`Weaviate returned ${res.status}`);
+    if (!res.ok) throw await weaviateRefusal(res);
 
     return true;
 }

@@ -77,7 +77,8 @@ describe('useWeaviateCollections', () => {
         ]);
         expect(current().loadingCollections).toBe(false);
         expect(onError).not.toHaveBeenCalled();
-        expect(fetchMock.mock.calls.every(([, init]) => (init as RequestInit).headers && JSON.stringify((init as RequestInit).headers).includes('wk'))).toBe(true);
+        // Weaviate reads its API key only as a bearer token.
+        expect(fetchMock.mock.calls.map(([, init]) => (init as RequestInit).headers)).toEqual(fetchMock.mock.calls.map(() => ({Authorization: 'Bearer wk'})));
     });
 
     it('falls back to the class name when a meta object can\'t be read', async () => {

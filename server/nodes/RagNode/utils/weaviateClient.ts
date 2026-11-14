@@ -6,6 +6,7 @@
 
 import {z} from "zod";
 import {parseApiResponse} from "../../../utils/apiResponse.ts";
+import {weaviateAuthHeaders} from "../../../../shared/utils.ts";
 import {WeaviateMetaObjectsResponseSchema} from "../types.ts";
 
 export type WHeaders = Record<string, string>;
@@ -33,13 +34,7 @@ const NearVectorResponseSchema = z.object({
     }).nullish(),
 });
 
-export function weaviateHeaders (apiKey?: string): WHeaders {
-    const h: WHeaders = {"Content-Type": "application/json"};
-
-    if (apiKey) h["X-Weaviate-Api-Key"] = apiKey;
-
-    return h;
-}
+export const weaviateHeaders = (apiKey?: string): WHeaders => ({"Content-Type": "application/json", ...weaviateAuthHeaders(apiKey)});
 
 /** Whether Weaviate has the class (it answers 404 for one it hasn't); throws when it can't tell (an API key it turns down, an error). */
 export async function classExists ({base, h, className}: WeaviateClass): Promise<boolean> {

@@ -92,7 +92,10 @@ export async function withFakeServices (run: (services: FakeServices) => Promise
             const body = text ? JSON.parse(text) : undefined;
             const failure = failures.get(`${request.method} ${url.pathname}`);
 
-            services.requests.push({method: request.method, path: `${url.pathname}${url.search}`, body, apiKey: request.headers.get("X-Weaviate-Api-Key") ?? undefined});
+            // Like Weaviate, the API key is read only from a bearer token.
+            const apiKey = request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
+
+            services.requests.push({method: request.method, path: `${url.pathname}${url.search}`, body, apiKey});
 
             if (failure) return (failures.delete(`${request.method} ${url.pathname}`), json(failure.body, failure.status));
 

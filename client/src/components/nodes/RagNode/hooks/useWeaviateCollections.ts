@@ -10,7 +10,7 @@ import {WeaviateMetaObjectsResponseSchema} from "@shared/types.gen";
 import {DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {defaultRagNodeData} from "../types/workflow";
 import {ragService} from "../services/ragService";
-import {errorMessage, isRagMetaClass, mayChangeRagCollection, ragClassName} from "@shared/utils";
+import {errorMessage, isRagMetaClass, mayChangeRagCollection, ragClassName, weaviateAuthHeaders} from "@shared/utils";
 
 
 export const FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX = "Failed to fetch collections";
@@ -28,7 +28,7 @@ async function readWeaviateJson<T> (res: Response, schema: z.ZodType<T>, endpoin
 }
 
 /** The Weaviate server to ask: its URL (no trailing slash) and the headers (its API key, when there is one). */
-type WeaviateTarget = {url: string; headers: Record<string, string> | undefined};
+type WeaviateTarget = {url: string; headers: Record<string, string>};
 
 /** The collections' Weaviate classes (meta classes left out); throws when Weaviate can't be asked, turns it down, or answers in another shape. */
 async function collectionClasses ({url, headers}: WeaviateTarget): Promise<string[]> {
@@ -123,7 +123,7 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, ownerK
 
     const target = useMemo<WeaviateTarget>(() => ({
         url: (weaviateUrl || defaultRagNodeData.weaviateUrl).replace(/\/$/, ""),
-        headers: weaviateApiKey ? {"X-Weaviate-Api-Key": weaviateApiKey} : undefined,
+        headers: weaviateAuthHeaders(weaviateApiKey),
     }), [weaviateUrl, weaviateApiKey]);
 
     // Counts the lock checks, so an answer that comes after a newer check's (picking two collections quickly) is dropped.

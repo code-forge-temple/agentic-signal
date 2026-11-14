@@ -14,6 +14,7 @@ import {
     markdownImageFilePrefix,
     mayChangeRagCollection,
     ragOwnerKeyHash,
+    weaviateAuthHeaders,
     withoutFileBlocks,
 } from '@shared/utils';
 
@@ -91,6 +92,19 @@ describe('mayChangeRagCollection', () => {
         expect(await mayChangeRagCollection(stored, 'someone else')).toBe(false);
         expect(await mayChangeRagCollection(stored, '')).toBe(false);
         expect(await mayChangeRagCollection(stored, undefined)).toBe(false);
+    });
+});
+
+describe('weaviateAuthHeaders', () => {
+    it('sends a Weaviate API key as a bearer token, and nothing without one', () => {
+        expect(weaviateAuthHeaders('wk')).toEqual({Authorization: 'Bearer wk'});
+        expect(weaviateAuthHeaders('')).toEqual({});
+        expect(weaviateAuthHeaders(undefined)).toEqual({});
+    });
+
+    it('drops the spaces around a pasted key, and takes a key of spaces for none', () => {
+        expect(weaviateAuthHeaders(' wk\n')).toEqual({Authorization: 'Bearer wk'});
+        expect(weaviateAuthHeaders('  ')).toEqual({});
     });
 });
 

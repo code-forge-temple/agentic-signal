@@ -150,6 +150,17 @@ export const ragClassName = (collectionName: string): string => {
 export const isRagMetaClass = (className: string): boolean => className !== "Meta" && className.endsWith("Meta");
 
 /**
+ * The header that carries a Weaviate API key, none without a key. Weaviate reads the key only as a bearer token: it
+ * ignores X-Weaviate-Api-Key (the key for its hosted embedding service) and takes such a request as anonymous. Spaces
+ * around a pasted key are dropped; a key of spaces is none, since a Weaviate without authentication refuses any key.
+ */
+export function weaviateAuthHeaders (apiKey: string | undefined): Record<string, string> {
+    const key = apiKey?.trim();
+
+    return key ? {Authorization: `Bearer ${key}`} : {};
+}
+
+/**
  * A RAG owner key's fingerprint (SHA-256, hex), the only form of the key a collection's meta keeps: whoever can read
  * Weaviate learns nothing they could type in. Empty for no key.
  */

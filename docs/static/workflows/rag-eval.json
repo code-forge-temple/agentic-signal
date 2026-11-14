@@ -75,7 +75,7 @@
         "chunkSize": 64,
         "chunkOverlap": 16,
         "topK": 5,
-        "weaviateUrl": "http://localhost:8080",
+        "weaviateUrl": "http://localhost:9090",
         "weaviateApiKey": ""
       },
       "position": {

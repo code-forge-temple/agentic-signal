@@ -39,7 +39,8 @@ export const defaultRagNodeData: RagNodeData = {
     chunkSize: 512,
     chunkOverlap: 64,
     topK: 5,
-    weaviateUrl: "http://localhost:8080",
+    // Not 8080, Weaviate's own port: the web app listens there, and so does the desktop app after a Google or Reddit sign-in.
+    weaviateUrl: "http://localhost:9090",
     weaviateApiKey: "",
     ownerKey: "",
     handler: undefined,

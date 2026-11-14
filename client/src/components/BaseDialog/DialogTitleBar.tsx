@@ -10,6 +10,8 @@ import Tooltip from "@mui/material/Tooltip";
 import {Xmark, Expand, Collapse} from "iconoir-react";
 
 type DialogTitleBarProps = {
+    /** The title text's element id, which the dialog is labelled by. */
+    id: string;
     title: string;
     /** Shows the maximize/restore button. */
     maximizable: boolean;
@@ -19,13 +21,11 @@ type DialogTitleBarProps = {
 };
 
 /** The dialog's title, which it's dragged by unless maximized, with its maximize and close buttons. */
-export function DialogTitleBar ({title, maximizable, maximized, onToggleMaximized, onClose}: DialogTitleBarProps) {
+export function DialogTitleBar ({id, title, maximizable, maximized, onToggleMaximized, onClose}: DialogTitleBarProps) {
     return (
-        <DialogTitle
-            style={{cursor: maximized ? 'default' : 'move', display: 'flex', alignItems: 'center', userSelect: 'none'}}
-            id="draggable-dialog-title"
-        >
-            <span style={{flex: 1}}>{title}</span>
+        <DialogTitle style={{cursor: maximized ? 'default' : 'move', display: 'flex', alignItems: 'center', userSelect: 'none'}}>
+            {/* The dialog is named by the title alone, not by its buttons' labels too. */}
+            <span id={id} style={{flex: 1}}>{title}</span>
             {maximizable && (
                 <Tooltip title={maximized ? "Restore" : "Maximize"}>
                     <IconButton size="medium" onClick={onToggleMaximized} sx={{mr: 0.5}}>

@@ -11,7 +11,7 @@ import DialogContent from "@mui/material/DialogContent";
 import {ThemeProvider} from "@mui/material/styles";
 import {darkTheme} from "../../utils";
 import {PaperComponent, PaperComponentProps} from "../PaperComponent";
-import {ReactNode, useContext, useState} from "react";
+import {ReactNode, useContext, useId, useState} from "react";
 import {DRAG_CANCEL_SELECTOR} from "../../constants";
 import {WorkflowLayerContext} from "../../context/WorkflowLayerContext";
 import {useDialogFocus} from "./useDialogFocus";
@@ -48,6 +48,8 @@ export function BaseDialog ({
     const {isActive: isLayerActive} = useContext(WorkflowLayerContext);
     const [maximized, setMaximized] = useState(false);
     const {zIndex, isFocused, handleFocus} = useDialogFocus(open);
+    // Each dialog's own: with one id for all, every open dialog was named after the first one's title (and its buttons).
+    const titleId = useId();
 
     const paperProps: PaperComponentProps = {
         enableDragging: !maximized,
@@ -68,7 +70,7 @@ export function BaseDialog ({
                     root: {style: {zIndex, pointerEvents: "none", visibility: isLayerActive ? undefined : "hidden"}},
                     paper: paperProps
                 }}
-                aria-labelledby="draggable-dialog-title"
+                aria-labelledby={titleId}
                 {...dialogSize({maximized, width, maxWidth, fullWidth})}
                 hideBackdrop
                 disableEnforceFocus
@@ -77,6 +79,7 @@ export function BaseDialog ({
             >
                 <div onMouseDown={handleFocus} style={{display: "contents", height: '100%'}}>
                     <DialogTitleBar
+                        id={titleId}
                         title={title}
                         maximizable={maximizable}
                         maximized={maximized}

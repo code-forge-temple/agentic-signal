@@ -226,7 +226,7 @@ export function RagSettings (props: RagSettingsProps) {
                     size="small"
                     value={data.weaviateUrl ?? defaultRagNodeData.weaviateUrl}
                     onChange={value => change({weaviateUrl: value})}
-                    helperText="e.g. http://localhost:8080"
+                    helperText="e.g. http://localhost:9090"
                 />
                 <DebouncedTextField
                     label="API Key (optional)"

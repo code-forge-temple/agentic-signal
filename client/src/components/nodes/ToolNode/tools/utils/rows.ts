@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {isRecord} from "../../../../../utils";
-import {ToolError} from "../../../../../types/ollama.types";
+import {ToolError} from "../../../../../types/tool.types";
 import {sanitizeJsonInput} from "./sanitize";
 import {allBooleans, allDates, allNumbers, ARRAY_ITEM_TYPES, isObjectRow, SORT_ORDER, toBooleanNumber} from "./sort";
 import {dateTime} from "./dates";

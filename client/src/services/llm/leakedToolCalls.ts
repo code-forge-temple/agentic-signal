@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {ToolSchema} from "../../types/ollama.types";
+import {ToolSchema} from "../../types/tool.types";
 import {ToolCall} from "./types";
 
 /**

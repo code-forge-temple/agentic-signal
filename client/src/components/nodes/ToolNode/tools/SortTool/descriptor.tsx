@@ -9,7 +9,7 @@ import {Sort} from "iconoir-react";
 import {ToolDefinition} from "../types";
 import {SORT_ORDER} from "../utils/sort";
 import {keyProblem, parseRows, sortRows} from "../utils/rows";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 
 export const SortToolDescriptor: ToolDefinition = {
     toolSubtype: "sort",

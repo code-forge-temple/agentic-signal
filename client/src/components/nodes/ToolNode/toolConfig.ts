@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {getDefaultUserConfigValues} from "../../../types/ollama.types";
+import {getDefaultUserConfigValues} from "../../../types/tool.types";
 import {ToolDefinition} from "./tools/types";
 import {globalToolProp} from "./tools/utils/utils";
 

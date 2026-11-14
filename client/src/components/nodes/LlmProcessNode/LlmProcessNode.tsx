@@ -16,7 +16,7 @@ import {useRunOnInputChange as useAutoRunOnInputChange} from "../../../hooks/use
 import {useTimerTrigger} from "../../../hooks/useTimerTrigger";
 import {isModelGone} from "../../../hooks/useFetchModels";
 import {useOnOpen} from "../../../hooks/useOnOpen";
-import {Message} from "../../../types/ollama.types";
+import {Message} from "../../../services/llm/types";
 import {Icon} from "./constants";
 import {AppNode} from "../workflow.gen";
 import {assertIsEnhancedNodeData, GenericNodeData} from "../../../types/workflow";

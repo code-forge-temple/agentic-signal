@@ -7,7 +7,7 @@
 import type {BaseNodeData} from "../../../../types/workflow";
 import type {Node} from '@xyflow/react';
 import type {NODE_TYPE} from "../constants";
-import {ToolSchema} from "../../../../types/ollama.types";
+import {ToolSchema} from "../../../../types/tool.types";
 import {z} from 'zod';
 
 

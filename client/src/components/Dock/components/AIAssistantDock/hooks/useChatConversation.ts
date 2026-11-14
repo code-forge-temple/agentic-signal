@@ -6,7 +6,7 @@
 
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {OllamaService} from '../../../../../services/ollamaService';
-import {FetchAiResponseSuccess, Message, MessageRole, StreamAiResponse} from '../../../../../types/ollama.types';
+import {FetchAiResponseSuccess, Message, MessageRole, StreamAiResponse} from '../../../../../services/llm/types';
 import {ROLE} from '../../../../../constants';
 import {useStreamThrottle} from '../../../../../hooks/useStreamThrottle';
 import {ChatEntry, ChatMessage, ContextUsage, EMPTY_CONTEXT_USAGE} from '../constants';

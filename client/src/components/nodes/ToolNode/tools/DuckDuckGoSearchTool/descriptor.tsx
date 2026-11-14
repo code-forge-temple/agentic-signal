@@ -7,7 +7,7 @@
 import DuckDuckGo from "./assets/duckduckgo.svg";
 import {ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 import {isTauri} from "../../../../../utils";
 
 

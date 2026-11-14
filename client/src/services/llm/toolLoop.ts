@@ -4,12 +4,12 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {FetchAiResponse, Message, MessageRole, isToolError} from "../../types/ollama.types";
+import {isToolError} from "../../types/tool.types";
 import {errorMessage} from "@shared/utils";
 import {LlmProvider} from "./LlmProvider";
 import {recoverToolCallFromContent} from "./leakedToolCalls";
 import {toModelMessage} from "./messages";
-import {ChatReply, ChatRequest, FetchAiParams, OfferedTool, ToolCall, ToolEntry} from "./types";
+import {ChatReply, ChatRequest, FetchAiParams, FetchAiResponse, Message, MessageRole, OfferedTool, ToolCall, ToolEntry} from "./types";
 
 type ToolStatus = {called: boolean; succeeded: boolean; retryCount: number};
 

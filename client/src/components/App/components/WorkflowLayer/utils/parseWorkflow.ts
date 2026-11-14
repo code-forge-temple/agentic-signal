@@ -14,7 +14,7 @@ import {toolRegistry} from '../../../../nodes/ToolNode/tools/toolRegistry.gen';
 import {nodeRegistry} from '../../../../nodes/nodeRegistry.gen';
 import {NODE_TYPE as TOOL_NODE_TYPE} from '../../../../nodes/ToolNode/constants';
 import {assertValidWorkflowEdges} from '../../../utils/workflowUtils';
-import {getDefaultUserConfigValues} from '../../../../../types/ollama.types';
+import {getDefaultUserConfigValues} from '../../../../../types/tool.types';
 import {Workflow} from '../types';
 import {isRecord} from '../../../../../utils';
 import {zodIssues} from '../../../../../utils/zodIssues';

@@ -12,7 +12,7 @@ import Slider from "@mui/material/Slider";
 import Typography from "@mui/material/Typography";
 import {SessionId, ToolDefinition} from "../types";
 import {GraphQLService} from "./services/graphqlService";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 import {isTauri} from "../../../../../utils";
 import {UserConfigFields} from "../../UserConfigFields";
 import {excludeKeysFromObject} from "../../../../../utils";

@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import Ajv from 'ajv';
-import {Message, MessageRole} from '../../../../types/ollama.types';
+import {Message, MessageRole} from '../../../../services/llm/types';
 import {NodeEnvelope} from '../../../../types/workflow';
 import {formatErrorMessage} from '../../../../utils/utils';
 import {errorMessage, withoutFileBlocks} from '@shared/utils';

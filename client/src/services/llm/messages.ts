@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Message} from "../../types/ollama.types";
+import {Message} from "./types";
 
 /** `content` without the images inlined in it as base64 data URLs, and those images' data. */
 export function extractImagesAndRemove (content: string): { content: string, images: string[] } {

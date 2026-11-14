@@ -8,7 +8,7 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {OllamaProvider} from './OllamaProvider';
-import {MessageRole} from '../../../../types/ollama.types';
+import {MessageRole} from '../../types';
 
 
 /** The provider's private client handling. Loosely typed on purpose: the tests hand it a bare `{chat}` fake. */

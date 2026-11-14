@@ -7,7 +7,7 @@
 import {Clock} from "iconoir-react";
 import {GraphQLService} from "./services/graphqlService";
 import {ToolDefinition} from "../types";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 
 
 export const DateTimeNowToolDescriptor:ToolDefinition = {

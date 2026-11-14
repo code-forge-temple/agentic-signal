@@ -11,7 +11,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {useChatCommand} from './useChatCommand';
 import {useChatConversation} from './useChatConversation';
 import {OllamaService} from '../../../../../services/ollamaService';
-import {Message, StreamAiResponse} from '../../../../../types/ollama.types';
+import {Message, StreamAiResponse} from '../../../../../services/llm/types';
 import {NodeEnvelope} from '../../../../../types/workflow';
 import {CommandError} from '../../../../../services/commandRouter';
 import {CommandWorkflow, withDefaultModel} from '../../../../../workflows';

@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {ToolDefinition} from "../../types";
-import {extendSystemUserConfigSchema} from "../../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../../types/tool.types";
 import {ACCESS_TOKEN_KEY, ACCESS_TOKEN_TYPE_OAUTH, GOOGLE_CLIENT_ID_KEY, googleOauthHandler} from "./oauth";
 import {GoogleToolOauthConfigFields} from "./GoogleToolOauthConfigFields";
 import {UserConfigFields} from "../../../UserConfigFields";

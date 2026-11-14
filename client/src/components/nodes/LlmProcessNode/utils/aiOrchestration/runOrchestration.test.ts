@@ -7,7 +7,7 @@ import {beforeEach, describe, expect, it} from 'vitest';
 import {runOrchestration} from './runOrchestration';
 import {parseFormat} from '../formatUtils';
 import {OllamaService} from '../../../../../services/ollamaService';
-import {FetchAiResponse} from '../../../../../types/ollama.types';
+import {FetchAiResponse} from '../../../../../services/llm/types';
 import {OrchestrationParams} from './types';
 
 /** Mocks the public `fetchAIResponse` directly — isolates runOrchestration's own

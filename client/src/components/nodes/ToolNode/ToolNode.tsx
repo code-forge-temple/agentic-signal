@@ -21,7 +21,7 @@ import {AppNode} from "../workflow.gen";
 import {Icon} from "./constants";
 import {assertIsEnhancedNodeData} from "../../../types/workflow";
 import {toolRegistry} from "./tools/toolRegistry.gen";
-import {getDefaultUserConfigValues} from "../../../types/ollama.types";
+import {getDefaultUserConfigValues} from "../../../types/tool.types";
 import {NODE_TYPE as LLM_NODE_TYPE} from "../LlmProcessNode/constants";
 import {RenderConfigProps, ToolDefinition} from "./tools/types";
 import {hasSettings} from "./toolConfig";

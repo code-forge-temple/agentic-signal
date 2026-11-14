@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {NodeEnvelope} from "../../../../../types/workflow";
-import {Message, MessageRole} from "../../../../../types/ollama.types";
+import {Message, MessageRole} from "../../../../../services/llm/types";
 import {CommandError} from "../../../../../services/commandRouter";
 import {AI_ASSISTANT_TITLE, ChatEntry, NOTICE_ROLE} from "../constants";
 import {errorMessage} from "@shared/utils";

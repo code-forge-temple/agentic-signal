@@ -6,7 +6,7 @@
 
 import {Thunderstorm} from "iconoir-react";
 import {ToolDefinition} from "../types";
-import {extendSystemUserConfigSchema, ToolError} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema, ToolError} from "../../../../../types/tool.types";
 import {zodIssues} from "../../../../../utils/zodIssues";
 import {dayAsWritten} from "../utils/dates";
 import {sanitizeStringInput} from "../utils/sanitize";

@@ -8,8 +8,7 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {OllamaService} from './ollamaService';
-import {MessageRole, StreamAiResponse} from '../types/ollama.types';
-import {ChatRequest} from './llm/types';
+import {ChatRequest, MessageRole, StreamAiResponse} from './llm/types';
 
 type CannedResponse = {message: {role: string; content?: string; tool_calls?: any[]}};
 

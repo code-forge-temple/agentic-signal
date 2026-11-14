@@ -5,20 +5,22 @@
  ************************************************************************/
 
 import {
+    DeleteModelResponse,
+    FetchAiParams,
     FetchAiResponse,
     FetchModelContextLengthResponse,
     FetchModelResponse,
+    FetchModelsResponse,
     Message,
     StreamAiResponse,
     StreamChatOptions,
-} from "../types/ollama.types";
+} from "./llm/types";
 import {errorMessage} from "@shared/utils";
 import {LlmProvider, ModelManagement} from "./llm/LlmProvider";
 import {extractImagesAndRemove} from "./llm/messages";
 import {OllamaProvider} from "./llm/providers/ollama/OllamaProvider";
 import {addStreamedPart, StreamedReply, tokenCounts} from "./llm/streamedReply";
 import {runToolLoop} from "./llm/toolLoop";
-import {DeleteModelResponse, FetchAiParams, FetchModelsResponse} from "./llm/types";
 
 /**
  * The app's way to the LLM server, for Settings, the AI Buddy chat, the LLM node and the model list. Every call goes

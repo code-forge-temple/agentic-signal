@@ -9,7 +9,7 @@ import {act, renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {useAIProcessor} from './useAIProcessor';
 import {OllamaService} from '../../../../services/ollamaService';
-import {FetchAiResponse} from '../../../../types/ollama.types';
+import {FetchAiResponse} from '../../../../services/llm/types';
 
 /** Mocks the public `fetchAIResponse` directly. Both the single/two-phase path
  * (via runSingleCall) and orchestration mode (via runOrchestration -> runSingleCall)

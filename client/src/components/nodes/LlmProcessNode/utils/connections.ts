@@ -11,7 +11,7 @@ import {NODE_TYPE as RAG_NODE_TYPE} from "../../RagNode/constants";
 import {assertIsToolNodeData, ToolNode} from "../../ToolNode/types/workflow";
 import {assertIsRagNodeData, RagNode} from "../../RagNode/types/workflow";
 import {SessionId} from "../../ToolNode/tools/types";
-import {SystemUserConfigValues, ToolSchema} from "../../../../types/ollama.types";
+import {SystemUserConfigValues, ToolSchema} from "../../../../types/tool.types";
 import {NodeEnvelope} from "../../../../types/workflow";
 import {AIRequest} from "./aiRequest";
 

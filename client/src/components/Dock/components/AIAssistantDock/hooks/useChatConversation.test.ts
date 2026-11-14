@@ -10,7 +10,7 @@ import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {useChatConversation} from './useChatConversation';
 import {OllamaService} from '../../../../../services/ollamaService';
-import {Message, MessageRole, StreamAiResponse} from '../../../../../types/ollama.types';
+import {Message, MessageRole, StreamAiResponse} from '../../../../../services/llm/types';
 import {ROLE} from '../../../../../constants';
 import {ChatEntry, ChatMessage, EMPTY_CONTEXT_USAGE} from '../constants';
 import {LlmSettingsMap} from '../utils/llmSettings';

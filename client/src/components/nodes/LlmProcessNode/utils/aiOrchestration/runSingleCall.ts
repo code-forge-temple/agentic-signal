@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {OllamaService} from "../../../../../services/ollamaService";
-import {FetchAiResponse} from "../../../../../types/ollama.types";
+import {FetchAiResponse} from "../../../../../services/llm/types";
 import {RunSingleCallParams} from "./types";
 
 /**

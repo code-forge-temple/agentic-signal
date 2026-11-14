@@ -6,7 +6,7 @@
 
 import {CandlestickChart} from "iconoir-react";
 import {ToolDefinition} from "../types";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 import {computeIndicators} from "../../../StockAnalysisNode/utils";
 import {isStockDataPointArray, StockDataPoint} from "../../../StockAnalysisNode/types/workflow";
 import {errorMessage} from "@shared/utils";

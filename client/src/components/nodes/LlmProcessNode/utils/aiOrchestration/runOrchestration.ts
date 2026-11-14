@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Message, MessageRole} from "../../../../../types/ollama.types";
+import {Message, MessageRole} from "../../../../../services/llm/types";
 import {getExpectedOutputType, llmResponseJsonParse, ParsedFormat, serializeInput} from "../formatUtils";
 import {AgentTask, AgentTaskResult, OrchestrationParams, OrchestrationResult} from "./types";
 import {buildAggregationMessage, buildDependencyContext, validDependencies} from "./messageBuilders";

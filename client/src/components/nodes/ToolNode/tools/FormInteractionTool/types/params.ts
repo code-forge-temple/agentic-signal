@@ -8,7 +8,7 @@
 
 import {z} from "zod";
 import {FILL_ACTION_TYPES, FillAction} from "@shared/types.gen";
-import {ToolError} from "../../../../../../types/ollama.types";
+import {ToolError} from "../../../../../../types/tool.types";
 import {zodIssues} from "../../../../../../utils/zodIssues";
 
 // LLMs send null for "no value" (e.g. `value: null` on a check action); taking it as omitted saves a rejected

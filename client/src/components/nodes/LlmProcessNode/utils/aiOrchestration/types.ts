@@ -4,7 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {Message, SystemUserConfigValues, ToolSchema} from "../../../../../types/ollama.types";
+import {Message} from "../../../../../services/llm/types";
+import {SystemUserConfigValues, ToolSchema} from "../../../../../types/tool.types";
 import type {ParsedFormat} from "../formatUtils";
 
 export type AgentTask = {

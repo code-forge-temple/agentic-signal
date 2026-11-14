@@ -9,7 +9,7 @@ import {ToolNode as component} from "./ToolNode";
 import {Icon, NODE_TYPE} from "./constants";
 import {TOOL_NODE_TO_SANITIZE} from "./toolConfig";
 import {assertIsToolNodeData, ToolNode, ToolNodeDataSchema} from "./types/workflow";
-import {ToolSchema} from "../../../types/ollama.types";
+import {ToolSchema} from "../../../types/tool.types";
 
 
 export const ToolNodeDescriptor: NodeDescriptor<typeof NODE_TYPE, ToolNode> = {

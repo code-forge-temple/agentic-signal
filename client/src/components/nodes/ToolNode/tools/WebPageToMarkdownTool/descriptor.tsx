@@ -7,7 +7,7 @@
 import {GraphQLService} from "./services/graphqlService";
 import {ToolDefinition} from "../types";
 import WebIcon from "./assets/web.svg";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 import {isTauri} from "../../../../../utils";
 
 

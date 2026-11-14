@@ -1,5 +1,5 @@
 import {ReactElement, ReactNode} from "react";
-import {ToolSchema, UserConfigSchema} from "../../../../types/ollama.types";
+import {ToolSchema, UserConfigSchema} from "../../../../types/tool.types";
 
 export type RenderConfigProps = {
     userConfig: Record<string, any>;

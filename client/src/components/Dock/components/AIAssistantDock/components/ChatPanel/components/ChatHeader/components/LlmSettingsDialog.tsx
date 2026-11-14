@@ -28,7 +28,7 @@ import {
     toDraft
 } from '../../../../../utils/llmSettings';
 import {isCloudModel} from '../../../../../utils/modelContext';
-import {THINK_LEVELS} from '../../../../../../../../../types/ollama.types';
+import {THINK_LEVELS} from '../../../../../../../../../services/llm/types';
 
 
 type LlmSettingsDialogProps = {

@@ -8,7 +8,7 @@ import {SortUp} from "iconoir-react";
 import {ToolDefinition} from "../types";
 import {SORT_ORDER} from "../utils/sort";
 import {extremeRows} from "../utils/rows";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 
 export const MinToolDescriptor: ToolDefinition = {
     toolSubtype: "min",

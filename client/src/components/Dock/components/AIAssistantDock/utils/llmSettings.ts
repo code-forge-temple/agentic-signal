@@ -4,7 +4,7 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {ThinkLevel, ThinkOption, isThinkLevel} from "../../../../../types/ollama.types";
+import {ThinkLevel, ThinkOption, isThinkLevel} from "../../../../../services/llm/types";
 import {readJsonRecord} from "./storage";
 
 /**

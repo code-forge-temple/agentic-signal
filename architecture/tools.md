@@ -37,7 +37,7 @@ Some tools run entirely in the browser (Max, Min, Sort, CSV to Array); others ca
 | `toolSubtype` | The tool's id, saved in workflow files as the AI Tool node's `toolSubtype`. Never rename it. |
 | `title`, `icon` | Shown on the node and in Settings → Credentials. |
 | `toolSchema` | What the LLM sees: `{name, description, parameters}` (JSON Schema). Name, describe and constrain parameters carefully: the model only knows what's written here. |
-| `userConfigSchema` | The settings the user fills in on the node. Wrap it in `extendSystemUserConfigSchema(...)`, which adds `requireToolUse`. |
+| `userConfigSchema` | The settings the user fills in on the node. Wrap it in `extendSystemUserConfigSchema(...)` (`client/src/types/tool.types.ts`, with the other tool types), which adds `requireToolUse`. |
 | `handlerFactory(userConfig)` | Returns the handler the LLM's calls go to: `async (params) => result`. Bound to the effective config whenever it changes. |
 | `runtimeCleanup(userConfig)` | Optional. Returns `async (sessionId) => void`, called once after each LLM run, for tools that open resources per run (Form Interaction's browser session). |
 | `renderConfig(props)` | Optional. Custom settings UI. Without it, `UserConfigFields` renders `userConfigSchema` generically. |

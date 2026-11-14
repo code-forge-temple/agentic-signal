@@ -6,7 +6,7 @@
 
 import {Table2Columns} from "iconoir-react";
 import {ToolDefinition} from "../types";
-import {extendSystemUserConfigSchema} from "../../../../../types/ollama.types";
+import {extendSystemUserConfigSchema} from "../../../../../types/tool.types";
 
 export const CsvToArrayToolDescriptor: ToolDefinition = {
     toolSubtype: "csv-to-array",

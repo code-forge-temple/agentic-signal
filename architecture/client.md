@@ -88,6 +88,7 @@ Workflows are **not** kept across a reload: layers live in memory.
 | Ollama host, browser path, workflows folder, the update check | `context/SettingsContext.tsx`; the storage in `context/settingsStorage.ts`, also for code outside React and for Clear App Data | `localStorage` keys `ollamaHost`, `browserPath`, `workflowsFolder`, `checkForUpdates` |
 | Global key/value store (selected model, model settings, outside connections, shared secrets for the session, ...) | `stores/globalConfig.ts` (zustand) | Only keys written with `persist: true`, under `agentic-signal.globalData.<key>`; kept in sync across tabs |
 | Saved credentials and outside connections' tokens | `stores/vault.ts` | Encrypted, in the `agentic-signal.vault` entry ([credentials.md](credentials.md#the-vault)) |
+| The Ollama host's models, one list for the app: Settings, the AI Buddy chat, the LLM and RAG nodes read it through `hooks/useFetchModels.ts`, so a fetch by any of them (Settings after a pull or delete) updates all; cleared when the host changes | `stores/ollamaModels.ts` | No, fetched again after a reload |
 
 Settings (`ActionsDock/components/Settings/`) has five tabs: General, Ollama, Workflows, Credentials, Vault. **Clear App Data** removes every persisted setting, every global key and the vault, then reloads.
 

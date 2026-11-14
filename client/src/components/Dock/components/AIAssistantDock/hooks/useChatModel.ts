@@ -19,7 +19,7 @@ export function useChatModel () {
     const {globalData, setGlobalData} = useGlobalConfig();
     const storedModel: string = globalData['selectedModel'] || '';
     const [selectedModel, setSelectedModel] = useState<string>(NO_MODEL);
-    const {models, isFetchingModels, fetchModels} = useFetchModels();
+    const {models, reachable, isFetchingModels, fetchModels} = useFetchModels();
 
     useEffect(() => {
         void fetchModels().then((names) => {
@@ -32,6 +32,14 @@ export function useChatModel () {
             if (storedModel) setGlobalData('selectedModel', NO_MODEL, true);
         });
     }, [storedModel, setGlobalData, fetchModels]);
+
+    // The list is the app's: a model deleted elsewhere (Settings → Ollama) stops being the chat's too, by the same rule.
+    useEffect(() => {
+        if (!reachable || selectedModel === NO_MODEL || models.includes(selectedModel)) return;
+
+        setSelectedModel(NO_MODEL);
+        setGlobalData('selectedModel', NO_MODEL, true);
+    }, [models, reachable, selectedModel, setGlobalData]);
 
     // A model chosen in the chat is saved for next time.
     const chooseModel = useCallback((model: string) => {

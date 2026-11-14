@@ -11,6 +11,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {useChatModel} from './useChatModel';
 import {OllamaService} from '../../../../../services/ollamaService';
 import {useGlobalConfig} from '../../../../../stores/globalConfig';
+import {refreshOllamaModels, useOllamaModels} from '../../../../../stores/ollamaModels';
 
 
 const STORAGE_KEY = 'agentic-signal.globalData.selectedModel';
@@ -36,6 +37,7 @@ beforeEach(() => {
     OllamaService.reloadInstance();
     localStorage.clear();
     useGlobalConfig.setState({globalData: {}});
+    useOllamaModels.setState({models: [], reachable: false, isFetching: false});
 });
 
 afterEach(() => {
@@ -91,5 +93,35 @@ describe('useChatModel', () => {
 
         expect(result.current.selectedModel).toBe('b:2');
         expect(localStorage.getItem(STORAGE_KEY)).toBe('b:2');
+    });
+
+    it('shows a model pulled elsewhere, and lets go of one deleted elsewhere, saved choice too (the list is shared)', async () => {
+        saveModel('m1');
+        ollamaLists('m1');
+        const {result} = renderHook(() => useChatModel());
+
+        await settle();
+        expect(result.current.selectedModel).toBe('m1');
+
+        ollamaLists('m1', 'm2');
+        await act(async () => { await refreshOllamaModels(); });
+        expect(result.current.models).toEqual(['m1', 'm2']);
+        expect(result.current.selectedModel).toBe('m1');
+
+        ollamaLists('m2');
+        await act(async () => { await refreshOllamaModels(); });
+        await settle();
+        expect(result.current.selectedModel).toBe('');
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    });
+
+    it('keeps its model while the list is only forgotten for a new host, not fetched without it', async () => {
+        saveModel('m1');
+        ollamaLists('m1');
+        const {result} = renderHook(() => useChatModel());
+
+        await settle();
+        act(() => useOllamaModels.setState({models: [], reachable: false}));
+        expect(result.current.selectedModel).toBe('m1');
     });
 });

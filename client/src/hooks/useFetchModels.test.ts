@@ -10,11 +10,13 @@ import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {isModelGone, modelOptions, useFetchModels} from './useFetchModels';
 import {OllamaService} from '../services/ollamaService';
+import {useOllamaModels} from '../stores/ollamaModels';
 
 
 describe('useFetchModels', () => {
     beforeEach(() => {
         OllamaService.reloadInstance();
+        useOllamaModels.setState({models: [], reachable: false, isFetching: false});
     });
 
     afterEach(() => {
@@ -49,6 +51,124 @@ describe('useFetchModels', () => {
 
         expect(names).toEqual([]);
         expect(result.current.reachable).toBe(true);
+    });
+});
+
+describe('useFetchModels: one list for the app', () => {
+    beforeEach(() => {
+        OllamaService.reloadInstance();
+        useOllamaModels.setState({models: [], reachable: false, isFetching: false});
+    });
+
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('updates the list of every user when any of them fetches (a model pulled in Settings reaches the chat and the nodes)', async () => {
+        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
+        const settings = renderHook(() => useFetchModels());
+        const chat = renderHook(() => useFetchModels());
+
+        await act(async () => {
+            await settings.result.current.fetchModels();
+        });
+        expect(chat.result.current.models).toEqual(['a']);
+
+        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}, {name: 'b'}]});
+        await act(async () => {
+            await settings.result.current.fetchModels();
+        });
+        expect([chat.result.current.models, chat.result.current.reachable]).toEqual([['a', 'b'], true]);
+    });
+
+    it('reports a failed fetch to the user that made it only, while every list empties', async () => {
+        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
+        const asking = vi.fn();
+        const watching = vi.fn();
+        const one = renderHook(() => useFetchModels(asking));
+        const other = renderHook(() => useFetchModels(watching));
+
+        await act(async () => {
+            await one.result.current.fetchModels();
+        });
+        OllamaService.getInstance().fetchModels = async () => ({success: false, error: 'down'});
+        await act(async () => {
+            await one.result.current.fetchModels();
+        });
+
+        expect(asking).toHaveBeenCalledWith('Failed to fetch models: down');
+        expect(watching).not.toHaveBeenCalled();
+        expect([other.result.current.models, other.result.current.reachable]).toEqual([[], false]);
+    });
+
+    it('keeps the newest answer: an older fetch that comes back last changes nothing', async () => {
+        let answerOld: (() => void) | undefined;
+
+        OllamaService.getInstance().fetchModels = () => new Promise((resolve) => {
+            answerOld = () => resolve({success: true, models: [{name: 'old'}]});
+        });
+        const {result} = renderHook(() => useFetchModels());
+        let first: Promise<string[] | null> = Promise.resolve(null);
+
+        act(() => { first = result.current.fetchModels(); });
+        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'new'}]});
+        await act(async () => {
+            await result.current.fetchModels();
+        });
+        await act(async () => {
+            answerOld!();
+            await first;
+        });
+
+        expect(result.current.models).toEqual(['new']);
+    });
+
+    it('keeps the list while the same host is asked again (Settings opening), and empties it at once for a new host', async () => {
+        const {result} = renderHook(() => useFetchModels());
+        let answer: (() => void) | undefined;
+        const pendingFetch = () => {
+            OllamaService.getInstance().fetchModels = () => new Promise((resolve) => {
+                answer = () => resolve({success: true, models: [{name: 'b'}]});
+            });
+        };
+
+        localStorage.setItem('ollamaHost', 'http://host-a:11434');
+        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
+        await act(async () => {
+            await result.current.fetchModels();
+        });
+
+        pendingFetch();
+        act(() => { void result.current.fetchModels(); });
+        expect([result.current.models, result.current.reachable]).toEqual([['a'], true]);
+        await act(async () => { answer!(); });
+
+        localStorage.setItem('ollamaHost', 'http://host-b:11434');
+        pendingFetch();
+        act(() => { void result.current.fetchModels(); });
+        expect([result.current.models, result.current.reachable]).toEqual([[], false]);
+        await act(async () => { answer!(); });
+        expect(result.current.models).toEqual(['b']);
+
+        localStorage.removeItem('ollamaHost');
+    });
+
+    it('is loading only while no list is known: a known list refreshing stays shown, not a spinner', async () => {
+        let answer: (() => void) | undefined;
+
+        OllamaService.getInstance().fetchModels = () => new Promise((resolve) => {
+            answer = () => resolve({success: true, models: [{name: 'a'}]});
+        });
+        const {result} = renderHook(() => useFetchModels());
+
+        act(() => { void result.current.fetchModels(); });
+        expect(result.current.isFetchingModels).toBe(true);
+        await act(async () => { answer!(); });
+        expect(result.current.isFetchingModels).toBe(false);
+
+        act(() => { void result.current.fetchModels(); });
+        expect([result.current.isFetchingModels, result.current.models]).toEqual([false, ['a']]);
+        await act(async () => { answer!(); });
     });
 });
 

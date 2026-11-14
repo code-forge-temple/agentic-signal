@@ -34,17 +34,16 @@ function toBrowserExecutable (path: string): string {
 
 export const Settings = () => {
     const {settings, setSetting} = useSettings();
-    const {models, isFetchingModels, reachable: isOllamaHostValid, fetchModels, resetModels} = useFetchModels();
-    // Only a host that hasn't answered yet: the refetches after a download leave a reachable host's list in place.
-    const checkingHost = isFetchingModels && !isOllamaHostValid;
+    // Checking: a host that hasn't answered yet; the refetches after a download leave a reachable host's list in place.
+    const {models, isFetchingModels: checkingHost, reachable: isOllamaHostValid, fetchModels} = useFetchModels();
     const [workflowsFolderError, setWorkflowsFolderError] = useState<string | null>(null);
     const [defaultWorkflowsFolder, setDefaultWorkflowsFolder] = useState<string | null>(null);
 
-    // A new host shows nothing, and can't take a new model, until it answers.
+    // A new host shows nothing, and can't take a new model, until it answers (the list is cleared for a new host only:
+    // the chat and the nodes show it too).
     useEffect(() => {
-        resetModels();
         void fetchModels();
-    }, [settings.ollamaHost, fetchModels, resetModels]);
+    }, [settings.ollamaHost, fetchModels]);
 
     // Checks the chosen folder, or learns the default one's path, which the field then shows.
     useEffect(() => {

@@ -70,7 +70,9 @@ A desktop build:
 5. copies it into `src-tauri/bin/` (bundled as a resource);
 6. runs `tauri build`.
 
-At start, the app launches that binary from its `bin/` folder (`src-tauri/src/main.gen.rs`) and keeps the process handle. **Close App** kills it (the `kill_backend_process` command).
+At start, the app launches that binary from its `bin/` folder (`src-tauri/src/main.gen.rs`, `start_backend` in `utils/manage_process.rs`) and keeps the process handle. **Close App** kills it (the `kill_backend_process` command), and so does the app ending any other way, such as the window's X (the `RunEvent::Exit` handler).
+
+A **release build** opens no console window: on Windows the app is a windowed program (`windows_subsystem = "windows"`) and starts the backend with `CREATE_NO_WINDOW`. The backend's output goes to `backend.log` in Tauri's app log folder (`%LOCALAPPDATA%\com.agentic-signal\logs` on Windows), made anew at each start. Its input is the null device: Playwright can't start Chrome on Windows when a stream has no handle (EBADF). A **debug build** (`dev:<platform>`, `tauri dev`) keeps the console, and the output stays in the terminal it was started from, as with `bun run dev`.
 
 Native features come from Tauri plugins (`shell`, `dialog`, `fs`, `log`) and from `#[tauri::command]` functions under `src-tauri/src/nodes`, `tools` and `utils`. The generator registers those commands in `main.gen.rs`. Examples: the Google and Reddit OAuth windows, the native file dialogs for the workflows folder.
 

@@ -34,6 +34,16 @@ If you **do not want to develop or build from source**, you can simply:
 
 You are now ready to use `Agentic Signal` with local AI and browser automation!
 
+## Logs
+
+The app opens no console window. Its backend writes its messages and errors to `backend.log`, which starts anew each time the app starts, so it holds the current or last session only:
+
+- **Windows:** `%LOCALAPPDATA%\com.agentic-signal\logs\backend.log`
+- **macOS:** `~/Library/Logs/com.agentic-signal/backend.log`
+- **Linux:** `~/.local/share/com.agentic-signal/logs/backend.log`
+
+If something fails, look there, and attach it when you report a problem. Copy it before restarting the app, which starts it over.
+
 ## Next Steps
 
 - Explore [example workflows](../../workflows/overview) to see ready-to-use templates.

@@ -32,7 +32,7 @@ const namedFiles = (): string[] => {
     return args.slice(start, end === -1 ? undefined : end).map(file => repoPath(file) ?? file);
 };
 
-const print = (json: unknown, text: string) => console.log(has("--json") ? JSON.stringify(json, null, 2) : text);
+const print = (json: unknown, text: string) => console.log(has("--json") ? JSON.stringify(json, null, 4) : text);
 
 async function changes (): Promise<number> {
     const results = await inSequence(has("--files") ? namedFiles() : changedFiles(), fileChange);

@@ -121,7 +121,7 @@ export function generateDocsSchemas () {
     }
 
     fs.mkdirSync(path.dirname(OUT_FILE), {recursive: true});
-    fs.writeFileSync(OUT_FILE, JSON.stringify(result, null, 2));
+    fs.writeFileSync(OUT_FILE, JSON.stringify(result, null, 4));
 
     console.log(`Generated: ${OUT_FILE} (${Object.keys(result).length} nodes)`);
 }

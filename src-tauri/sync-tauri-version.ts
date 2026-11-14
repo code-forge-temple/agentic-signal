@@ -4,5 +4,5 @@ const tauriConf = JSON.parse(await Deno.readTextFile(tauriConfPath));
 
 tauriConf.version = pkg.version;
 
-await Deno.writeTextFile(tauriConfPath, JSON.stringify(tauriConf, null, 2));
+await Deno.writeTextFile(tauriConfPath, JSON.stringify(tauriConf, null, 4));
 console.log(`Synced tauri.conf.json version to ${pkg.version}`);

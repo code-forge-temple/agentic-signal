@@ -36,7 +36,7 @@ afterEach(() => {
 const workflowReply = (title: string) => {
     const workflow = {nodes: [{id: title, type: 'timer', position: {x: 0, y: 0}, data: {title}}], edges: []};
 
-    return `Here is ${title}:\n\n\`\`\`json\n${JSON.stringify(workflow, null, 2)}\n\`\`\`\n`;
+    return `Here is ${title}:\n\n\`\`\`json\n${JSON.stringify(workflow, null, 4)}\n\`\`\`\n`;
 };
 
 const CONVERSATION: ChatEntry[] = [

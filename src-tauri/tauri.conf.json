@@ -1,44 +1,44 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Agentic Signal",
-  "version": "3.6.0",
-  "identifier": "com.agentic-signal",
-  "build": {
-    "frontendDist": "../client/dist",
-    "devUrl": "http://localhost:8080",
-    "beforeDevCommand": "bun run client:dev"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "Agentic Signal",
-        "width": 1920,
-        "height": 1080,
-        "resizable": true,
-        "fullscreen": false,
-        "dragDropEnabled": false,
-        "backgroundColor": "#141414"
-      }
-    ],
-    "security": {
-      "csp": null
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "resources": [
-      "bin/"
-    ],
-    "publisher": "Code Forge Temple",
-    "licenseFile": "LICENSE.txt"
-  },
-  "mainBinaryName": "Agentic Signal"
+    "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+    "productName": "Agentic Signal",
+    "version": "3.6.0",
+    "identifier": "com.agentic-signal",
+    "build": {
+        "frontendDist": "../client/dist",
+        "devUrl": "http://localhost:8080",
+        "beforeDevCommand": "bun run client:dev"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "Agentic Signal",
+                "width": 1920,
+                "height": 1080,
+                "resizable": true,
+                "fullscreen": false,
+                "dragDropEnabled": false,
+                "backgroundColor": "#141414"
+            }
+        ],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "resources": [
+            "bin/"
+        ],
+        "publisher": "Code Forge Temple",
+        "licenseFile": "LICENSE.txt"
+    },
+    "mainBinaryName": "Agentic Signal"
 }

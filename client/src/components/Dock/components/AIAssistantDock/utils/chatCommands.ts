@@ -105,7 +105,7 @@ export function commandReplySystemPrompt (command: string, description: string, 
 
 /** The workflow's result as the message the AI Buddy's model reads, cut to fit a `contextLimit`-token window. */
 export function commandResultsMessage (command: string, text: string, result: NodeEnvelope, contextLimit: number): string {
-    const raw = typeof result.payload === "string" ? result.payload : JSON.stringify(result.payload, null, 2) ?? "";
+    const raw = typeof result.payload === "string" ? result.payload : JSON.stringify(result.payload, null, 4) ?? "";
     const maxChars = Math.floor(contextLimit * RESULTS_SHARE_OF_CONTEXT * CHARS_PER_TOKEN);
     const body = raw.length > maxChars
         ? `${raw.slice(0, maxChars)}\n\n[… cut to fit the model's context window]`

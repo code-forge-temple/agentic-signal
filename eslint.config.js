@@ -49,6 +49,11 @@ export default defineConfig(
                     message: `Import each component from its own path, as '${name}/Box' (theme helpers from '@mui/material/styles'): '${name}' loads the whole package.`,
                 })),
             }],
+            // JSON the app writes or shows is indented by 4, as the code is (compact, with no indent, is fine).
+            'no-restricted-syntax': ['error', {
+                selector: "CallExpression[callee.object.name='JSON'][callee.property.name='stringify'][arguments.2.type='Literal']:not([arguments.2.value=4])",
+                message: 'Indent JSON by 4: JSON.stringify(value, null, 4).',
+            }],
             "@typescript-eslint/no-floating-promises": "error", // a promise is awaited, caught, or marked `void`
             "@typescript-eslint/no-misused-promises": "error", // no async function where a void callback is expected
             "@typescript-eslint/unbound-method": "error", // methods handed around keep their `this`

@@ -26,7 +26,7 @@ export function NodeSchemaTab ({nodeType}: Props) {
                 generated from the Zod schema used to validate the node at runtime.
             </p>
             <CodeBlock language="json">
-                {JSON.stringify(schema, null, 2)}
+                {JSON.stringify(schema, null, 4)}
             </CodeBlock>
         </>
     );

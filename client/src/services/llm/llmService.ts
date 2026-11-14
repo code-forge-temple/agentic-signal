@@ -14,42 +14,42 @@ import {
     Message,
     StreamAiResponse,
     StreamChatOptions,
-} from "./llm/types";
+} from "./types";
 import {errorMessage} from "@shared/utils";
-import {LlmProvider, ModelManagement} from "./llm/LlmProvider";
-import {extractImagesAndRemove} from "./llm/messages";
-import {OllamaProvider} from "./llm/providers/ollama/OllamaProvider";
-import {addStreamedPart, StreamedReply, tokenCounts} from "./llm/streamedReply";
-import {runToolLoop} from "./llm/toolLoop";
+import {LlmProvider, ModelManagement} from "./llmProvider";
+import {extractImagesAndRemove} from "./messages";
+import {OllamaProvider} from "./providers/ollama/ollamaProvider";
+import {addStreamedPart, StreamedReply, tokenCounts} from "./streamedReply";
+import {runToolLoop} from "./toolLoop";
 
 /**
  * The app's way to the LLM server, for Settings, the AI Buddy chat, the LLM node and the model list. Every call goes
- * through a provider (llm/LlmProvider.ts; Ollama's today) and comes back in the app's own response shapes: a failure is
+ * through a provider (llmProvider.ts; Ollama's today) and comes back in the app's own response shapes: a failure is
  * an answer with `success: false`, never thrown.
  */
-export class OllamaService {
-    private static instance: OllamaService | null = null;
+export class LlmService {
+    private static instance: LlmService | null = null;
     private provider: LlmProvider & ModelManagement = new OllamaProvider();
 
     constructor () {
-        if (OllamaService.instance) {
-            return OllamaService.instance;
+        if (LlmService.instance) {
+            return LlmService.instance;
         }
 
-        OllamaService.instance = this;
+        LlmService.instance = this;
     }
 
-    static getInstance (): OllamaService {
-        if (!OllamaService.instance) {
-            OllamaService.instance = new OllamaService();
+    static getInstance (): LlmService {
+        if (!LlmService.instance) {
+            LlmService.instance = new LlmService();
         }
 
-        return OllamaService.instance;
+        return LlmService.instance;
     }
 
     static reloadInstance (): void {
-        OllamaService.instance = null;
-        OllamaService.instance = new OllamaService();
+        LlmService.instance = null;
+        LlmService.instance = new LlmService();
     }
 
     fetchModels = async (): Promise<FetchModelsResponse> => {

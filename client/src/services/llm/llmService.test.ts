@@ -7,8 +7,8 @@
 // @vitest-environment jsdom
 
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {OllamaService} from './ollamaService';
-import {ChatRequest, MessageRole, StreamAiResponse} from './llm/types';
+import {LlmService} from './llmService';
+import {ChatRequest, MessageRole, StreamAiResponse} from './types';
 
 type CannedResponse = {message: {role: string; content?: string; tool_calls?: any[]}};
 
@@ -18,14 +18,14 @@ type ProviderInternals = {
     getOllama: (signal?: AbortSignal) => Promise<unknown>;
 };
 
-const providerOf = (service: OllamaService) => (service as unknown as {provider: ProviderInternals}).provider;
+const providerOf = (service: LlmService) => (service as unknown as {provider: ProviderInternals}).provider;
 
 /** Mocks only the provider's `chat` — everything else (the loop, recovery, retries, tool
  * execution) runs for real, against the actual implementation. */
 function mockService (mockResponses: CannedResponse[]) {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
 
-    const service = OllamaService.getInstance();
+    const service = LlmService.getInstance();
     let callIndex = 0;
     const receivedRequests: ChatRequest[] = [];
     // The conversation is one array that keeps growing; this keeps what each request saw.
@@ -48,9 +48,9 @@ function mockService (mockResponses: CannedResponse[]) {
 /** Mocks the provider's `getOllama` to return a fake client — for the methods that talk to Ollama
  * directly (list/pull/delete/streaming chat/show). */
 function mockOllamaClient (overrides: Partial<Record<'list' | 'chat' | 'pull' | 'delete' | 'abort' | 'show', any>>) {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
 
-    const service = OllamaService.getInstance();
+    const service = LlmService.getInstance();
     const client = {list: undefined, chat: undefined, pull: undefined, delete: undefined, abort: undefined, show: undefined, ...overrides};
 
     providerOf(service).getOllama = async () => client;
@@ -84,9 +84,9 @@ const leakedNested = (args: object = {url: 'http://x'}, name = 'formInteraction'
 const leakedFlat = (args: object = {url: 'http://x'}, name = 'formInteraction') =>
     JSON.stringify({name, arguments: args});
 
-describe('OllamaService.fetchAIResponse', () => {
+describe('LlmService.fetchAIResponse', () => {
     beforeEach(() => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
     });
 
     it('succeeds with a clean reply when the model uses native tool_calls throughout', async () => {
@@ -609,9 +609,9 @@ describe('OllamaService.fetchAIResponse', () => {
             vi.spyOn(console, 'error').mockImplementation(() => {});
 
             try {
-                OllamaService.reloadInstance();
+                LlmService.reloadInstance();
 
-                const service = OllamaService.getInstance();
+                const service = LlmService.getInstance();
 
                 // The provider's real chat, whose client can't be made.
                 providerOf(service).getOllama = async () => { throw new Error('bad host'); };
@@ -845,7 +845,7 @@ describe('OllamaService.fetchAIResponse', () => {
     });
 });
 
-describe('OllamaService.fetchModels', () => {
+describe('LlmService.fetchModels', () => {
     it('returns the model list on success', async () => {
         const {service} = mockOllamaClient({
             list: async () => ({models: [{name: 'llama3'}, {name: 'gemma'}]}),
@@ -867,7 +867,7 @@ describe('OllamaService.fetchModels', () => {
     });
 });
 
-describe('OllamaService.deleteModel', () => {
+describe('LlmService.deleteModel', () => {
     it('reports success after deleting', async () => {
         let receivedArgs: Record<string, unknown> = {};
         const {service} = mockOllamaClient({
@@ -891,10 +891,10 @@ describe('OllamaService.deleteModel', () => {
     });
 });
 
-describe('OllamaService cancel (signal)', () => {
+describe('LlmService cancel (signal)', () => {
     beforeEach(() => {
         localStorage.clear();
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
     });
 
     afterEach(() => {
@@ -951,7 +951,7 @@ describe('OllamaService cancel (signal)', () => {
     });
 });
 
-describe('OllamaService.streamAIResponse', () => {
+describe('LlmService.streamAIResponse', () => {
     it('yields incremental chunks and a final chunk with the full accumulated reply', async () => {
         const {service} = mockOllamaClient({
             chat: async () => fakeAsyncStream([
@@ -1135,7 +1135,7 @@ describe('OllamaService.streamAIResponse', () => {
     });
 });
 
-describe('OllamaService.fetchModelContextLength', () => {
+describe('LlmService.fetchModelContextLength', () => {
     // A plain object, not a Map — which is what the real client produces, since show() is
     // just `response.json()`.
     const showing = (modelInfo: Record<string, unknown>) => ({
@@ -1173,7 +1173,7 @@ describe('OllamaService.fetchModelContextLength', () => {
     });
 });
 
-describe('OllamaService.pullModel', () => {
+describe('LlmService.pullModel', () => {
     it('yields only when progress increases, and stops at 100', async () => {
         const {service} = mockOllamaClient({
             pull: async () => fakeAsyncStream([
@@ -1212,37 +1212,37 @@ describe('OllamaService.pullModel', () => {
     });
 });
 
-describe('OllamaService singleton', () => {
+describe('LlmService singleton', () => {
     it('getInstance always returns the same instance until reloadInstance is called', () => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
 
-        const a = OllamaService.getInstance();
-        const b = OllamaService.getInstance();
+        const a = LlmService.getInstance();
+        const b = LlmService.getInstance();
 
         expect(a).toBe(b);
 
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
 
-        const c = OllamaService.getInstance();
+        const c = LlmService.getInstance();
 
         expect(c).not.toBe(a);
     });
 
-    it('calling `new OllamaService()` directly while an instance exists returns that same instance', () => {
-        OllamaService.reloadInstance();
+    it('calling `new LlmService()` directly while an instance exists returns that same instance', () => {
+        LlmService.reloadInstance();
 
-        const existing = OllamaService.getInstance();
-        const viaConstructor = new OllamaService();
+        const existing = LlmService.getInstance();
+        const viaConstructor = new LlmService();
 
         expect(viaConstructor).toBe(existing);
     });
 
     it('getInstance creates a fresh instance when none exists yet', () => {
-        (OllamaService as any).instance = null;
+        (LlmService as any).instance = null;
 
-        const created = OllamaService.getInstance();
+        const created = LlmService.getInstance();
 
-        expect(created).toBeInstanceOf(OllamaService);
-        expect(OllamaService.getInstance()).toBe(created);
+        expect(created).toBeInstanceOf(LlmService);
+        expect(LlmService.getInstance()).toBe(created);
     });
 });

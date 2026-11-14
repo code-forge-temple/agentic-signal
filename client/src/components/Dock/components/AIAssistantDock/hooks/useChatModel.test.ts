@@ -9,7 +9,7 @@
 import {act, cleanup, renderHook, waitFor} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {useChatModel} from './useChatModel';
-import {OllamaService} from '../../../../../services/ollamaService';
+import {LlmService} from '../../../../../services/llm/llmService';
 import {useGlobalConfig} from '../../../../../stores/globalConfig';
 import {refreshOllamaModels, useOllamaModels} from '../../../../../stores/ollamaModels';
 
@@ -25,7 +25,7 @@ const saveModel = (model: string) => {
 const ollamaLists = (...names: string[]) => {
     const fetchModels = vi.fn(async () => ({success: true as const, models: names.map(name => ({name}))}));
 
-    OllamaService.getInstance().fetchModels = fetchModels;
+    LlmService.getInstance().fetchModels = fetchModels;
 
     return fetchModels;
 };
@@ -34,7 +34,7 @@ const ollamaLists = (...names: string[]) => {
 const settle = () => act(async () => {});
 
 beforeEach(() => {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
     localStorage.clear();
     useGlobalConfig.setState({globalData: {}});
     useOllamaModels.setState({models: [], reachable: false, isFetching: false});
@@ -71,7 +71,7 @@ describe('useChatModel', () => {
 
         const fetchModels = vi.fn(async () => ({success: false as const, error: 'daemon not running'}));
 
-        OllamaService.getInstance().fetchModels = fetchModels;
+        LlmService.getInstance().fetchModels = fetchModels;
 
         const {result} = renderHook(() => useChatModel());
 

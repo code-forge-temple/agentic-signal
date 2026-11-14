@@ -7,7 +7,7 @@
 // @vitest-environment jsdom
 
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {OllamaProvider} from './OllamaProvider';
+import {OllamaProvider} from './ollamaProvider';
 import {MessageRole} from '../../types';
 
 

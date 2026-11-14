@@ -44,6 +44,6 @@ Agentic Signal scores each TypeScript file from 1 to 10 for complexity, nesting 
 ## Project Notes
 
 - **PRO nodes** (Slack, SMS, Reddit Post) are symlinked in from `../agentic-signal-pro`. The scripts follow the links, and the PRO record lives in that repo's own `eslint-suppressions.json`.
-- **The LLM layer** is split by job: `client/src/services/ollamaService.ts` is only the entry point; the server's calls are a provider (`services/llm/providers/ollama/`), and the tool loop, leaked-tool-call recovery and streamed replies work with any provider (`services/llm/`). Keep server-specific code in its provider.
+- **The LLM layer** is split by job: `client/src/services/llm/llmService.ts` (`LlmService`) is only the entry point; the server's calls are a provider (`services/llm/providers/ollama/`), and the tool loop, leaked-tool-call recovery and streamed replies work with any provider (`services/llm/`). Keep server-specific code in its provider.
 - **Tests** have no size or nesting limits, and generated `*.gen.*` files aren't scored.
 - **The hooks** in `.claude/settings.json` run the same check after each edit of a TypeScript file and at the end of a turn.

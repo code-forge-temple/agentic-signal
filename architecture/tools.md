@@ -58,7 +58,7 @@ Return a JSON-serializable result. On failure, return `{error: "..."}` with a me
 
 1. **The AI Tool node** (`ToolNode.tsx`) looks up its tool in `toolRegistry` by `toolSubtype`. It checks that required config is present, then stores `handler`, `cleanup` and `toolSchema` in its node data.
 2. **The LLM node** (`LlmProcessNode`) finds the AI Tool nodes connected to its `tool` port and builds the list of `{schema, handler, systemUserConfigValues}` for the run (`LlmProcessNode/utils/connections.ts`).
-3. **The tool loop** (`services/llm/toolLoop.ts`, behind `ollamaService.fetchAIResponse`) sends the schemas with the chat request, executes each tool call through the matching handler, and sends the results back to the model until it answers.
+3. **The tool loop** (`services/llm/toolLoop.ts`, behind `LlmService.fetchAIResponse`) sends the schemas with the chat request, executes each tool call through the matching handler, and sends the results back to the model until it answers.
    - Tools with `requireToolUse` are retried, up to the LLM node's `maxToolRetries`, until the model calls them.
    - A call to a tool the agent doesn't have is answered with the list of tools it can call, instead of failing the run.
 4. **After the run**, the LLM node calls every connected tool's `cleanup(sessionId)`.

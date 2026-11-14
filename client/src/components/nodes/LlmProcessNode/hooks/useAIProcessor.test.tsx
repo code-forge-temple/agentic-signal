@@ -8,18 +8,18 @@
 import {act, renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {useAIProcessor} from './useAIProcessor';
-import {OllamaService} from '../../../../services/ollamaService';
+import {LlmService} from '../../../../services/llm/llmService';
 import {FetchAiResponse} from '../../../../services/llm/types';
 
 /** Mocks the public `fetchAIResponse` directly. Both the single/two-phase path
  * (via runSingleCall) and orchestration mode (via runOrchestration -> runSingleCall)
  * bottom out here, so this one mock point exercises every mode useAIProcessor supports. */
 function mockFetchAIResponse (responses: FetchAiResponse[]) {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
 
-    const service = OllamaService.getInstance();
+    const service = LlmService.getInstance();
     let callIndex = 0;
-    const receivedCalls: Parameters<OllamaService['fetchAIResponse']>[0][] = [];
+    const receivedCalls: Parameters<LlmService['fetchAIResponse']>[0][] = [];
 
     service.fetchAIResponse = async (params) => {
         receivedCalls.push(params);
@@ -49,11 +49,11 @@ function makeHistory (initial: any[] = []) {
 
 describe('useAIProcessor.processAIRequest', () => {
     beforeEach(() => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
     });
 
     describe('input validation', () => {
-        it('fails immediately when no model is provided, without calling OllamaService', async () => {
+        it('fails immediately when no model is provided, without calling LlmService', async () => {
             const {getCallCount} = mockFetchAIResponse([]);
             const onError = vi.fn();
             const {result} = renderHook(() => useAIProcessor({onError}));
@@ -126,9 +126,9 @@ describe('useAIProcessor.processAIRequest', () => {
 
     describe('other exposed behavior', () => {
         it('fetchModels shows a failure in the error log only: no onError, so no output cleared and no feedback sent', async () => {
-            OllamaService.reloadInstance();
+            LlmService.reloadInstance();
 
-            const service = OllamaService.getInstance();
+            const service = LlmService.getInstance();
 
             service.fetchModels = async () => ({success: false, error: 'daemon not running'});
 
@@ -191,7 +191,7 @@ describe('useAIProcessor.processAIRequest', () => {
     });
 
     describe('normal single-call mode', () => {
-        it('succeeds with a plain prompt + input, calling OllamaService once', async () => {
+        it('succeeds with a plain prompt + input, calling LlmService once', async () => {
             const {receivedCalls, getCallCount} = mockFetchAIResponse([success('Hello back!')]);
             const onSuccess = vi.fn();
             const {result} = renderHook(() => useAIProcessor({onSuccess}));
@@ -303,7 +303,7 @@ describe('useAIProcessor.processAIRequest', () => {
             expect(onError).toHaveBeenCalledWith(expect.stringContaining('onError schema'));
         });
 
-        it('fails with a clear error when the format JSON itself is malformed, without calling OllamaService', async () => {
+        it('fails with a clear error when the format JSON itself is malformed, without calling LlmService', async () => {
             const {getCallCount} = mockFetchAIResponse([]);
             const onError = vi.fn();
             const {result} = renderHook(() => useAIProcessor({onError}));
@@ -479,7 +479,7 @@ describe('useAIProcessor.processAIRequest', () => {
             expect(receivedCalls[0].messages[0]).toEqual({role: 'user', content: 'core'});
         });
 
-        it('fails when the RAG handler throws, without calling OllamaService', async () => {
+        it('fails when the RAG handler throws, without calling LlmService', async () => {
             const {getCallCount} = mockFetchAIResponse([]);
             const ragHandler = vi.fn(async () => { throw new Error('vector store down'); });
             const onError = vi.fn();
@@ -839,7 +839,7 @@ describe('useAIProcessor.processAIRequest', () => {
 
 describe('useAIProcessor cancelling', () => {
     beforeEach(() => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
     });
 
     /**
@@ -849,7 +849,7 @@ describe('useAIProcessor cancelling', () => {
     function mockPendingCalls () {
         const calls: {signal?: AbortSignal; release: (response: FetchAiResponse) => void}[] = [];
 
-        OllamaService.getInstance().fetchAIResponse = (params) => new Promise((resolve) => {
+        LlmService.getInstance().fetchAIResponse = (params) => new Promise((resolve) => {
             calls.push({signal: params.signal, release: resolve});
 
             if (params.signal?.aborted) return resolve(failure('This operation was aborted'));

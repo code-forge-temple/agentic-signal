@@ -10,7 +10,7 @@ import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {useChatCommand} from './useChatCommand';
 import {useChatConversation} from './useChatConversation';
-import {OllamaService} from '../../../../../services/ollamaService';
+import {LlmService} from '../../../../../services/llm/llmService';
 import {Message, StreamAiResponse} from '../../../../../services/llm/types';
 import {NodeEnvelope} from '../../../../../types/workflow';
 import {CommandError} from '../../../../../services/commandRouter';
@@ -43,7 +43,7 @@ const STATUS_LINE: ChatMessage = {role: ROLE.ASSISTANT, content: `Running **/res
 function ollamaReplies (reply: string): Message[][] {
     const asked: Message[][] = [];
 
-    OllamaService.getInstance().streamAIResponse = async function * (messages) {
+    LlmService.getInstance().streamAIResponse = async function * (messages) {
         asked.push(messages);
 
         yield {success: true, final: true, reply} satisfies StreamAiResponse;
@@ -79,7 +79,7 @@ function startCommand (result: Chat): Promise<void> {
 const lastEntry = (result: Chat) => result.current.messages[result.current.messages.length - 1];
 
 beforeEach(() => {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
     layer.run.mockReset();
     layer.stop.mockReset();
 });

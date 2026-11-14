@@ -8,7 +8,7 @@ import {ChatReply, ChatRequest, ModelInfo, PullProgress, StreamPart, StreamReque
 
 /**
  * What the app needs from an LLM server, in the app's own terms: each provider turns these into its server's API (Ollama:
- * providers/ollama/OllamaProvider.ts). Everything that isn't the server's (the tool-calling loop, building a streamed
+ * providers/ollama/ollamaProvider.ts). Everything that isn't the server's (the tool-calling loop, building a streamed
  * reply) stays out of it, so a second provider (LM Studio's OpenAI-compatible API, say) brings only its own calls.
  */
 export interface LlmProvider {

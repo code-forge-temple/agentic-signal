@@ -50,7 +50,7 @@ Every user message is sent with a `[Sun 1 Nov 2026, 14:03 GMT-5]`-style stamp of
 
 ## Ollama Calls
 
-`client/src/services/ollamaService.ts` handles every model call: the chat, the LLM nodes, tool loops, model pulls and deletes. The Ollama-specific part is its provider, `client/src/services/llm/providers/ollama/OllamaProvider.ts` ([client.md](client.md#talking-to-the-backend)).
+`client/src/services/llm/llmService.ts` (`LlmService`) handles every model call: the chat, the LLM nodes, tool loops, model pulls and deletes. The Ollama-specific part is its provider, `client/src/services/llm/providers/ollama/ollamaProvider.ts` ([client.md](client.md#talking-to-the-backend)).
 
 - **`think` is always sent explicitly.** `think: false` is safe on every model, and leaving it out silently breaks a "thinking off" setting.
 - **A request with an `AbortSignal` gets its own Ollama client,** so Stop cancels that stream only. The shared client's `abort()` would cancel every stream in the app.

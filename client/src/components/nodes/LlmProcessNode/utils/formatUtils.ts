@@ -97,7 +97,7 @@ export type ParsedFormat = {
 };
 
 /**
- * Parses a node format config into a ready-to-use OllamaService format object
+ * Parses a node format config into a ready-to-use LlmService format object
  * and an optional AJV validator for the `onError` schema.
  *
  * Accepts the three shapes that can arrive from the node config:

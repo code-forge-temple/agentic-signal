@@ -9,7 +9,7 @@
 import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {useChatConversation} from './useChatConversation';
-import {OllamaService} from '../../../../../services/ollamaService';
+import {LlmService} from '../../../../../services/llm/llmService';
 import {Message, MessageRole, StreamAiResponse} from '../../../../../services/llm/types';
 import {ROLE} from '../../../../../constants';
 import {ChatEntry, ChatMessage, EMPTY_CONTEXT_USAGE} from '../constants';
@@ -26,7 +26,7 @@ type StreamCall = {messages: Message[]; model: string; signal?: AbortSignal};
 function ollamaStreams (chunks: StreamAiResponse[], gate?: Promise<void>): StreamCall[] {
     const calls: StreamCall[] = [];
 
-    OllamaService.getInstance().streamAIResponse = async function * (messages, model, _settings, signal) {
+    LlmService.getInstance().streamAIResponse = async function * (messages, model, _settings, signal) {
         calls.push({messages, model, signal});
 
         await gate;
@@ -61,7 +61,7 @@ function startReply (result: Conversation, reply?: ChatMessage): Promise<void> {
 const lastEntry = (result: Conversation) => result.current.messages[result.current.messages.length - 1];
 
 beforeEach(() => {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
 });
 
 afterEach(() => {

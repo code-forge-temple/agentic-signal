@@ -9,13 +9,13 @@
 import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {isModelGone, modelOptions, useFetchModels} from './useFetchModels';
-import {OllamaService} from '../services/ollamaService';
+import {LlmService} from '../services/llm/llmService';
 import {useOllamaModels} from '../stores/ollamaModels';
 
 
 describe('useFetchModels', () => {
     beforeEach(() => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
         useOllamaModels.setState({models: [], reachable: false, isFetching: false});
     });
 
@@ -24,7 +24,7 @@ describe('useFetchModels', () => {
     });
 
     it('resolves with null, not an empty list, when Ollama cannot be reached', async () => {
-        OllamaService.getInstance().fetchModels = async () => ({success: false, error: 'daemon not running'});
+        LlmService.getInstance().fetchModels = async () => ({success: false, error: 'daemon not running'});
 
         const onError = vi.fn();
         const {result} = renderHook(() => useFetchModels(onError));
@@ -40,7 +40,7 @@ describe('useFetchModels', () => {
     });
 
     it('resolves with the names Ollama lists, an empty list included', async () => {
-        OllamaService.getInstance().fetchModels = async () => ({success: true, models: []});
+        LlmService.getInstance().fetchModels = async () => ({success: true, models: []});
 
         const {result} = renderHook(() => useFetchModels());
         let names: string[] | null = null;
@@ -56,7 +56,7 @@ describe('useFetchModels', () => {
 
 describe('useFetchModels: one list for the app', () => {
     beforeEach(() => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
         useOllamaModels.setState({models: [], reachable: false, isFetching: false});
     });
 
@@ -65,7 +65,7 @@ describe('useFetchModels: one list for the app', () => {
     });
 
     it('updates the list of every user when any of them fetches (a model pulled in Settings reaches the chat and the nodes)', async () => {
-        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
+        LlmService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
         const settings = renderHook(() => useFetchModels());
         const chat = renderHook(() => useFetchModels());
 
@@ -74,7 +74,7 @@ describe('useFetchModels: one list for the app', () => {
         });
         expect(chat.result.current.models).toEqual(['a']);
 
-        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}, {name: 'b'}]});
+        LlmService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}, {name: 'b'}]});
         await act(async () => {
             await settings.result.current.fetchModels();
         });
@@ -82,7 +82,7 @@ describe('useFetchModels: one list for the app', () => {
     });
 
     it('reports a failed fetch to the user that made it only, while every list empties', async () => {
-        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
+        LlmService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
         const asking = vi.fn();
         const watching = vi.fn();
         const one = renderHook(() => useFetchModels(asking));
@@ -91,7 +91,7 @@ describe('useFetchModels: one list for the app', () => {
         await act(async () => {
             await one.result.current.fetchModels();
         });
-        OllamaService.getInstance().fetchModels = async () => ({success: false, error: 'down'});
+        LlmService.getInstance().fetchModels = async () => ({success: false, error: 'down'});
         await act(async () => {
             await one.result.current.fetchModels();
         });
@@ -104,14 +104,14 @@ describe('useFetchModels: one list for the app', () => {
     it('keeps the newest answer: an older fetch that comes back last changes nothing', async () => {
         let answerOld: (() => void) | undefined;
 
-        OllamaService.getInstance().fetchModels = () => new Promise((resolve) => {
+        LlmService.getInstance().fetchModels = () => new Promise((resolve) => {
             answerOld = () => resolve({success: true, models: [{name: 'old'}]});
         });
         const {result} = renderHook(() => useFetchModels());
         let first: Promise<string[] | null> = Promise.resolve(null);
 
         act(() => { first = result.current.fetchModels(); });
-        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'new'}]});
+        LlmService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'new'}]});
         await act(async () => {
             await result.current.fetchModels();
         });
@@ -127,13 +127,13 @@ describe('useFetchModels: one list for the app', () => {
         const {result} = renderHook(() => useFetchModels());
         let answer: (() => void) | undefined;
         const pendingFetch = () => {
-            OllamaService.getInstance().fetchModels = () => new Promise((resolve) => {
+            LlmService.getInstance().fetchModels = () => new Promise((resolve) => {
                 answer = () => resolve({success: true, models: [{name: 'b'}]});
             });
         };
 
         localStorage.setItem('ollamaHost', 'http://host-a:11434');
-        OllamaService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
+        LlmService.getInstance().fetchModels = async () => ({success: true, models: [{name: 'a'}]});
         await act(async () => {
             await result.current.fetchModels();
         });
@@ -156,7 +156,7 @@ describe('useFetchModels: one list for the app', () => {
     it('is loading only while no list is known: a known list refreshing stays shown, not a spinner', async () => {
         let answer: (() => void) | undefined;
 
-        OllamaService.getInstance().fetchModels = () => new Promise((resolve) => {
+        LlmService.getInstance().fetchModels = () => new Promise((resolve) => {
             answer = () => resolve({success: true, models: [{name: 'a'}]});
         });
         const {result} = renderHook(() => useFetchModels());

@@ -6,7 +6,7 @@
 
 import {ChatResponse, Ollama, Tool} from "ollama/browser";
 import {savedOllamaHost} from "../../../../context/settingsStorage";
-import {LlmProvider, ModelManagement} from "../../LlmProvider";
+import {LlmProvider, ModelManagement} from "../../llmProvider";
 import {ChatReply, ChatRequest, ModelInfo, PullProgress, StreamChatOptions, StreamPart, StreamRequest} from "../../types";
 
 /** Ollama, through ollama-js, straight from the browser: every call goes to the host saved in Settings. */

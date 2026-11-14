@@ -11,7 +11,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import LinearProgress from "@mui/material/LinearProgress";
 import TextField from "@mui/material/TextField";
 import {Plus} from "iconoir-react";
-import {OllamaService} from "../../../../../../../services/ollamaService";
+import {LlmService} from "../../../../../../../services/llm/llmService";
 
 
 type AddModelFieldProps = {
@@ -48,7 +48,7 @@ export function AddModelField ({enabled, checking, onPulled}: AddModelFieldProps
         setProgress(0);
 
         try {
-            for await (const res of OllamaService.getInstance().pullModel(pulled)) {
+            for await (const res of LlmService.getInstance().pullModel(pulled)) {
                 if (!res.success) {
                     setError(res.error);
 

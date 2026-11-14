@@ -14,7 +14,7 @@ import Slider from '@mui/material/Slider';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import {BaseDialog} from '../../../../../../../../BaseDialog';
-import {OllamaService} from '../../../../../../../../../services/ollamaService';
+import {LlmService} from '../../../../../../../../../services/llm/llmService';
 import {useLlmSettings} from '../../../../../hooks/useLlmSettings';
 import {
     CONTEXT_WINDOW_FALLBACK_MAX,
@@ -68,7 +68,7 @@ export const LlmSettingsDialog = ({open, model, onClose}: LlmSettingsDialogProps
 
         let cancelled = false;
 
-        OllamaService.getInstance().fetchModelContextLength(model)
+        LlmService.getInstance().fetchModelContextLength(model)
             .then(response => {
                 // Nothing is recorded on failure: null is cached permanently, so a transient
                 // outage must not be mistaken for "this model reports no length".

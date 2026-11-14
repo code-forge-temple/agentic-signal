@@ -6,19 +6,19 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 import {runOrchestration} from './runOrchestration';
 import {parseFormat} from '../formatUtils';
-import {OllamaService} from '../../../../../services/ollamaService';
+import {LlmService} from '../../../../../services/llm/llmService';
 import {FetchAiResponse} from '../../../../../services/llm/types';
 import {OrchestrationParams} from './types';
 
 /** Mocks the public `fetchAIResponse` directly — isolates runOrchestration's own
  * planning/dependency/aggregation logic from the tool-calling loop, which has its
- * own dedicated coverage in ollamaService.test.ts. */
+ * own dedicated coverage in services/llm/llmService.test.ts. */
 function mockFetchAIResponse (responses: FetchAiResponse[]) {
-    OllamaService.reloadInstance();
+    LlmService.reloadInstance();
 
-    const service = OllamaService.getInstance();
+    const service = LlmService.getInstance();
     let callIndex = 0;
-    const receivedCalls: Parameters<OllamaService['fetchAIResponse']>[0][] = [];
+    const receivedCalls: Parameters<LlmService['fetchAIResponse']>[0][] = [];
 
     service.fetchAIResponse = async (params) => {
         receivedCalls.push(params);
@@ -47,7 +47,7 @@ function baseParams (overrides: Partial<OrchestrationParams> = {}): Orchestratio
 
 describe('runOrchestration', () => {
     beforeEach(() => {
-        OllamaService.reloadInstance();
+        LlmService.reloadInstance();
     });
 
     it('runs planning -> one agent call per task -> aggregation, and returns the raw aggregation reply', async () => {

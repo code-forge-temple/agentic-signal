@@ -6,7 +6,7 @@
 
 import {isToolError} from "../../types/tool.types";
 import {errorMessage} from "@shared/utils";
-import {LlmProvider} from "./LlmProvider";
+import {LlmProvider} from "./llmProvider";
 import {recoverToolCallFromContent} from "./leakedToolCalls";
 import {toModelMessage} from "./messages";
 import {ChatReply, ChatRequest, FetchAiParams, FetchAiResponse, Message, MessageRole, OfferedTool, ToolCall, ToolEntry} from "./types";
@@ -34,7 +34,7 @@ type Exchange = {
  */
 export async function runToolLoop (provider: LlmProvider, params: FetchAiParams): Promise<FetchAiResponse> {
     /* #if LOGS */
-    console.groupCollapsed("[OllamaService] fetchAIResponse");
+    console.groupCollapsed("[LlmService] fetchAIResponse");
     console.log("Model:", params.model);
     console.log("Format:", params.format ?? "(none)");
     console.log("Tools:", params.tools?.map(t => t.schema.name) ?? "(none)");
@@ -212,7 +212,7 @@ async function replyAfterTools (exchange: Exchange, response: ChatReply): Promis
     if (!tools || tools.length === 0 || hasText(response)) return response;
 
     /* #if LOGS */
-    console.groupCollapsed("[OllamaService] Final summary call (no tools)");
+    console.groupCollapsed("[LlmService] Final summary call (no tools)");
     console.log("Format:", exchange.chat.format ?? "(none)");
     /* #endif */
 

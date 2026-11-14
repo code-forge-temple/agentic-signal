@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {create} from 'zustand';
-import {OllamaService} from '../services/ollamaService';
+import {LlmService} from '../services/llm/llmService';
 import {savedOllamaHost} from '../context/settingsStorage';
 
 type OllamaModelsState = {
@@ -44,7 +44,7 @@ export async function refreshOllamaModels (): Promise<string[] | null> {
     useOllamaModels.setState({isFetching: true});
 
     try {
-        const response = await OllamaService.getInstance().fetchModels();
+        const response = await LlmService.getInstance().fetchModels();
 
         if (!response.success) throw new Error(response.error);
 

@@ -5,7 +5,7 @@
  ************************************************************************/
 
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {OllamaService} from '../../../../../services/ollamaService';
+import {LlmService} from '../../../../../services/llm/llmService';
 import {FetchAiResponseSuccess, Message, MessageRole, StreamAiResponse} from '../../../../../services/llm/types';
 import {ROLE} from '../../../../../constants';
 import {useStreamThrottle} from '../../../../../hooks/useStreamThrottle';
@@ -72,7 +72,7 @@ export function useChatConversation ({model, settingsMap}: {model: string; setti
         setMessages(prev => [...prev, reply]);
 
         try {
-            for await (const chunk of OllamaService.getInstance().streamAIResponse(ollamaMessages, model, streamOptionsFor(settingsMap, model), controller.signal)) {
+            for await (const chunk of LlmService.getInstance().streamAIResponse(ollamaMessages, model, streamOptionsFor(settingsMap, model), controller.signal)) {
                 // A newer reply took over.
                 if (!isCurrent()) {
                     cancel();

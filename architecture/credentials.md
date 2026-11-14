@@ -73,7 +73,7 @@ The `satisfies` check makes every local field name a store key. Slack Input and 
 | `slackBotToken` | Slack Input, Slack Output |
 | `slackAppToken` | Slack Input |
 | `redditClientId`, `redditClientSecret` | Reddit Post |
-| `weaviateApiKey` | RAG |
+| `weaviateApiKey`, `ragOwnerKey` | RAG |
 | `brave-search.apiKey` | Brave Search tool |
 | `fetch-weather-data.apiKey` | Weather tool |
 | `googleClientId` | Google Calendar, Drive and Gmail tools |
@@ -148,7 +148,7 @@ The vault protects secrets at rest: a copied browser profile or app data. Once u
 
 1. Add `LOCAL_SECRETS` and `GLOBAL_SECRETS` to the node's `constants.tsx`. Reuse an existing store key when the secret is the same one another node uses.
 2. In the descriptor: `globalSecrets: Object.values(GLOBAL_SECRETS)`, and add `...Object.values(LOCAL_SECRETS)` to `defaultData.toSanitize`.
-3. In a hook of the node, read and write the shared value, and seed it once from the node's data (RAG's `hooks/useWeaviateApiKey.ts` does this):
+3. In a hook of the node, read and write the shared value, and seed it once from the node's data (RAG's `hooks/useRagSecret.ts` does this, for both of its secrets):
 
 ```tsx
 const {apiKey: savedApiKey} = data;

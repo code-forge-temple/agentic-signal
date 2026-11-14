@@ -5,8 +5,8 @@
  ************************************************************************/
 
 import {GraphQLContext} from "../../graphql/types.ts";
-import {ragIngestAndRetrieve} from "./service.ts";
-import {RagIngestAndRetrieveArgs, RagRetrieveResult} from "./types.ts";
+import {ragDeleteCollection, ragIngestAndRetrieve} from "./service.ts";
+import {RagDeleteCollectionArgs, RagDeleteCollectionResult, RagIngestAndRetrieveArgs, RagRetrieveResult} from "./types.ts";
 
 export const resolver = {
     Query: {},
@@ -17,6 +17,13 @@ export const resolver = {
             _context: GraphQLContext
         ): Promise<RagRetrieveResult> => {
             return ragIngestAndRetrieve(args);
-        }
+        },
+        ragDeleteCollection: async (
+            _parent: unknown,
+            args: RagDeleteCollectionArgs,
+            _context: GraphQLContext
+        ): Promise<RagDeleteCollectionResult> => {
+            return ragDeleteCollection(args);
+        },
     }
 };

@@ -18,6 +18,8 @@ export const RagNodeDataSchema = z.object({
     topK: z.number().int().positive().describe("Number of top matching chunks to retrieve"),
     weaviateUrl: z.string().describe("URL of the Weaviate vector database instance"),
     weaviateApiKey: z.string().optional().describe("API key for Weaviate (leave empty for local instances)"),
+    // eslint-disable-next-line max-len
+    ownerKey: z.string().optional().describe("Owner key: a collection made with it can be changed (files added or replaced, its model changed) or deleted only with it; anyone may query it. Kept in Credentials, never in workflow files"),
     handler: z.function().args(z.string()).returns(z.promise(z.string())).optional(),
 });
 
@@ -39,5 +41,6 @@ export const defaultRagNodeData: RagNodeData = {
     topK: 5,
     weaviateUrl: "http://localhost:8080",
     weaviateApiKey: "",
+    ownerKey: "",
     handler: undefined,
 };

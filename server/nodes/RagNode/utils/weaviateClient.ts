@@ -81,6 +81,7 @@ export async function createMetaClass ({base, h, className}: WeaviateClass): Pro
                 {name: "documentHash", dataType: ["text"]},
                 {name: "embeddingModel", dataType: ["text"]},
                 {name: "originalName", dataType: ["text"]},
+                {name: "ownerKeyHash", dataType: ["text"]},
             ],
         }),
     });
@@ -88,8 +89,11 @@ export async function createMetaClass ({base, h, className}: WeaviateClass): Pro
     if (!res.ok) throw new Error(`Failed to create Weaviate meta class "${className}": ${await res.text()}`);
 }
 
+/** Deletes the class with its objects; one already gone is no failure. */
 export async function deleteClass ({base, h, className}: WeaviateClass): Promise<void> {
-    await fetch(`${base}/v1/schema/${className}`, {method: "DELETE", headers: h});
+    const res = await fetch(`${base}/v1/schema/${className}`, {method: "DELETE", headers: h});
+
+    if (!res.ok && res.status !== 404) throw new Error(`Failed to delete Weaviate class "${className}": ${res.status} ${await res.text()}`);
 }
 
 export async function deleteChunksBySourceFile ({base, h, className}: WeaviateClass, sourceFile: string): Promise<void> {
@@ -137,8 +141,11 @@ export async function batchInsert (
     }
 }
 
-/** A RAG collection's meta object: the files ingested (name → content hash) and the embedding model they were embedded with. */
-export type StoredMeta = {id: string; fileHashes: Record<string, string>; embeddingModel?: string};
+/**
+ * A RAG collection's meta object: the files ingested (name → content hash), the embedding model they were embedded
+ * with, and the owner key's fingerprint when the collection has one.
+ */
+export type StoredMeta = {id: string; fileHashes: Record<string, string>; embeddingModel?: string; ownerKeyHash?: string};
 
 export async function getStoredMeta ({base, h, className: metaClassName}: WeaviateClass): Promise<StoredMeta | undefined> {
     const res = await fetch(`${base}/v1/objects?class=${metaClassName}&limit=1`, {headers: h});
@@ -163,16 +170,20 @@ export async function getStoredMeta ({base, h, className: metaClassName}: Weavia
         id: obj.id,
         fileHashes,
         embeddingModel: obj.properties.embeddingModel ?? undefined,
+        ownerKeyHash: obj.properties.ownerKeyHash || undefined,
     };
 }
 
-/** What a collection's meta object holds: its files' hashes, the embedding model, and the collection's name as typed. */
-export type MetaProperties = {fileHashes: Record<string, string>; embeddingModel: string; originalName: string};
+/**
+ * What a collection's meta object holds: its files' hashes, the embedding model, the collection's name as typed, and
+ * the owner key's fingerprint, which is written with a new meta object only: an update never changes the owner.
+ */
+export type MetaProperties = {fileHashes: Record<string, string>; embeddingModel: string; originalName: string; ownerKeyHash?: string};
 
 /** Writes the collection's meta object: updates the one with `existingId`, or adds it when there's none. */
 export async function upsertMeta (
     {base, h, className: metaClassName}: WeaviateClass,
-    {fileHashes, embeddingModel, originalName}: MetaProperties,
+    {fileHashes, embeddingModel, originalName, ownerKeyHash}: MetaProperties,
     existingId?: string,
 ): Promise<void> {
     const documentHash = JSON.stringify(fileHashes);
@@ -189,7 +200,7 @@ export async function upsertMeta (
         const res = await fetch(`${base}/v1/objects`, {
             method: "POST",
             headers: h,
-            body: JSON.stringify({class: metaClassName, properties: {documentHash, embeddingModel, originalName}}),
+            body: JSON.stringify({class: metaClassName, properties: {documentHash, embeddingModel, originalName, ...(ownerKeyHash ? {ownerKeyHash} : {})}}),
         });
 
         if (!res.ok) throw new Error(`Failed to insert Weaviate meta: ${await res.text()}`);

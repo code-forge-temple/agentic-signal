@@ -9,11 +9,43 @@ import Button, {ButtonProps} from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
+
+/** A button at the end of a menu item (delete, say): it does its own thing, without picking the item. */
+export interface DropdownItemAction {
+    label: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+}
 
 export interface DropdownMenuItem {
     id: string;
     value: string;
+    action?: DropdownItemAction;
+}
+
+// The menu closes first, so whatever the action opens (a confirm dialog) isn't behind it.
+function ItemActionButton ({action, closeMenu}: {action: DropdownItemAction; closeMenu: () => void}) {
+    return (
+        <Tooltip title={action.label}>
+            <IconButton
+                size="small"
+                edge="end"
+                aria-label={action.label}
+                onClick={(event) => {
+                    event.stopPropagation();
+                    closeMenu();
+                    action.onClick();
+                }}
+                // Negative margins: a row with an action is as tall as one without.
+                sx={{ml: 1, my: -1}}
+            >
+                {action.icon}
+            </IconButton>
+        </Tooltip>
+    );
 }
 
 interface DropdownButtonProps {
@@ -102,8 +134,10 @@ export function DropdownButton ({
                                 <MenuItem
                                     key={item.id}
                                     onClick={() => handleMenuItemClick(item)}
+                                    sx={{justifyContent: "space-between"}}
                                 >
                                     {item.value}
+                                    {item.action && <ItemActionButton action={item.action} closeMenu={handleClose} />}
                                 </MenuItem>
                             ))
                         )

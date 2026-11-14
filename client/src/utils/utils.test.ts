@@ -6,7 +6,7 @@
 
 import {describe, expect, expectTypeOf, it} from 'vitest';
 import {getField, withDefaults} from './utils';
-import {fileExtension} from '@shared/utils';
+import {fileExtension, mayChangeRagCollection, ragOwnerKeyHash} from '@shared/utils';
 
 
 describe('getField', () => {
@@ -54,5 +54,33 @@ describe('fileExtension', () => {
         expect(fileExtension('.env')).toBe('env');
 
         for (const name of ['pdf', 'Makefile', 'trailing.', '']) expect(fileExtension(name), name).toBe('');
+    });
+});
+
+describe('ragOwnerKeyHash', () => {
+    it('is a fixed SHA-256 fingerprint of the key, never the key itself, and empty for no key', async () => {
+        const key = '0b9c3f6e-7d1a-4a4e-9c55-2f1e8d3b6a10';
+        const hash = await ragOwnerKeyHash(key);
+
+        expect(hash).toMatch(/^[0-9a-f]{64}$/);
+        expect(hash).not.toContain(key);
+        expect(await ragOwnerKeyHash(key)).toBe(hash);
+        expect(await ragOwnerKeyHash(`${key}x`)).not.toBe(hash);
+        expect(await ragOwnerKeyHash('')).toBe('');
+        expect(await ragOwnerKeyHash(undefined)).toBe('');
+    });
+});
+
+describe('mayChangeRagCollection', () => {
+    it('lets anyone change a collection without a key, and only the same key one with', async () => {
+        const stored = await ragOwnerKeyHash('owner');
+
+        expect(await mayChangeRagCollection(undefined, '')).toBe(true);
+        expect(await mayChangeRagCollection('', 'anyone')).toBe(true);
+        expect(await mayChangeRagCollection(null, undefined)).toBe(true);
+        expect(await mayChangeRagCollection(stored, 'owner')).toBe(true);
+        expect(await mayChangeRagCollection(stored, 'someone else')).toBe(false);
+        expect(await mayChangeRagCollection(stored, '')).toBe(false);
+        expect(await mayChangeRagCollection(stored, undefined)).toBe(false);
     });
 });

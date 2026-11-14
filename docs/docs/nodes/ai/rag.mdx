@@ -34,6 +34,8 @@ It connects exclusively to the **AI Data Processing Node** via a dedicated RAG p
     <TabItem value="collection-name" label="Collection Name">
         Namespace for the knowledge base in Weaviate (e.g. `rag_collection`, the default when it's left empty). Use the browse button (🔍) to pick from existing collections. A name whose Weaviate class would end in `Meta` (e.g. `projectMeta`) is refused, since classes ending in `Meta` hold the collections' file lists.
 
+        The list shows a bin next to each collection this node may delete: see [Owner Key and Deleting Collections](#owner-key-and-deleting-collections).
+
         ![RAG Node Parameters](/img/nodes/rag-node-params.webp)
     </TabItem>
     <TabItem value="chunk-size" label="Chunk Size">
@@ -62,6 +64,11 @@ It connects exclusively to the **AI Data Processing Node** via a dedicated RAG p
         Every RAG node shares it, so a blank key applies to all of them. Save it in [Settings → Credentials](../../getting-started/configuration#credentials) as `weaviateApiKey` to keep it after a reload.
 
         ![RAG Node Parameters](/img/nodes/rag-node-params.webp)
+    </TabItem>
+    <TabItem value="owner-key" label="Owner Key (optional)">
+        A secret that protects the collections this node creates: only a node with the same key can add files to them, replace their files, change their model or delete them. Anyone can query them. While the field is empty, the button on its right generates a random key (a UUID).
+
+        Every RAG node shares it, like the API key. Save it in [Settings → Credentials](../../getting-started/configuration#credentials) as `ragOwnerKey`: a key that isn't saved is gone after a reload, and with it the right to change your collections from the app. Workflow files never contain it. See [Owner Key and Deleting Collections](#owner-key-and-deleting-collections).
     </TabItem>
     <TabItem value="config-schema" label="Configuration Schema">
         <NodeSchemaTab nodeType="rag" />
@@ -115,10 +122,32 @@ The node uses **per-file content hashing** to avoid redundant re-embedding:
     | Embedding model changed | Entire chunks class dropped and all current files re-ingested |
     | Query only (no files in input) | Queries whatever is already in the collection |
     | Query with another embedding model than the collection's | Fails, naming the collection's model |
+    | New or changed files, or another model, for a collection made with another owner key | Fails, naming the collection; nothing is written |
 
 </div>
 
 This makes the node safe to use in a **shared knowledge base** scenario: multiple workflows can contribute documents to the same collection without overwriting each other's data.
+
+## Owner Key and Deleting Collections
+
+A collection made by a node with an [owner key](#configuration) belongs to that key. Weaviate keeps only the key's fingerprint (a SHA-256 hash), never the key itself.
+
+<div className="fullWidthTable">
+
+    | | Query | Add or replace files, change the model, delete |
+    |---|---|---|
+    | Collection made without an owner key (every collection made before owner keys existed) | Everyone | Everyone |
+    | Collection made with an owner key | Everyone | Only nodes with that key |
+
+</div>
+
+**Deleting:** in the collection list (🔍), a bin appears next to each collection this node may delete, and Agentic Signal asks you to confirm first. The collection's chunks and file list are removed from Weaviate; this can't be undone. Only collections Agentic Signal made can be deleted this way: a class without a meta class (made by another tool) has to be deleted in Weaviate.
+
+**Sharing:** to let colleagues maintain a collection, share its owner key with them, as you would a password. People who only ask questions don't need it.
+
+:::warning What an owner key doesn't do
+It guards against accidents in Agentic Signal, such as one team wiping another team's collection. It isn't access control: anyone who has the Weaviate API key can still change or delete any collection directly in Weaviate. To control who can read or change what, and to know who did it, use Weaviate's own users and roles, and back the data up regularly: see [Weaviate Setup](../../getting-started/weaviate-setup#sharing-weaviate-roles-audit-logs-and-backups).
+:::
 
 ## Weaviate Schema
 
@@ -149,12 +178,13 @@ Each object also carries a `vector` (float array). Dimension depends on the embe
 "properties": [
     { "name": "documentHash",   "dataType": ["text"] },
     { "name": "embeddingModel", "dataType": ["text"] },
-    { "name": "originalName",   "dataType": ["text"] }
+    { "name": "originalName",   "dataType": ["text"] },
+    { "name": "ownerKeyHash",   "dataType": ["text"] }
 ]
 }
 ```
 
-Exactly **one object** exists in the meta class per collection. `documentHash` is a JSON map of `{ "filename": "sha256hex", ... }` for per-file change detection. `originalName` stores the human-readable collection name (e.g. `rag_collection`) for display in the UI.
+Exactly **one object** exists in the meta class per collection. `documentHash` is a JSON map of `{ "filename": "sha256hex", ... }` for per-file change detection. `originalName` stores the human-readable collection name (e.g. `rag_collection`) for display in the UI. `ownerKeyHash` is the owner key's fingerprint, set once when a node with an owner key creates the collection; meta classes made before owner keys existed don't have it, and their collections stay open to everyone.
 
 **Minimum viable external collection** (to be queryable from Agentic Signal without triggering re-ingestion):
 1. Create `Ragcollection` with `content`, `sourceFile`, `chunkIndex` properties and correctly-dimensioned vectors.

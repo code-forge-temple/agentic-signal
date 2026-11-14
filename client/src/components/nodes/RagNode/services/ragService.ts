@@ -17,6 +17,14 @@ type RagIngestAndRetrieveParams = {
     ollamaHost: string;
     weaviateUrl: string;
     weaviateApiKey?: string;
+    ownerKey?: string;
+};
+
+type RagDeleteCollectionParams = {
+    collectionName: string;
+    weaviateUrl: string;
+    weaviateApiKey?: string;
+    ownerKey?: string;
 };
 
 class RagService {
@@ -33,6 +41,7 @@ class RagService {
                     $ollamaHost: String
                     $weaviateUrl: String!
                     $weaviateApiKey: String
+                    $ownerKey: String
                 ) {
                     ragIngestAndRetrieve(
                         input: $input
@@ -44,6 +53,7 @@ class RagService {
                         ollamaHost: $ollamaHost
                         weaviateUrl: $weaviateUrl
                         weaviateApiKey: $weaviateApiKey
+                        ownerKey: $ownerKey
                     ) {
                         success
                         context
@@ -61,6 +71,23 @@ class RagService {
         }
 
         return result.context || "";
+    }
+
+    /** Deletes a collection the app made; throws why the server refused (another owner key, not the app's, Weaviate). */
+    async deleteCollection (params: RagDeleteCollectionParams): Promise<void> {
+        const data = await graphqlRequest<{ ragDeleteCollection: { success: boolean; error: string | null } }>(
+            /* GraphQL */ `
+                mutation RagDeleteCollection($collectionName: String!, $weaviateUrl: String!, $weaviateApiKey: String, $ownerKey: String) {
+                    ragDeleteCollection(collectionName: $collectionName, weaviateUrl: $weaviateUrl, weaviateApiKey: $weaviateApiKey, ownerKey: $ownerKey) {
+                        success
+                        error
+                    }
+                }
+            `,
+            params
+        );
+
+        if (!data.ragDeleteCollection.success) throw new Error(data.ragDeleteCollection.error || "The collection couldn't be deleted");
     }
 }
 

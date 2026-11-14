@@ -15,7 +15,8 @@ import {isModelGone, useFetchModels} from "../../../hooks/useFetchModels";
 import {useOnOpen} from "../../../hooks/useOnOpen";
 import {DropdownMenuItem} from "../../DropdownButton/DropdownButton";
 import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from "./hooks/useWeaviateCollections";
-import {useWeaviateApiKey} from "./hooks/useWeaviateApiKey";
+import {useRagSecret} from "./hooks/useRagSecret";
+import {GLOBAL_SECRETS} from "./constants";
 import {useRagHandler} from "./hooks/useRagHandler";
 import {RagPort} from "./components/RagPort";
 import {RagSettings} from "./components/RagSettings";
@@ -30,11 +31,12 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
     const showError = useCallback((message: string) => setError(prev => [...prev, message]), []);
     const {title, embeddingModel, collectionName, weaviateUrl, onConfigChange} = data;
     const {models, isFetchingModels, fetchModels} = useFetchModels(showError);
-    const [weaviateApiKey, setWeaviateApiKey] = useWeaviateApiKey(data.weaviateApiKey);
+    const [weaviateApiKey, setWeaviateApiKey] = useRagSecret(GLOBAL_SECRETS.API_KEY, data.weaviateApiKey);
+    const [ownerKey, setOwnerKey] = useRagSecret(GLOBAL_SECRETS.OWNER_KEY, data.ownerKey);
     const change = (changes: Partial<RagNodeData>) => onConfigChange(id, changes);
-    const collections = useWeaviateCollections({id, weaviateUrl, weaviateApiKey, onConfigChange, onError: showError});
+    const collections = useWeaviateCollections({id, weaviateUrl, weaviateApiKey, ownerKey, onConfigChange, onError: showError});
 
-    useRagHandler({id, settings: data, weaviateApiKey, onConfigChange, showError});
+    useRagHandler({id, settings: data, weaviateApiKey, ownerKey, onConfigChange, showError});
 
     // A model Ollama no longer has is dropped, unless the collection locks it; the lock itself is checked again.
     useOnOpen(openSettings, () => {
@@ -72,6 +74,8 @@ export function RagNode ({data, id}: NodeProps<AppNode>) {
                 change={change}
                 apiKey={weaviateApiKey}
                 setApiKey={setWeaviateApiKey}
+                ownerKey={ownerKey}
+                setOwnerKey={setOwnerKey}
                 models={models}
                 isFetchingModels={isFetchingModels}
                 collections={collections}

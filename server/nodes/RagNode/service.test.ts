@@ -4,7 +4,8 @@
  *    See the LICENSE file in the project root for license details.     *
  ************************************************************************/
 
-import {ragIngestAndRetrieve} from "./service.ts";
+import {ragDeleteCollection, ragIngestAndRetrieve} from "./service.ts";
+import {ragOwnerKeyHash} from "../../../shared/utils.ts";
 import {FakeServices, withFakeServices} from "./fakeServices.test-utils.ts";
 import {RagIngestAndRetrieveArgs} from "./types.ts";
 
@@ -173,5 +174,115 @@ Deno.test("RAG: a failing Weaviate call is the run's error", async () => {
 
         assertEquals(await run(withFiles("q", {"a.txt": "Alpha."})),
             {success: false, context: null, error: "Failed to create Weaviate meta class \"DocsMeta\": {\"error\":\"disk full\"}"});
+    });
+});
+
+const OWNER = "owner-key-0b9c3f6e";
+const OTHER = "other-key-7d1a4a4e";
+const DELETE_ARGS = {collectionName: "docs", weaviateUrl: ARGS.weaviateUrl, weaviateApiKey: ARGS.weaviateApiKey};
+const hasFile = (services: FakeServices, name: string) => chunksOf(services, "Docs").some(chunk => chunk.startsWith(`${name}:`));
+
+Deno.test("RAG owner key: a collection made with a key keeps only its fingerprint, and that key may add to it", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}), {ownerKey: OWNER});
+
+        assertEquals(metaOf(services)?.ownerKeyHash, await ragOwnerKeyHash(OWNER));
+        // The key itself never reaches Weaviate.
+        assertEquals(JSON.stringify(services.requests).includes(OWNER), false);
+
+        assertEquals((await run(withFiles("q", {"b.txt": "Beta."}), {ownerKey: OWNER})).success, true);
+        assertEquals(hasFile(services, "b.txt"), true);
+        // An update keeps the fingerprint.
+        assertEquals(metaOf(services)?.ownerKeyHash, await ragOwnerKeyHash(OWNER));
+    });
+});
+
+Deno.test("RAG owner key: another key, or none, may query and re-send stored files, but not add, replace or re-embed", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}), {ownerKey: OWNER});
+
+        const added = await run(withFiles("q", {"b.txt": "Beta."}), {ownerKey: OTHER});
+
+        assertEquals(added.success, false);
+        assertEquals(added.error, `Collection "docs" has an owner key, and this node's is another one: it can query the collection, but not add files to it or change it.`);
+        assertEquals((await run(withFiles("q", {"a.txt": "Alpha, replaced."}))).error?.includes("this node's is empty"), true);
+        assertEquals((await run(withFiles("q", {"a.txt": "Alpha."}), {ownerKey: OTHER, embeddingModel: "other-model"})).success, false);
+        assertEquals(chunksOf(services, "Docs"), ["a.txt: Alpha."]);
+        assertEquals(metaOf(services)?.embeddingModel, "nomic");
+
+        assertEquals(await run("what is alpha?", {ownerKey: OTHER}), {success: true, context: "[1] (a.txt)\nAlpha.", error: null});
+        assertEquals((await run(withFiles("what is alpha?", {"a.txt": "Alpha."}), {ownerKey: OTHER})).success, true);
+    });
+});
+
+Deno.test("RAG owner key: a collection made without a key stays open to every key, and none claims it", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}));
+
+        assertEquals((await run(withFiles("q", {"b.txt": "Beta."}), {ownerKey: OTHER})).success, true);
+        assertEquals((await run(withFiles("q", {"c.txt": "Gamma."}))).success, true);
+        assertEquals(metaOf(services)?.ownerKeyHash, undefined);
+    });
+});
+
+Deno.test("RAG owner key: a collection made outside the app (no meta) isn't claimed by the first run with a key", async () => {
+    await withFakeServices(async (services) => {
+        services.classes.add("Docs");
+
+        assertEquals((await run(withFiles("q", {"a.txt": "Alpha."}), {ownerKey: OWNER})).success, true);
+        assertEquals(metaOf(services)?.ownerKeyHash, undefined);
+    });
+});
+
+Deno.test("RAG delete: the owner key deletes the collection, chunks and meta; another key or none is refused", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}), {ownerKey: OWNER});
+
+        assertEquals(await ragDeleteCollection({...DELETE_ARGS, ownerKey: OTHER}), {
+            success: false,
+            error: `Collection "docs" has an owner key, and this node's is another one: only that key can delete the collection.`,
+        });
+        assertEquals((await ragDeleteCollection(DELETE_ARGS)).error?.includes("this node's is empty"), true);
+        assertEquals([...services.classes].sort(), ["Docs", "DocsMeta"]);
+
+        assertEquals(await ragDeleteCollection({...DELETE_ARGS, ownerKey: OWNER}), {success: true, error: null});
+        assertEquals([...services.classes], []);
+        assertEquals(services.objects, []);
+    });
+});
+
+Deno.test("RAG delete: a collection without a key may be deleted by anyone", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}));
+
+        assertEquals(await ragDeleteCollection({...DELETE_ARGS, ownerKey: OTHER}), {success: true, error: null});
+        assertEquals([...services.classes], []);
+    });
+});
+
+Deno.test("RAG delete: leaves classes the app didn't make alone, and says when there's no such collection", async () => {
+    await withFakeServices(async (services) => {
+        services.classes.add("Docs");
+
+        assertEquals(await ragDeleteCollection(DELETE_ARGS), {
+            success: false,
+            error: `Collection "docs" wasn't made by Agentic Signal (it has no meta class): delete it in Weaviate.`,
+        });
+        assertEquals([...services.classes], ["Docs"]);
+        assertEquals(await ragDeleteCollection({...DELETE_ARGS, collectionName: "nothing"}), {success: false, error: `There's no collection "nothing".`});
+        assertEquals((await ragDeleteCollection({...DELETE_ARGS, collectionName: "docsMeta"})).success, false);
+        assertEquals([...services.classes], ["Docs"]);
+    });
+});
+
+Deno.test("RAG delete: a delete Weaviate turns down is the error, not a success", async () => {
+    await withFakeServices(async (services) => {
+        await run(withFiles("q", {"a.txt": "Alpha."}));
+        services.failNext("DELETE /v1/schema/Docs", 500, {error: "disk full"});
+
+        const result = await ragDeleteCollection(DELETE_ARGS);
+
+        assertEquals(result.success, false);
+        assertEquals(result.error?.includes(`Failed to delete Weaviate class "Docs": 500`), true);
     });
 });

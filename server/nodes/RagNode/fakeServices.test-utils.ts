@@ -41,7 +41,8 @@ function makeRoutes (services: FakeServices) {
         "PATCH /v1/objects/": (rest: string, body: {properties: Record<string, unknown>}) => {
             const object = services.objects.find(candidate => candidate.id === rest.split("/")[1]);
 
-            if (object) object.properties = body.properties;
+            // Merged, as Weaviate's PATCH does: properties it doesn't name stay.
+            if (object) object.properties = {...object.properties, ...body.properties};
 
             return json({}, object ? 200 : 404);
         },

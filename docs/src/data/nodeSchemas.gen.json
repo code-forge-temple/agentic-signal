@@ -440,6 +440,10 @@
             "weaviateApiKey": {
                 "type": "string",
                 "description": "API key for Weaviate (leave empty for local instances)"
+            },
+            "ownerKey": {
+                "type": "string",
+                "description": "Owner key: a collection made with it can be changed (files added or replaced, its model changed) or deleted only with it; anyone may query it. Kept in Credentials, never in workflow files"
             }
         },
         "required": [

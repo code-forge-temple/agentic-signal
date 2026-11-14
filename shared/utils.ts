@@ -113,3 +113,23 @@ export const ragClassName = (collectionName: string): string => {
  * it), not chunks. "Meta" alone is no collection's meta class: it's the class of a collection named "meta".
  */
 export const isRagMetaClass = (className: string): boolean => className !== "Meta" && className.endsWith("Meta");
+
+/**
+ * A RAG owner key's fingerprint (SHA-256, hex), the only form of the key a collection's meta keeps: whoever can read
+ * Weaviate learns nothing they could type in. Empty for no key.
+ */
+export async function ragOwnerKeyHash (ownerKey: string | undefined): Promise<string> {
+    if (!ownerKey) return "";
+
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`agentic-signal.rag-owner:${ownerKey}`));
+
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Whether a node with `ownerKey` may change a collection (add to it, replace its files, change its model, delete it):
+ * one whose meta holds no key fingerprint is open to all; one that holds one only to the same key. Querying needs none.
+ */
+export async function mayChangeRagCollection (storedKeyHash: string | null | undefined, ownerKey: string | undefined): Promise<boolean> {
+    return !storedKeyHash || storedKeyHash === await ragOwnerKeyHash(ownerKey);
+}

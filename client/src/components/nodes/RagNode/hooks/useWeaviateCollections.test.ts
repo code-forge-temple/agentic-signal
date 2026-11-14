@@ -10,7 +10,9 @@ import {act, cleanup, renderHook} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 import {FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX, useWeaviateCollections} from './useWeaviateCollections';
 import {defaultRagNodeData} from '../types/workflow';
+import {ragService} from '../services/ragService';
 import {DEFAULT_RAG_COLLECTION} from '@shared/constants';
+import {ragOwnerKeyHash} from '@shared/utils';
 
 
 type Answer = {status?: number; body?: unknown} | Error;
@@ -52,10 +54,10 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-function setup () {
+function setup (ownerKey = '') {
     const onConfigChange = vi.fn();
     const onError = vi.fn();
-    const hook = renderHook(() => useWeaviateCollections({id: 'n1', weaviateUrl: 'http://weaviate:8080/', weaviateApiKey: 'wk', onConfigChange, onError}));
+    const hook = renderHook(() => useWeaviateCollections({id: 'n1', weaviateUrl: 'http://weaviate:8080/', weaviateApiKey: 'wk', ownerKey, onConfigChange, onError}));
 
     return {hook, onConfigChange, onError, current: () => hook.result.current};
 }
@@ -66,7 +68,13 @@ describe('useWeaviateCollections', () => {
 
         await act(() => current().fetchCollections());
 
-        expect(current().availableCollections).toEqual([{id: 'Docs', value: 'docs'}, {id: 'Notes', value: 'notes'}, {id: 'Raw', value: 'Raw'}, {id: 'Meta', value: 'Meta'}]);
+        // Docs and Notes were made by the app without an owner key: anyone may delete them. Raw and Meta have no meta.
+        expect(current().availableCollections).toEqual([
+            {id: 'Docs', value: 'docs', owned: false, deletable: true},
+            {id: 'Notes', value: 'notes', owned: false, deletable: true},
+            {id: 'Raw', value: 'Raw', owned: false, deletable: false},
+            {id: 'Meta', value: 'Meta', owned: false, deletable: false},
+        ]);
         expect(current().loadingCollections).toBe(false);
         expect(onError).not.toHaveBeenCalled();
         expect(fetchMock.mock.calls.every(([, init]) => (init as RequestInit).headers && JSON.stringify((init as RequestInit).headers).includes('wk'))).toBe(true);
@@ -79,7 +87,71 @@ describe('useWeaviateCollections', () => {
 
         await act(() => current().fetchCollections());
 
-        expect(current().availableCollections).toEqual([{id: 'Docs', value: 'Docs'}, {id: 'Notes', value: 'Notes'}, {id: 'Raw', value: 'Raw'}, {id: 'Meta', value: 'Meta'}]);
+        // Nothing known about them: no bin (the server would check again anyway).
+        expect(current().availableCollections.map(({id, value, deletable}) => ({id, value, deletable}))).toEqual([
+            {id: 'Docs', value: 'Docs', deletable: false},
+            {id: 'Notes', value: 'Notes', deletable: false},
+            {id: 'Raw', value: 'Raw', deletable: false},
+            {id: 'Meta', value: 'Meta', deletable: false},
+        ]);
+    });
+
+    it('lets only the owner key delete a collection made with one', async () => {
+        answers['/v1/schema'] = schemaWith('Owned', 'OwnedMeta');
+        answers['/v1/objects?class=OwnedMeta&limit=1'] = {body: {objects: [{id: '3', properties: {originalName: 'owned', ownerKeyHash: await ragOwnerKeyHash('k1')}}]}};
+
+        for (const [ownerKey, deletable] of [['k1', true], ['k2', false], ['', false]] as const) {
+            const {current} = setup(ownerKey);
+
+            await act(() => current().fetchCollections());
+
+            expect(current().availableCollections).toEqual([{id: 'Owned', value: 'owned', owned: true, deletable}]);
+            cleanup();
+        }
+    });
+
+    it('deletes through the server with the node\'s keys, drops the collection, and unlocks the model when it was the node\'s', async () => {
+        const deleteCollection = vi.spyOn(ragService, 'deleteCollection').mockResolvedValue();
+        const {current, onError} = setup('k1');
+
+        await act(() => current().fetchCollections());
+        await act(() => current().selectCollection({id: 'Docs', value: 'docs'}));
+        expect(current().isEmbeddingModelLocked).toBe(true);
+
+        // Weaviate no longer has it once deleted.
+        delete answers['/v1/schema/Docs'];
+        let outcome: string | null = 'not run';
+
+        await act(async () => {
+            outcome = await current().deleteCollection(current().availableCollections[0], 'docs');
+        });
+
+        expect(outcome).toBeNull();
+        expect(deleteCollection).toHaveBeenCalledWith({collectionName: 'docs', weaviateUrl: 'http://weaviate:8080', weaviateApiKey: 'wk', ownerKey: 'k1'});
+        expect(current().availableCollections.map(collection => collection.id)).toEqual(['Notes', 'Raw', 'Meta']);
+        expect(current().isEmbeddingModelLocked).toBe(false);
+        expect(onError).not.toHaveBeenCalled();
+        deleteCollection.mockRestore();
+    });
+
+    it('reports a delete the server refuses, and keeps the collection listed', async () => {
+        const deleteCollection = vi.spyOn(ragService, 'deleteCollection').mockRejectedValue(new Error('Collection "docs" has an owner key, and this node\'s is another one'));
+        const {current, onError} = setup();
+
+        await act(() => current().fetchCollections());
+        let outcome: string | null = null;
+
+        await act(async () => {
+            outcome = await current().deleteCollection(current().availableCollections[0], 'other');
+        });
+
+        const reason = 'Couldn\'t delete collection "docs": Collection "docs" has an owner key, and this node\'s is another one';
+
+        // For the dialog to show, and in the node's logs.
+        expect(outcome).toBe(reason);
+        expect(onError).toHaveBeenCalledWith(reason);
+        expect(current().availableCollections.map(collection => collection.id)).toEqual(['Docs', 'Notes', 'Raw', 'Meta']);
+        deleteCollection.mockRestore();
     });
 
     it('reports a schema Weaviate turns down, or can\'t answer, and lists nothing', async () => {

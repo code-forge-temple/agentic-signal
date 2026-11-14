@@ -54,3 +54,36 @@ Then point your `Agentic Signal` Weaviate integration to `http://localhost:9090`
 - `DEFAULT_VECTORIZER_MODULE=none` is useful when using an external embeddings service.
 - Keep `DISABLE_TELEMETRY=true` enabled if you want to avoid automatic telemetry from Weaviate.
 :::
+## Sharing Weaviate: Roles, Audit Logs and Backups
+
+The setup above has no authentication: anyone who can reach the port can read, change or delete every collection. That's fine on your own machine. For a Weaviate that several people share, set up the following too.
+
+**The RAG node's [owner key](/docs/nodes/ai/rag#owner-key-and-deleting-collections)** stops people from accidentally changing or deleting each other's collections in Agentic Signal. It isn't access control: anyone with the Weaviate API key can still change any collection directly in Weaviate. Real access control comes from Weaviate itself.
+
+### An API key per person, with roles
+
+1. Turn on API-key authentication and role-based access control (RBAC), and remove `AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true`. See [Enable and configure RBAC](https://docs.weaviate.io/deploy/configuration/configuring-rbac); the setting names differ between Weaviate versions (the docs use both `AUTHORIZATION_RBAC_ENABLED` and `AUTHORIZATION_ENABLE_RBAC`), so check them for yours.
+2. Give each person their own Weaviate user and API key. With `AUTHENTICATION_DB_USERS_ENABLED=true`, users can be added and removed without restarting Weaviate ([Manage users](https://docs.weaviate.io/weaviate/configuration/rbac/manage-users)).
+3. Give each user a role: read-only for people who only ask questions, read-write for those who maintain the content. A team's rights can be limited to its own collections by a name pattern, such as `Engineering*` for collections named `engineering_…`. A pattern like that also covers each collection's `…Meta` class, which the RAG node needs to read too.
+4. Each person enters their own key in the RAG node's `API Key` field, and saves it in [Settings → Credentials](./configuration#credentials).
+
+### Who did what: the audit log
+
+With Weaviate's roles turned on and a Weaviate API key per person, Weaviate logs every decision on whether to allow a request. Each entry has the user, the action (create, read, update, delete), the collection, and whether it was allowed or refused. A collection deletion appears there under the deleting user's name. Two limits: it records who was allowed or refused to do what, not what the data looked like before, and keeping and searching the logs depends on how you store Weaviate's logs ([Logging](https://docs.weaviate.io/deploy/configuration/logging)).
+
+### Regular backups
+
+The audit log tells you who deleted or changed something, not what was there before. To get data back after a mistake, back Weaviate up regularly, and keep copies off the machine.
+
+- **To a folder:** start Weaviate with `-e ENABLE_MODULES=backup-filesystem -e BACKUP_FILESYSTEM_PATH=/var/lib/weaviate/backups` (on a mounted volume), then create a backup with a unique id, for example from a scheduled task:
+
+  ```bash
+  curl -X POST http://localhost:9090/v1/backups/filesystem \
+    -H "Content-Type: application/json" \
+    -d '{"id": "backup-2026-11-14"}'
+  ```
+
+  Add `-H "Authorization: Bearer <admin API key>"` once authentication is on. A backup is restored with `POST /v1/backups/filesystem/<id>/restore`.
+- **To cloud storage:** Weaviate also has backup modules for S3, Google Cloud Storage and Azure.
+
+See [Backups](https://docs.weaviate.io/deploy/configuration/backups) for the details, including restoring only some collections.

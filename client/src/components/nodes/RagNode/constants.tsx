@@ -13,12 +13,17 @@ export const Icon = <Brain />;
 
 export const TITLE = "RAG";
 
-/** The node's data field that holds the Weaviate API key (only older workflow files still carry it). */
+/**
+ * The node's data fields that hold its secrets: the Weaviate API key, and the owner key that alone may change or delete
+ * the collections it makes. Workflow files never keep them (only older ones still carry the API key).
+ */
 export const LOCAL_SECRETS = {
     API_KEY: "weaviateApiKey",
+    OWNER_KEY: "ownerKey",
 } as const;
 
-/** The global store key for the same key, shared by every RAG node; Settings → Credentials can save it. */
+/** The global store keys for the same secrets, shared by every RAG node; Settings → Credentials can save them. */
 export const GLOBAL_SECRETS = {
     API_KEY: "weaviateApiKey",
+    OWNER_KEY: "ragOwnerKey",
 } as const satisfies Record<keyof typeof LOCAL_SECRETS, string>;

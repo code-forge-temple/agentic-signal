@@ -12,15 +12,15 @@ import {defaultRagNodeData} from '../types/workflow';
 const settings = {embeddingModel: 'nomic-embed-text', collectionName: 'docs', chunkSize: 256, chunkOverlap: 32, topK: 3, weaviateUrl: 'http://weaviate:8080'};
 
 describe('ragRequest', () => {
-    it('sends the node\'s settings with the input and the hosts', () => {
-        expect(ragRequest({input: 'question', settings, weaviateApiKey: 'key', ollamaHost: 'http://ollama:11434'}))
-            .toEqual({input: 'question', ...settings, weaviateApiKey: 'key', ollamaHost: 'http://ollama:11434'});
+    it('sends the node\'s settings with the input, the hosts and both keys', () => {
+        expect(ragRequest({input: 'question', settings, weaviateApiKey: 'key', ownerKey: 'owner', ollamaHost: 'http://ollama:11434'}))
+            .toEqual({input: 'question', ...settings, weaviateApiKey: 'key', ownerKey: 'owner', ollamaHost: 'http://ollama:11434'});
     });
 
     it('falls back to the defaults for empty names and missing numbers', () => {
         const empty = {embeddingModel: '', collectionName: '', weaviateUrl: ''} as typeof settings;
 
-        expect(ragRequest({input: 'q', settings: empty, weaviateApiKey: '', ollamaHost: 'h'})).toMatchObject({
+        expect(ragRequest({input: 'q', settings: empty, weaviateApiKey: '', ownerKey: '', ollamaHost: 'h'})).toMatchObject({
             embeddingModel: '',
             collectionName: defaultRagNodeData.collectionName,
             chunkSize: defaultRagNodeData.chunkSize,

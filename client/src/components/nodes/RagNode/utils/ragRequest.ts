@@ -13,11 +13,12 @@ type RagRequestOptions = {
     input: string;
     settings: RagSettings;
     weaviateApiKey: string;
+    ownerKey: string;
     ollamaHost: string;
 };
 
 /** What the RAG service gets for one input: the node's settings, each falling back to its default, and the hosts. */
-export const ragRequest = ({input, settings, weaviateApiKey, ollamaHost}: RagRequestOptions) => ({
+export const ragRequest = ({input, settings, weaviateApiKey, ownerKey, ollamaHost}: RagRequestOptions) => ({
     input,
     collectionName: settings.collectionName || defaultRagNodeData.collectionName,
     embeddingModel: settings.embeddingModel || "",
@@ -27,4 +28,5 @@ export const ragRequest = ({input, settings, weaviateApiKey, ollamaHost}: RagReq
     ollamaHost,
     weaviateUrl: settings.weaviateUrl || defaultRagNodeData.weaviateUrl,
     weaviateApiKey,
+    ownerKey,
 });

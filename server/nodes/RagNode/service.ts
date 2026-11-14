@@ -5,9 +5,17 @@
  ************************************************************************/
 
 import {Ollama} from "npm:ollama";
-import {extractFileBlocksFromMarkdown, extractQueryFromMarkdown, errorMessage, isRagMetaClass, ragClassName} from "../../../shared/utils.ts";
+import {
+    extractFileBlocksFromMarkdown,
+    extractQueryFromMarkdown,
+    errorMessage,
+    isRagMetaClass,
+    mayChangeRagCollection,
+    ragClassName,
+    ragOwnerKeyHash,
+} from "../../../shared/utils.ts";
 import {DEFAULT_RAG_COLLECTION} from "../../../shared/constants.ts";
-import {RagIngestAndRetrieveArgs, RagRetrieveResult} from "./types.ts";
+import {RagDeleteCollectionArgs, RagDeleteCollectionResult, RagIngestAndRetrieveArgs, RagRetrieveResult} from "./types.ts";
 import {chunkText, hashString} from "./utils/textUtils.ts";
 import {
     batchInsert,
@@ -36,17 +44,26 @@ type RagCollection = {
     args: RagIngestAndRetrieveArgs;
 };
 
-function ragCollection (args: RagIngestAndRetrieveArgs): RagCollection {
-    const base = args.weaviateUrl.replace(/\/$/, "");
-    const h = weaviateHeaders(args.weaviateApiKey);
-    const className = ragClassName(args.collectionName);
+/** A collection's two Weaviate classes: its chunks, and its meta (file list, model, owner key fingerprint). */
+function collectionClasses ({weaviateUrl, weaviateApiKey, collectionName}: RagDeleteCollectionArgs): {chunks: WeaviateClass; meta: WeaviateClass} {
+    const base = weaviateUrl.replace(/\/$/, "");
+    const h = weaviateHeaders(weaviateApiKey);
+    const className = ragClassName(collectionName);
 
-    return {
-        ollama: new Ollama({host: args.ollamaHost || ""}),
-        chunks: {base, h, className},
-        meta: {base, h, className: `${className}Meta`},
-        args,
-    };
+    return {chunks: {base, h, className}, meta: {base, h, className: `${className}Meta`}};
+}
+
+function ragCollection (args: RagIngestAndRetrieveArgs): RagCollection {
+    return {ollama: new Ollama({host: args.ollamaHost || ""}), ...collectionClasses(args), args};
+}
+
+/** Refuses a change from a node whose owner key isn't the collection's; `refused` says what it can't do. */
+async function assertMayChange (storedKeyHash: string | undefined, {collectionName, ownerKey}: RagDeleteCollectionArgs, refused: string): Promise<void> {
+    if (await mayChangeRagCollection(storedKeyHash, ownerKey)) return;
+
+    const whose = ownerKey ? "another one" : "empty";
+
+    throw new Error(`Collection "${collectionName || DEFAULT_RAG_COLLECTION}" has an owner key, and this node's is ${whose}: ${refused}`);
 }
 
 /** Each file's content hash, by file name. */
@@ -62,26 +79,28 @@ async function hashFiles (files: FileBlock[]): Promise<Record<string, string>> {
 
 /**
  * Readies the chunks class for the files to ingest: on a model change it starts empty (the stored vectors have another
- * dimension); else it's created when missing, or each file's old chunks are deleted.
+ * dimension); else it's created when missing, or each file's old chunks are deleted. Says whether it was missing.
  */
-async function prepareChunksClass (chunks: WeaviateClass, modelChanged: boolean, filesToIngest: FileBlock[]): Promise<void> {
+async function prepareChunksClass (chunks: WeaviateClass, modelChanged: boolean, filesToIngest: FileBlock[]): Promise<boolean> {
     if (modelChanged) {
         if (await classExists(chunks)) await deleteClass(chunks);
 
         await createChunksClass(chunks);
 
-        return;
+        return false;
     }
 
     if (!(await classExists(chunks))) {
         await createChunksClass(chunks);
 
-        return;
+        return true;
     }
 
     for (const file of filesToIngest) {
         await deleteChunksBySourceFile(chunks, file.name);
     }
+
+    return false;
 }
 
 /** The files' chunks, in order, each with its file and its place in it. */
@@ -126,13 +145,19 @@ async function ingestFiles (collection: RagCollection, files: FileBlock[]): Prom
     // Nothing to ingest: there's something to query only if an earlier run ingested files.
     if (filesToIngest.length === 0) return classExists(chunks);
 
-    await prepareChunksClass(chunks, modelChanged, filesToIngest);
+    // Right before the first write: re-sending files the collection already has changes nothing, so anyone may.
+    await assertMayChange(storedMeta?.ownerKeyHash, args, "it can query the collection, but not add files to it or change it.");
+
+    const isNewCollection = await prepareChunksClass(chunks, modelChanged, filesToIngest);
+
     await embedAndInsert(collection, filesToIngest);
 
     const metaProperties = {
         fileHashes: ingestedHashes(currentHashes, storedMeta, modelChanged),
         embeddingModel: args.embeddingModel,
         originalName: args.collectionName || DEFAULT_RAG_COLLECTION,
+        // Set when the collection is made, by the node that makes it; upsertMeta never changes it later.
+        ownerKeyHash: isNewCollection ? await ragOwnerKeyHash(args.ownerKey) : undefined,
     };
 
     await upsertMeta(meta, metaProperties, storedMeta?.id);
@@ -208,5 +233,35 @@ export async function ragIngestAndRetrieve (args: RagIngestAndRetrieveArgs): Pro
             context: null,
             error: errorMessage(error),
         };
+    }
+}
+
+/**
+ * Deletes a collection the app made: its chunks and meta classes. Only the owner key may, when it has one. A class
+ * without a meta class wasn't made by the app (in a shared Weaviate it may be another app's data), so it's left alone.
+ */
+export async function ragDeleteCollection (args: RagDeleteCollectionArgs): Promise<RagDeleteCollectionResult> {
+    try {
+        const {chunks, meta} = collectionClasses(args);
+        const name = args.collectionName || DEFAULT_RAG_COLLECTION;
+
+        if (isRagMetaClass(chunks.className)) throw new Error(`"${name}" is no collection: Weaviate classes ending in "Meta" hold collections' file lists.`);
+
+        // Keyed like the ingest, so a delete doesn't land in the middle of a run writing the same collection.
+        await withKeyedLock(chunks.className, async () => {
+            if (!(await classExists(meta))) {
+                throw new Error(await classExists(chunks)
+                    ? `Collection "${name}" wasn't made by Agentic Signal (it has no meta class): delete it in Weaviate.`
+                    : `There's no collection "${name}".`);
+            }
+
+            await assertMayChange((await getStoredMeta(meta))?.ownerKeyHash, args, "only that key can delete the collection.");
+            await deleteClass(chunks);
+            await deleteClass(meta);
+        });
+
+        return {success: true, error: null};
+    } catch (error) {
+        return {success: false, error: errorMessage(error)};
     }
 }

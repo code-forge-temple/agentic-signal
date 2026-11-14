@@ -5,12 +5,13 @@
  ************************************************************************/
 
 import {generateGraphQLType} from "../../utils/graphqlUtils.ts";
-import {RagRetrieveResultFields} from "./types.ts";
+import {RagDeleteCollectionResultFields, RagRetrieveResultFields} from "./types.ts";
 
 export const graphqlTypeName = "RagRetrieveResult";
 
 export const typeDefs = /* GraphQL */ `
 ${generateGraphQLType(graphqlTypeName, RagRetrieveResultFields)}
+${generateGraphQLType("RagDeleteCollectionResult", RagDeleteCollectionResultFields)}
 `;
 
 export const queryDefs = "";
@@ -26,5 +27,12 @@ export const mutationDefs = /* GraphQL */ `
         ollamaHost: String
         weaviateUrl: String!
         weaviateApiKey: String
+        ownerKey: String
     ): RagRetrieveResult!
+    ragDeleteCollection(
+        collectionName: String!
+        weaviateUrl: String!
+        weaviateApiKey: String
+        ownerKey: String
+    ): RagDeleteCollectionResult!
 `;

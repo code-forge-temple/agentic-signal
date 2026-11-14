@@ -9,7 +9,8 @@ import {z} from "zod";
 import {WeaviateMetaObjectsResponseSchema} from "@shared/types.gen";
 import {DropdownMenuItem} from "../../../DropdownButton/DropdownButton";
 import {defaultRagNodeData} from "../types/workflow";
-import {errorMessage, isRagMetaClass, ragClassName} from "@shared/utils";
+import {ragService} from "../services/ragService";
+import {errorMessage, isRagMetaClass, mayChangeRagCollection, ragClassName} from "@shared/utils";
 
 
 export const FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX = "Failed to fetch collections";
@@ -88,24 +89,32 @@ async function classFound ({url, headers}: WeaviateTarget, weaviateClass: string
     return true;
 }
 
-// item.id = Weaviate class name (e.g. "Ragcollection"), item.value = original name (e.g. "rag_collection"; the class
-// name when it has none).
-async function collectionItem (target: WeaviateTarget, weaviateClass: string): Promise<DropdownMenuItem> {
-    const originalName = (await collectionMeta(target, weaviateClass).catch(() => undefined))?.originalName;
+/**
+ * A collection to pick: id = Weaviate class name (e.g. "Ragcollection"), value = original name (e.g. "rag_collection";
+ * the class name when it has none), whether it was made with an owner key, and whether this node may delete it: only a
+ * collection the app made (it has a meta), and one made with an owner key only with that key. The server checks again
+ * before deleting.
+ */
+export type CollectionItem = DropdownMenuItem & {owned: boolean; deletable: boolean};
 
-    return {id: weaviateClass, value: originalName || weaviateClass};
+async function collectionItem (target: WeaviateTarget, weaviateClass: string, ownerKey: string): Promise<CollectionItem> {
+    const meta = await collectionMeta(target, weaviateClass).catch(() => undefined);
+    const deletable = meta !== undefined && await mayChangeRagCollection(meta.ownerKeyHash, ownerKey);
+
+    return {id: weaviateClass, value: meta?.originalName || weaviateClass, owned: !!meta?.ownerKeyHash, deletable};
 }
 
 interface UseWeaviateCollectionsOptions {
     id: string;
     weaviateUrl: string | undefined;
     weaviateApiKey: string | undefined;
+    ownerKey: string;
     onConfigChange: (id: string, patch: Record<string, unknown>) => void;
     onError: (msg: string) => void;
 }
 
-export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConfigChange, onError}: UseWeaviateCollectionsOptions) {
-    const [availableCollections, setAvailableCollections] = useState<DropdownMenuItem[]>([]);
+export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, ownerKey, onConfigChange, onError}: UseWeaviateCollectionsOptions) {
+    const [availableCollections, setAvailableCollections] = useState<CollectionItem[]>([]);
     const [loadingCollections, setLoadingCollections] = useState(false);
     const [isEmbeddingModelLocked, setIsEmbeddingModelLocked] = useState(false);
     const isEmbeddingModelLockedRef = useRef(false);
@@ -154,8 +163,8 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
         try {
             const classes = await collectionClasses(target);
 
-            // Each collection's original name, from its meta class, asked in parallel.
-            setAvailableCollections(await Promise.all(classes.map(weaviateClass => collectionItem(target, weaviateClass))));
+            // Each collection's original name and owner, from its meta class, asked in parallel.
+            setAvailableCollections(await Promise.all(classes.map(weaviateClass => collectionItem(target, weaviateClass, ownerKey))));
         } catch (err) {
             onError(`${FAILED_TO_FETCH_COLLECTIONS_ERROR_PREFIX}: ${errorMessage(err)}`);
 
@@ -163,7 +172,28 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
         } finally {
             setLoadingCollections(false);
         }
-    }, [onError, target]);
+    }, [onError, target, ownerKey]);
+
+    // Deletes a collection through the server, which checks the owner key; when it was the node's own collection
+    // (`currentName`), the model lock is checked again: nothing is left to lock it. Resolves to why it failed (also
+    // in the node's logs), for the dialog to show; null when it was deleted.
+    const deleteCollection = useCallback(async (item: CollectionItem, currentName: string): Promise<string | null> => {
+        try {
+            await ragService.deleteCollection({collectionName: item.value, weaviateUrl: target.url, weaviateApiKey, ownerKey});
+        } catch (err) {
+            const message = `Couldn't delete collection "${item.value}": ${errorMessage(err)}`;
+
+            onError(message);
+
+            return message;
+        }
+
+        setAvailableCollections(prev => prev.filter(collection => collection.id !== item.id));
+
+        if (ragClassName(currentName) === item.id) await checkCollectionLockByName(currentName);
+
+        return null;
+    }, [target, weaviateApiKey, ownerKey, checkCollectionLockByName, onError]);
 
     return {
         availableCollections,
@@ -173,5 +203,6 @@ export function useWeaviateCollections ({id, weaviateUrl, weaviateApiKey, onConf
         checkCollectionLockByName,
         selectCollection,
         fetchCollections,
+        deleteCollection,
     };
 }

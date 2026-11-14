@@ -33,10 +33,11 @@ export const extractFromMarkdown = (markdown: string, type: EXTRACTION_TYPE): st
 };
 
 // The headings a message's attachments are written under (markdownFilePrefix, markdownImageFilePrefix), after a blank
-// line; group 1 is a file's name, none for an image. A name runs to the end of its heading line, so quotes and
-// parentheses in it ('my "draft".md', 'photo (1).png') are part of it. Only these split a message: a document's own
-// "### " headings, and any heading in the text, are text.
-const ATTACHMENT_HEADING = /\n\n### (?:File name "([^\n]+)"|Image \d+ \(file name [^\n]*\) attached)\n/g;
+// line or at the very start (a Slack message with files and no text starts with one); group 1 is a file's name, none
+// for an image. A name runs to the end of its heading line, so quotes and parentheses in it ('my "draft".md',
+// 'photo (1).png') are part of it. Only these split a message: a document's own "### " headings, and any heading in the
+// text, are text.
+const ATTACHMENT_HEADING = /(?:^|\n\n)### (?:File name "([^\n]+)"|Image \d+ \(file name [^\n]*\) attached)\n/g;
 const CLOSING_FENCE = /\n```[ \t]*(?=\n|$)/g;
 
 /**

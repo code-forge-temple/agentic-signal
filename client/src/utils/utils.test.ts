@@ -137,6 +137,15 @@ describe('attachments in a message (Data Source\'s file and image sections)', ()
         expect(withoutFileBlocks(named)).not.toContain('Draft.');
     });
 
+    it('knows an attachment at the very start, as in a Slack message with files and no text', () => {
+        // How the Slack Input node writes one: the sections joined by blank lines, nothing before the first.
+        const slack = [`${markdownFilePrefix('x.json')}${FENCE}json\n{}\n${FENCE}`, `${markdownFilePrefix('notes.txt')}${FENCE}\nhi\n${FENCE}`].join('\n\n');
+
+        expect(extractFileBlocksFromMarkdown(slack).map(file => file.name)).toEqual(['x.json', 'notes.txt']);
+        expect(extractQueryFromMarkdown(slack)).toBe('');
+        expect(withoutFileBlocks(slack).trim()).toBe('');
+    });
+
     it('takes a placeholder line as the whole file, not what follows it', () => {
         expect(extractFileBlocksFromMarkdown(`q\n\n${markdownFilePrefix('doc.pdf')}[Binary attachment: doc.pdf]\n\nAnswer briefly.`))
             .toEqual([{name: 'doc.pdf', content: '[Binary attachment: doc.pdf]'}]);

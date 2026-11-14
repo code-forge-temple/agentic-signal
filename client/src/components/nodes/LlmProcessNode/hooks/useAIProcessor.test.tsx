@@ -418,6 +418,22 @@ describe('useAIProcessor.processAIRequest', () => {
             expect(receivedCalls[0].messages[1].content).toBe('Summarize. \n\n');
         });
 
+        it('with a RAG node, also leaves out a file at the very start of the input, as in a Slack message with only files', async () => {
+            const {receivedCalls} = mockFetchAIResponse([success('ok')]);
+            const ragHandler = vi.fn(async () => '[1] (x.txt)\nFound.');
+            const {result} = renderHook(() => useAIProcessor());
+
+            await act(async () => {
+                await result.current.processAIRequest({
+                    payload: '### File name "x.txt"\n```\nSLACK-FILE-TEXT\n```', prompt: 'p', message: {prefix: 'Summarize.\n\n', suffix: ''}, model: 'm',
+                    format: undefined, maxToolRetries: 3, conversationHistory: makeHistory(), ragHandler,
+                });
+            });
+
+            expect(ragHandler).toHaveBeenCalledWith('Summarize.\n\n### File name "x.txt"\n```\nSLACK-FILE-TEXT\n```');
+            expect(receivedCalls[0].messages[1].content).toBe('## CONTEXT\n[1] (x.txt)\nFound.\n\nSummarize.\n\n');
+        });
+
         it('uses a plain format-only system prompt when no node-level prompt is configured', async () => {
             const {receivedCalls} = mockFetchAIResponse([success(JSON.stringify({greeting: 'hi'}))]);
             const {result} = renderHook(() => useAIProcessor());

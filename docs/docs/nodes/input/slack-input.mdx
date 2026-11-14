@@ -77,7 +77,7 @@ Besides the slash command, people can message the bot directly, from its **Messa
 
 Files sent with a direct message reach the workflow too:
 
-- **Text and code files** are added to the `message` in code blocks, each under its file name.
+- **Text and code files** are added to the `message` in code blocks, each under its file name. A file with code blocks of its own (a Markdown file, say) is fenced with more backticks, so it stays one block.
 - **Images** are added to the `message` as data URLs, numbered in order (Image 1, Image 2, ...).
 - **Other files** (PDF, Office documents, zip archives, videos, ...) are passed on as attachments in the node's `toolsPayload`, for tools such as the [Form Interaction Tool](/docs/nodes/ai/tools/form-interaction) to upload. The `message` names each one: `[Binary attachment: report.pdf]`.
 - Each file can be up to **10 MB**, and a message's files up to **25 MB** together. A file past either limit is named in the `message` (`[Not included: ...]`) but left out. A file that can't be downloaded is left out too.

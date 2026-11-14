@@ -153,10 +153,12 @@ describe('a Data Source message, as the RAG node and its LLM read it', () => {
         const message = String(payload);
 
         expect(extractQueryFromMarkdown(message)).toBe('What do the files say?');
-        expect(extractFileBlocksFromMarkdown(message).map(file => [file.name, fileText(file.content)])).toEqual([
-            ['guide.md', markdownWithCodeBlock],
-            ['notes.txt', 'Plain notes.'],
+        // The Markdown file with a code block of its own gets a longer fence, so it stays one block; the saved one keeps three.
+        expect(extractFileBlocksFromMarkdown(message)).toEqual([
+            {name: 'guide.md', content: `\`\`\`\`markdown\n${markdownWithCodeBlock}\n\`\`\`\``},
+            {name: 'notes.txt', content: '```text\nPlain notes.\n```'},
         ]);
+        expect(fileText(files[0].content)).toBe(markdownWithCodeBlock);
 
         const forLlm = withoutFileBlocks(message);
 

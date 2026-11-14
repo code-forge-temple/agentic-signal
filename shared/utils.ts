@@ -36,39 +36,67 @@ export const extractFromMarkdown = (markdown: string, type: EXTRACTION_TYPE): st
 // line or at the very start (a Slack message with files and no text starts with one); group 1 is a file's name, none
 // for an image. A name runs to the end of its heading line, so quotes and parentheses in it ('my "draft".md',
 // 'photo (1).png') are part of it. Only these split a message: a document's own "### " headings, and any heading in the
-// text, are text.
+// text, are text; so is one of these inside an attached file, which is read to its end before the next is looked for.
 const ATTACHMENT_HEADING = /(?:^|\n\n)### (?:File name "([^\n]+)"|Image \d+ \(file name [^\n]*\) attached)\n/g;
-const CLOSING_FENCE = /\n```[ \t]*(?=\n|$)/g;
+// A text file's opening fence, right where its content starts (sticky): three backticks or more (group 1), then its
+// language.
+const OPENING_FENCE = /(`{3,})[^`\n]*\n/y;
 
 /**
- * How much of `rest` (the text after an attachment's heading, up to the next one) is the attachment: a text file is in
- * a code block (a document's own code blocks inside it), so it ends at the last closing fence; anything else (an image,
- * a placeholder line) at the first blank line. What follows, a message's suffix say, isn't the attachment's.
+ * `text` in a code block that nothing in it can close: its fence is one backtick longer than the longest run of
+ * backticks in the text, and at least three. So a Markdown file with code blocks of its own stays one block.
  */
-function attachmentLength (rest: string): number {
-    if (rest.startsWith("```")) {
-        const fences = [...rest.matchAll(CLOSING_FENCE)];
-        const lastFence = fences[fences.length - 1];
+export function fencedCode (text: string, lang = ""): string {
+    const longestRun = (text.match(/`+/g) ?? []).reduce((longest, run) => Math.max(longest, run.length), 0);
+    const fence = "`".repeat(Math.max(3, longestRun + 1));
 
-        return lastFence ? lastFence.index + lastFence[0].length : rest.length;
-    }
-
-    const blankLine = rest.indexOf("\n\n");
-
-    return blankLine === -1 ? rest.length : blankLine;
+    return `${fence}${lang}\n${text}\n${fence}`;
 }
 
+/**
+ * Where the attachment whose content starts at `from` (right after its heading) ends: a text file at the first line of
+ * only as many backticks as its opening fence or more (fencedCode puts none inside), so what follows (another file, a
+ * message's suffix with code blocks of its own) isn't the file's; anything else (an image, a placeholder line) at the
+ * first blank line. Positions, not copies: a message can hold many files and images of megabytes.
+ */
+function attachmentEnd (markdown: string, from: number): number {
+    const openingFence = new RegExp(OPENING_FENCE);
+
+    openingFence.lastIndex = from;
+    const opening = openingFence.exec(markdown);
+
+    if (!opening) {
+        const blankLine = markdown.indexOf("\n\n", from);
+
+        return blankLine === -1 ? markdown.length : blankLine;
+    }
+
+    const closingFence = new RegExp(`\\n\`{${opening[1].length},}[ \\t]*(?=\\n|$)`, "g");
+
+    // From the opening line's own line break, so a closing fence right under it (an empty file) is found too.
+    closingFence.lastIndex = from + opening[0].length - 1;
+    const closing = closingFence.exec(markdown);
+
+    return closing ? closing.index + closing[0].length : markdown.length;
+}
+
+type AttachmentSection = {fileName?: string; start: number; end: number; content: string};
+
 /** A message's attachments, in order: where each starts (its heading) and ends, its content, and a file's name. */
-function attachmentSections (markdown: string): Array<{fileName?: string; start: number; end: number; content: string}> {
-    const headings = [...markdown.matchAll(ATTACHMENT_HEADING)];
+function attachmentSections (markdown: string): AttachmentSection[] {
+    const sections: AttachmentSection[] = [];
+    const headings = new RegExp(ATTACHMENT_HEADING);
 
-    return headings.map((heading, i) => {
+    for (let heading = headings.exec(markdown); heading; heading = headings.exec(markdown)) {
         const contentStart = heading.index + heading[0].length;
-        const rest = markdown.slice(contentStart, headings[i + 1]?.index ?? markdown.length);
-        const content = rest.slice(0, attachmentLength(rest));
+        const end = attachmentEnd(markdown, contentStart);
 
-        return {fileName: heading[1], start: heading.index, end: contentStart + content.length, content: content.trim()};
-    });
+        sections.push({fileName: heading[1], start: heading.index, end, content: markdown.slice(contentStart, end).trim()});
+        // The next heading after this attachment, never one inside it.
+        headings.lastIndex = end;
+    }
+
+    return sections;
 }
 
 /**

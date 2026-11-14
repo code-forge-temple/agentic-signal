@@ -9,6 +9,7 @@ import {arrayBufferToBase64,
     fileExtension,
     extractFromMarkdown,
     EXTRACTION_TYPE,
+    fencedCode,
     fileExtensionToCodeBlockLang,
     markdownFilePrefix,
     markdownImageFilePrefix, errorMessage} from "@shared/utils";
@@ -27,12 +28,25 @@ export const mimeTypeFromExtension = (ext: string): string => {
     return ext === "csv" ? "text/csv" : "text/plain";
 };
 
+// How a text file's `content` is saved: its language (group 1) and its text (group 2) in a three-backtick code block.
+const STORED_CODE_BLOCK = /^```([a-zA-Z0-9]*)\n([\s\S]*)\n```$/;
+
 /**
  * A text file's own text, from the code block its `content` is saved in. Takes everything up to the closing fence
  * at the very end, so a file with code blocks of its own (e.g. Markdown) comes out whole.
  * `undefined` when `content` isn't wrapped in a code block.
  */
-export const fileText = (content: string): string | undefined => content.match(/^```[a-zA-Z0-9]*\n([\s\S]*)\n```$/)?.[1];
+export const fileText = (content: string): string | undefined => content.match(STORED_CODE_BLOCK)?.[2];
+
+/**
+ * A file's `content` as a message carries it: a text file's code block fenced anew (fencedCode), so a file with code
+ * blocks of its own stays one block; an image or a placeholder as it is. The saved `content` keeps three backticks.
+ */
+const messageFileContent = (content: string): string => {
+    const block = content.match(STORED_CODE_BLOCK);
+
+    return block ? fencedCode(block[2], block[1]) : content;
+};
 
 /**
  * The file's bytes as base64. Workflows saved before every attached file kept its `base64` have only the
@@ -137,7 +151,7 @@ function markdownFiles (files: FileData[]): {text: string; tools: AttachedFile[]
 
         const prefix = IMAGE_FILE_EXTENSIONS.has(ext) ? markdownImageFilePrefix(imageCounter++, file.name) : markdownFilePrefix(file.name);
 
-        text += `\n\n${prefix}${file.content}\n\n`;
+        text += `\n\n${prefix}${messageFileContent(file.content)}\n\n`;
     }
 
     if (filesWithoutData.length > 0) {

@@ -90,7 +90,7 @@ What are the main topics covered?
 ```
 ````
 
-- **File blocks** (optional): One or more `### File name "..."` sections, each with the file in a code block, as the Data Source writes them — each is chunked, embedded, and stored in the collection. A document is taken whole, its own headings and code blocks included.
+- **File blocks** (optional): One or more `### File name "..."` sections, each with the file in a code block, as the Data Source writes them — each is chunked, embedded, and stored in the collection. A document is taken whole, its own headings and code blocks included: a file with code blocks of its own is fenced with more backticks, and ends at its own closing fence.
 - **Query** (required for retrieval): The text preceding the first file or image block. Used to perform a vector similarity search against the stored chunks.
 
 Only text files reach the node: in the Data Source, a file set to **Included in LLM context**. Files set to **Passed to tools only** (PDF, DOCX and other binary files by default) go to tool nodes, not to the RAG node, and images aren't stored either.

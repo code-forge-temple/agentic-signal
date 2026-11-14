@@ -9,6 +9,7 @@ import {getField, withDefaults} from './utils';
 import {
     extractFileBlocksFromMarkdown,
     extractQueryFromMarkdown,
+    fencedCode,
     fileExtension,
     markdownFilePrefix,
     markdownImageFilePrefix,
@@ -108,10 +109,20 @@ describe('weaviateAuthHeaders', () => {
     });
 });
 
+describe('fencedCode', () => {
+    it('fences text one backtick longer than its longest run of backticks, and with three at least', () => {
+        expect(fencedCode('plain', 'text')).toBe('```text\nplain\n```');
+        expect(fencedCode('inline `code` and ``more``')).toBe('```\ninline `code` and ``more``\n```');
+        expect(fencedCode('```bash\nnpm start\n```', 'markdown')).toBe('````markdown\n```bash\nnpm start\n```\n````');
+        expect(fencedCode('a ````` run')).toBe('``````\na ````` run\n``````');
+    });
+});
+
 describe('attachments in a message (Data Source\'s file and image sections)', () => {
     const FENCE = '```';
     const guide = `# Guide\n\nIntro.\n\n### Setup\n\nRun it:\n\n${FENCE}bash\nnpm start\n${FENCE}\n\n### Usage\n\nUse it.`;
-    const file = (name: string, text: string, lang = '') => `\n\n${markdownFilePrefix(name)}${FENCE}${lang}\n${text}\n${FENCE}\n\n`;
+    // A file section as the Data Source writes one.
+    const file = (name: string, text: string, lang = '') => `\n\n${markdownFilePrefix(name)}${fencedCode(text, lang)}\n\n`;
     const image = (index: number, name: string) => `\n\n${markdownImageFilePrefix(index, name)}![${name}](data:image/png;base64,AAAA)\n\n`;
     // The question with its own heading, two files around an image, and a message suffix after them.
     // eslint-disable-next-line max-len
@@ -119,9 +130,20 @@ describe('attachments in a message (Data Source\'s file and image sections)', ()
 
     it('takes a document whole, its own headings and code blocks included, and leaves images and later text out', () => {
         expect(extractFileBlocksFromMarkdown(message)).toEqual([
-            {name: 'guide.md', content: `${FENCE}markdown\n${guide}\n${FENCE}`},
+            {name: 'guide.md', content: `\`\`\`\`markdown\n${guide}\n\`\`\`\``},
             {name: 'notes.txt', content: `${FENCE}\nPlain notes.\n${FENCE}`},
         ]);
+    });
+
+    it('reads a file to its own closing fence: an attachment heading inside it, or a suffix\'s code block after it, isn\'t the file\'s', () => {
+        // A document that shows the attachment format itself, as the RAG node's docs page does.
+        const doc = `Example:\n\n${markdownFilePrefix('my-document.txt')}${FENCE}\n<file content here>\n${FENCE}\n\nEnd of the page.`;
+        const suffix = `Answer as JSON:\n\n${FENCE}json\n{"a": 1}\n${FENCE}`;
+        const withDoc = `Q?${file('rag.mdx', doc, 'markdown')}${suffix}`;
+
+        expect(extractFileBlocksFromMarkdown(withDoc)).toEqual([{name: 'rag.mdx', content: fencedCode(doc, 'markdown')}]);
+        expect(extractQueryFromMarkdown(withDoc)).toBe('Q?');
+        expect(withoutFileBlocks(withDoc)).toBe(`Q?\n\n${suffix}`);
     });
 
     it('takes the text before the first attachment as the query, its own headings included', () => {

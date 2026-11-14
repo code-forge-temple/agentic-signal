@@ -1,7 +1,2 @@
 {
-  "client/src/services/ollamaService.ts": {
-    "max-lines": {
-      "count": 1
-    }
-  }
 }

@@ -9,36 +9,32 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {OllamaService} from './ollamaService';
 import {MessageRole, StreamAiResponse} from '../types/ollama.types';
+import {ChatRequest} from './llm/types';
 
 type CannedResponse = {message: {role: string; content?: string; tool_calls?: any[]}};
 
-type CallOllamaChatArgs = Parameters<OllamaService['callOllamaChat']>;
-
-/** The private members some tests call directly. Loosely typed on purpose: those tests
- * pass hand-rolled fakes, e.g. a bare `{chat}` object instead of an Ollama client. */
-type OllamaServiceInternals = {
-    callOllamaChat: (...args: unknown[]) => Promise<unknown>;
-    recoverToolCallFromContent: (response: unknown, tools: unknown) => void;
+/** The service's provider (Ollama's), whose `chat` and client the tests replace. Loosely typed on purpose. */
+type ProviderInternals = {
+    chat: (request: ChatRequest) => Promise<unknown>;
     getOllama: (signal?: AbortSignal) => Promise<unknown>;
-    ollama: unknown;
 };
 
-const getInternals = () => OllamaService.getInstance() as unknown as OllamaServiceInternals;
+const providerOf = (service: OllamaService) => (service as unknown as {provider: ProviderInternals}).provider;
 
-/** Mocks only `callOllamaChat` — everything else (the loop, recovery, retries, tool
+/** Mocks only the provider's `chat` — everything else (the loop, recovery, retries, tool
  * execution) runs for real, against the actual implementation. */
 function mockService (mockResponses: CannedResponse[]) {
     OllamaService.reloadInstance();
 
     const service = OllamaService.getInstance();
     let callIndex = 0;
-    const receivedArgs: CallOllamaChatArgs[] = [];
+    const receivedRequests: ChatRequest[] = [];
     // The conversation is one array that keeps growing; this keeps what each request saw.
     const sentMessages: {role: string; content: string}[][] = [];
 
-    (service as any).callOllamaChat = async (...args: CallOllamaChatArgs) => {
-        receivedArgs.push(args);
-        sentMessages.push([...args[1]]);
+    providerOf(service).chat = async (request: ChatRequest) => {
+        receivedRequests.push(request);
+        sentMessages.push([...request.messages]);
 
         const next = mockResponses[callIndex++];
 
@@ -47,18 +43,18 @@ function mockService (mockResponses: CannedResponse[]) {
         return next;
     };
 
-    return {service, getCallCount: () => callIndex, receivedArgs, sentMessages};
+    return {service, getCallCount: () => callIndex, receivedRequests, sentMessages};
 }
 
-/** Mocks `getOllama` to return a fake client — for the methods that talk to Ollama
- * directly (list/pull/delete/abort/streaming chat) rather than through `callOllamaChat`. */
+/** Mocks the provider's `getOllama` to return a fake client — for the methods that talk to Ollama
+ * directly (list/pull/delete/streaming chat/show). */
 function mockOllamaClient (overrides: Partial<Record<'list' | 'chat' | 'pull' | 'delete' | 'abort' | 'show', any>>) {
     OllamaService.reloadInstance();
 
     const service = OllamaService.getInstance();
     const client = {list: undefined, chat: undefined, pull: undefined, delete: undefined, abort: undefined, show: undefined, ...overrides};
 
-    (service as any).getOllama = async () => client;
+    providerOf(service).getOllama = async () => client;
 
     return {service, client};
 }
@@ -206,7 +202,7 @@ describe('OllamaService.fetchAIResponse', () => {
 
     it('tells the model which tools it has when it calls one it was not given, and carries on', async () => {
         const handlerLog: any[] = [];
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall({}, 'someUnknownTool')]}},
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
             {message: {role: 'assistant', content: 'Form filled.'}},
@@ -223,7 +219,7 @@ describe('OllamaService.fetchAIResponse', () => {
         expect(result).toEqual({success: true, final: true, reply: 'Form filled.'});
 
         // The second request answers the made-up call, followed by the usual nudge for the required tool.
-        const contents = (receivedArgs[1][1] as {content: string}[]).map(m => m.content);
+        const contents = (receivedRequests[1].messages as {content: string}[]).map(m => m.content);
         const answer = contents.indexOf('Error: there is no tool named "someUnknownTool" here. The tools you can call are: formInteraction.');
 
         expect(answer).toBeGreaterThan(-1);
@@ -255,7 +251,7 @@ describe('OllamaService.fetchAIResponse', () => {
     });
 
     it('passes a string tool result through as-is, without JSON-stringifying it', async () => {
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
             {message: {role: 'assistant', content: 'Reported back.'}},
         ]);
@@ -273,16 +269,16 @@ describe('OllamaService.fetchAIResponse', () => {
             maxToolRetries: 3,
         });
 
-        // The 2nd callOllamaChat invocation's `messages` arg should carry the raw string,
+        // The 2nd request's messages should carry the raw string,
         // not a JSON-stringified version of it.
-        const secondCallMessages = receivedArgs[1][1];
+        const secondCallMessages = receivedRequests[1].messages;
         const toolResultMessage = secondCallMessages.find(m => m.content === 'a plain string result');
 
         expect(toolResultMessage).toBeDefined();
     });
 
     it('preserves extra context fields (not just .error) in the message sent back to the model on tool error', async () => {
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
             {message: {role: 'assistant', content: 'Understood.'}},
         ]);
@@ -300,7 +296,7 @@ describe('OllamaService.fetchAIResponse', () => {
             maxToolRetries: 1,
         });
 
-        const secondCallMessages = receivedArgs[1][1]; // (ollama, messages, ...) — messages is arg index 1
+        const secondCallMessages = receivedRequests[1].messages;
         const toolResultMessage = secondCallMessages.find(m => m.content?.includes('Submit blocked'));
 
         expect(toolResultMessage?.content).toContain('formFields');
@@ -309,7 +305,7 @@ describe('OllamaService.fetchAIResponse', () => {
 
     it('nudges only for required tools not yet called when there are several', async () => {
         const handlerLog: {tool: string}[] = [];
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             // Neither required tool called on the first turn.
             {message: {role: 'assistant', content: 'thinking...'}},
             // Second turn: both get called.
@@ -348,8 +344,8 @@ describe('OllamaService.fetchAIResponse', () => {
         expect(handlerLog).toEqual([{tool: 'toolA'}, {tool: 'toolB'}]);
         expect(result).toEqual({success: true, final: true, reply: 'Both tools used.'});
 
-        // The nudge pushed before the 2nd callOllamaChat call should mention both tool names.
-        const secondCallMessages = receivedArgs[1][1];
+        // The nudge pushed before the 2nd request should mention both tool names.
+        const secondCallMessages = receivedRequests[1].messages;
         const nudge = secondCallMessages.find(m => m.content?.includes('must call'));
 
         expect(nudge?.content).toContain('toolA');
@@ -357,7 +353,7 @@ describe('OllamaService.fetchAIResponse', () => {
     });
 
     it('JSON-stringifies non-string message content before sending it to Ollama', async () => {
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: 'ok'}},
         ]);
 
@@ -367,13 +363,13 @@ describe('OllamaService.fetchAIResponse', () => {
             maxToolRetries: 3,
         });
 
-        const firstCallMessages = receivedArgs[0][1];
+        const firstCallMessages = receivedRequests[0].messages;
 
         expect(firstCallMessages[0].content).toBe(JSON.stringify({nested: 'object'}));
     });
 
     it('extracts base64 images out of markdown-image syntax in message content', async () => {
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: 'ok'}},
         ]);
 
@@ -383,14 +379,28 @@ describe('OllamaService.fetchAIResponse', () => {
             maxToolRetries: 3,
         });
 
-        const firstCallMessages = receivedArgs[0][1];
+        const firstCallMessages = receivedRequests[0].messages;
 
         expect(firstCallMessages[0].content).not.toContain('data:image');
         expect(firstCallMessages[0].images).toEqual(['ABCD1234']);
     });
 
-    it('passes format/think/temperature through to every callOllamaChat invocation', async () => {
-        const {service, receivedArgs} = mockService([
+    it('leaves the caller\'s messages as they were, keeping the tool calls and nudges in a list of its own', async () => {
+        const {service} = mockService([
+            {message: {role: 'assistant', content: 'thinking'}},
+            {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
+            {message: {role: 'assistant', content: 'done'}},
+        ]);
+        const messages = [{role: MessageRole.USER, content: 'Look: ![pic](data:image/png;base64,ABCD1234)', images: []}];
+        const before = structuredClone(messages);
+
+        expect(await service.fetchAIResponse({messages, model: 'm', tools: makeTools([]), maxToolRetries: 3}))
+            .toEqual({success: true, final: true, reply: 'done'});
+        expect(messages).toEqual(before);
+    });
+
+    it('passes format/think/temperature through to every chat request', async () => {
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: 'ok'}},
         ]);
 
@@ -403,8 +413,7 @@ describe('OllamaService.fetchAIResponse', () => {
             maxToolRetries: 3,
         });
 
-        // (ollama, messages, {model, format, tools, think, temperature})
-        const {model, format, think, temperature} = receivedArgs[0][2];
+        const {model, format, think, temperature} = receivedRequests[0];
 
         expect(model).toBe('m');
         expect(format).toEqual({type: 'object'});
@@ -449,7 +458,7 @@ describe('OllamaService.fetchAIResponse', () => {
     });
 
     it('keeps the text of each reply in the conversation for the next request', async () => {
-        const {service, receivedArgs} = mockService([
+        const {service, receivedRequests} = mockService([
             {message: {role: 'assistant', content: 'Hello'}},
             {message: {role: 'assistant', content: 'I will call it'}},
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
@@ -464,7 +473,7 @@ describe('OllamaService.fetchAIResponse', () => {
         });
 
         // The conversation is one array, so the last request's shows everything that joined it.
-        const conversation = receivedArgs[3][1] as {role: string; content: string}[];
+        const conversation = receivedRequests[3].messages as {role: string; content: string}[];
 
         expect(conversation).toContainEqual({role: 'assistant', content: 'Hello', images: []});
         expect(conversation).toContainEqual({role: 'assistant', content: 'I will call it', images: []});
@@ -601,9 +610,12 @@ describe('OllamaService.fetchAIResponse', () => {
             vi.spyOn(console, 'error').mockImplementation(() => {});
 
             try {
-                const {service} = mockService([]);
+                OllamaService.reloadInstance();
 
-                (service as any).getOllama = async () => { throw new Error('bad host'); };
+                const service = OllamaService.getInstance();
+
+                // The provider's real chat, whose client can't be made.
+                providerOf(service).getOllama = async () => { throw new Error('bad host'); };
 
                 expect(await service.fetchAIResponse({messages: [], model: 'm', maxToolRetries: 1})).toEqual({success: false, error: 'bad host'});
                 expect([opened.mock.calls.length, closed.mock.calls.length]).toEqual([1, 1]);
@@ -834,196 +846,6 @@ describe('OllamaService.fetchAIResponse', () => {
     });
 });
 
-describe('OllamaService (private) callOllamaChat', () => {
-    it('builds the request with stream:false and a 60m keep_alive, and returns the client response as-is', async () => {
-        OllamaService.reloadInstance();
-
-        const service = getInternals();
-        let receivedArgs: Record<string, unknown> = {};
-        const client = {
-            chat: async (args: Record<string, unknown>) => {
-                receivedArgs = args;
-
-                return {message: {role: 'assistant', content: 'hi'}};
-            },
-        };
-
-        const result = await service.callOllamaChat(client, [{role: MessageRole.USER, content: 'hello', images: []}], {model: 'm'});
-
-        expect(receivedArgs).toMatchObject({
-            model: 'm',
-            stream: false,
-            keep_alive: '60m',
-        });
-        expect(receivedArgs).not.toHaveProperty('think');
-        expect(receivedArgs).not.toHaveProperty('options');
-        expect(result).toEqual({message: {role: 'assistant', content: 'hi'}});
-    });
-
-    it('includes think and options.temperature only when explicitly provided', async () => {
-        OllamaService.reloadInstance();
-
-        const service = getInternals();
-        let receivedArgs: Record<string, unknown> = {};
-        const client = {
-            chat: async (args: Record<string, unknown>) => {
-                receivedArgs = args;
-
-                return {message: {role: 'assistant', content: 'hi'}};
-            },
-        };
-
-        await service.callOllamaChat(
-            client, [{role: MessageRole.USER, content: 'hello', images: []}], {model: 'm', format: {type: 'object'}, think: true, temperature: 0.7}
-        );
-
-        expect(receivedArgs.think).toBe(true);
-        expect(receivedArgs.options).toEqual({temperature: 0.7});
-        expect(receivedArgs.format).toEqual({type: 'object'});
-    });
-});
-
-describe('OllamaService (private) recoverToolCallFromContent', () => {
-    function recover (content: string | undefined, toolNames: string[] = ['formInteraction']) {
-        OllamaService.reloadInstance();
-
-        const service = getInternals();
-        const response: {message: {role: string; content?: string; tool_calls?: any[]}} = {message: {role: 'assistant', content}};
-
-        service.recoverToolCallFromContent(response, toolNames.map(name => ({schema: {name}})));
-
-        return response;
-    }
-
-    it('recovers the nested { function: { name, arguments } } shape', () => {
-        const response = recover(JSON.stringify({function: {name: 'formInteraction', arguments: {url: 'http://x'}}}));
-
-        expect(response.message.tool_calls).toEqual([{function: {name: 'formInteraction', arguments: {url: 'http://x'}}}]);
-        expect(response.message.content).toBe('');
-    });
-
-    it('recovers the flat { name, arguments } shape, normalizing it into the nested one', () => {
-        const response = recover(JSON.stringify({name: 'formInteraction', arguments: {url: 'http://x'}}));
-
-        expect(response.message.tool_calls).toEqual([{function: {name: 'formInteraction', arguments: {url: 'http://x'}}}]);
-    });
-
-    it('strips ```json fences before parsing', () => {
-        const response = recover('```json\n' + JSON.stringify({name: 'formInteraction', arguments: {}}) + '\n```');
-
-        expect(response.message.tool_calls).toHaveLength(1);
-    });
-
-    it('recovers a JSON object embedded in stray surrounding text', () => {
-        const response = recover(
-            `Sure! ${JSON.stringify({name: 'formInteraction', arguments: {url: 'http://x'}})} — done.`
-        );
-
-        expect(response.message.tool_calls).toHaveLength(1);
-    });
-
-    it('recovers a JSON object with quoted values containing literal braces, without miscounting depth', () => {
-        // extractBalancedJsonObject must not let a `{`/`}` inside a string value throw off
-        // its brace-depth counter.
-        const response = recover(
-            `garbage-before ${JSON.stringify({name: 'formInteraction', arguments: {note: 'a {literal} brace pair'}})} trailing`
-        );
-
-        expect(response.message.tool_calls).toEqual([
-            {function: {name: 'formInteraction', arguments: {note: 'a {literal} brace pair'}}},
-        ]);
-    });
-
-    it('handles an escaped quote inside a string value without ending the string early', () => {
-        // A literal `"` inside a string value becomes `\"` once JSON-serialized; the scanner
-        // must not mistake that escaped quote for the string's real closing quote.
-        const payload = JSON.stringify({name: 'formInteraction', arguments: {note: 'she said "hi" to me'}});
-        const response = recover(`garbage-before ${payload} trailing`);
-
-        expect(response.message.tool_calls).toEqual([
-            {function: {name: 'formInteraction', arguments: {note: 'she said "hi" to me'}}},
-        ]);
-    });
-
-    it('does not recover when there is no "{" anywhere in the content', () => {
-        const response = recover('just plain text with no braces at all');
-
-        expect(response.message.tool_calls).toBeUndefined();
-    });
-
-    it('does not recover an object that never closes its braces', () => {
-        const response = recover('leading text {"name": "formInteraction", "arguments": {');
-
-        expect(response.message.tool_calls).toBeUndefined();
-    });
-
-    it('does not recover a brace-balanced substring that is not actually valid JSON', () => {
-        // Balanced braces (depth returns to 0) but unquoted keys/values — a valid target
-        // for extractBalancedJsonObject to find, but JSON.parse on it must still fail cleanly.
-        const response = recover('xxx {not: valid, json: here} yyy');
-
-        expect(response.message.tool_calls).toBeUndefined();
-    });
-
-    it('does not recover when the tool name is not among the available tools', () => {
-        const response = recover(JSON.stringify({name: 'someOtherTool', arguments: {}}));
-
-        expect(response.message.tool_calls).toBeUndefined();
-    });
-
-    it('does not touch plain prose that happens to not be JSON', () => {
-        const response = recover('The form has been submitted successfully.');
-
-        expect(response.message.tool_calls).toBeUndefined();
-        expect(response.message.content).toBe('The form has been submitted successfully.');
-    });
-
-    it('is a no-op when tool_calls are already populated', () => {
-        OllamaService.reloadInstance();
-
-        const service = getInternals();
-        const existingCalls = [{function: {name: 'formInteraction', arguments: {}}}];
-        const response = {message: {role: 'assistant', content: 'ignored', tool_calls: existingCalls}};
-
-        service.recoverToolCallFromContent(response, [{schema: {name: 'formInteraction'}}]);
-
-        expect(response.message.tool_calls).toBe(existingCalls);
-        expect(response.message.content).toBe('ignored');
-    });
-
-    it('is a no-op when no tools are available at all (undefined)', () => {
-        OllamaService.reloadInstance();
-
-        const service = getInternals();
-        const response: {message: {role: string; content?: string; tool_calls?: any[]}} =
-            {message: {role: 'assistant', content: JSON.stringify({name: 'formInteraction', arguments: {}})}};
-
-        service.recoverToolCallFromContent(response, undefined);
-
-        expect(response.message.tool_calls).toBeUndefined();
-    });
-
-    it('is a no-op when the tools array is empty', () => {
-        OllamaService.reloadInstance();
-
-        const service = getInternals();
-        const response: {message: {role: string; content?: string; tool_calls?: any[]}} =
-            {message: {role: 'assistant', content: JSON.stringify({name: 'formInteraction', arguments: {}})}};
-
-        service.recoverToolCallFromContent(response, []);
-
-        expect(response.message.tool_calls).toBeUndefined();
-    });
-
-    it('is a no-op when content is empty/undefined', () => {
-        const empty = recover('');
-        const undef = recover(undefined);
-
-        expect(empty.message.tool_calls).toBeUndefined();
-        expect(undef.message.tool_calls).toBeUndefined();
-    });
-});
-
 describe('OllamaService.fetchModels', () => {
     it('returns the model list on success', async () => {
         const {service} = mockOllamaClient({
@@ -1070,7 +892,7 @@ describe('OllamaService.deleteModel', () => {
     });
 });
 
-describe('OllamaService per-request cancel (signal)', () => {
+describe('OllamaService cancel (signal)', () => {
     beforeEach(() => {
         localStorage.clear();
         OllamaService.reloadInstance();
@@ -1080,68 +902,20 @@ describe('OllamaService per-request cancel (signal)', () => {
         vi.unstubAllGlobals();
     });
 
-    it('gives a request with a signal a client of its own, leaving the shared one alone', async () => {
-        const service = getInternals();
-        const shared = await service.getOllama();
-        const own = await service.getOllama(new AbortController().signal);
-
-        expect(own).not.toBe(shared);
-        expect(await service.getOllama()).toBe(shared);
-    });
-
-    it("cancels that client's requests when the signal aborts, streamed or not", async () => {
-        const seen: (AbortSignal | null | undefined)[] = [];
-
-        vi.stubGlobal('fetch', (_input: unknown, init?: RequestInit) => {
-            seen.push(init?.signal);
-
-            return new Promise(() => {});
-        });
-
-        const controller = new AbortController();
-        const client = await getInternals().getOllama(controller.signal) as {fetch: typeof fetch};
-
-        // Not streamed: ollama-js passes no signal. Streamed: it passes one of its own.
-        void client.fetch('http://x', {});
-        void client.fetch('http://x', {signal: new AbortController().signal});
-
-        controller.abort();
-
-        expect(seen).toHaveLength(2);
-        expect(seen.every(signal => signal?.aborted)).toBe(true);
-    });
-
-    it('still lets ollama-js abort a stream through its own signal', async () => {
-        let seen: AbortSignal | null | undefined;
-
-        vi.stubGlobal('fetch', (_input: unknown, init?: RequestInit) => {
-            seen = init?.signal;
-
-            return new Promise(() => {});
-        });
-
-        const streamController = new AbortController();
-        const client = await getInternals().getOllama(new AbortController().signal) as {fetch: typeof fetch};
-
-        void client.fetch('http://x', {signal: streamController.signal});
-        streamController.abort();
-
-        expect(seen?.aborted).toBe(true);
-    });
-
     it('starts no tool call once fetchAIResponse is cancelled', async () => {
         const handlerLog: any[] = [];
         const controller = new AbortController();
         const {service} = mockService([
             {message: {role: 'assistant', content: '', tool_calls: [nativeToolCall()]}},
         ]);
-        const cannedCall = (service as any).callOllamaChat as (...args: unknown[]) => Promise<unknown>;
+        const provider = providerOf(service);
+        const cannedCall = provider.chat;
 
         // Cancelled while the model answers with a tool call.
-        (service as any).callOllamaChat = async (...args: unknown[]) => {
+        provider.chat = async (request: ChatRequest) => {
             controller.abort();
 
-            return cannedCall(...args);
+            return cannedCall(request);
         };
 
         const result = await service.fetchAIResponse({
@@ -1162,7 +936,7 @@ describe('OllamaService per-request cancel (signal)', () => {
         });
         let received: AbortSignal | undefined;
 
-        (service as any).getOllama = async (signal?: AbortSignal) => {
+        providerOf(service).getOllama = async (signal?: AbortSignal) => {
             received = signal;
 
             return client;
@@ -1436,42 +1210,6 @@ describe('OllamaService.pullModel', () => {
         }
 
         expect(chunks).toEqual([{success: false, error: 'disk full'}]);
-    });
-});
-
-describe('OllamaService host handling (getOllama)', () => {
-    beforeEach(() => {
-        localStorage.clear();
-        OllamaService.reloadInstance();
-    });
-
-    it('reuses the same client across calls when the configured host has not changed', async () => {
-        localStorage.setItem('ollamaHost', 'http://host-a');
-
-        const service = getInternals();
-
-        await service.getOllama();
-        const firstClient = service.ollama;
-
-        await service.getOllama();
-        const secondClient = service.ollama;
-
-        expect(secondClient).toBe(firstClient);
-    });
-
-    it('constructs a new client when the configured host changes', async () => {
-        localStorage.setItem('ollamaHost', 'http://host-a');
-
-        const service = getInternals();
-
-        await service.getOllama();
-        const firstClient = service.ollama;
-
-        localStorage.setItem('ollamaHost', 'http://host-b');
-        await service.getOllama();
-        const secondClient = service.ollama;
-
-        expect(secondClient).not.toBe(firstClient);
     });
 });
 

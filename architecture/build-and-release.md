@@ -92,7 +92,7 @@ docker run -it -p 8080:8080 -p 8000:8000 -p 8001:8001 agentic-signal
 
 `.github/workflows/`:
 
-- **`build.yml`** builds the desktop app on Windows, macOS and Linux (Bun + Deno). It uploads the artifacts and creates a GitHub Release named after `package.json`'s version. Its Deno version is pinned (`deno-version`, 2.9.8): the release's backend is compiled with it, so use the same version locally (`deno upgrade --version 2.9.8`) and raise both together.
+- **`build.yml`** builds the desktop app on Windows, macOS and Linux (Bun + Deno). It uploads the artifacts and creates a GitHub Release named after `package.json`'s version. Its Deno version is pinned (`deno-version`, 2.9.6): the release's backend is compiled with it, so use the same version locally (`deno upgrade --version 2.9.6`) and raise both together. Not 2.9.8: antivirus programs (Avast, WithSecure) quarantine its runtime, the one `deno compile` embeds in the backend; before raising the version, check that a compiled backend survives an antivirus scan.
 - **`deploy-docs.yml`** builds the docs site and deploys it to GitHub Pages whenever a push or a pull request to `main` touches `docs/` (the job has no condition separating the two).
 
 Bump `package.json`'s `version` for a release; the Tauri version follows it. The app's update check compares its own version with the tag of the latest GitHub release (`v<version>`, as this workflow writes it), so a release published another way must keep that tag format, and must not be a draft or a pre-release.

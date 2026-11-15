@@ -45,7 +45,9 @@ jobs:
         with:
           # Pinned, and the same version used locally: the release's backend is compiled with it, and with v2.x a new
           # Deno could break the build (or type-check differently) with no change of ours. Raise both together.
-          deno-version: v2.9.8
+          # Not 2.9.8: antivirus programs (Avast, WithSecure) quarantine its runtime, the one deno compile embeds, so
+          # the backend in the installers could be removed on users' machines.
+          deno-version: v2.9.6
 
       - name: Build backend (Windows)
         if: matrix.platform == 'windows-latest'

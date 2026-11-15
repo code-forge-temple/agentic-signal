@@ -43,7 +43,9 @@ jobs:
 
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          # Pinned, and the same version used locally: the release's backend is compiled with it, and with v2.x a new
+          # Deno could break the build (or type-check differently) with no change of ours. Raise both together.
+          deno-version: v2.9.8
 
       - name: Build backend (Windows)
         if: matrix.platform == 'windows-latest'

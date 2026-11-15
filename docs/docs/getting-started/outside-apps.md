@@ -16,7 +16,7 @@ Scripts, browser extensions and other programs can run your workflows over HTTP,
 
 ## The API
 
-Every request goes to port `8001` and sends the token:
+Every request goes to port `8001`, at the **URL** shown in the same Settings section (the button beside it copies it), and sends the token:
 
 ```
 Authorization: Bearer <token>
@@ -90,7 +90,7 @@ A failed call answers `{"error": {"code": "…", "message": "…"}}`. When a nod
 
 ## Calls from Other Computers
 
-By default only this computer can call. To accept calls from other computers on your network, turn on **Accept calls from other computers on your network** in the same Settings section. It shows the address to use. Calls travel as plain HTTP, so keep this for networks you trust.
+By default only this computer can call. To accept calls from other computers on your network, turn on **Accept calls from other computers on your network** in the same Settings section. A **URL for other computers** then appears for each of this computer's network addresses, with a button to copy it. Calls travel as plain HTTP, so keep this for networks you trust.
 
 - **Docker:** the container accepts calls from outside by default. Publish port `8001` along with the others: `docker run -p 8080:8080 -p 8000:8000 -p 8001:8001 agentic-signal`.
 - **Started with `AGENTIC_SIGNAL_COMMANDS_HOST` or `AGENTIC_SIGNAL_HOST`:** that address decides, and the switch is locked.

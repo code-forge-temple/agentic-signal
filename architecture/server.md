@@ -11,7 +11,8 @@ Back to the [overview](../ARCHITECTURE.md).
 - creates the GraphQL Yoga server from `graphql/schema.ts` (with GraphiQL at `/graphql`, and CORS for the dev server, the desktop app and `localhost:8080`);
 - serves port **8000** (`BACKEND_PORT`) with `Deno.serve`, sending every request through `webSocketManager.handleRequest`. WebSocket upgrades are handled there; everything else goes to Yoga;
 - starts the **commands listener** on port **8001** ([commands.md](commands.md));
-- swallows unhandled promise rejections (logging them), so a stray background error can't take the backend down.
+- swallows unhandled promise rejections (logging them), so a stray background error can't take the backend down;
+- first of all, starts every console line with the time (`utils/logTime.ts`), so `backend.log` shows when each thing happened.
 
 Both ports bind `127.0.0.1` unless `AGENTIC_SIGNAL_HOST` is set (Docker sets `0.0.0.0`). `AGENTIC_SIGNAL_COMMANDS_HOST` sets port 8001's address on its own.
 
@@ -43,6 +44,8 @@ webSocketManager.registerSubscriptionType("timerTrigger", (nodeId, handler) => t
 - By default a subscription is **node-scoped**: it must name a `nodeId`, and events go only to that node's subscribers.
 - `registerSubscriptionType(type, factory, {nodeScoped: false})` registers an app-wide one, such as the outside commands' `commandRequests`.
 - A client's `complete` really tears its subscription down.
+- A factory also gets `{socket}`, the socket's number, and its teardown gets the reason: `"unsubscribed"` (the client's `complete`) or `"connection closed"`.
+- Each socket is logged as it opens (`WebSocket 3 opened (http://tauri.localhost)`: the origin tells the desktop app from a browser tab) and closes (`WebSocket 3 closed (code 1006)`). `commandRequests` logs on that socket when an app starts and stops listening for outside calls.
 
 Modules register their factories in a `websocket.ts`, which `mod.ts` imports for its side effect.
 

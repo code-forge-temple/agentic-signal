@@ -9,9 +9,27 @@ import {errorMessage} from "../../shared/utils.ts";
 
 type SubscriptionHandler = (event: any) => void;
 
-type UnsubscribeFunction = () => void;
+/** Why a subscription ended: the client's own "complete", or its socket closing. */
+export type SubscriptionEndReason = "unsubscribed" | "connection closed";
 
-type SubscriptionFactory = (nodeId: string, handler: SubscriptionHandler, variables: Record<string, unknown>) => UnsubscribeFunction;
+type UnsubscribeFunction = (reason: SubscriptionEndReason) => void;
+
+/** Where a subscription came from: its socket's number, as the log's "WebSocket N opened" names it. */
+export type SubscriptionContext = {socket: number};
+
+type SubscriptionFactory = (
+    nodeId: string,
+    handler: SubscriptionHandler,
+    variables: Record<string, unknown>,
+    context: SubscriptionContext
+) => UnsubscribeFunction;
+
+/** "code 1000: bye", or "code 1006" with no reason; a socket closed without an event just "closed". */
+function describeClose (event?: CloseEvent): string {
+    if (!event) return "closed";
+
+    return event.reason ? `code ${event.code}: ${event.reason}` : `code ${event.code}`;
+}
 
 /**
  * What a subscribe message's payload names: the subscription type (the field its query subscribes to, with arguments)
@@ -40,6 +58,9 @@ export class WebSocketManager {
     private subscriptionCleanups = new Map<WebSocket, Map<string, () => void>>();
 
     private pingIntervals = new Map<WebSocket, ReturnType<typeof setInterval>>();
+
+    // Numbers the sockets in the log, so a subscription's lines can be matched to its socket's.
+    private nextSocketNumber = 1;
 
     private yogaHandler: ((request: Request) => Promise<Response>) | null = null;
 
@@ -88,11 +109,14 @@ export class WebSocketManager {
     handleUpgrade (request: Request): Response {
         try {
             const protocol = request.headers.get("sec-websocket-protocol");
+            // Read now: the request's headers are gone once it's upgraded. It tells the desktop app
+            // (http://tauri.localhost) from a browser tab.
+            const origin = request.headers.get("origin");
             const {socket, response} = Deno.upgradeWebSocket(request, {
                 protocol: protocol || undefined
             });
 
-            this.setupSocketHandlers(socket);
+            this.setupSocketHandlers(socket, origin);
 
             return response;
         } catch (error) {
@@ -102,8 +126,12 @@ export class WebSocketManager {
         }
     }
 
-    private setupSocketHandlers (socket: WebSocket): void {
+    private setupSocketHandlers (socket: WebSocket, origin: string | null = null): void {
+        const number = this.nextSocketNumber++;
+
         this.subscriptionCleanups.set(socket, new Map());
+
+        socket.onopen = () => console.log(`WebSocket ${number} opened (${origin ?? "no origin"})`);
 
         const pingInterval = setInterval(() => {
             if (socket.readyState === WebSocket.OPEN) {
@@ -116,8 +144,6 @@ export class WebSocketManager {
 
         this.pingIntervals.set(socket, pingInterval);
 
-        socket.onopen = () => { };
-
         socket.onmessage = async (event) => {
             try {
                 const message = JSON.parse(event.data);
@@ -129,7 +155,7 @@ export class WebSocketManager {
                         break;
 
                     case 'subscribe':
-                        this.handleSubscribe(socket, message);
+                        this.handleSubscribe(socket, message, {socket: number});
 
                         break;
 
@@ -149,7 +175,8 @@ export class WebSocketManager {
             }
         };
 
-        socket.onclose = () => {
+        socket.onclose = (event?: CloseEvent) => {
+            console.log(`WebSocket ${number} closed (${describeClose(event)})`);
             this.cleanupSocket(socket);
         };
 
@@ -159,7 +186,7 @@ export class WebSocketManager {
         };
     }
 
-    private handleSubscribe (socket: WebSocket, message: any): void {
+    private handleSubscribe (socket: WebSocket, message: any, context: SubscriptionContext): void {
         const {id, payload} = message;
         const subscription = this.readSubscription(payload);
 
@@ -187,7 +214,7 @@ export class WebSocketManager {
                         }
                     }
                 }));
-            }, payload.variables ?? {});
+            }, payload.variables ?? {}, context);
         } catch (error) {
             // It couldn't start (a timer not started yet, say): the client hears why, under its id, instead of waiting.
             socket.send(JSON.stringify({id, type: 'error', payload: [{message: errorMessage(error)}]}));
@@ -219,7 +246,7 @@ export class WebSocketManager {
     /** Unsubscribes when the socket closes (telling the client, if it still can, that it's complete), or on the client's own "complete". */
     private endWithSocketOrClient (socket: WebSocket, id: string, unsubscribe: UnsubscribeFunction): void {
         const closeHandler = () => {
-            unsubscribe();
+            unsubscribe("connection closed");
 
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({
@@ -235,7 +262,7 @@ export class WebSocketManager {
         this.subscriptionCleanups.get(socket)?.set(id, () => {
             socket.removeEventListener('close', closeHandler);
             this.subscriptionCleanups.get(socket)?.delete(id);
-            unsubscribe();
+            unsubscribe("unsubscribed");
         });
     }
 

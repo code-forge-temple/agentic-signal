@@ -41,7 +41,14 @@ class FakeSocket extends EventTarget {
 type Handler = (event: unknown) => void;
 
 // The node-scoped "ticks" and the app-wide "news" subscriptions, keeping each subscriber's handler and teardown.
-const subscribers: {nodeId: string; handler: Handler; variables: Record<string, unknown>; unsubscribed: boolean}[] = [];
+const subscribers: {
+    nodeId: string;
+    handler: Handler;
+    variables: Record<string, unknown>;
+    unsubscribed: boolean;
+    socket?: number;
+    endedBy?: string;
+}[] = [];
 
 webSocketManager.registerSubscriptionType("ticks", (nodeId, handler, variables) => {
     const subscriber = {nodeId, handler, variables, unsubscribed: false};
@@ -56,13 +63,14 @@ webSocketManager.registerSubscriptionType("ticks", (nodeId, handler, variables) 
 webSocketManager.registerSubscriptionType("stopped", (nodeId) => {
     throw new Error(`Timer ${nodeId} not found. Start the timer before subscribing.`);
 });
-webSocketManager.registerSubscriptionType("news", (nodeId, handler, variables) => {
-    const subscriber = {nodeId, handler, variables, unsubscribed: false};
+webSocketManager.registerSubscriptionType("news", (nodeId, handler, variables, {socket}) => {
+    const subscriber = {nodeId, handler, variables, unsubscribed: false, socket, endedBy: ""};
 
     subscribers.push(subscriber);
 
-    return () => {
+    return (reason) => {
         subscriber.unsubscribed = true;
+        subscriber.endedBy = reason;
     };
 }, {nodeScoped: false});
 
@@ -145,6 +153,23 @@ Deno.test("WebSocket: the client's own complete unsubscribes at once", async () 
     // Closing later sends no "complete" for it: it's over already.
     socket.close();
     assertEquals(socket.sent, []);
+});
+
+Deno.test("WebSocket: a subscription learns its socket's number, and whether the client or the socket ended it", async () => {
+    const first = connect();
+    const second = connect();
+    const before = subscribers.length;
+
+    await subscribe(first, "11", "subscription { news(topic: \"x\") { text } }");
+    await subscribe(second, "12", "subscription { news(topic: \"y\") { text } }");
+    await first.receive({type: "complete", id: "11"});
+    second.close();
+
+    const [unsubscribed, closed] = subscribers.slice(before);
+
+    assertEquals([unsubscribed.endedBy, closed.endedBy], ["unsubscribed", "connection closed"]);
+    assertEquals(typeof unsubscribed.socket === "number" && unsubscribed.socket !== closed.socket, true);
+    first.close();
 });
 
 Deno.test("WebSocket: a message that isn't JSON is logged, not thrown", async () => {

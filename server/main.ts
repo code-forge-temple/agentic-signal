@@ -9,6 +9,10 @@ import {schema} from "./graphql/schema.ts";
 import {BACKEND_PORT} from "../shared/constants.ts";
 import {webSocketManager} from "./ws/webSocketManager.ts";
 import {commandsListener} from "./commands/mod.ts";
+import {timestampConsole} from "./utils/logTime.ts";
+
+// First, so every line from here on carries its time. The imports above print nothing while they load.
+timestampConsole();
 
 // Prevent uncaught promise rejections from bringing down the entire Deno backend.
 globalThis.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {

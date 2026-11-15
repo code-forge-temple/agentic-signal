@@ -60,7 +60,8 @@ export function nextScheduledTrigger (scheduled: Date, repeat: SCHEDULED_TIMER_R
 type TimerInstance = {
     id: string;
     config: TimerConfig;
-    timer: number | null;
+    // Not `number`: newer Deno types setTimeout with Node's Timeout.
+    timer: ReturnType<typeof setTimeout> | null;
     subscribers: Set<(event: TimerTriggerEvent) => void>;
     startTime?: number; // For drift correction
     expectedTime?: number; // For drift correction

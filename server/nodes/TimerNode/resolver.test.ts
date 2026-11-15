@@ -23,7 +23,7 @@ async function firstEvents (count: number, waitMs: number): Promise<unknown[]> {
     const field = resolver.Subscription.timerTrigger as Field;
     const stream = await field.subscribe(undefined, {nodeId: "sub"}, {} as GraphQLContext);
     const events: unknown[] = [];
-    let timer = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<"late">((resolve) => {
         timer = setTimeout(() => resolve("late"), waitMs);
     });

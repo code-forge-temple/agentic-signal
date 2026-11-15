@@ -5,7 +5,19 @@
  ************************************************************************/
 
 import {describe, expect, it} from 'vitest';
-import {subscriptionError} from './graphQLSocketManager';
+import {reconnectDelayMs, subscriptionError} from './graphQLSocketManager';
+
+
+describe('reconnectDelayMs', () => {
+    it('waits 1, 2, 4 seconds, then never more than 5, however long the backend stays away', () => {
+        expect([0, 1, 2, 3, 10, 100].map(retries => reconnectDelayMs(retries, 0))).toEqual([1000, 2000, 4000, 5000, 5000, 5000]);
+    });
+
+    it('adds up to half a second at random', () => {
+        expect(reconnectDelayMs(0, 0.999)).toBe(1499);
+        expect(reconnectDelayMs(100, 0.5)).toBe(5250);
+    });
+});
 
 
 describe('subscriptionError', () => {

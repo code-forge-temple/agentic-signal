@@ -72,6 +72,8 @@
 - [Chart](https://agentic-signal.com/docs/nodes/output/chart)
 - [Data Flow Spy](https://agentic-signal.com/docs/nodes/output/data-flow-spy)
 - [Timer](https://agentic-signal.com/docs/nodes/input/timer)
+- [Workflow Input](https://agentic-signal.com/docs/nodes/input/workflow-input)
+- [Workflow Output](https://agentic-signal.com/docs/nodes/output/workflow-output)
 - [Reddit Post](https://agentic-signal.com/docs/nodes/output/reddit-post) *(PRO)*
 - [Slack Input](https://agentic-signal.com/docs/nodes/input/slack-input) *(PRO)*
 - [Slack Output](https://agentic-signal.com/docs/nodes/output/slack-output) *(PRO)*
